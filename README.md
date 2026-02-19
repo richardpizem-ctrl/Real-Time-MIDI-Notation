@@ -1,3 +1,5 @@
+![Project Banner](https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation/blob/858fc86b9b8cfbcbd22183217575aa66ad38bcc3/SIRIUS%20PROGRAM%20S%20EM.png)
+
 # Real-Time MIDI Score Visualizer & Accompaniment Track Notation System
 
 This project provides real-time visualization of MIDI accompaniment tracks.  
