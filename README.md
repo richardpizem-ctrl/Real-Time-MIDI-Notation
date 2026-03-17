@@ -1,57 +1,49 @@
-![Project Banner](https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation/blob/858fc86b9b8cfbcbd22183217575aa66ad38bcc3/SIRIUS%20PROGRAM%20S%20EM.png)
+![Project Banner](https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation/blob/main/SIRIUS%20PROGRAM%20S%20EM.png)
 
 # Real-Time MIDI Score Visualizer & Accompaniment Track Notation System
 
 This project provides real-time visualization of MIDI accompaniment tracks.  
-It is designed for users of arranger keyboards (Yamaha PSR-SX, Genos, and others)  
-who want to display bass lines, drum patterns, chord layers, pads, and other  
-internal MIDI tracks as readable musical notation.
+It is designed for users of arranger keyboards (Yamaha PSR-SX, Genos, Tyros, and others) who want to display bass lines, drum patterns, chord layers, pads, and other internal MIDI tracks as readable musical notation.
 
 ---
 
-## 🚀 Features (planned and implemented)
+## 🚀 Features
+
+### ✔️ Implemented
 - Real-time MIDI data capture  
 - Automatic separation of accompaniment tracks by MIDI channel  
-- Display of each track as standard music notation  
-- Select which tracks to show or hide  
-- Analysis and export of MIDI tracks  
-- Support for Yamaha arranger keyboards  
+- Device detection and MIDI routing  
+- Real-time event processing (low-latency stream handler)
+
+### 🔧 In Development
+- Full notation rendering for bass, drums, pads, and chord tracks  
+- Layout engine for staff, spacing, and symbol placement  
+- UI components for real-time score display  
+- Rhythm analysis and quantization
+
+### 🧭 Planned
+- Export to MusicXML / PDF  
+- Track selection and filtering  
+- Advanced timing analysis  
+- Support for additional MIDI devices
 
 ---
 
-## 🎹 Who is this project for
-- Musicians  
-- Arrangers  
-- Music teachers  
-- Performers who want to understand the internal accompaniment tracks of their keyboard  
+## 🧩 Project Architecture
+
+| Module | Purpose |
+|--------|---------|
+| **midi_input/** | Captures MIDI data from the selected device |
+| **real_time_processing/stream_handler.py** | Processes MIDI events with minimal latency |
+| **notation_engine/** | Converts MIDI events into musical notation |
+| **layout_engine/** | Handles staff layout and note positioning |
+| **ui_components/** | Visual components for real-time score display |
+| **device_manager.py** | Detects and manages MIDI devices |
+| **rhythm_analyzer.py** | Performs rhythm and timing analysis |
+| **run.py** | Main application entry point |
 
 ---
 
-## 🛠️ Installation (coming soon)
-To be added…
+## 🛠️ Installation
 
----
-
-## 📦 Usage (coming soon)
-To be added…
-
----
-
-## 🤝 Contributing
-If you want to contribute, please read **CONTRIBUTING.md**.
-
----
-
-## 📄 License
-This project is licensed under the MIT License.  
-See the **LICENSE** file for details.
-
----
-
-## 🧑‍💻 Code of Conduct
-This project follows the rules defined in **CODE_OF_CONDUCT.md**.
-
----
-
-## ⭐ Support the project
-If you like this project, consider giving it a ⭐ on GitHub.
+### 1. Clone the repository
