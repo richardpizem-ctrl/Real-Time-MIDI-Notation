@@ -29,4 +29,3 @@ class NotationRenderer:
         except Exception as e:
             Logger.error(f"NotationRenderer error: {e}")
             return ""
-
