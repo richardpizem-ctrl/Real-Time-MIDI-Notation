@@ -50,4 +50,3 @@ class RhythmAnalyzer:
 
         closest = min(values.keys(), key=lambda x: abs(x - beats))
         return values[closest]
-
