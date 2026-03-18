@@ -1,29 +1,20 @@
-# Note Mapper – converts MIDI note numbers to musical note names
-
-from ..core.logger import Logger
-
 class NoteMapper:
-    NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F",
-                  "F#", "G", "G#", "A", "A#", "B"]
+    NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
-    @staticmethod
-    def midi_to_note(midi_number):
-        """Convert MIDI note number (0–127) to note name and octave."""
-        try:
-            if not 0 <= midi_number <= 127:
-                Logger.warning(f"Invalid MIDI note number: {midi_number}")
-                return None
+    def __init__(self):
+        pass
 
-            note_name = NoteMapper.NOTE_NAMES[midi_number % 12]
-            octave = (midi_number // 12) - 1
-
-            return {
-                "note": note_name,
-                "octave": octave,
-                "midi": midi_number
-            }
-
-        except Exception as e:
-            Logger.error(f"NoteMapper error: {e}")
+    def midi_to_note_name(self, midi_number):
+        """
+        Prevod MIDI čísla (0–127) na názov noty.
+        Napr. 60 -> C4, 61 -> C#4, 62 -> D4
+        """
+        if midi_number is None:
             return None
+
+        note_index = midi_number % 12
+        octave = (midi_number // 12) - 1
+        note_name = self.NOTE_NAMES[note_index]
+
+        return f"{note_name}{octave}"
 
