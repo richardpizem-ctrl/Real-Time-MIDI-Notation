@@ -15,4 +15,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-Add basic run.py entry point
