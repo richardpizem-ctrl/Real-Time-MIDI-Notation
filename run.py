@@ -1,32 +1,18 @@
-#!/usr/bin/env python3
-
-from core.app_controller import AppController
-from core.logger import Logger
-
+from notation_engine.notation_processor import NotationProcessor
 
 def main():
-    Logger.info("Starting Real-Time MIDI Notation app...")
+    processor = NotationProcessor()
 
-    app = AppController()
+    # Testovací MIDI event
+    test_event = {
+        "type": "note_on",
+        "note": 60,
+        "velocity": 100,
+        "time": 0.5
+    }
 
-    try:
-        app.start()
-        Logger.info("AppController started successfully.")
-
-        # Hlavná slučka – kým aplikácia beží
-        app.run()
-
-    except KeyboardInterrupt:
-        Logger.info("KeyboardInterrupt received. Shutting down...")
-    except Exception as e:
-        Logger.error(f"Unhandled exception in main: {e}")
-    finally:
-        try:
-            app.stop()
-            Logger.info("AppController stopped cleanly.")
-        except Exception as e:
-            Logger.error(f"Error while stopping AppController: {e}")
-
+    processor.process_midi_event(test_event)
 
 if __name__ == "__main__":
     main()
+Add basic run.py entry point
