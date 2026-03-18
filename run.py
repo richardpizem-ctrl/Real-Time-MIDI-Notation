@@ -15,3 +15,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+Fix run.py – correct Python syntax and event keys
