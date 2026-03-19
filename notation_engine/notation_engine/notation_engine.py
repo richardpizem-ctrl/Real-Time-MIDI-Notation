@@ -1,66 +1,66 @@
+# notation_engine/notation_engine.py
+
+from notation_engine.color_mapper import get_note_color
+
+
 class NotationEngine:
-    """
-    Jednoduchý „mozog“ systému:
-    - prijíma hotové noty zo StreamHandleru
-    - ukladá ich do timeline
-    - počíta takty a beaty podľa tempa a metra
-    - voliteľne ich posiela rendereru
-    """
+    def __init__(self):
+        # Zoznam všetkých nôt v časovej osi
+        self.timeline = []
 
-    def __init__(self, renderer=None, tempo=120, time_signature=(4, 4)):
-        # Renderer (napr. NotationRenderer) – môže byť None
-        self.renderer = renderer
+        # Aktuálny akord (nastavuje stream_handler)
+        self.current_chord = None
 
-        # Uložené noty v timeline
-        self.notes = []
-
-        # Základné metrum
-        self.tempo = tempo                  # BPM
-        self.time_signature = time_signature  # (beats_per_bar, beat_unit)
-
-        # Interný stav
-        self.current_bar = 1
-        self.current_beat = 0.0
+        # Renderer (nastaví sa cez set_renderer)
+        self.renderer = None
 
     def set_renderer(self, renderer):
-        """Dodatočne nastaví renderer, ak nebol daný v __init__."""
+        """
+        Prepojenie s grafickým rendererom.
+        Renderer musí mať metódu draw_note().
+        """
         self.renderer = renderer
+
+    def set_current_chord(self, chord):
+        """
+        StreamHandler sem posiela aktuálny akord.
+        """
+        self.current_chord = chord
 
     def add_note(self, note):
         """
-        Očakáva dict z MidiNoteMapperu, napr:
+        Pridá notu do časovej osi a zafarbí ju podľa akordu.
+        Očakáva dict vo formáte:
         {
-            'pitch': ...,
-            'duration': ... (v sekundách),
-            'channel': ...,
-            'start_time': ...,
+            "pitch": int,
+            "start": float,
+            "duration": float
         }
         """
-        # Výpočet dĺžky v beatoch podľa tempa
-        seconds_per_beat = 60.0 / self.tempo
-        duration_seconds = note.get("duration", 0.0)
-        note_beats = duration_seconds / seconds_per_beat if seconds_per_beat > 0 else 0.0
 
-        # Pridáme informáciu o takte a beate
-        note_info = dict(note)
-        note_info["bar"] = self.current_bar
-        note_info["beat"] = self.current_beat
+        # 1. Získame farbu pre danú notu
+        color = get_note_color(
+            note=note["pitch"],
+            chord=self.current_chord,
+            scale=None,            # stupnicu doplníme neskôr
+            track_type="melody"    # neskôr môžeme meniť podľa stopy
+        )
 
-        # Uložíme do timeline
-        self.notes.append(note_info)
+        # 2. Pridáme farbu do objektu noty
+        note["color"] = color
 
-        # Posunieme interný beat counter
-        beats_per_bar = self.time_signature[0]
-        self.current_beat += note_beats
+        # 3. Uložíme notu do timeline
+        self.timeline.append(note)
 
-        while self.current_beat >= beats_per_bar:
-            self.current_beat -= beats_per_bar
-            self.current_bar += 1
-
-        # Pošleme do rendereru, ak existuje
-        if self.renderer is not None:
-            self.renderer.add_note(note_info)
+        # 4. Ak máme renderer, vykreslíme notu
+        if self.renderer:
+            self.renderer.draw_note(note)
 
     def get_timeline(self):
-        """Vráti všetky noty v timeline."""
-        return self.notes
+        """
+        Vráti všetky noty v časovej osi.
+        """
+        return self.timeline
+
+  
+        
