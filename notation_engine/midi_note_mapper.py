@@ -40,12 +40,20 @@ class MidiNoteMapper:
         self.active_notes = {}
         self.ppq = ppq
         self.tempo_bpm = tempo_bpm
+
+        # Position tracking
         self.current_measure = 0
         self.current_beat = 1.0
+
+        # Callback
         self.on_note_created = None
 
-        # 🔥 KVANTOVANIE – 1/16 nota pri PPQ 480
+        # Quantization (1/16 note)
         self.quantize_resolution = 120
+
+        # Time signature (default 4/4)
+        self.time_numerator = 4
+        self.time_denominator = 4
 
     # -----------------------------
     # Timing
@@ -54,27 +62,46 @@ class MidiNoteMapper:
         self.ppq = ppq
         self.tempo_bpm = tempo_bpm
 
+    def set_time_signature(self, numerator: int, denominator: int):
+        self.time_numerator = numerator
+        self.time_denominator = denominator
+
     def _seconds_to_ticks(self, seconds: float) -> int:
         seconds_per_beat = 60.0 / self.tempo_bpm
         beats = seconds / seconds_per_beat
         return int(round(beats * self.ppq))
 
-    # 🔥 Kvantovanie tickov
     def _quantize_ticks(self, ticks: int) -> int:
         q = self.quantize_resolution
         return round(ticks / q) * q
+
+    def _update_position(self, timestamp: float):
+        seconds_per_beat = 60.0 / self.tempo_bpm
+        beats = timestamp / seconds_per_beat
+
+        beat_in_measure = (beats % self.time_numerator) + 1
+        measure = int(beats // self.time_numerator)
+
+        self.current_measure = measure
+        self.current_beat = beat_in_measure
 
     # -----------------------------
     # MIDI EVENTS
     # -----------------------------
     def handle_note_on(self, pitch: int, velocity: int,
                        channel: int, timestamp: float):
+
+        self._update_position(timestamp)
+
         self.active_notes[(pitch, channel)] = {
             "start_time": timestamp,
             "velocity": velocity,
         }
 
     def handle_note_off(self, pitch: int, channel: int, timestamp: float):
+
+        self._update_position(timestamp)
+
         key = (pitch, channel)
         if key not in self.active_notes:
             return
@@ -83,13 +110,11 @@ class MidiNoteMapper:
         velocity = self.active_notes[key]["velocity"]
         del self.active_notes[key]
 
-        # Duration
         duration_seconds = timestamp - start_time
         duration_ticks = self._seconds_to_ticks(duration_seconds)
         duration_ticks = self._quantize_ticks(duration_ticks)
         duration = Duration(ticks=duration_ticks)
 
-        # 🔥 Kvantovanie beatu (1/4 = 0.25)
         quantized_beat = round(self.current_beat * 4) / 4
 
         position = MeasurePosition(
@@ -109,6 +134,4 @@ class MidiNoteMapper:
         if self.on_note_created is not None:
             self.on_note_created(note)
 
-
-
-  
+          
