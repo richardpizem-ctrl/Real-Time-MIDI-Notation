@@ -1,21 +1,29 @@
 import time
 from notation_engine.midi_note_mapper import MidiNoteMapper
-from renderer.notation_renderer import NotationRenderer
+from renderer.graphic_renderer import GraphicNotationRenderer
+from notation_engine.notation_engine import NotationEngine
+
 
 class StreamHandler:
     def __init__(self):
         # MIDI → Note mapper
         self.mapper = MidiNoteMapper()
 
-        # Renderer pre zobrazovanie nôt
-        self.renderer = NotationRenderer()
+        # Grafický renderer (pygame okno)
+        self.renderer = GraphicNotationRenderer()
+
+        # Notation engine – mozog medzi mapperom a rendererom
+        self.engine = NotationEngine(renderer=self.renderer)
 
         # Callback keď mapper vytvorí hotovú notu
         self.mapper.on_note_created = self._on_note_created
 
     def _on_note_created(self, note):
-        # Odovzdáme hotovú notu rendereru
-        self.renderer.add_note(note)
+        """
+        Keď mapper dokončí notu, pošleme ju do notation engine.
+        Ten jej priradí takt/beat a pošle ju rendereru.
+        """
+        self.engine.add_note(note)
 
     def process_midi_message(self, msg):
         """
