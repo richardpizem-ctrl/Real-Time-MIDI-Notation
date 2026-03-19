@@ -1,45 +1,44 @@
-# Stream Handler – orchestrates real-time MIDI → notation pipeline
-
-from ..core.logger import Logger
-from ..midi_input.event_router import EventRouter
-from ..notation_engine.note_mapper import NoteMapper
-from ..notation_engine.rhythm_analyzer import RhythmAnalyzer
-from ..notation_engine.notation_renderer import NotationRenderer
+import time
+from notation_engine.midi_note_mapper import MidiNoteMapper
 
 class StreamHandler:
-    def __init__(self, event_bus, tempo_bpm=120):
-        self.event_bus = event_bus
-        self.router = EventRouter(event_bus)
-        self.mapper = NoteMapper()
-        self.analyzer = RhythmAnalyzer(tempo_bpm)
-        self.renderer = NotationRenderer()
+    def __init__(self):
+        # MIDI → Note mapper
+        self.mapper = MidiNoteMapper()
 
-        self.buffer = []  # stores note events with timestamps
+        # Callback keď mapper vytvorí hotovú notu
+        self.mapper.on_note_created = self._on_note_created
 
-        Logger.info("StreamHandler initialized.")
+    def _on_note_created(self, note):
+        print("NOTE CREATED:", note)
+        # sem neskôr pôjde: notation_engine.add_note(note)
 
-    def process_event(self, midi_event):
-        """Main entry point for real-time MIDI events."""
-        try:
-            # Route raw event
-            self.router.route(midi_event)
+    def process_midi_message(self, msg):
+        """
+        msg: objekt z mido alebo rtmidi
+        msg.type: 'note_on' alebo 'note_off'
+        msg.note: pitch
+        msg.velocity: 0–127
+        msg.channel: 0–15
+        """
 
-            # Only process note_on events for notation
-            if midi_event.get("type") == "note_on":
-                mapped = NoteMapper.midi_to_note(midi_event["note"])
-                if mapped:
-                    mapped["timestamp"] = midi_event["timestamp"]
-                    self.buffer.append(mapped)
+        timestamp = time.time()
 
-            # If we have at least 2 notes, analyze rhythm
-            if len(self.buffer) >= 2:
-                analyzed = self.analyzer.analyze(self.buffer)
-                rendered = self.renderer.render(analyzed)
-                return rendered
+        # NOTE ON (velocity > 0)
+        if msg.type == "note_on" and msg.velocity > 0:
+            self.mapper.handle_note_on(
+                pitch=msg.note,
+                velocity=msg.velocity,
+                channel=msg.channel,
+                timestamp=timestamp
+            )
 
-            return None
+        # NOTE OFF (alebo note_on s velocity 0)
+        elif msg.type in ("note_off", "note_on") and msg.velocity == 0:
+            self.mapper.handle_note_off(
+                pitch=msg.note,
+                channel=msg.channel,
+                timestamp=timestamp
+            )
 
-        except Exception as e:
-            Logger.error(f"StreamHandler error: {e}")
-            return None
 
