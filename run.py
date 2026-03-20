@@ -1,4 +1,4 @@
-# --- GRAFICKÁ NOTOVÁ OSNOVA S POSÚVANÍM, RYTMICKÝMI HODNOTAMI, TAKTAMI A LIGATÚRAMI ---
+# --- GRAFICKÁ NOTOVÁ OSNOVA S AKORDAMI, LIGATÚRAMI, RYTMICKÝMI HODNOTAMI A TAKTAMI ---
 class StaffUI:
     def __init__(self):
         self.root = tk.Toplevel()
@@ -19,11 +19,14 @@ class StaffUI:
         # Aktívne noty
         self.active_notes = {}
 
-        # Hotové rytmické symboly
-        self.finished_notes = []  # {id, x, y, symbol}
+        # Aktívny akord (noty, ktoré prišli naraz)
+        self.active_chord = []
+
+        # Hotové rytmické symboly (aj akordy)
+        self.finished_notes = []  # {ids:[], x, y_list, symbol}
 
         # Ligatúry
-        self.ligatures = []  # {id, x1, x2}
+        self.ligatures = []
 
         # Taktové čiary
         self.bar_lines = []
@@ -63,6 +66,9 @@ class StaffUI:
             "start": time.time()
         }
 
+        # pridáme do akordu
+        self.active_chord.append(note)
+
     def note_off(self, note):
         if note not in self.active_notes:
             return
@@ -70,9 +76,10 @@ class StaffUI:
         data = self.active_notes[note]
         duration = time.time() - data["start"]
 
+        # odstránime bodku
         self.canvas.delete(data["id"])
 
-        # Rytmický symbol
+        # rytmický symbol
         if duration > 0.60:
             symbol = "○"
         elif duration > 0.30:
@@ -82,43 +89,64 @@ class StaffUI:
         else:
             symbol = "♫"
 
-        text_id = self.canvas.create_text(
-            data["x"], data["y"],
-            text=symbol,
-            font=("Arial", 20),
-            fill=data["color"]
-        )
+        # akord ešte nie je kompletný
+        if note in self.active_chord:
+            self.active_chord.remove(note)
+
+        # čakáme, kým všetky noty akordu dostanú note_off
+        if len(self.active_chord) > 0:
+            del self.active_notes[note]
+            return
+
+        # všetky noty akordu sú ukončené → vykreslíme akord
+        chord_notes = list(self.active_notes.keys())
+        chord_data = [self.active_notes[n] for n in chord_notes]
+
+        ids = []
+        y_list = []
+
+        for d in chord_data:
+            text_id = self.canvas.create_text(
+                d["x"], d["y"],
+                text=symbol,
+                font=("Arial", 20),
+                fill=d["color"]
+            )
+            ids.append(text_id)
+            y_list.append(d["y"])
 
         self.finished_notes.append({
-            "id": text_id,
-            "x": data["x"],
-            "y": data["y"],
+            "ids": ids,
+            "x": chord_data[0]["x"],
+            "y_list": y_list,
             "symbol": symbol
         })
 
-        # Ligatúry
+        # ligatúry
         self.try_create_ligature()
 
-        del self.active_notes[note]
+        # vyčistiť aktívne noty
+        for n in chord_notes:
+            del self.active_notes[n]
 
     def try_create_ligature(self):
-        """Hľadá posledné dve/trí/štyri noty a vytvára ligatúru podľa symbolov."""
         if len(self.finished_notes) < 2:
             return
 
         last = self.finished_notes[-1]
         prev = self.finished_notes[-2]
 
-        # Osminy → jedna ligatúra
-        if last["symbol"] == "♪" and prev["symbol"] == "♪":
+        s1 = prev["symbol"]
+        s2 = last["symbol"]
+
+        if s1 == "♪" and s2 == "♪":
             self.create_ligature(prev, last, double=False)
 
-        # Šestnástiny → dvojitá ligatúra
-        if last["symbol"] == "♫" and prev["symbol"] == "♫":
+        if s1 == "♫" and s2 == "♫":
             self.create_ligature(prev, last, double=True)
 
     def create_ligature(self, n1, n2, double=False):
-        y = min(n1["y"], n2["y"]) - 15
+        y = min(n1["y_list"] + n2["y_list"]) - 15
         x1 = n1["x"]
         x2 = n2["x"]
 
@@ -130,7 +158,7 @@ class StaffUI:
             self.ligatures.append({"id": line2, "x1": x1, "x2": x2})
 
     def scroll(self):
-        # Aktívne noty
+        # aktívne noty
         for note, data in list(self.active_notes.items()):
             dx = -self.scroll_speed
             self.canvas.move(data["id"], dx, 0)
@@ -139,16 +167,18 @@ class StaffUI:
                 self.canvas.delete(data["id"])
                 del self.active_notes[note]
 
-        # Hotové rytmické symboly
+        # hotové rytmické symboly (aj akordy)
         for item in list(self.finished_notes):
             dx = -self.scroll_speed
-            self.canvas.move(item["id"], dx, 0)
+            for tid in item["ids"]:
+                self.canvas.move(tid, dx, 0)
             item["x"] += dx
             if item["x"] < 0:
-                self.canvas.delete(item["id"])
+                for tid in item["ids"]:
+                    self.canvas.delete(tid)
                 self.finished_notes.remove(item)
 
-        # Ligatúry
+        # ligatúry
         for lig in list(self.ligatures):
             dx = -self.scroll_speed
             self.canvas.move(lig["id"], dx, 0)
@@ -158,7 +188,7 @@ class StaffUI:
                 self.canvas.delete(lig["id"])
                 self.ligatures.remove(lig)
 
-        # Taktové čiary
+        # taktové čiary
         for bar in list(self.bar_lines):
             dx = -self.scroll_speed
             self.canvas.move(bar["id"], dx, 0)
@@ -167,7 +197,7 @@ class StaffUI:
                 self.canvas.delete(bar["id"])
                 self.bar_lines.remove(bar)
 
-        # Nová taktová čiara
+        # nová taktová čiara
         if len(self.bar_lines) == 0 or self.bar_lines[-1]["x"] < self.canvas_width - self.bar_spacing:
             new_x = self.canvas_width - 20
             line_id = self.canvas.create_line(new_x, 50, new_x, 150, width=2)
