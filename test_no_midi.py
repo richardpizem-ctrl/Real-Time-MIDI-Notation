@@ -1,34 +1,33 @@
-from notation_engine.note_mapper import NoteMapper
-from notation_engine.layout_engine import LayoutEngine
-from ui_components.text_renderer import TextRenderer
+# Test behu systému bez MIDI zariadení
 
-# Testovacie symboly (simulujeme výstup z NotationEngine)
-test_symbols = [
-    {"type": "note", "pitch": 60, "duration": 0.25},
-    {"type": "note", "pitch": 62, "duration": 0.5},
-    {"type": "note", "pitch": 64, "duration": 1.0},
-    {"type": "barline"},
-    {"type": "note", "pitch": 65, "duration": 0.25},
-    {"type": "note", "pitch": 67, "duration": 0.25},
-]
+from device_manager import DeviceManager
+from notation_engine.notation_processor import NotationProcessor
 
 def main():
-    print("=== TEST BEZ MIDI ===")
+    print("=== TEST: NO MIDI DEVICES ===")
 
-    # 1) Mapovanie nôt (ak by bolo treba)
-    mapper = NoteMapper()
-    mapped = [mapper.map_symbol(s) for s in test_symbols]
+    dm = DeviceManager()
+    np = NotationProcessor()
 
-    # 2) Layout engine
-    layout = LayoutEngine()
-    laid_out = layout.apply_layout(mapped)
+    devices = dm.list_devices()
 
-    # 3) Text renderer
-    renderer = TextRenderer()
-    output = renderer.render(laid_out)
+    if not devices:
+        print("[TEST] Neboli nájdené žiadne MIDI zariadenia – OK")
+    else:
+        print("[TEST] MIDI zariadenia nájdené:", devices)
 
-    print("\n=== VÝSTUP ===")
-    print(output)
+    # Simulovaný MIDI event (bez reálneho zariadenia)
+    fake_event = {
+        "type": "note_on",
+        "note": 64,
+        "velocity": 90,
+        "time": None
+    }
+
+    print("[TEST] Spracovávam simulovaný MIDI event...")
+    np.process_midi_event(fake_event)
+
+    print("[TEST] Test úspešne dokončený.")
 
 if __name__ == "__main__":
     main()
