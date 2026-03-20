@@ -1,4 +1,4 @@
-# --- GRAFICKÁ NOTOVÁ OSNOVA S POSÚVANÍM, AKORDAMI A RYTMICKÝMI HODNOTAMI ---
+# --- GRAFICKÁ NOTOVÁ OSNOVA S POSÚVANÍM, AKORDAMI, RYTMICKÝMI HODNOTAMI A TAKTOVÝMI ČIARAMI ---
 class StaffUI:
     def __init__(self):
         self.root = tk.Toplevel()
@@ -22,10 +22,22 @@ class StaffUI:
         # Hotové rytmické symboly
         self.finished_notes = []
 
+        # Taktové čiary
+        self.bar_lines = []
+        self.bar_spacing = 120  # px medzi taktmi
+        self.generate_initial_barlines()
+
         self.scroll_speed = 3
         self.root.after(50, self.scroll)
 
         threading.Thread(target=self.root.mainloop, daemon=True).start()
+
+    def generate_initial_barlines(self):
+        x = 100
+        while x < self.canvas_width:
+            line_id = self.canvas.create_line(x, 50, x, 150, width=2)
+            self.bar_lines.append({"id": line_id, "x": x})
+            x += self.bar_spacing
 
     def midi_to_y(self, note):
         base_y = 100
@@ -111,5 +123,26 @@ class StaffUI:
             self.canvas.delete(item["id"])
             self.finished_notes.remove(item)
 
-        self.root.after(50, self.scroll)
+        # Posúvame taktové čiary
+        bar_delete = []
+        for bar in self.bar_lines:
+            new_x = bar["x"] - self.scroll_speed
+            dx = -self.scroll_speed
+            self.canvas.move(bar["id"], dx, 0)
+            bar["x"] = new_x
 
+            if new_x < 0:
+                bar_delete.append(bar)
+
+        # Odstránenie starých taktových čiar
+        for bar in bar_delete:
+            self.canvas.delete(bar["id"])
+            self.bar_lines.remove(bar)
+
+        # Pridanie novej taktovej čiary na pravý okraj
+        if len(self.bar_lines) == 0 or self.bar_lines[-1]["x"] < self.canvas_width - self.bar_spacing:
+            new_x = self.canvas_width - 20
+            line_id = self.canvas.create_line(new_x, 50, new_x, 150, width=2)
+            self.bar_lines.append({"id": line_id, "x": new_x})
+
+        self.root.after(50, self.scroll)
