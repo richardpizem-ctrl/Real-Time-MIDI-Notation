@@ -4,6 +4,13 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any
 from core.config_manager import ConfigManager
 
+# 🔵 Import event typov
+from .event_types import (
+    NOTE_RECORDED,
+    TRACK_SELECTED,
+    TRACK_NAME_CHANGED
+)
+
 
 @dataclass
 class Track:
@@ -19,7 +26,8 @@ class TrackSystem:
     Názvy sa ukladajú do config.json.
     """
 
-    def __init__(self):
+    def __init__(self, event_bus=None):
+        self.event_bus = event_bus
         self.config = ConfigManager()
         self.tracks: Dict[int, Track] = {}
         self.active_track_id: Optional[int] = None
@@ -68,6 +76,14 @@ class TrackSystem:
         track.name = name
         self._save_track_names()
         print(f"[TrackSystem] Track {track_id} → nový názov: {name}")
+
+        # 🔵 Publikujeme event o zmene názvu
+        if self.event_bus:
+            self.event_bus.publish(TRACK_NAME_CHANGED, {
+                "track_id": track_id,
+                "name": name
+            })
+
         return True
 
     def rename_active_track(self, name: str):
@@ -100,6 +116,11 @@ class TrackSystem:
 
         self.active_track_id = track_id
         print(f"[TrackSystem] Aktívny trakt: {track_id} ({self.tracks[track_id].name})")
+
+        # 🔵 Publikujeme event o zmene aktívneho traktu
+        if self.event_bus:
+            self.event_bus.publish(TRACK_SELECTED, track_id)
+
         return True
 
     def get_active_track(self) -> Optional[Track]:
@@ -136,6 +157,10 @@ class TrackSystem:
 
         # 🔵 Uloženie eventu pre export MIDI
         self.recorded_events[track_id].append(event)
+
+        # 🔵 Publikujeme NOTE_RECORDED
+        if self.event_bus:
+            self.event_bus.publish(NOTE_RECORDED, event)
 
         return event
 
