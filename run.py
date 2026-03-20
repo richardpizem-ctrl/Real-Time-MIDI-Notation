@@ -139,27 +139,6 @@ class StaffUI:
 
         # pridáme do akordu
         self.active_chord.append(note)
-
-    def note_off(self, note):
-        if note not in self.active_notes:
-            return
-
-        data = self.active_notes[note]
-        duration = time.time() - data["start"]
-
-        # odstránime bodku
-        self.canvas.delete(data["id"])
-
-        # rytmický symbol
-        if duration > 0.60:
-            symbol = "○"
-        elif duration > 0.30:
-            symbol = "●"
-        elif duration > 0.15:
-            symbol = "♪"
-        else:
-            symbol = "♫"
-
         # akord ešte nie je kompletný
         if note in self.active_chord:
             self.active_chord.remove(note)
@@ -346,7 +325,7 @@ class PianoRollUI:
 
     def scroll(self):
         # Aktívne bloky
-        for note, data in list(self.active_blocks.items()):
+        for note, data in list(self.active.active_blocks.items()):
             dx = -self.scroll_speed
             self.canvas.move(data["id"], dx, 0)
             data["x"] += dx
@@ -354,6 +333,16 @@ class PianoRollUI:
                 self.canvas.delete(data["id"])
                 del self.active_blocks[note]
 
+        # Hotové bloky
+        for item in list(self.finished_blocks):
+            dx = -self.scroll_speed
+            self.canvas.move(item["id"], dx, 0)
+            item["x"] += dx
+            if item["x"] < -200:
+                self.canvas.delete(item["id"])
+                self.finished_blocks.remove(item)
+
+        self.root.after(50, self.scroll)
         # Hotové bloky
         for item in list(self.finished_blocks):
             dx = -self.scroll_speed
