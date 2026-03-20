@@ -1,74 +1,3 @@
-from notation_engine.notation_processor import NotationProcessor
-from core.track_manager import TrackSystem
-import mido
-import keyboard
-import threading
-import tkinter as tk
-import time
-
-
-# --- UI INDIKÁTOR AKTÍVNEHO TRAKTU ---
-class TrackIndicatorUI:
-    def __init__(self, track_system: TrackSystem):
-        self.tracks = track_system
-
-        self.root = tk.Tk()
-        self.root.title("Aktívny trakt")
-        self.root.geometry("220x90")
-        self.root.resizable(False, False)
-
-        self.label = tk.Label(
-            self.root,
-            text=f"Aktívny trakt: {self.tracks.active_track_id}",
-            font=("Arial", 22)
-        )
-        self.label.pack(expand=True)
-
-        threading.Thread(target=self.root.mainloop, daemon=True).start()
-
-    def update(self):
-        self.label.config(text=f"Aktívny trakt: {self.tracks.active_track_id}")
-
-
-# --- REALTIME VIZUALIZÁCIA NÔT ---
-class NoteVisualizerUI:
-    def __init__(self):
-        self.active_notes = set()
-
-        self.root = tk.Toplevel()
-        self.root.title("Realtime noty")
-        self.root.geometry("300x200")
-        self.root.resizable(False, False)
-
-        self.label = tk.Label(
-            self.root,
-            text="Aktívne noty:\n(nic nehrá)",
-            font=("Arial", 14),
-            justify="left"
-        )
-        self.label.pack(expand=True)
-
-        threading.Thread(target=self.root.mainloop, daemon=True).start()
-
-    def note_on(self, note):
-        self.active_notes.add(note)
-        self.update()
-
-    def note_off(self, note):
-        if note in self.active_notes:
-            self.active_notes.remove(note)
-        self.update()
-
-    def update(self):
-        if not self.active_notes:
-            text = "Aktívne noty:\n(nic nehrá)"
-        else:
-            sorted_notes = sorted(list(self.active_notes))
-            text = "Aktívne noty:\n" + ", ".join(str(n) for n in sorted_notes)
-
-        self.label.config(text=text)
-
-
 # --- GRAFICKÁ NOTOVÁ OSNOVA S AKORDAMI, LIGATÚRAMI, RYTMICKÝMI HODNOTAMI A TAKTAMI ---
 class StaffUI:
     def __init__(self):
@@ -121,7 +50,11 @@ class StaffUI:
         offset = (60 - note) * 5
         return base_y + offset
 
-    def note_on(self, note):
+    def note_on(self, note, track_id=None, symbol="?"):
+        """
+        track_id = číslo traktu (1–16)
+        symbol = rytmický symbol (○ ● ♪ ♫)
+        """
         y = self.midi_to_y(note)
         x = self.canvas_width - 40
 
@@ -139,11 +72,10 @@ class StaffUI:
 
         # pridáme do akordu
         self.active_chord.append(note)
-        # akord ešte nie je kompletný
         if note in self.active_chord:
             self.active_chord.remove(note)
 
-        # čakáme, kým všetky noty akordu dostanú note_off
+        # čakáme na ukončenie akordu
         if len(self.active_chord) > 0:
             del self.active_notes[note]
             return
@@ -164,6 +96,18 @@ class StaffUI:
             )
             ids.append(text_id)
             y_list.append(d["y"])
+
+        # číslo traktu nad akordom
+        if track_id is not None:
+            num_x = chord_data[0]["x"]
+            num_y = min(y_list) - 18
+            num_id = self.canvas.create_text(
+                num_x, num_y,
+                text=str(track_id),
+                font=("Arial", 10),
+                fill="black"
+            )
+            ids.append(num_id)
 
         self.finished_notes.append({
             "ids": ids,
@@ -217,7 +161,7 @@ class StaffUI:
                 self.canvas.delete(data["id"])
                 del self.active_notes[note]
 
-        # hotové rytmické symboly (aj akordy)
+        # hotové rytmické symboly
         for item in list(self.finished_notes):
             dx = -self.scroll_speed
             for tid in item["ids"]:
@@ -254,8 +198,6 @@ class StaffUI:
             self.bar_lines.append({"id": line_id, "x": new_x})
 
         self.root.after(50, self.scroll)
-
-
 # --- REALTIME PIANOROLL ---
 class PianoRollUI:
     def __init__(self):
@@ -269,7 +211,7 @@ class PianoRollUI:
         self.canvas = tk.Canvas(self.root, width=self.canvas_width, height=self.canvas_height, bg="#111")
         self.canvas.pack()
 
-        # Aktívne bloky: note -> {id, x, y, start}
+        # Aktívne bloky: note -> {id, x, y, start, track_id, text_id}
         self.active_blocks = {}
 
         # Hotové bloky
@@ -283,7 +225,10 @@ class PianoRollUI:
     def note_to_y(self, note):
         return self.canvas_height - (note * 2)
 
-    def note_on(self, note):
+    def note_on(self, note, track_id=None):
+        """
+        track_id = číslo traktu (1–16)
+        """
         y = self.note_to_y(note)
         x = self.canvas_width - 40
 
@@ -293,11 +238,23 @@ class PianoRollUI:
             outline="#33ccff"
         )
 
+        # číslo traktu nad blokom
+        text_id = None
+        if track_id is not None:
+            text_id = self.canvas.create_text(
+                x + 10, y - 14,
+                text=str(track_id),
+                font=("Arial", 10),
+                fill="white"
+            )
+
         self.active_blocks[note] = {
             "id": block_id,
+            "text_id": text_id,
             "x": x,
             "y": y,
-            "start": time.time()
+            "start": time.time(),
+            "track_id": track_id
         }
 
     def note_off(self, note):
@@ -309,6 +266,7 @@ class PianoRollUI:
 
         length = max(20, int(duration * 200))
 
+        # predĺženie bloku
         self.canvas.coords(
             data["id"],
             data["x"], data["y"] - 6,
@@ -317,6 +275,7 @@ class PianoRollUI:
 
         self.finished_blocks.append({
             "id": data["id"],
+            "text_id": data["text_id"],
             "x": data["x"],
             "y": data["y"]
         })
@@ -325,36 +284,34 @@ class PianoRollUI:
 
     def scroll(self):
         # Aktívne bloky
-        for note, data in list(self.active.active_blocks.items()):
+        for note, data in list(self.active_blocks.items()):
             dx = -self.scroll_speed
             self.canvas.move(data["id"], dx, 0)
+            if data["text_id"]:
+                self.canvas.move(data["text_id"], dx, 0)
+
             data["x"] += dx
             if data["x"] < -200:
                 self.canvas.delete(data["id"])
+                if data["text_id"]:
+                    self.canvas.delete(data["text_id"])
                 del self.active_blocks[note]
 
         # Hotové bloky
         for item in list(self.finished_blocks):
             dx = -self.scroll_speed
             self.canvas.move(item["id"], dx, 0)
+            if item["text_id"]:
+                self.canvas.move(item["text_id"], dx, 0)
+
             item["x"] += dx
             if item["x"] < -200:
                 self.canvas.delete(item["id"])
+                if item["text_id"]:
+                    self.canvas.delete(item["text_id"])
                 self.finished_blocks.remove(item)
 
         self.root.after(50, self.scroll)
-        # Hotové bloky
-        for item in list(self.finished_blocks):
-            dx = -self.scroll_speed
-            self.canvas.move(item["id"], dx, 0)
-            item["x"] += dx
-            if item["x"] < -200:
-                self.canvas.delete(item["id"])
-                self.finished_blocks.remove(item)
-
-        self.root.after(50, self.scroll)
-
-
 def main():
     processor = NotationProcessor()
     tracks = TrackSystem()
@@ -378,22 +335,39 @@ def main():
     for msg in midi_in:
 
         # Prepínač traktu
-        for i in range(1, 10):
+        for i in range(1, 9 + 1):
             if keyboard.is_pressed(str(i)):
                 tracks.set_active_track(i)
                 ui_track.update()
 
-        for i in range(1, 7):
+        for i in range(1, 6 + 1):
             if keyboard.is_pressed("shift+" + str(i)):
                 tracks.set_active_track(9 + i)
                 ui_track.update()
 
         # MIDI správy
         if msg.type == "note_on" and msg.velocity > 0:
-            ui_notes.note_on(msg.note)
-            ui_staff.note_on(msg.note)
-            ui_piano.note_on(msg.note)
 
+            # 1) realtime text UI
+            ui_notes.note_on(msg.note)
+
+            # 2) symbol z NotationProcessor
+            symbol = processor.get_symbol_for_note(msg.note)
+
+            # 3) StaffUI + track ID + symbol
+            ui_staff.note_on(
+                note=msg.note,
+                track_id=tracks.active_track_id,
+                symbol=symbol
+            )
+
+            # 4) PianoRollUI + track ID
+            ui_piano.note_on(
+                note=msg.note,
+                track_id=tracks.active_track_id
+            )
+
+            # 5) zápis do TrackSystem
             event = tracks.build_note_event_for_active_track(
                 note=msg.note,
                 velocity=msg.velocity,
@@ -403,6 +377,7 @@ def main():
             processor.process_midi_event(event)
 
         elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
+
             ui_notes.note_off(msg.note)
             ui_staff.note_off(msg.note)
             ui_piano.note_off(msg.note)
@@ -416,7 +391,3 @@ def main():
             processor.process_midi_event(event)
 
         print(f"MIDI {msg.type} → nota {msg.note} → trakt {tracks.active_track_id}")
-
-
-if __name__ == "__main__":
-    main()
