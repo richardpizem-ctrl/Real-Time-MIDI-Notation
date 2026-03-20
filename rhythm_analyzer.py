@@ -67,5 +67,3 @@ class RhythmAnalyzer:
         # hrubá normalizácia – čím menšia variancia, tým vyššia stabilita
         stability = 1.0 / (1.0 + variance * 50.0)
         return max(0.0, min(1.0, stability))
-
-
