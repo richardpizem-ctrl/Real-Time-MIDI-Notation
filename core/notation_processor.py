@@ -3,6 +3,12 @@
 from typing import Dict, Any
 from mido import Message, MidiFile, MidiTrack, MetaMessage
 
+# 🔵 Import event typov
+from .event_types import (
+    MIDI_EXPORTED,
+    ERROR_OCCURRED
+)
+
 
 class NotationProcessor:
     """
@@ -11,11 +17,13 @@ class NotationProcessor:
     - exportuje MIDI podľa trakov (každý trakt = jedna MIDI stopa)
     """
 
-    def __init__(self, track_system):
+    def __init__(self, track_system, event_bus=None):
         """
         track_system: inštancia TrackSystem z core.track_manager
+        event_bus: EventBus pre publikovanie udalostí
         """
         self.track_system = track_system
+        self.event_bus = event_bus
 
     def export_to_midi(self, filename: str = "export.mid") -> None:
         """
@@ -24,27 +32,39 @@ class NotationProcessor:
         - každý trakt má vlastnú MIDI stopu
         - názov traktu sa použije ako názov stopy
         """
-        mid = MidiFile()
+        try:
+            mid = MidiFile()
 
-        # pre každý trakt vytvoríme jednu MIDI stopu
-        for track_id in range(1, 17):
-            midi_track = MidiTrack()
-            mid.tracks.append(midi_track)
+            # pre každý trakt vytvoríme jednu MIDI stopu
+            for track_id in range(1, 17):
+                midi_track = MidiTrack()
+                mid.tracks.append(midi_track)
 
-            # názov traktu
-            track_name = self.track_system.get_track_name(track_id) or f"Track {track_id}"
-            midi_track.append(MetaMessage("track_name", name=track_name, time=0))
+                # názov traktu
+                track_name = self.track_system.get_track_name(track_id) or f"Track {track_id}"
+                midi_track.append(MetaMessage("track_name", name=track_name, time=0))
 
-            # eventy z TrackSystem
-            events = self.track_system.recorded_events.get(track_id, [])
+                # eventy z TrackSystem
+                events = self.track_system.recorded_events.get(track_id, [])
 
-            for event in events:
-                msg = self._event_to_mido_message(event)
-                if msg is not None:
-                    midi_track.append(msg)
+                for event in events:
+                    msg = self._event_to_mido_message(event)
+                    if msg is not None:
+                        midi_track.append(msg)
 
-        mid.save(filename)
-        print(f"[NotationProcessor] MIDI exportované do súboru: {filename}")
+            mid.save(filename)
+            print(f"[NotationProcessor] MIDI exportované do súboru: {filename}")
+
+            # 🔵 Publikujeme úspešný export
+            if self.event_bus:
+                self.event_bus.publish(MIDI_EXPORTED, filename)
+
+        except Exception as e:
+            print(f"[NotationProcessor] Chyba pri exporte MIDI: {e}")
+
+            # 🔵 Publikujeme chybu
+            if self.event_bus:
+                self.event_bus.publish(ERROR_OCCURRED, str(e))
 
     def _event_to_mido_message(self, event: Dict[str, Any]) -> Any:
         """
