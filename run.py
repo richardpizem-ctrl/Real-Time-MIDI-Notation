@@ -1,13 +1,13 @@
-# --- GRAFICKÁ NOTOVÁ OSNOVA S POSÚVANÍM, AKORDAMI, RYTMICKÝMI HODNOTAMI A TAKTOVÝMI ČIARAMI ---
+# --- GRAFICKÁ NOTOVÁ OSNOVA S POSÚVANÍM, RYTMICKÝMI HODNOTAMI, TAKTAMI A LIGATÚRAMI ---
 class StaffUI:
     def __init__(self):
         self.root = tk.Toplevel()
         self.root.title("Notová osnova")
-        self.root.geometry("600x240")
+        self.root.geometry("600x260")
         self.root.resizable(False, False)
 
         self.canvas_width = 600
-        self.canvas_height = 240
+        self.canvas_height = 260
         self.canvas = tk.Canvas(self.root, width=self.canvas_width, height=self.canvas_height, bg="white")
         self.canvas.pack()
 
@@ -16,15 +16,18 @@ class StaffUI:
         for y in self.staff_y:
             self.canvas.create_line(20, y, self.canvas_width - 20, y, width=2)
 
-        # Aktívne noty: note -> {id, x, y, color, start}
+        # Aktívne noty
         self.active_notes = {}
 
         # Hotové rytmické symboly
-        self.finished_notes = []
+        self.finished_notes = []  # {id, x, y, symbol}
+
+        # Ligatúry
+        self.ligatures = []  # {id, x1, x2}
 
         # Taktové čiary
         self.bar_lines = []
-        self.bar_spacing = 120  # px medzi taktmi
+        self.bar_spacing = 120
         self.generate_initial_barlines()
 
         self.scroll_speed = 3
@@ -48,7 +51,6 @@ class StaffUI:
         y = self.midi_to_y(note)
         x = self.canvas_width - 40
 
-        # akord = viac nôt naraz → farba červená
         color = "red" if len(self.active_notes) > 0 else "black"
 
         dot_id = self.canvas.create_oval(x-6, y-6, x+6, y+6, fill=color, outline=color)
@@ -68,18 +70,17 @@ class StaffUI:
         data = self.active_notes[note]
         duration = time.time() - data["start"]
 
-        # Vymažeme pôvodnú bodku
         self.canvas.delete(data["id"])
 
-        # Určíme rytmický symbol
+        # Rytmický symbol
         if duration > 0.60:
-            symbol = "○"   # polová
+            symbol = "○"
         elif duration > 0.30:
-            symbol = "●"   # štvrťová
+            symbol = "●"
         elif duration > 0.15:
-            symbol = "♪"   # osminová
+            symbol = "♪"
         else:
-            symbol = "♫"   # šestnástinová
+            symbol = "♫"
 
         text_id = self.canvas.create_text(
             data["x"], data["y"],
@@ -91,55 +92,82 @@ class StaffUI:
         self.finished_notes.append({
             "id": text_id,
             "x": data["x"],
-            "y": data["y"]
+            "y": data["y"],
+            "symbol": symbol
         })
+
+        # Ligatúry
+        self.try_create_ligature()
 
         del self.active_notes[note]
 
+    def try_create_ligature(self):
+        """Hľadá posledné dve/trí/štyri noty a vytvára ligatúru podľa symbolov."""
+        if len(self.finished_notes) < 2:
+            return
+
+        last = self.finished_notes[-1]
+        prev = self.finished_notes[-2]
+
+        # Osminy → jedna ligatúra
+        if last["symbol"] == "♪" and prev["symbol"] == "♪":
+            self.create_ligature(prev, last, double=False)
+
+        # Šestnástiny → dvojitá ligatúra
+        if last["symbol"] == "♫" and prev["symbol"] == "♫":
+            self.create_ligature(prev, last, double=True)
+
+    def create_ligature(self, n1, n2, double=False):
+        y = min(n1["y"], n2["y"]) - 15
+        x1 = n1["x"]
+        x2 = n2["x"]
+
+        line1 = self.canvas.create_line(x1, y, x2, y, width=2)
+        self.ligatures.append({"id": line1, "x1": x1, "x2": x2})
+
+        if double:
+            line2 = self.canvas.create_line(x1, y - 6, x2, y - 6, width=2)
+            self.ligatures.append({"id": line2, "x1": x1, "x2": x2})
+
     def scroll(self):
-        # Posúvame aktívne noty
+        # Aktívne noty
         for note, data in list(self.active_notes.items()):
-            new_x = data["x"] - self.scroll_speed
             dx = -self.scroll_speed
             self.canvas.move(data["id"], dx, 0)
-            data["x"] = new_x
-
-            if new_x < 0:
+            data["x"] += dx
+            if data["x"] < 0:
                 self.canvas.delete(data["id"])
                 del self.active_notes[note]
 
-        # Posúvame hotové rytmické symboly
-        to_delete = []
-        for item in self.finished_notes:
-            new_x = item["x"] - self.scroll_speed
+        # Hotové rytmické symboly
+        for item in list(self.finished_notes):
             dx = -self.scroll_speed
             self.canvas.move(item["id"], dx, 0)
-            item["x"] = new_x
+            item["x"] += dx
+            if item["x"] < 0:
+                self.canvas.delete(item["id"])
+                self.finished_notes.remove(item)
 
-            if new_x < 0:
-                to_delete.append(item)
+        # Ligatúry
+        for lig in list(self.ligatures):
+            dx = -self.scroll_speed
+            self.canvas.move(lig["id"], dx, 0)
+            lig["x1"] += dx
+            lig["x2"] += dx
+            if lig["x2"] < 0:
+                self.canvas.delete(lig["id"])
+                self.ligatures.remove(lig)
 
-        for item in to_delete:
-            self.canvas.delete(item["id"])
-            self.finished_notes.remove(item)
-
-        # Posúvame taktové čiary
-        bar_delete = []
-        for bar in self.bar_lines:
-            new_x = bar["x"] - self.scroll_speed
+        # Taktové čiary
+        for bar in list(self.bar_lines):
             dx = -self.scroll_speed
             self.canvas.move(bar["id"], dx, 0)
-            bar["x"] = new_x
+            bar["x"] += dx
+            if bar["x"] < 0:
+                self.canvas.delete(bar["id"])
+                self.bar_lines.remove(bar)
 
-            if new_x < 0:
-                bar_delete.append(bar)
-
-        # Odstránenie starých taktových čiar
-        for bar in bar_delete:
-            self.canvas.delete(bar["id"])
-            self.bar_lines.remove(bar)
-
-        # Pridanie novej taktovej čiary na pravý okraj
+        # Nová taktová čiara
         if len(self.bar_lines) == 0 or self.bar_lines[-1]["x"] < self.canvas_width - self.bar_spacing:
             new_x = self.canvas_width - 20
             line_id = self.canvas.create_line(new_x, 50, new_x, 150, width=2)
