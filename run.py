@@ -68,6 +68,50 @@ class NoteVisualizerUI:
         self.label.config(text=text)
 
 
+# --- GRAFICKÁ NOTOVÁ OSNOVA ---
+class StaffUI:
+    def __init__(self):
+        self.root = tk.Toplevel()
+        self.root.title("Notová osnova")
+        self.root.geometry("500x200")
+        self.root.resizable(False, False)
+
+        self.canvas = tk.Canvas(self.root, width=500, height=200, bg="white")
+        self.canvas.pack()
+
+        # 5 liniek
+        self.staff_y = [40, 60, 80, 100, 120]
+        for y in self.staff_y:
+            self.canvas.create_line(20, y, 480, y, width=2)
+
+        # Aktívne noty: {note_number: canvas_id}
+        self.drawn_notes = {}
+
+        threading.Thread(target=self.root.mainloop, daemon=True).start()
+
+    def midi_to_y(self, note):
+        """
+        Jednoduché mapovanie MIDI -> pozícia na osnove.
+        C4 = 60 bude na strednej linke.
+        Každý poltón = 5 pixelov.
+        """
+        base_y = 80  # stredná linka
+        offset = (60 - note) * 5
+        return base_y + offset
+
+    def note_on(self, note):
+        y = self.midi_to_y(note)
+        x = 250  # stred osnovy
+
+        dot = self.canvas.create_oval(x-6, y-6, x+6, y+6, fill="black")
+        self.drawn_notes[note] = dot
+
+    def note_off(self, note):
+        if note in self.drawn_notes:
+            self.canvas.delete(self.drawn_notes[note])
+            del self.drawn_notes[note]
+
+
 def main():
     processor = NotationProcessor()
     tracks = TrackSystem()
@@ -75,6 +119,7 @@ def main():
     # UI okná
     ui_track = TrackIndicatorUI(tracks)
     ui_notes = NoteVisualizerUI()
+    ui_staff = StaffUI()
 
     print("Prepínanie traktu: 1–9 alebo SHIFT+1–6 (10–16)")
     print("Čakám na MIDI vstup...")
@@ -105,6 +150,7 @@ def main():
         # --- SPRACOVANIE MIDI ---
         if msg.type == "note_on" and msg.velocity > 0:
             ui_notes.note_on(msg.note)
+            ui_staff.note_on(msg.note)
 
             event = tracks.build_note_event_for_active_track(
                 note=msg.note,
@@ -116,6 +162,7 @@ def main():
 
         elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
             ui_notes.note_off(msg.note)
+            ui_staff.note_off(msg.note)
 
             event = tracks.build_note_event_for_active_track(
                 note=msg.note,
