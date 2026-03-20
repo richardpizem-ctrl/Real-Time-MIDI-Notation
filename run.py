@@ -2,11 +2,40 @@ from notation_engine.notation_processor import NotationProcessor
 from core.track_manager import TrackSystem
 import mido
 import keyboard
+import threading
+import tkinter as tk
+
+
+# --- UI INDIKÁTOR AKTÍVNEHO TRAKTU ---
+class TrackIndicatorUI:
+    def __init__(self, track_system: TrackSystem):
+        self.tracks = track_system
+
+        self.root = tk.Tk()
+        self.root.title("Aktívny trakt")
+        self.root.geometry("220x90")
+        self.root.resizable(False, False)
+
+        self.label = tk.Label(
+            self.root,
+            text=f"Aktívny trakt: {self.tracks.active_track_id}",
+            font=("Arial", 22)
+        )
+        self.label.pack(expand=True)
+
+        # UI beží v samostatnom vlákne
+        threading.Thread(target=self.root.mainloop, daemon=True).start()
+
+    def update(self):
+        self.label.config(text=f"Aktívny trakt: {self.tracks.active_track_id}")
 
 
 def main():
     processor = NotationProcessor()
     tracks = TrackSystem()
+
+    # Spustíme UI indikátor
+    ui = TrackIndicatorUI(tracks)
 
     print("Prepínanie traktu: 1–9 alebo SHIFT+1–6 (10–16)")
     print("Čakám na MIDI vstup...")
@@ -27,10 +56,12 @@ def main():
         for i in range(1, 10):
             if keyboard.is_pressed(str(i)):
                 tracks.set_active_track(i)
+                ui.update()
 
         for i in range(1, 7):
             if keyboard.is_pressed("shift+" + str(i)):
                 tracks.set_active_track(9 + i)
+                ui.update()
 
         # --- SPRACOVANIE REÁLNEHO MIDI ---
         if msg.type in ["note_on", "note_off"]:
@@ -58,4 +89,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
