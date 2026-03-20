@@ -23,6 +23,10 @@ class TrackSystem:
         self.config = ConfigManager()
         self.tracks: Dict[int, Track] = {}
         self.active_track_id: Optional[int] = None
+
+        # 🔵 Úložisko eventov pre export MIDI
+        self.recorded_events = {i: [] for i in range(1, 17)}
+
         self._init_tracks()
         self._load_track_names()
 
@@ -120,7 +124,7 @@ class TrackSystem:
             print(f"[TrackSystem] Track {track_id} je vypnutý.")
             return None
 
-        return {
+        event = {
             "type": event_type,
             "note": note,
             "velocity": velocity,
@@ -129,6 +133,11 @@ class TrackSystem:
             "track_name": track.name,
             "time": time,
         }
+
+        # 🔵 Uloženie eventu pre export MIDI
+        self.recorded_events[track_id].append(event)
+
+        return event
 
     def build_note_event_for_active_track(
         self,
