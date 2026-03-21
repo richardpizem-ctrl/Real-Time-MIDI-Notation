@@ -8,6 +8,13 @@ class NotationRenderer:
         # tu budú všetky noty, ktoré prídu zo stream handlera
         self.notes = []
 
+        # FPS kontrola – pripravené na budúce použitie
+        try:
+            import pygame
+            self.clock = pygame.time.Clock()
+        except ImportError:
+            self.clock = None
+
     def add_note(self, note):
         """Pridá hotovú notu do renderovacieho bufferu a vypíše ich."""
         self.notes.append(note)
@@ -23,4 +30,6 @@ class NotationRenderer:
             )
         print("--------------\n")
 
-      
+        # FPS limit – ak pygame existuje
+        if self.clock:
+            self.clock.tick(60)
