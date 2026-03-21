@@ -44,6 +44,43 @@ class NotationRenderer:
         self.draw_staff(y_top=y_top, spacing=spacing, width=width)
 
     # ---------------------------------------------------------
+    # 0.2) NÁZVY STÔP NAĽAVO
+    # ---------------------------------------------------------
+    def draw_track_labels(self):
+        """
+        Vykreslí názvy stôp naľavo od osnov.
+        """
+        if self.canvas is None:
+            return
+
+        # Melody – pri hornej osnove
+        self.canvas.create_text(
+            40, 80 + 24,
+            text="Melody",
+            fill="#4DA6FF",
+            font=("Arial", 12, "bold"),
+            anchor="e"
+        )
+
+        # Bass – pri basovej osnove
+        self.canvas.create_text(
+            40, 80 + 140 + 24,
+            text="Bass",
+            fill="#66CC66",
+            font=("Arial", 12, "bold"),
+            anchor="e"
+        )
+
+        # Drums – pod basovou osnovou (orientačne)
+        self.canvas.create_text(
+            40, 80 + 140 + 80,
+            text="Drums",
+            fill="#FF9933",
+            font=("Arial", 12, "bold"),
+            anchor="e"
+        )
+
+    # ---------------------------------------------------------
     # 0.5) VYKRESLENIE TAKTOVEJ ČIARY
     # ---------------------------------------------------------
     def draw_barline(self, x, y_top=80, height=48 + 140):
@@ -169,13 +206,15 @@ class NotationRenderer:
         # 🔵 0.1) Basová osnova (bass)
         self.draw_bass_staff(y_top=80 + 140)
 
+        # 🔵 0.2) Názvy stôp naľavo
+        self.draw_track_labels()
+
         # 🔵 0.5) Taktové čiary + akordy nad taktmi
         for note in timeline:
             if note.get("type") == "barline":
                 x = note.get("start", 0) * 40
                 self.draw_barline(x)
 
-                # akord nad taktom
                 if "chord" in note:
                     self.draw_chord_above_bar(note["chord"], x)
 
