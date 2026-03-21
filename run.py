@@ -8,6 +8,10 @@ from notation_engine.ui import (
     TrackIndicatorUI
 )
 
+# PRIDANÉ – grafický renderer
+from notation_engine.renderer.graphic_renderer import GraphicNotationRenderer
+
+
 def main():
     # Hlavné okno
     root = tk.Tk()
@@ -21,6 +25,10 @@ def main():
     # Inicializácia procesora a track systému
     processor = NotationProcessor()
     tracks = TrackSystem()
+
+    # PRIDANÉ – grafický renderer
+    renderer = GraphicNotationRenderer()
+    processor.bind_renderer(renderer)
 
     # Horný panel – indikátor stopy
     track_frame = tk.Frame(main_frame)
@@ -54,7 +62,7 @@ def main():
     ui_notes = NoteVisualizerUI()
     ui_notes.render(bottom_frame)
 
-    # Prepojenie procesora s UI (pripravené na tvoje metódy)
+    # Prepojenie procesora s UI
     processor.bind_tracks(tracks)
     processor.bind_visualizer(ui_notes)
     processor.bind_staff(ui_staff)
@@ -63,8 +71,19 @@ def main():
     # Spustenie MIDI procesora
     processor.start()
 
+    # ---------------------------------------------------
+    # PRIDANÉ – slučka pre pygame renderer
+    # ---------------------------------------------------
+    def update_renderer():
+        if renderer.is_running():
+            renderer.run_event_loop_step()
+            root.after(10, update_renderer)
+
+    update_renderer()
+
     # Spustenie Tkinter slučky
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
