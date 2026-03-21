@@ -36,11 +36,20 @@ class NotationRenderer:
             self.canvas.create_line(0, y, width, y, fill="#666666", width=2)
 
     # ---------------------------------------------------------
+    # 0.1) BASOVÁ OSNOVA (ďalších 5 liniek)
+    # ---------------------------------------------------------
+    def draw_bass_staff(self, y_top=80 + 140, spacing=12, width=2000):
+        """
+        Vykreslí basovú osnovu (5 liniek pod hlavnou osnovou).
+        """
+        self.draw_staff(y_top=y_top, spacing=spacing, width=width)
+
+    # ---------------------------------------------------------
     # 0.5) VYKRESLENIE TAKTOVEJ ČIARY
     # ---------------------------------------------------------
-    def draw_barline(self, x, y_top=80, height=48):
+    def draw_barline(self, x, y_top=80, height=48 + 140):
         """
-        Vykreslí taktovú čiaru na pozícii x.
+        Vykreslí taktovú čiaru cez obe osnovy.
         """
         if self.canvas is None:
             return
@@ -102,23 +111,24 @@ class NotationRenderer:
             print("[Renderer] Canvas nie je nastavený.")
             return
 
-        # 🔵 0) OSNOVA
-        self.draw_staff()
+        # 🔵 0) Hlavná osnova (melody)
+        self.draw_staff(y_top=80)
 
-        # 🔵 0.5) TAKTOVÉ ČIARY
-        # PixelLayoutEngine ešte neobsahuje barline symboly,
-        # ale keď ich pridáš, bude to fungovať automaticky.
+        # 🔵 0.1) Basová osnova (bass)
+        self.draw_bass_staff(y_top=80 + 140)
+
+        # 🔵 0.5) Taktové čiary podľa LayoutEngine barline symbolov
         for note in timeline:
             if note.get("type") == "barline":
                 x = note.get("start", 0) * 40
                 self.draw_barline(x)
 
-        # 🔵 1) AKORD
+        # 🔵 1) Akord
         self.draw_chord(current_chord)
 
         # 🔵 2) PixelLayoutEngine → prepočet x/y
         positioned = self.pixel_layout.layout_timeline(timeline)
 
-        # 🔵 3) NOTY
+        # 🔵 3) Noty podľa stopy
         for note in positioned:
             self.draw_note(note)
