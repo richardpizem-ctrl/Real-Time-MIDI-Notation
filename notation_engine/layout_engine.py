@@ -31,35 +31,13 @@ class LayoutEngine:
         Logger.info("LayoutEngine initialized with full layout configuration.")
 
     def layout(self, symbols):
-        """
-        Main entry point.
-        Input: list of symbol dicts, e.g.:
-            {
-                "type": "note" | "rest" | "barline",
-                "duration": 0.25,  # quarter, eighth, etc.
-                "pitch": "C4",     # optional
-                ...
-            }
-        Output: list of lines, each line is list of layout items:
-            {
-                "symbol": <original symbol>,
-                "x": <position index>,
-                "line": <line index>,
-                "spacing": <spacing units>
-            }
-        """
         if not symbols:
             Logger.warning("LayoutEngine.layout called with empty symbol list.")
             return []
 
         try:
-            # 1) Rozdelenie na takty (bars)
             bars = self._group_into_bars(symbols)
-
-            # 2) Rozdelenie na riadky
             lines = self._break_into_lines(bars)
-
-            # 3) Výpočet spacingu v rámci riadkov
             laid_out = self._apply_spacing(lines)
 
             Logger.info(f"LayoutEngine produced {len(laid_out)} lines.")
@@ -74,10 +52,6 @@ class LayoutEngine:
     # ------------------------
 
     def _group_into_bars(self, symbols):
-        """
-        Group symbols into bars based on 'barline' type.
-        Returns list of bars, each bar is list of symbols.
-        """
         bars = []
         current_bar = []
 
@@ -98,11 +72,6 @@ class LayoutEngine:
     # ------------------------
 
     def _break_into_lines(self, bars):
-        """
-        Break bars into lines based on config.max_symbols_per_line
-        and optional line_break_on_bars.
-        Returns list of lines, each line is list of symbols.
-        """
         lines = []
         current_line = []
         symbol_count = 0
@@ -110,7 +79,6 @@ class LayoutEngine:
         for bar in bars:
             bar_len = len(bar)
 
-            # If adding this bar would exceed max symbols per line → new line
             if symbol_count + bar_len > self.config.max_symbols_per_line and current_line:
                 lines.append(current_line)
                 current_line = []
@@ -130,10 +98,6 @@ class LayoutEngine:
     # ------------------------
 
     def _apply_spacing(self, lines):
-        """
-        Apply spacing based on duration and barlines.
-        Returns list of lines, each line is list of layout items.
-        """
         laid_out_lines = []
         line_index = 0
 
@@ -159,20 +123,79 @@ class LayoutEngine:
         return laid_out_lines
 
     def _spacing_for_symbol(self, symbol):
-        """
-        Determine spacing for a symbol based on its type and duration.
-        """
         sym_type = symbol.get("type")
-        duration = symbol.get("duration", 0.25)  # default quarter
+        duration = symbol.get("duration", 0.25)
 
-        # Barline – extra spacing
         if sym_type == "barline":
             return self.config.barline_spacing
 
-        # Notes/rests – duration-based spacing
-        # Longer duration → more spacing, clamped between min and max
-        base = duration * 8  # scale factor
+        base = duration * 8
         spacing = max(self.config.min_spacing, min(self.config.max_spacing, base))
 
         return spacing
 
+
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# 🔵 NOVÁ ČASŤ – GRAFICKÝ LAYOUT PRE RENDERER (x/y pozície)
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+
+class PixelLayoutEngine:
+    """
+    Druhá vrstva layoutu – prepočíta symboly na konkrétne x/y pozície
+    pre grafický renderer.
+    """
+
+    def __init__(
+        self,
+        note_spacing: float = 40.0,
+        measure_width: float = 480.0,
+        staff_top: float = 80.0,
+        staff_spacing: float = 140.0,
+    ):
+        self.note_spacing = note_spacing
+        self.measure_width = measure_width
+        self.staff_top = staff_top
+        self.staff_spacing = staff_spacing
+
+        self.track_offsets = {
+            "melody": 0.0,
+            "bass": staff_spacing,
+            "drums": staff_spacing * 2,
+            "chords": staff_spacing * 3,
+        }
+
+        self.reference_pitch = 60
+        self.pitch_step = 3.0
+
+    def layout_timeline(self, timeline):
+        positioned = []
+        for note in timeline:
+            positioned.append(self.layout_note(note))
+        return positioned
+
+    def layout_note(self, note):
+        x = self._compute_x(note)
+        y = self._compute_y(note)
+
+        return {
+            **note,
+            "x": x,
+            "y": y,
+        }
+
+    def _compute_x(self, note):
+        return note.get("start", 0.0) * self.note_spacing
+
+    def _compute_y(self, note):
+        pitch = note.get("pitch", self.reference_pitch)
+        track_type = note.get("track_type", "melody")
+
+        base_y = self._get_track_base_y(track_type)
+        dy = (self.reference_pitch - pitch) * self.pitch_step
+
+        return base_y + dy
+
+    def _get_track_base_y(self, track_type):
+        return self.staff_top + self.track_offsets.get(track_type, 0.0)
