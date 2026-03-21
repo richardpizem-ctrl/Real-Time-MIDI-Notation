@@ -15,6 +15,14 @@ class NotationRenderer:
         # Pixelový layout engine
         self.pixel_layout = PixelLayoutEngine()
 
+        # Farby pre jednotlivé stopy
+        self.track_colors = {
+            "melody": "#4DA6FF",   # modrá
+            "bass": "#66CC66",     # zelená
+            "drums": "#FF9933",    # oranžová
+            "chords": "#FFFFFF"
+        }
+
     def set_canvas(self, canvas):
         self.canvas = canvas
 
@@ -22,12 +30,6 @@ class NotationRenderer:
     # 0) VYKRESLENIE OSNOVY (5 liniek)
     # ---------------------------------------------------------
     def draw_staff(self, y_top=80, spacing=12, width=2000):
-        """
-        Vykreslí 5 liniek notovej osnovy.
-        y_top = horná linka
-        spacing = vzdialenosť medzi linkami
-        width = šírka osnovy
-        """
         if self.canvas is None:
             return
 
@@ -39,25 +41,33 @@ class NotationRenderer:
     # 0.1) BASOVÁ OSNOVA (ďalších 5 liniek)
     # ---------------------------------------------------------
     def draw_bass_staff(self, y_top=80 + 140, spacing=12, width=2000):
-        """
-        Vykreslí basovú osnovu (5 liniek pod hlavnou osnovou).
-        """
         self.draw_staff(y_top=y_top, spacing=spacing, width=width)
 
     # ---------------------------------------------------------
     # 0.5) VYKRESLENIE TAKTOVEJ ČIARY
     # ---------------------------------------------------------
     def draw_barline(self, x, y_top=80, height=48 + 140):
-        """
-        Vykreslí taktovú čiaru cez obe osnovy.
-        """
         if self.canvas is None:
             return
 
         self.canvas.create_line(x, y_top, x, y_top + height, fill="#AAAAAA", width=2)
 
     # ---------------------------------------------------------
-    # 1) VYKRESLENIE AKORDU
+    # 0.6) AKORD NAD TAKTOM
+    # ---------------------------------------------------------
+    def draw_chord_above_bar(self, chord_name, x):
+        if self.canvas is None:
+            return
+
+        self.canvas.create_text(
+            x + 10, 50,
+            text=chord_name,
+            fill="#FFFFAA",
+            font=("Arial", 14, "bold")
+        )
+
+    # ---------------------------------------------------------
+    # 1) VYKRESLENIE HLAVNÉHO AKORDU
     # ---------------------------------------------------------
     def draw_chord(self, chord):
         if chord is None:
@@ -84,7 +94,37 @@ class NotationRenderer:
         self.last_drawn_chord = chord_name
 
     # ---------------------------------------------------------
-    # 2) VYKRESLENIE NOTY
+    # 2) RYTMICKÉ SYMBOLY
+    # ---------------------------------------------------------
+    def draw_rhythm_symbol(self, x, y, duration):
+        """
+        duration:
+            1.0 = celá
+            0.5 = polová
+            0.25 = štvrťová
+            0.125 = osminová
+        """
+        if self.canvas is None:
+            return
+
+        if duration >= 1.0:
+            symbol = "𝅝"   # whole
+        elif duration >= 0.5:
+            symbol = "𝅗𝅥"   # half
+        elif duration >= 0.25:
+            symbol = "♩"   # quarter
+        else:
+            symbol = "♪"   # eighth
+
+        self.canvas.create_text(
+            x - 10, y - 15,
+            text=symbol,
+            fill="#FFFFFF",
+            font=("Arial", 14)
+        )
+
+    # ---------------------------------------------------------
+    # 3) VYKRESLENIE NOTY (melody, bass, drums)
     # ---------------------------------------------------------
     def draw_note(self, note):
         if self.canvas is None:
@@ -97,14 +137,26 @@ class NotationRenderer:
         width = note["duration"] * 50
         height = 10
 
+        # Farba podľa stopy
+        track = note.get("track_type", "melody")
+        color = self.track_colors.get(track, "#FFFFFF")
+
+        # Špeciálne pozície pre bubny
+        if track == "drums":
+            height = 6
+            y += 20
+
         self.canvas.create_rectangle(
             x, y, x + width, y + height,
-            fill=note["color"],
+            fill=color,
             outline=""
         )
 
+        # Rytmický symbol
+        self.draw_rhythm_symbol(x, y, note["duration"])
+
     # ---------------------------------------------------------
-    # 3) VYKRESLENIE CELEJ TIMELINE
+    # 4) VYKRESLENIE CELEJ TIMELINE
     # ---------------------------------------------------------
     def render(self, timeline, current_chord=None):
         if self.canvas is None:
@@ -117,13 +169,17 @@ class NotationRenderer:
         # 🔵 0.1) Basová osnova (bass)
         self.draw_bass_staff(y_top=80 + 140)
 
-        # 🔵 0.5) Taktové čiary podľa LayoutEngine barline symbolov
+        # 🔵 0.5) Taktové čiary + akordy nad taktmi
         for note in timeline:
             if note.get("type") == "barline":
                 x = note.get("start", 0) * 40
                 self.draw_barline(x)
 
-        # 🔵 1) Akord
+                # akord nad taktom
+                if "chord" in note:
+                    self.draw_chord_above_bar(note["chord"], x)
+
+        # 🔵 1) Hlavný akord
         self.draw_chord(current_chord)
 
         # 🔵 2) PixelLayoutEngine → prepočet x/y
