@@ -8,7 +8,7 @@ class LayoutConfig:
     def __init__(
         self,
         max_symbols_per_line=32,
-        min_spacing=1,
+        min_spacing=1,OK O
         max_spacing=4,
         barline_spacing=2,
         line_break_on_bars=True
