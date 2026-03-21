@@ -1,5 +1,8 @@
 # notation_engine/notation_renderer.py
 
+from .layout_engine import PixelLayoutEngine
+
+
 class NotationRenderer:
     def __init__(self, canvas=None):
         """
@@ -8,6 +11,9 @@ class NotationRenderer:
         """
         self.canvas = canvas
         self.last_drawn_chord = None  # aby sme nekreslili akord 100x za sekundu
+
+        # 🔵 Pixelový layout engine – pridali sme ho sem
+        self.pixel_layout = PixelLayoutEngine()
 
     def set_canvas(self, canvas):
         """
@@ -37,12 +43,10 @@ class NotationRenderer:
             return
 
         # Ak máme canvas → vykreslíme text
-        # Vymažeme starý text akordu
         self.canvas.delete("chord_text")
 
-        # Vykreslíme nový akord
         self.canvas.create_text(
-            100, 30,                # pozícia textu
+            100, 30,
             text=chord_name,
             fill="#FFFFFF",
             font=("Arial", 20, "bold"),
@@ -62,7 +66,9 @@ class NotationRenderer:
             "pitch": int,
             "start": float,
             "duration": float,
-            "color": "#RRGGBB"
+            "color": "#RRGGBB",
+            "x": float,
+            "y": float
         }
         """
 
@@ -70,8 +76,9 @@ class NotationRenderer:
             print(f"[Renderer] Note: pitch={note['pitch']}, color={note['color']}")
             return
 
-        x = note["start"] * 50
-        y = 400 - (note["pitch"] * 3)
+        # 🔵 Používame x/y z PixelLayoutEngine
+        x = note["x"]
+        y = note["y"]
 
         width = note["duration"] * 50
         height = 10
@@ -89,6 +96,7 @@ class NotationRenderer:
         """
         Vykreslí všetky noty + akord.
         """
+
         if self.canvas is None:
             print("[Renderer] Canvas nie je nastavený.")
             return
@@ -96,6 +104,9 @@ class NotationRenderer:
         # Najprv akord
         self.draw_chord(current_chord)
 
+        # 🔵 PixelLayoutEngine → prepočet x/y
+        positioned = self.pixel_layout.layout_timeline(timeline)
+
         # Potom noty
-        for note in timeline:
+        for note in positioned:
             self.draw_note(note)
