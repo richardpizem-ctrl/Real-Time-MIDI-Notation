@@ -30,6 +30,9 @@ class GraphicNotationRenderer:
 
         self._running = True
 
+        # FPS kontrola
+        self.clock = pygame.time.Clock()
+
     def add_note(self, note):
         """
         Očakáva dict s 'pitch' a 'bar'/'beat' (z NotationEngine).
@@ -71,6 +74,9 @@ class GraphicNotationRenderer:
         self._draw_staff()
         self._draw_notes()
         pygame.display.flip()
+
+        # FPS limit
+        self.clock.tick(60)
 
     def run_event_loop_step(self):
         """
