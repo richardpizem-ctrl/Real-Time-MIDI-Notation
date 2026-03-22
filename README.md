@@ -1,47 +1,32 @@
-# Real-Time MIDI Score Visualizer & Accompaniment Track Notation System
-
-This project provides real-time visualization of MIDI accompaniment tracks.  
-It is designed for users of arranger keyboards (Yamaha PSR-SX, Genos, Tyros, and others) who want to display bass lines, drum patterns, chord layers, pads, and other internal MIDI tracks as readable musical notation.
-
 ---
 
-## 🚀 Features
+## 🎯 Project Vision
 
-### ✔️ Implemented
-- Real-time MIDI data capture  
-- Automatic separation of accompaniment tracks by MIDI channel  
-- Device detection and MIDI routing  
-- Real-time event processing (low-latency stream handler)
+The goal of this project is to create a real‑time MIDI notation system for musicians who do not read traditional sheet music.  
+It focuses on arranger keyboards (Yamaha PSR‑SX, Genos, Tyros, etc.) and aims to visualize accompaniment tracks such as bass, drums, pads, and chord layers in a clear and intuitive way.
 
-### 🔧 In Development
-- Full notation rendering for bass, drums, pads, and chord tracks  
-- Layout engine for staff, spacing, and symbol placement  
-- UI components for real-time score display  
-- Rhythm analysis and quantization
-
-### 🧭 Planned
+The long‑term vision includes:
+- Real‑time multi‑track score rendering  
+- Color‑coded harmony visualization  
+- Automatic rhythm interpretation  
 - Export to MusicXML / PDF  
-- Track selection and filtering  
-- Advanced timing analysis  
-- Support for additional MIDI devices
+- Tools for beginners who want to understand what their keyboard is playing  
+
+This project is designed to grow into a complete real‑time notation engine for modern arranger keyboards.
 
 ---
 
-## 🧩 Project Architecture
+## 👤 Author
 
-| Module                                      | Purpose                                           |
-|---------------------------------------------|---------------------------------------------------|
-| **midi_input/**                             | Captures MIDI data from the selected device       |
-| **real_time_processing/stream_handler.py**  | Processes MIDI events with minimal latency        |
-| **notation_engine/**                        | Converts MIDI events into musical notation        |
-| **layout_engine/**                          | Handles staff layout and note positioning         |
-| **ui_components/**                          | Visual components for real-time score display     |
-| **device_manager.py**                       | Detects and manages MIDI devices                  |
-| **rhythm_analyzer.py**                      | Performs rhythm and timing analysis               |
-| **run.py**                                  | Main application entry point                      |
+Created by **Richard Pizem**  
+Real‑Time MIDI Notation Project  
+2024–2026
 
 ---
 
-## 🛠️ Installation
+## 🧑‍💻 About the Author
 
-### 1. Clone the repository
+I am a developer focused on music technology, real‑time systems, and MIDI processing.  
+My goal is to build tools that help musicians understand and visualize what their instruments are playing — even if they do not read sheet music.
+
+This project represents my long‑term work on real‑time MIDI analysis, notation rendering, and intelligent accompaniment visualization.
