@@ -12,8 +12,8 @@ class LayoutConfig:
         max_spacing=4,
         barline_spacing=2,
         line_break_on_bars=True,
-        max_line_width=1200,          # 🔵 maximálna šírka riadku v pixeloch
-        line_height=150               # 🔵 vertikálny posun medzi riadkami
+        max_line_width=1200,          # maximálna šírka riadku v pixeloch
+        line_height=150               # vertikálny posun medzi riadkami
     ):
         self.max_symbols_per_line = max_symbols_per_line
         self.min_spacing = min_spacing
@@ -84,7 +84,6 @@ class LayoutEngine:
         for bar in bars:
             bar_width = self._estimate_bar_width(bar)
 
-            # 🔵 Ak by takt prešiel limit → zalomiť
             if current_width + bar_width > self.config.max_line_width and current_line:
                 lines.append(current_line)
                 current_line = []
@@ -99,15 +98,11 @@ class LayoutEngine:
         Logger.info(f"LayoutEngine: broken into {len(lines)} lines.")
         return lines
 
-    # 🔵 odhad šírky taktu podľa spacingu symbolov
     def _estimate_bar_width(self, bar):
-        width = 0
-        for sym in bar:
-            width += self._spacing_for_symbol(sym)
-        return width
+        return sum(self._spacing_for_symbol(sym) for sym in bar)
 
     # ------------------------
-    # 3) Spacing within lines + JUSTIFY
+    # 3) SMART JUSTIFY (proporčné rozťahovanie taktov)
     # ------------------------
 
     def _apply_spacing(self, lines):
@@ -116,38 +111,58 @@ class LayoutEngine:
 
         for line in lines:
 
-            # 1) pôvodná šírka riadku
-            original_width = sum(self._spacing_for_symbol(sym) for sym in line)
+            # 1) Rozdeliť symboly do taktov
+            bars = []
+            current_bar = []
+            for sym in line:
+                current_bar.append(sym)
+                if sym.get("type") == "barline":
+                    bars.append(current_bar)
+                    current_bar = []
+            if current_bar:
+                bars.append(current_bar)
 
-            # 2) koľko chýba do max_line_width
-            remaining = max(self.config.max_line_width - original_width, 0)
+            # 2) Šírka každého taktu
+            bar_widths = [sum(self._spacing_for_symbol(s) for s in bar) for bar in bars]
+            total_original_width = sum(bar_widths)
 
-            # 3) počet medzier medzi symbolmi
-            gaps = max(len(line) - 1, 1)
+            # 3) Koľko chýba do max_line_width
+            remaining = max(self.config.max_line_width - total_original_width, 0)
 
-            # 4) extra spacing pre každý symbol (JUSTIFY)
-            extra = remaining / gaps
+            # 4) Váha taktov (väčší takt = viac priestoru)
+            total_bar_weight = sum(bar_widths) or 1
 
-            x_pos = 0
+            # 5) Extra šírka pre každý takt podľa jeho veľkosti
+            bar_extra = [
+                remaining * (bw / total_bar_weight)
+                for bw in bar_widths
+            ]
+
+            # 6) Rozloženie symbolov s novým spacingom
             laid_out_line = []
+            x_pos = 0
 
-            for i, sym in enumerate(line):
-                base_spacing = self._spacing_for_symbol(sym)
+            for bar, extra_width in zip(bars, bar_extra):
 
-                # posledný symbol nedostáva extra medzeru
-                if i < len(line) - 1:
-                    spacing = base_spacing + extra
-                else:
-                    spacing = base_spacing
+                gaps = max(len(bar) - 1, 1)
+                extra_per_symbol = extra_width / gaps
 
-                laid_out_line.append({
-                    "symbol": sym,
-                    "x": x_pos,
-                    "line": line_index,
-                    "spacing": spacing,
-                })
+                for i, sym in enumerate(bar):
+                    base_spacing = self._spacing_for_symbol(sym)
 
-                x_pos += spacing
+                    if i < len(bar) - 1:
+                        spacing = base_spacing + extra_per_symbol
+                    else:
+                        spacing = base_spacing
+
+                    laid_out_line.append({
+                        "symbol": sym,
+                        "x": x_pos,
+                        "line": line_index,
+                        "spacing": spacing,
+                    })
+
+                    x_pos += spacing
 
             laid_out_lines.append(laid_out_line)
             line_index += 1
@@ -162,23 +177,14 @@ class LayoutEngine:
             return self.config.barline_spacing
 
         base = duration * 8
-        spacing = max(self.config.min_spacing, min(self.config.max_spacing, base))
-
-        return spacing
+        return max(self.config.min_spacing, min(self.config.max_spacing, base))
 
 
 # -------------------------------------------------------------------------
-# -------------------------------------------------------------------------
-# 🔵 GRAFICKÝ LAYOUT PRE RENDERER (x/y pozície)
-# -------------------------------------------------------------------------
+# GRAFICKÝ LAYOUT PRE RENDERER (x/y pozície)
 # -------------------------------------------------------------------------
 
 class PixelLayoutEngine:
-    """
-    Druhá vrstva layoutu – prepočíta symboly na konkrétne x/y pozície
-    pre grafický renderer.
-    """
-
     def __init__(
         self,
         note_spacing: float = 40.0,
@@ -211,22 +217,16 @@ class PixelLayoutEngine:
         self.pitch_step = 3.0
 
     def layout_timeline(self, timeline):
-        positioned = []
-        for note in timeline:
-            positioned.append(self.layout_note(note))
-        return positioned
+        return [self.layout_note(note) for note in timeline]
 
     def layout_single(self, note):
         return self.layout_note(note)
 
     def layout_note(self, note):
-        x = self._compute_x(note)
-        y = self._compute_y(note)
-
         return {
             **note,
-            "x": x,
-            "y": y,
+            "x": self._compute_x(note),
+            "y": self._compute_y(note),
         }
 
     def _compute_x(self, note):
