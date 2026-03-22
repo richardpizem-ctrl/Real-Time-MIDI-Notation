@@ -36,7 +36,7 @@
 - presné pozície nôt **(hotové)**  
 - taktové čiary **(hotové)**  
 - akordové symboly **(hotové)**  
-- bubnové značky **(čiastočne)**  
+- bubnové značky **(hotové)**  ← 🔥 OPRAVENÉ
 
 ### 🎨 2.3 Farby a štýly  
 - farby stôp **(hotové)**  
@@ -52,12 +52,12 @@
 ---
 
 ## 🟩 FÁZA 3 — Renderer (grafická vrstva)  
-**STAV: 80 %**
+**STAV: 90 %**  ← 🔥 zvýšené
 
 ### 🖼️ 3.1 Vykresľovanie symbolov  
 - noty, stonky, bodky **(hotové)**  
 - ligatúry **(nie)**  
-- bubnové značky **(čiastočne)**  
+- bubnové značky **(hotové)**  ← 🔥 OPRAVENÉ  
 - akordové symboly **(hotové)**  
 
 ### 🖥️ 3.2 Real‑time aktualizácia  
@@ -174,4 +174,4 @@
 
 ---
 
-### 🔥 CELKOVÝ PROGRES: **70 %**
+### 🔥 CELKOVÝ PROGRES: **75 %**
