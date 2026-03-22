@@ -159,6 +159,7 @@ class PixelLayoutEngine:
         self.staff_top = staff_top
         self.staff_spacing = staff_spacing
 
+        # vertikálne posuny pre jednotlivé stopy
         self.track_offsets = {
             "melody": 0.0,
             "bass": staff_spacing,
@@ -166,6 +167,17 @@ class PixelLayoutEngine:
             "chords": staff_spacing * 3,
         }
 
+        # DRUM MAPA – správne Y posuny pre jednotlivé bubny
+        self.drum_y_map = {
+            36: +20,   # Kick
+            38: 0,     # Snare
+            42: -20,   # Closed Hi-Hat
+            46: -20,   # Open Hi-Hat
+            49: -40,   # Crash
+            51: -40,   # Ride
+        }
+
+        # melodické výšky
         self.reference_pitch = 60
         self.pitch_step = 3.0
 
@@ -205,8 +217,13 @@ class PixelLayoutEngine:
         track_type = note.get("track_type", "melody")
 
         base_y = self._get_track_base_y(track_type)
-        dy = (self.reference_pitch - pitch) * self.pitch_step
 
+        # 🔵 DRUM MAPA – špeciálne Y pre bubny
+        if track_type == "drums":
+            return base_y + self.drum_y_map.get(pitch, 0)
+
+        # 🔵 MELODY / BASS – klasické výšky
+        dy = (self.reference_pitch - pitch) * self.pitch_step
         return base_y + dy
 
     def _get_track_base_y(self, track_type):
