@@ -169,12 +169,24 @@ class PixelLayoutEngine:
         self.reference_pitch = 60
         self.pitch_step = 3.0
 
+    # ---------------------------------------------------------
+    # Layout celej timeline
+    # ---------------------------------------------------------
     def layout_timeline(self, timeline):
         positioned = []
         for note in timeline:
             positioned.append(self.layout_note(note))
         return positioned
 
+    # ---------------------------------------------------------
+    # Layout jednej noty (pre renderer.add_note)
+    # ---------------------------------------------------------
+    def layout_single(self, note):
+        return self.layout_note(note)
+
+    # ---------------------------------------------------------
+    # Výpočet x/y
+    # ---------------------------------------------------------
     def layout_note(self, note):
         x = self._compute_x(note)
         y = self._compute_y(note)
