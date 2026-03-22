@@ -12,6 +12,7 @@ class GraphicNotationRenderer:
     - farby podľa stopy
     - x/y pozície z PixelLayoutEngine
     - real-time horizontálny scrolling
+    - bubnové noteheady (X, diamond, open hat, ghost)
     """
 
     def __init__(self, width=1200, height=500):
@@ -99,6 +100,49 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
+    # Vykreslenie bubnovej hlavičky
+    # ---------------------------------------------------------
+    def _draw_drum_notehead(self, x, y, drum):
+        head = drum["notehead_type"]
+
+        # ghost → bledšia farba
+        if drum["is_ghost"]:
+            color = (180, 180, 180)
+        else:
+            color = (255, 150, 60)
+
+        # X-head
+        if head == "x":
+            pygame.draw.line(self.screen, color, (x - 5, y - 5), (x + 5, y + 5), 2)
+            pygame.draw.line(self.screen, color, (x - 5, y + 5), (x + 5, y - 5), 2)
+
+            # open hat → malý kruh nad X
+            if drum["is_open_hat"]:
+                pygame.draw.circle(self.screen, color, (x, y - 10), 4, 1)
+
+        # diamond
+        elif head == "diamond":
+            pygame.draw.polygon(
+                self.screen,
+                color,
+                [(x, y - 6), (x + 6, y), (x, y + 6), (x - 6, y)],
+                2
+            )
+
+        # triangle (perkusie)
+        elif head == "triangle":
+            pygame.draw.polygon(
+                self.screen,
+                color,
+                [(x, y - 6), (x + 6, y + 6), (x - 6, y + 6)],
+                2
+            )
+
+        # default → normálna nota
+        else:
+            pygame.draw.circle(self.screen, color, (x, y), 6, 2)
+
+    # ---------------------------------------------------------
     # Vykreslenie noty
     # ---------------------------------------------------------
     def _draw_note(self, note):
@@ -106,6 +150,16 @@ class GraphicNotationRenderer:
         y = int(note["y"])
         track = note.get("track_type", "melody")
 
+        # layering pre bicie
+        if "drum_layer_offset" in note:
+            x += int(note["drum_layer_offset"])
+
+        # bubny majú vlastné hlavičky
+        if track == "drums" and "drum" in note:
+            self._draw_drum_notehead(x, y, note["drum"])
+            return
+
+        # normálna nota
         color = self.track_colors.get(track, (255, 255, 255))
         pygame.draw.circle(self.screen, color, (x, y), 6)
 
@@ -113,7 +167,6 @@ class GraphicNotationRenderer:
     # Hlavné vykreslenie
     # ---------------------------------------------------------
     def render(self):
-        # delta time
         dt = self.clock.tick(60) / 1000.0
         self.scroll_x += dt * self.scroll_speed
 
@@ -124,11 +177,9 @@ class GraphicNotationRenderer:
 
         # položky
         for item in self.items:
-            # posun podľa scrollu
             base_x = item.get("x", 0)
             screen_x = base_x - self.scroll_x
 
-            # ignoruj mimo obrazovky
             if screen_x < -100 or screen_x > self.width + 100:
                 continue
 
