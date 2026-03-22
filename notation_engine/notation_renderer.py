@@ -49,7 +49,7 @@ class NotationRenderer:
             print(f"[Renderer] Note: pitch={positioned['pitch']}, color={positioned['color']}")
 
     # ---------------------------------------------------------
-    # ADD CHORD (NOVÉ)
+    # ADD CHORD
     # ---------------------------------------------------------
     def add_chord(self, chord_dict):
         """
@@ -84,14 +84,29 @@ class NotationRenderer:
         if self.canvas is None:
             return
 
-        self.canvas.create_text(40, 80 + 24, text="Melody", fill="#4DA6FF",
-                                font=("Arial", 12, "bold"), anchor="e")
+        self.canvas.create_text(
+            40, 80 + 24,
+            text="Melody",
+            fill="#4DA6FF",
+            font=("Arial", 12, "bold"),
+            anchor="e"
+        )
 
-        self.canvas.create_text(40, 80 + 140 + 24, text="Bass", fill="#66CC66",
-                                font=("Arial", 12, "bold"), anchor="e")
+        self.canvas.create_text(
+            40, 80 + 140 + 24,
+            text="Bass",
+            fill="#66CC66",
+            font=("Arial", 12, "bold"),
+            anchor="e"
+        )
 
-        self.canvas.create_text(40, 80 + 140 + 80, text="Drums", fill="#FF9933",
-                                font=("Arial", 12, "bold"), anchor="e")
+        self.canvas.create_text(
+            40, 80 + 140 + 80,
+            text="Drums",
+            fill="#FF9933",
+            font=("Arial", 12, "bold"),
+            anchor="e"
+        )
 
     # ---------------------------------------------------------
     # BARLINE
@@ -144,7 +159,7 @@ class NotationRenderer:
         self.last_drawn_chord = chord_name
 
     # ---------------------------------------------------------
-    # DRAW CHORD SYMBOL (NOVÉ)
+    # DRAW CHORD SYMBOL
     # ---------------------------------------------------------
     def _draw_chord(self, chord):
         if self.canvas is None:
@@ -241,7 +256,11 @@ class NotationRenderer:
         positioned = self.pixel_layout.layout_timeline(timeline)
 
         for item in positioned:
-            if item.get("type") == "chord":
+            item_type = item.get("type")
+            if item_type == "chord":
                 self._draw_chord(item)
+            elif item_type == "barline":
+                # barline už bola vykreslená vyššie, tu ju ignorujeme
+                continue
             else:
                 self.draw_note(item)
