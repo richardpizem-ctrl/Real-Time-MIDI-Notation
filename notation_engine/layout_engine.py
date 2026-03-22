@@ -11,13 +11,19 @@ class LayoutConfig:
         min_spacing=1,
         max_spacing=4,
         barline_spacing=2,
-        line_break_on_bars=True
+        line_break_on_bars=True,
+        max_line_width=1200,          # 🔵 NOVÉ – maximálna šírka riadku v pixeloch
+        line_height=150               # 🔵 NOVÉ – vertikálny posun medzi riadkami
     ):
         self.max_symbols_per_line = max_symbols_per_line
         self.min_spacing = min_spacing
         self.max_spacing = max_spacing
         self.barline_spacing = barline_spacing
         self.line_break_on_bars = line_break_on_bars
+
+        # 🔵 nové parametre
+        self.max_line_width = max_line_width
+        self.line_height = line_height
 
 
 class LayoutEngine:
@@ -68,30 +74,41 @@ class LayoutEngine:
         return bars
 
     # ------------------------
-    # 2) Line breaking
+    # 2) Line breaking (NOVÁ LOGIKA)
     # ------------------------
 
     def _break_into_lines(self, bars):
         lines = []
         current_line = []
-        symbol_count = 0
+        current_width = 0
 
         for bar in bars:
-            bar_len = len(bar)
+            bar_width = self._estimate_bar_width(bar)
 
-            if symbol_count + bar_len > self.config.max_symbols_per_line and current_line:
+            # 🔵 Ak by takt prešiel limit → zalomiť
+            if current_width + bar_width > self.config.max_line_width and current_line:
+
+                # zalamujeme len na konci taktu (čo bar je)
                 lines.append(current_line)
                 current_line = []
-                symbol_count = 0
+                current_width = 0
 
+            # pridaj takt do riadku
             current_line.extend(bar)
-            symbol_count += bar_len
+            current_width += bar_width
 
         if current_line:
             lines.append(current_line)
 
         Logger.info(f"LayoutEngine: broken into {len(lines)} lines.")
         return lines
+
+    # 🔵 odhad šírky taktu podľa spacingu symbolov
+    def _estimate_bar_width(self, bar):
+        width = 0
+        for sym in bar:
+            width += self._spacing_for_symbol(sym)
+        return width
 
     # ------------------------
     # 3) Spacing within lines
@@ -137,7 +154,7 @@ class LayoutEngine:
 
 # -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
-# 🔵 NOVÁ ČASŤ – GRAFICKÝ LAYOUT PRE RENDERER (x/y pozície)
+# 🔵 GRAFICKÝ LAYOUT PRE RENDERER (x/y pozície)
 # -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
 
