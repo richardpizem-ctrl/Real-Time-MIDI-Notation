@@ -30,6 +30,24 @@ class NotationProcessor:
         self.renderer = renderer
 
     # ---------------------------------------------------------
+    # MAPOVANIE MIDI KANÁLOV NA STOPY
+    # ---------------------------------------------------------
+    def _detect_track(self, channel: int) -> str:
+        """
+        Pre mapovanie MIDI kanálov na stopy.
+        CH0 = melody
+        CH1 = bass
+        CH9 = drums
+        """
+        if channel == 0:
+            return "melody"
+        if channel == 1:
+            return "bass"
+        if channel == 9:
+            return "drums"
+        return "melody"
+
+    # ---------------------------------------------------------
     # HLAVNÁ FUNKCIA – spracovanie MIDI udalosti
     # ---------------------------------------------------------
     def process_midi_event(self, midi_event: dict):
@@ -110,11 +128,13 @@ class NotationProcessor:
             # Timeline pre renderer
             # -----------------------------
             visual_duration = created_note.duration.ticks / 120.0
+
             timeline_item = {
                 "pitch": created_note.pitch,
                 "start": created_note.start_time,
                 "duration": visual_duration,
                 "color": symbol.get("color", "#FFFFFF"),
+                "track_type": self._detect_track(channel),
             }
 
             self.timeline.append(timeline_item)
@@ -123,8 +143,6 @@ class NotationProcessor:
             # Vykreslenie cez AKTUÁLNY renderer
             # -----------------------------
             if self.renderer:
-                # grafický renderer má add_note()
-                # textový renderer má render(timeline)
                 if hasattr(self.renderer, "add_note"):
                     self.renderer.add_note(timeline_item)
                 else:
