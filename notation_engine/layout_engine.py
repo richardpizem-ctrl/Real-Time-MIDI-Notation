@@ -102,11 +102,12 @@ class LayoutEngine:
         return sum(self._spacing_for_symbol(sym) for sym in bar)
 
     # ------------------------
-    # 3) SMART JUSTIFY (proporčné rozťahovanie taktov)
+    # 3) SMART JUSTIFY + CENTER LAST LINE
     # ------------------------
 
     def _apply_spacing(self, lines):
         laid_out_lines = []
+        last_line_index = len(lines) - 1
         line_index = 0
 
         for line in lines:
@@ -126,19 +127,42 @@ class LayoutEngine:
             bar_widths = [sum(self._spacing_for_symbol(s) for s in bar) for bar in bars]
             total_original_width = sum(bar_widths)
 
-            # 3) Koľko chýba do max_line_width
-            remaining = max(self.config.max_line_width - total_original_width, 0)
+            # -------------------------
+            # CENTER LAST LINE
+            # -------------------------
+            if line_index == last_line_index:
+                x_pos = (self.config.max_line_width - total_original_width) / 2
+                laid_out_line = []
 
-            # 4) Váha taktov (väčší takt = viac priestoru)
+                for bar in bars:
+                    for sym in bar:
+                        spacing = self._spacing_for_symbol(sym)
+
+                        laid_out_line.append({
+                            "symbol": sym,
+                            "x": x_pos,
+                            "line": line_index,
+                            "spacing": spacing,
+                        })
+
+                        x_pos += spacing
+
+                laid_out_lines.append(laid_out_line)
+                line_index += 1
+                continue
+
+            # -------------------------
+            # SMART JUSTIFY (pre všetky okrem posledného)
+            # -------------------------
+
+            remaining = max(self.config.max_line_width - total_original_width, 0)
             total_bar_weight = sum(bar_widths) or 1
 
-            # 5) Extra šírka pre každý takt podľa jeho veľkosti
             bar_extra = [
                 remaining * (bw / total_bar_weight)
                 for bw in bar_widths
             ]
 
-            # 6) Rozloženie symbolov s novým spacingom
             laid_out_line = []
             x_pos = 0
 
