@@ -33,6 +33,27 @@ class NotationProcessor:
         self.renderer = renderer
 
     # ---------------------------------------------------------
+    # PRIDANIE AKORDU DO TIMELINE
+    # ---------------------------------------------------------
+    def add_chord(self, name: str, start_time: float):
+        """
+        Pridá akord do timeline a odošle ho rendereru.
+        """
+        chord_item = {
+            "type": "chord",
+            "name": name,
+            "start": start_time,
+            "track_type": "chords",
+        }
+
+        self.timeline.append(chord_item)
+
+        if hasattr(self.renderer, "add_chord"):
+            self.renderer.add_chord(chord_item)
+
+        return chord_item
+
+    # ---------------------------------------------------------
     # MAPOVANIE MIDI KANÁLOV NA STOPY
     # ---------------------------------------------------------
     def _detect_track(self, channel: int) -> str:
@@ -134,6 +155,10 @@ class NotationProcessor:
                     "measure": current_measure
                 }
                 self.timeline.append(bar_item)
+
+                if hasattr(self.renderer, "add_barline"):
+                    self.renderer.add_barline(bar_item["start"])
+
                 self.last_measure = current_measure
 
             # -----------------------------
