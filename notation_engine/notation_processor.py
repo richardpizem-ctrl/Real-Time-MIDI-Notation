@@ -29,6 +29,9 @@ class NotationProcessor:
         """Pripojí externý renderer (grafický alebo iný)."""
         self.renderer = renderer
 
+    # ---------------------------------------------------------
+    # HLAVNÁ FUNKCIA – spracovanie MIDI udalosti
+    # ---------------------------------------------------------
     def process_midi_event(self, midi_event: dict):
         """
         Spracuje jednu MIDI udalosť.
@@ -62,7 +65,7 @@ class NotationProcessor:
             return None
 
         # -----------------------------
-        # NOTE OFF
+        # NOTE OFF (alebo note_on s velocity 0)
         # -----------------------------
         if event_type in ("note_off", "note_on") and velocity == 0:
             created_note: Note | None = None
@@ -118,16 +121,13 @@ class NotationProcessor:
 
             # -----------------------------
             # Vykreslenie cez AKTUÁLNY renderer
-            # (textový alebo grafický)
             # -----------------------------
             if self.renderer:
-                # textový renderer má signatúru render(timeline)
                 # grafický renderer má add_note()
-                try:
-                    # grafický renderer
+                # textový renderer má render(timeline)
+                if hasattr(self.renderer, "add_note"):
                     self.renderer.add_note(timeline_item)
-                except Exception:
-                    # textový renderer
+                else:
                     self.renderer.render(self.timeline)
 
             return {
