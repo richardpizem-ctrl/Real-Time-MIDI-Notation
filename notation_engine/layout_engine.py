@@ -1,7 +1,7 @@
 # Layout engine – full staff layout, spacing and line breaking
 
 from ..core.logger import Logger
-
+from .drum_notation import annotate_drum_timeline   # 🔥 DOPLNENÉ
 
 class LayoutConfig:
     """Configuration for layout behavior."""
@@ -317,6 +317,8 @@ class PixelLayoutEngine:
         self.pitch_step = 3.0
 
     def layout_timeline(self, timeline):
+        # 🔥 DOPLNENÉ — anotácia bicích
+        timeline = annotate_drum_timeline(timeline)
         return [self.layout_note(note) for note in timeline]
 
     def layout_single(self, note):
