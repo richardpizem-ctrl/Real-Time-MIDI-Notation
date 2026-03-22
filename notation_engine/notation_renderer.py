@@ -29,6 +29,9 @@ class NotationRenderer:
         # Font pre akordy (ak je canvas tkinter)
         self.chord_font = ("Arial", 16, "bold")
 
+        # posledná vykreslená tónina
+        self.last_key = None
+
     def set_canvas(self, canvas):
         self.canvas = canvas
 
@@ -36,10 +39,6 @@ class NotationRenderer:
     # ADD NOTE
     # ---------------------------------------------------------
     def add_note(self, note_dict):
-        """
-        Pridá jednu notu do bufferu a okamžite ju vykreslí,
-        ak je canvas dostupný.
-        """
         positioned = self.pixel_layout.layout_single(note_dict)
         self.buffer.append(positioned)
 
@@ -52,9 +51,6 @@ class NotationRenderer:
     # ADD CHORD
     # ---------------------------------------------------------
     def add_chord(self, chord_dict):
-        """
-        Pridá akord do bufferu a vykreslí ho.
-        """
         positioned = self.pixel_layout.layout_single(chord_dict)
         self.buffer.append(positioned)
 
@@ -62,6 +58,33 @@ class NotationRenderer:
             self._draw_chord(positioned)
         else:
             print(f"[Renderer] Chord: {positioned['name']}")
+
+    # ---------------------------------------------------------
+    # ADD KEY CHANGE  ← sem som to vložil
+    # ---------------------------------------------------------
+    def add_key_change(self, key_item: dict):
+        """
+        Pridá zmenu tóniny do renderera.
+        """
+        key = key_item["key"]
+        start = key_item["start"]
+
+        if self.canvas:
+            # zmažeme starý text tóniny
+            self.canvas.delete("key_text")
+
+            # vykreslíme novú tóninu vľavo hore
+            self.canvas.create_text(
+                300, 30,
+                text=f"Key: {key}",
+                fill="#FFFFAA",
+                font=("Arial", 18, "bold"),
+                tags="key_text"
+            )
+        else:
+            print(f"[KEY] Zmena tóniny → {key} @ {start}")
+
+        self.last_key = key
 
     # ---------------------------------------------------------
     # STAFF LINES
@@ -132,7 +155,7 @@ class NotationRenderer:
         )
 
     # ---------------------------------------------------------
-    # MAIN CHORD DISPLAY (optional)
+    # MAIN CHORD DISPLAY
     # ---------------------------------------------------------
     def draw_chord(self, chord):
         if chord is None:
@@ -167,7 +190,7 @@ class NotationRenderer:
             return
 
         x = chord["x"]
-        y = chord["y"] - 40  # nad osnovou
+        y = chord["y"] - 40
 
         self.canvas.create_text(
             x, y,
@@ -249,7 +272,11 @@ class NotationRenderer:
                 if "chord" in item:
                     self.draw_chord_above_bar(item["chord"], x)
 
-        # hlavný akord (voliteľné)
+            # vykreslenie tóniny
+            if item.get("type") == "key_change":
+                self.add_key_change(item)
+
+        # hlavný akord
         self.draw_chord(current_chord)
 
         # layout + vykreslenie
@@ -260,7 +287,6 @@ class NotationRenderer:
             if item_type == "chord":
                 self._draw_chord(item)
             elif item_type == "barline":
-                # barline už bola vykreslená vyššie, tu ju ignorujeme
                 continue
             else:
                 self.draw_note(item)
