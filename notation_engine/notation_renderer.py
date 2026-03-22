@@ -15,6 +15,9 @@ class NotationRenderer:
         # Pixelový layout engine
         self.pixel_layout = PixelLayoutEngine()
 
+        # Buffer pre noty (ak sa používa add_note)
+        self.buffer = []
+
         # Farby pre jednotlivé stopy
         self.track_colors = {
             "melody": "#4DA6FF",   # modrá
@@ -25,6 +28,26 @@ class NotationRenderer:
 
     def set_canvas(self, canvas):
         self.canvas = canvas
+
+    # ---------------------------------------------------------
+    # NOVÉ: add_note() – kompatibilné s NotationProcessor
+    # ---------------------------------------------------------
+    def add_note(self, note_dict):
+        """
+        Pridá jednu notu do bufferu a okamžite ju vykreslí,
+        ak je canvas dostupný.
+        """
+        # PixelLayoutEngine doplní x/y
+        positioned = self.pixel_layout.layout_single(note_dict)
+
+        # uložíme do bufferu
+        self.buffer.append(positioned)
+
+        # ak máme canvas → vykreslíme
+        if self.canvas:
+            self.draw_note(positioned)
+        else:
+            print(f"[Renderer] Note: pitch={positioned['pitch']}, color={positioned['color']}")
 
     # ---------------------------------------------------------
     # 0) VYKRESLENIE OSNOVY (5 liniek)
@@ -47,38 +70,17 @@ class NotationRenderer:
     # 0.2) NÁZVY STÔP NAĽAVO
     # ---------------------------------------------------------
     def draw_track_labels(self):
-        """
-        Vykreslí názvy stôp naľavo od osnov.
-        """
         if self.canvas is None:
             return
 
-        # Melody – pri hornej osnove
-        self.canvas.create_text(
-            40, 80 + 24,
-            text="Melody",
-            fill="#4DA6FF",
-            font=("Arial", 12, "bold"),
-            anchor="e"
-        )
+        self.canvas.create_text(40, 80 + 24, text="Melody", fill="#4DA6FF",
+                                font=("Arial", 12, "bold"), anchor="e")
 
-        # Bass – pri basovej osnove
-        self.canvas.create_text(
-            40, 80 + 140 + 24,
-            text="Bass",
-            fill="#66CC66",
-            font=("Arial", 12, "bold"),
-            anchor="e"
-        )
+        self.canvas.create_text(40, 80 + 140 + 24, text="Bass", fill="#66CC66",
+                                font=("Arial", 12, "bold"), anchor="e")
 
-        # Drums – pod basovou osnovou (orientačne)
-        self.canvas.create_text(
-            40, 80 + 140 + 80,
-            text="Drums",
-            fill="#FF9933",
-            font=("Arial", 12, "bold"),
-            anchor="e"
-        )
+        self.canvas.create_text(40, 80 + 140 + 80, text="Drums", fill="#FF9933",
+                                font=("Arial", 12, "bold"), anchor="e")
 
     # ---------------------------------------------------------
     # 0.5) VYKRESLENIE TAKTOVEJ ČIARY
@@ -134,24 +136,17 @@ class NotationRenderer:
     # 2) RYTMICKÉ SYMBOLY
     # ---------------------------------------------------------
     def draw_rhythm_symbol(self, x, y, duration):
-        """
-        duration:
-            1.0 = celá
-            0.5 = polová
-            0.25 = štvrťová
-            0.125 = osminová
-        """
         if self.canvas is None:
             return
 
         if duration >= 1.0:
-            symbol = "𝅝"   # whole
+            symbol = "𝅝"
         elif duration >= 0.5:
-            symbol = "𝅗𝅥"   # half
+            symbol = "𝅗𝅥"
         elif duration >= 0.25:
-            symbol = "♩"   # quarter
+            symbol = "♩"
         else:
-            symbol = "♪"   # eighth
+            symbol = "♪"
 
         self.canvas.create_text(
             x - 10, y - 15,
@@ -161,7 +156,7 @@ class NotationRenderer:
         )
 
     # ---------------------------------------------------------
-    # 3) VYKRESLENIE NOTY (melody, bass, drums)
+    # 3) VYKRESLENIE NOTY
     # ---------------------------------------------------------
     def draw_note(self, note):
         if self.canvas is None:
@@ -174,11 +169,9 @@ class NotationRenderer:
         width = note["duration"] * 50
         height = 10
 
-        # Farba podľa stopy
         track = note.get("track_type", "melody")
         color = self.track_colors.get(track, "#FFFFFF")
 
-        # Špeciálne pozície pre bubny
         if track == "drums":
             height = 6
             y += 20
@@ -189,7 +182,6 @@ class NotationRenderer:
             outline=""
         )
 
-        # Rytmický symbol
         self.draw_rhythm_symbol(x, y, note["duration"])
 
     # ---------------------------------------------------------
@@ -200,16 +192,10 @@ class NotationRenderer:
             print("[Renderer] Canvas nie je nastavený.")
             return
 
-        # 🔵 0) Hlavná osnova (melody)
         self.draw_staff(y_top=80)
-
-        # 🔵 0.1) Basová osnova (bass)
         self.draw_bass_staff(y_top=80 + 140)
-
-        # 🔵 0.2) Názvy stôp naľavo
         self.draw_track_labels()
 
-        # 🔵 0.5) Taktové čiary + akordy nad taktmi
         for note in timeline:
             if note.get("type") == "barline":
                 x = note.get("start", 0) * 40
@@ -218,12 +204,9 @@ class NotationRenderer:
                 if "chord" in note:
                     self.draw_chord_above_bar(note["chord"], x)
 
-        # 🔵 1) Hlavný akord
         self.draw_chord(current_chord)
 
-        # 🔵 2) PixelLayoutEngine → prepočet x/y
         positioned = self.pixel_layout.layout_timeline(timeline)
 
-        # 🔵 3) Noty podľa stopy
         for note in positioned:
             self.draw_note(note)
