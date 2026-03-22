@@ -4,7 +4,7 @@
 ---
 
 ## 🟩 FÁZA 1 — Stabilizácia základného engine  
-**STAV: HOTOVÉ**
+**STAV: HOTOVÉ (100 %)**
 
 ### 🔧 1.1 Real‑time MIDI pipeline  
 - optimalizácia latencie **(hotové)**  
@@ -24,12 +24,13 @@
 ---
 
 ## 🟩 FÁZA 2 — Layout Engine  
-**STAV: 85 %**
+**STAV: 95 %**
 
 ### 📏 2.1 Osnova a rozloženie  
 - vykreslenie osnovy pre melódiu, basu a bicie **(hotové)**  
 - dynamické rozostupy podľa počtu symbolov **(hotové)**  
-- automatické zalamovanie riadkov **(čiastočne)**  
+- automatické zalamovanie riadkov **(hotové)**  
+  → doplnené: **No justify on short lines**, **Minimum bars for justify**
 
 ### 🧩 2.2 Symbol Placement  
 - presné pozície nôt **(hotové)**  
@@ -41,6 +42,12 @@
 - farby stôp **(hotové)**  
 - farby akordov **(hotové)**  
 - farby rytmických prvkov **(hotové)**  
+
+### 🧠 2.4 Smart Layout  
+- Smart Justify 1.0 **(hotové)**  
+- Smart Justify 2.0 (rytmické váhy) **(hotové)**  
+- Center last line **(hotové)**  
+- Debug vizualizácia spacingu **(hotové)**  
 
 ---
 
@@ -66,19 +73,25 @@
 ---
 
 ## 🟩 FÁZA 4 — Rhythm Analyzer  
-**STAV: 90 %**
+**STAV: 100 %**
 
 ### 🥁 4.1 Kvantizácia  
 - detekcia oneskorených úderov **(hotové)**  
 - normalizácia rytmu **(hotové)**  
 
 ### 🎵 4.2 Pattern Recognition  
-- rozpoznanie bicích patternov **(nie)**  
-- rozpoznanie basových fráz **(nie)**  
+- rozpoznanie bicích patternov **(hotové)**  
+- rozpoznanie basových fráz **(hotové)**  
 
 ### 🎚️ 4.3 Velocity → vizuálna dynamika  
-- hrúbka nôt podľa úderu **(čiastočne)**  
-- intenzita farby **(čiastočne)**  
+- hrúbka nôt podľa úderu **(hotové)**  
+- intenzita farby **(hotové)**  
+
+### 🧠 4.4 Pokročilá analýza  
+- swing / shuffle detection **(hotové)**  
+- microtiming analyzer **(hotové)**  
+- downbeat detection **(hotové)**  
+- groove classifier **(hotové)**  
 
 ---
 
@@ -161,4 +174,4 @@
 
 ---
 
-### 🔥 CELKOVÝ PROGRES: **65 %**
+### 🔥 CELKOVÝ PROGRES: **70 %**
