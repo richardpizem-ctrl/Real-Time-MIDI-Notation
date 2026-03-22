@@ -3,13 +3,17 @@ import pygame
 
 class GraphicNotationRenderer:
     """
-    Jednoduchý grafický renderer:
-    - otvorí okno
-    - vykreslí päťčiarie
-    - vykresľuje noty ako bodky na čiare
+    Jednoduchý grafický renderer pre real-time MIDI notáciu.
+    Podporuje:
+    - päťčiarie
+    - basovú osnovu
+    - bubnový grid
+    - taktové čiary
+    - farby podľa stopy
+    - x/y pozície z PixelLayoutEngine
     """
 
-    def __init__(self, width=1000, height=400):
+    def __init__(self, width=1200, height=500):
         pygame.init()
         self.width = width
         self.height = height
@@ -17,72 +21,121 @@ class GraphicNotationRenderer:
         pygame.display.set_caption("Real-Time MIDI Notation")
 
         self.background_color = (20, 20, 20)
-        self.staff_color = (220, 220, 220)
-        self.note_color = (100, 200, 255)
+        self.staff_color = (200, 200, 200)
 
-        # uložené noty na vykreslenie
-        self.notes = []
+        # farby podľa stopy
+        self.track_colors = {
+            "melody": (80, 160, 255),
+            "bass": (120, 220, 120),
+            "drums": (255, 150, 60),
+        }
 
-        # základné rozloženie
-        self.staff_top = 100
-        self.staff_spacing = 12  # vzdialenosť medzi čiarami
-        self.note_spacing_x = 25  # horizontálny odstup medzi notami
+        # uložené prvky
+        self.items = []
+
+        # rozloženie
+        self.staff_top = 80
+        self.staff_spacing = 12
+        self.bass_staff_top = 80 + 140
+        self.drums_y = 80 + 140 + 80
 
         self._running = True
-
-        # FPS kontrola
         self.clock = pygame.time.Clock()
 
+    # ---------------------------------------------------------
+    # API pre NotationProcessor
+    # ---------------------------------------------------------
     def add_note(self, note):
         """
-        Očakáva dict s 'pitch' a 'bar'/'beat' (z NotationEngine).
-        Zatiaľ len pridá notu do zoznamu a prekreslí obrazovku.
+        Očakáva dict s:
+        - pitch
+        - x
+        - y
+        - duration
+        - track_type
         """
-        self.notes.append(note)
+        self.items.append(note)
         self.render()
 
-    def _pitch_to_y(self, pitch):
-        """
-        Veľmi jednoduché mapovanie pitch → vertikálna pozícia.
-        Neskôr sa môže nahradiť reálnou notovou osnovou.
-        """
-        # middle C (60) niekde v strede päťčiarí
-        base_pitch = 60
-        offset = (pitch - base_pitch)
-        return self.staff_top + 2 * self.staff_spacing - offset * 3
+    def add_barline(self, x):
+        self.items.append({"type": "barline", "x": x})
+        self.render()
 
-    def _draw_staff(self):
+    # ---------------------------------------------------------
+    # Vykresľovanie osnov
+    # ---------------------------------------------------------
+    def _draw_staff(self, y_top):
         for i in range(5):
-            y = self.staff_top + i * self.staff_spacing
+            y = y_top + i * self.staff_spacing
             pygame.draw.line(
                 self.screen,
                 self.staff_color,
-                (50, y),
-                (self.width - 50, y),
+                (40, y),
+                (self.width - 40, y),
                 2
             )
 
-    def _draw_notes(self):
-        x_start = 80
-        for i, note in enumerate(self.notes):
-            x = x_start + i * self.note_spacing_x
-            y = self._pitch_to_y(note.get("pitch", 60))
-            pygame.draw.circle(self.screen, self.note_color, (int(x), int(y)), 6)
+    def _draw_all_staffs(self):
+        # melody
+        self._draw_staff(self.staff_top)
+        # bass
+        self._draw_staff(self.bass_staff_top)
+        # drums (len jedna čiara)
+        pygame.draw.line(
+            self.screen,
+            self.staff_color,
+            (40, self.drums_y),
+            (self.width - 40, self.drums_y),
+            2
+        )
 
+    # ---------------------------------------------------------
+    # Vykreslenie taktovej čiary
+    # ---------------------------------------------------------
+    def _draw_barline(self, x):
+        pygame.draw.line(
+            self.screen,
+            (180, 180, 180),
+            (x, self.staff_top - 10),
+            (x, self.drums_y + 20),
+            2
+        )
+
+    # ---------------------------------------------------------
+    # Vykreslenie noty
+    # ---------------------------------------------------------
+    def _draw_note(self, note):
+        x = int(note["x"])
+        y = int(note["y"])
+        track = note.get("track_type", "melody")
+
+        color = self.track_colors.get(track, (255, 255, 255))
+
+        pygame.draw.circle(self.screen, color, (x, y), 6)
+
+    # ---------------------------------------------------------
+    # Hlavné vykreslenie
+    # ---------------------------------------------------------
     def render(self):
         self.screen.fill(self.background_color)
-        self._draw_staff()
-        self._draw_notes()
-        pygame.display.flip()
 
-        # FPS limit
+        # osnovy
+        self._draw_all_staffs()
+
+        # položky
+        for item in self.items:
+            if item.get("type") == "barline":
+                self._draw_barline(item["x"])
+            else:
+                self._draw_note(item)
+
+        pygame.display.flip()
         self.clock.tick(60)
 
+    # ---------------------------------------------------------
+    # Event loop
+    # ---------------------------------------------------------
     def run_event_loop_step(self):
-        """
-        Jednoduchý krok event loopu – treba volať pravidelne v hlavnom programe,
-        aby okno reagovalo.
-        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self._running = False
