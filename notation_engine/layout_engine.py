@@ -13,7 +13,9 @@ class LayoutConfig:
         barline_spacing=2,
         line_break_on_bars=True,
         max_line_width=1200,          # maximálna šírka riadku v pixeloch
-        line_height=150               # vertikálny posun medzi riadkami
+        line_height=150,              # vertikálny posun medzi riadkami
+        min_bars_for_justify=2,       # No justify on short lines (< 2 bars)
+        min_bars_for_smart_justify=3  # Smart Justify 2.0 až od 3 barov
     ):
         self.max_symbols_per_line = max_symbols_per_line
         self.min_spacing = min_spacing
@@ -23,6 +25,9 @@ class LayoutConfig:
 
         self.max_line_width = max_line_width
         self.line_height = line_height
+
+        self.min_bars_for_justify = min_bars_for_justify
+        self.min_bars_for_smart_justify = min_bars_for_smart_justify
 
 
 class LayoutEngine:
@@ -102,7 +107,7 @@ class LayoutEngine:
         return sum(self._spacing_for_symbol(sym) for sym in bar)
 
     # ------------------------
-    # 3) SMART JUSTIFY + CENTER LAST LINE
+    # 3) SMART JUSTIFY 2.0 + CENTER LAST LINE + NO JUSTIFY ON SHORT LINES
     # ------------------------
 
     def _apply_spacing(self, lines):
@@ -112,7 +117,7 @@ class LayoutEngine:
 
         for line in lines:
 
-            # 1) Rozdeliť symboly do taktov
+            # Rozdeliť symboly do taktov
             bars = []
             current_bar = []
             for sym in line:
@@ -123,18 +128,44 @@ class LayoutEngine:
             if current_bar:
                 bars.append(current_bar)
 
-            # 2) Šírka každého taktu
+            bar_count = len(bars)
+
+            # Šírka každého taktu (geometrická)
             bar_widths = [sum(self._spacing_for_symbol(s) for s in bar) for bar in bars]
             total_original_width = sum(bar_widths)
 
-            # -------------------------
+            # Rytmická váha každého taktu (Smart Justify 2.0)
+            bar_rhythm_weights = []
+            for bar in bars:
+                weight = 0.0
+                for s in bar:
+                    if s.get("type") == "barline":
+                        continue
+                    dur = s.get("duration", 0.25)
+                    if dur >= 1.0:
+                        weight += 4.0 * dur
+                    elif dur >= 0.5:
+                        weight += 2.0 * dur
+                    elif dur >= 0.25:
+                        weight += 1.0 * dur
+                    elif dur >= 0.125:
+                        weight += 0.5 * dur
+                    else:
+                        weight += 0.25 * dur
+                bar_rhythm_weights.append(weight or 1.0)
+
+            Logger.info(
+                f"Line {line_index}: bars={bar_count}, "
+                f"width={total_original_width:.2f}, "
+                f"rhythm_weights={bar_rhythm_weights}"
+            )
+
             # CENTER LAST LINE
-            # -------------------------
             if line_index == last_line_index:
                 x_pos = (self.config.max_line_width - total_original_width) / 2
                 laid_out_line = []
 
-                for bar in bars:
+                for bar_idx, bar in enumerate(bars):
                     for sym in bar:
                         spacing = self._spacing_for_symbol(sym)
 
@@ -143,6 +174,12 @@ class LayoutEngine:
                             "x": x_pos,
                             "line": line_index,
                             "spacing": spacing,
+                            "debug": {
+                                "mode": "center_last_line",
+                                "bar_index": bar_idx,
+                                "base_spacing": spacing,
+                                "extra_spacing": 0.0,
+                            },
                         })
 
                         x_pos += spacing
@@ -151,22 +188,53 @@ class LayoutEngine:
                 line_index += 1
                 continue
 
-            # -------------------------
-            # SMART JUSTIFY (pre všetky okrem posledného)
-            # -------------------------
+            # NO JUSTIFY ON SHORT LINES
+            if bar_count < self.config.min_bars_for_justify:
+                laid_out_line = []
+                x_pos = 0
+                for bar_idx, bar in enumerate(bars):
+                    for sym in bar:
+                        spacing = self._spacing_for_symbol(sym)
+                        laid_out_line.append({
+                            "symbol": sym,
+                            "x": x_pos,
+                            "line": line_index,
+                            "spacing": spacing,
+                            "debug": {
+                                "mode": "no_justify_short_line",
+                                "bar_index": bar_idx,
+                                "base_spacing": spacing,
+                                "extra_spacing": 0.0,
+                            },
+                        })
+                        x_pos += spacing
 
+                laid_out_lines.append(laid_out_line)
+                line_index += 1
+                continue
+
+            # JUSTIFY / SMART JUSTIFY 2.0
             remaining = max(self.config.max_line_width - total_original_width, 0)
-            total_bar_weight = sum(bar_widths) or 1
 
-            bar_extra = [
-                remaining * (bw / total_bar_weight)
-                for bw in bar_widths
-            ]
+            if bar_count >= self.config.min_bars_for_smart_justify:
+                total_weight = sum(bar_rhythm_weights) or 1.0
+                bar_extra = [
+                    remaining * (rw / total_weight)
+                    for rw in bar_rhythm_weights
+                ]
+                mode = "smart_justify_2_0"
+            else:
+                total_bar_weight = sum(bar_widths) or 1.0
+                bar_extra = [
+                    remaining * (bw / total_bar_weight)
+                    for bw in bar_widths
+                ]
+                mode = "justify_width_based"
 
             laid_out_line = []
             x_pos = 0
 
-            for bar, extra_width in zip(bars, bar_extra):
+            for bar_idx, (bar, extra_width) in enumerate(zip(bars, bar_extra)):
 
                 gaps = max(len(bar) - 1, 1)
                 extra_per_symbol = extra_width / gaps
@@ -176,14 +244,22 @@ class LayoutEngine:
 
                     if i < len(bar) - 1:
                         spacing = base_spacing + extra_per_symbol
+                        extra = extra_per_symbol
                     else:
                         spacing = base_spacing
+                        extra = 0.0
 
                     laid_out_line.append({
                         "symbol": sym,
                         "x": x_pos,
                         "line": line_index,
                         "spacing": spacing,
+                        "debug": {
+                            "mode": mode,
+                            "bar_index": bar_idx,
+                            "base_spacing": base_spacing,
+                            "extra_spacing": extra,
+                        },
                     })
 
                     x_pos += spacing
