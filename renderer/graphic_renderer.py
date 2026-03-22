@@ -89,6 +89,7 @@ class GraphicNotationRenderer:
     # Vykreslenie taktovej čiary
     # ---------------------------------------------------------
     def _draw_barline(self, x):
+        x = int(x)
         pygame.draw.line(
             self.screen,
             (180, 180, 180),
@@ -124,7 +125,8 @@ class GraphicNotationRenderer:
         # položky
         for item in self.items:
             # posun podľa scrollu
-            screen_x = item.get("x", 0) - self.scroll_x
+            base_x = item.get("x", 0)
+            screen_x = base_x - self.scroll_x
 
             # ignoruj mimo obrazovky
             if screen_x < -100 or screen_x > self.width + 100:
