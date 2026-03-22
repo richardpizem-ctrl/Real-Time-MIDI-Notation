@@ -11,6 +11,7 @@ class GraphicNotationRenderer:
     - taktové čiary
     - farby podľa stopy
     - x/y pozície z PixelLayoutEngine
+    - real-time horizontálny scrolling
     """
 
     def __init__(self, width=1200, height=500):
@@ -39,6 +40,10 @@ class GraphicNotationRenderer:
         self.bass_staff_top = 80 + 140
         self.drums_y = 80 + 140 + 80
 
+        # scrolling
+        self.scroll_x = 0.0
+        self.scroll_speed = 40.0  # px/s
+
         self._running = True
         self.clock = pygame.time.Clock()
 
@@ -46,14 +51,6 @@ class GraphicNotationRenderer:
     # API pre NotationProcessor
     # ---------------------------------------------------------
     def add_note(self, note):
-        """
-        Očakáva dict s:
-        - pitch
-        - x
-        - y
-        - duration
-        - track_type
-        """
         self.items.append(note)
         self.render()
 
@@ -76,11 +73,10 @@ class GraphicNotationRenderer:
             )
 
     def _draw_all_staffs(self):
-        # melody
         self._draw_staff(self.staff_top)
-        # bass
         self._draw_staff(self.bass_staff_top)
-        # drums (len jedna čiara)
+
+        # drums – jedna čiara
         pygame.draw.line(
             self.screen,
             self.staff_color,
@@ -110,13 +106,16 @@ class GraphicNotationRenderer:
         track = note.get("track_type", "melody")
 
         color = self.track_colors.get(track, (255, 255, 255))
-
         pygame.draw.circle(self.screen, color, (x, y), 6)
 
     # ---------------------------------------------------------
     # Hlavné vykreslenie
     # ---------------------------------------------------------
     def render(self):
+        # delta time
+        dt = self.clock.tick(60) / 1000.0
+        self.scroll_x += dt * self.scroll_speed
+
         self.screen.fill(self.background_color)
 
         # osnovy
@@ -124,13 +123,21 @@ class GraphicNotationRenderer:
 
         # položky
         for item in self.items:
+            # posun podľa scrollu
+            screen_x = item.get("x", 0) - self.scroll_x
+
+            # ignoruj mimo obrazovky
+            if screen_x < -100 or screen_x > self.width + 100:
+                continue
+
             if item.get("type") == "barline":
-                self._draw_barline(item["x"])
+                self._draw_barline(screen_x)
             else:
-                self._draw_note(item)
+                shifted = dict(item)
+                shifted["x"] = screen_x
+                self._draw_note(shifted)
 
         pygame.display.flip()
-        self.clock.tick(60)
 
     # ---------------------------------------------------------
     # Event loop
