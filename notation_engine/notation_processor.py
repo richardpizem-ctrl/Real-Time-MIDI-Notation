@@ -20,7 +20,10 @@ class NotationProcessor:
 
         # Timeline pre renderer (zoznam dictov)
         self.timeline = []
-        self.current_chord = None  # ak budeš neskôr posielať aj akordy
+        self.current_chord = None
+
+        # posledný takt pre barline generáciu
+        self.last_measure = None
 
     # ---------------------------------------------------------
     # PREPOJENIE EXTERNÉHO RENDERERA (napr. grafického)
@@ -115,6 +118,23 @@ class NotationProcessor:
                 "measure": created_note.position.measure,
                 "beat_position": created_note.position.beat,
             }
+
+            # -------------------------------------------------
+            # BARLINE GENERÁCIA – nový takt = nová čiara
+            # -------------------------------------------------
+            current_measure = created_note.position.measure
+
+            if self.last_measure is None:
+                self.last_measure = current_measure
+
+            if current_measure != self.last_measure:
+                bar_item = {
+                    "type": "barline",
+                    "start": created_note.start_time,
+                    "measure": current_measure
+                }
+                self.timeline.append(bar_item)
+                self.last_measure = current_measure
 
             # -----------------------------
             # SymbolManager
