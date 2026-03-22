@@ -12,8 +12,8 @@ class LayoutConfig:
         max_spacing=4,
         barline_spacing=2,
         line_break_on_bars=True,
-        max_line_width=1200,          # 🔵 NOVÉ – maximálna šírka riadku v pixeloch
-        line_height=150               # 🔵 NOVÉ – vertikálny posun medzi riadkami
+        max_line_width=1200,          # 🔵 maximálna šírka riadku v pixeloch
+        line_height=150               # 🔵 vertikálny posun medzi riadkami
     ):
         self.max_symbols_per_line = max_symbols_per_line
         self.min_spacing = min_spacing
@@ -21,7 +21,6 @@ class LayoutConfig:
         self.barline_spacing = barline_spacing
         self.line_break_on_bars = line_break_on_bars
 
-        # 🔵 nové parametre
         self.max_line_width = max_line_width
         self.line_height = line_height
 
@@ -74,7 +73,7 @@ class LayoutEngine:
         return bars
 
     # ------------------------
-    # 2) Line breaking (NOVÁ LOGIKA)
+    # 2) Line breaking (šírkové zalamovanie)
     # ------------------------
 
     def _break_into_lines(self, bars):
@@ -87,13 +86,10 @@ class LayoutEngine:
 
             # 🔵 Ak by takt prešiel limit → zalomiť
             if current_width + bar_width > self.config.max_line_width and current_line:
-
-                # zalamujeme len na konci taktu (čo bar je)
                 lines.append(current_line)
                 current_line = []
                 current_width = 0
 
-            # pridaj takt do riadku
             current_line.extend(bar)
             current_width += bar_width
 
@@ -111,7 +107,7 @@ class LayoutEngine:
         return width
 
     # ------------------------
-    # 3) Spacing within lines
+    # 3) Spacing within lines + JUSTIFY
     # ------------------------
 
     def _apply_spacing(self, lines):
@@ -119,11 +115,30 @@ class LayoutEngine:
         line_index = 0
 
         for line in lines:
+
+            # 1) pôvodná šírka riadku
+            original_width = sum(self._spacing_for_symbol(sym) for sym in line)
+
+            # 2) koľko chýba do max_line_width
+            remaining = max(self.config.max_line_width - original_width, 0)
+
+            # 3) počet medzier medzi symbolmi
+            gaps = max(len(line) - 1, 1)
+
+            # 4) extra spacing pre každý symbol (JUSTIFY)
+            extra = remaining / gaps
+
             x_pos = 0
             laid_out_line = []
 
-            for sym in line:
-                spacing = self._spacing_for_symbol(sym)
+            for i, sym in enumerate(line):
+                base_spacing = self._spacing_for_symbol(sym)
+
+                # posledný symbol nedostáva extra medzeru
+                if i < len(line) - 1:
+                    spacing = base_spacing + extra
+                else:
+                    spacing = base_spacing
 
                 laid_out_line.append({
                     "symbol": sym,
@@ -176,7 +191,6 @@ class PixelLayoutEngine:
         self.staff_top = staff_top
         self.staff_spacing = staff_spacing
 
-        # vertikálne posuny pre jednotlivé stopy
         self.track_offsets = {
             "melody": 0.0,
             "bass": staff_spacing,
@@ -184,38 +198,27 @@ class PixelLayoutEngine:
             "chords": staff_spacing * 3,
         }
 
-        # DRUM MAPA – správne Y posuny pre jednotlivé bubny
         self.drum_y_map = {
-            36: +20,   # Kick
-            38: 0,     # Snare
-            42: -20,   # Closed Hi-Hat
-            46: -20,   # Open Hi-Hat
-            49: -40,   # Crash
-            51: -40,   # Ride
+            36: +20,
+            38: 0,
+            42: -20,
+            46: -20,
+            49: -40,
+            51: -40,
         }
 
-        # melodické výšky
         self.reference_pitch = 60
         self.pitch_step = 3.0
 
-    # ---------------------------------------------------------
-    # Layout celej timeline
-    # ---------------------------------------------------------
     def layout_timeline(self, timeline):
         positioned = []
         for note in timeline:
             positioned.append(self.layout_note(note))
         return positioned
 
-    # ---------------------------------------------------------
-    # Layout jednej noty (pre renderer.add_note)
-    # ---------------------------------------------------------
     def layout_single(self, note):
         return self.layout_note(note)
 
-    # ---------------------------------------------------------
-    # Výpočet x/y
-    # ---------------------------------------------------------
     def layout_note(self, note):
         x = self._compute_x(note)
         y = self._compute_y(note)
@@ -235,11 +238,9 @@ class PixelLayoutEngine:
 
         base_y = self._get_track_base_y(track_type)
 
-        # 🔵 DRUM MAPA – špeciálne Y pre bubny
         if track_type == "drums":
             return base_y + self.drum_y_map.get(pitch, 0)
 
-        # 🔵 MELODY / BASS – klasické výšky
         dy = (self.reference_pitch - pitch) * self.pitch_step
         return base_y + dy
 
