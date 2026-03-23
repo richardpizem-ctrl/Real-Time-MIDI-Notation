@@ -48,6 +48,10 @@ class GraphicNotationRenderer:
         # 🔥 ZOOM faktor
         self.zoom = 1.0
 
+        # 🔥 Dragovanie timeline
+        self.dragging = False
+        self.last_mouse_x = 0
+
         self._running = True
         self.clock = pygame.time.Clock()
 
@@ -203,12 +207,47 @@ class GraphicNotationRenderer:
         pygame.display.flip()
 
     # ---------------------------------------------------------
-    # Event loop
+    # Event loop + timeline posúvanie
     # ---------------------------------------------------------
     def run_event_loop_step(self):
         for event in pygame.event.get():
+
+            # zavretie okna
             if event.type == pygame.QUIT:
                 self._running = False
+
+            # -----------------------------
+            # DRAGOVANIE TIMELINE MYŠOU
+            # -----------------------------
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # ľavé tlačidlo
+                    self.dragging = True
+                    self.last_mouse_x = event.pos[0]
+
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    self.dragging = False
+
+            if event.type == pygame.MOUSEMOTION:
+                if self.dragging:
+                    dx = event.pos[0] - self.last_mouse_x
+                    self.last_mouse_x = event.pos[0]
+                    self.scroll_x -= dx / self.zoom  # zoom-corrected dragging
+
+            # -----------------------------
+            # SCROLL WHEEL POSÚVANIE
+            # -----------------------------
+            if event.type == pygame.MOUSEWHEEL:
+                self.scroll_x -= event.y * 40 / self.zoom
+
+            # -----------------------------
+            # KLÁVESY ← →
+            # -----------------------------
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    self.scroll_x -= 50 / self.zoom
+                if event.key == pygame.K_RIGHT:
+                    self.scroll_x += 50 / self.zoom
 
     def is_running(self):
         return self._running
