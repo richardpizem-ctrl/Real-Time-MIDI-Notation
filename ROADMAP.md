@@ -36,7 +36,7 @@
 - presné pozície nôt **(hotové)**  
 - taktové čiary **(hotové)**  
 - akordové symboly **(hotové)**  
-- bubnové značky **(hotové)**  ← 🔥 OPRAVENÉ
+- bubnové značky **(hotové)**  
 
 ### 🎨 2.3 Farby a štýly  
 - farby stôp **(hotové)**  
@@ -52,18 +52,18 @@
 ---
 
 ## 🟩 FÁZA 3 — Renderer (grafická vrstva)  
-**STAV: 90 %**  ← 🔥 zvýšené
+**STAV: HOTOVÉ (100 %)**
 
 ### 🖼️ 3.1 Vykresľovanie symbolov  
 - noty, stonky, bodky **(hotové)**  
-- ligatúry **(nie)**  
-- bubnové značky **(hotové)**  ← 🔥 OPRAVENÉ  
+- ligatúry **(hotové)**  
+- bubnové značky **(hotové)**  
 - akordové symboly **(hotové)**  
 
 ### 🖥️ 3.2 Real‑time aktualizácia  
 - plynulé prekresľovanie **(hotové)**  
-- zvýraznenie aktuálnej pozície **(čiastočne)**  
-- animácia prehrávania **(nie)**  
+- zvýraznenie aktuálnej pozície (playhead) **(hotové)**  
+- animácia prehrávania (plynulý tick 60 FPS) **(hotové)**  
 
 ### 🧪 3.3 Debug panel  
 - MIDI udalosti **(hotové)**  
@@ -174,4 +174,4 @@
 
 ---
 
-### 🔥 CELKOVÝ PROGRES: **75 %**
+### 🔥 CELKOVÝ PROGRES: **80 %**
