@@ -45,6 +45,9 @@ class GraphicNotationRenderer:
         self.scroll_x = 0.0
         self.scroll_speed = 40.0  # px/s
 
+        # 🔥 ZOOM faktor
+        self.zoom = 1.0
+
         self._running = True
         self.clock = pygame.time.Clock()
 
@@ -63,14 +66,17 @@ class GraphicNotationRenderer:
     # Vykresľovanie osnov
     # ---------------------------------------------------------
     def _draw_staff(self, y_top):
+        y_top *= self.zoom
+        spacing = self.staff_spacing * self.zoom
+
         for i in range(5):
-            y = y_top + i * self.staff_spacing
+            y = y_top + i * spacing
             pygame.draw.line(
                 self.screen,
                 self.staff_color,
-                (40, y),
-                (self.width - 40, y),
-                2
+                (40 * self.zoom, y),
+                (self.width * self.zoom - 40 * self.zoom, y),
+                int(2 * self.zoom)
             )
 
     def _draw_all_staffs(self):
@@ -81,28 +87,32 @@ class GraphicNotationRenderer:
         pygame.draw.line(
             self.screen,
             self.staff_color,
-            (40, self.drums_y),
-            (self.width - 40, self.drums_y),
-            2
+            (40 * self.zoom, self.drums_y * self.zoom),
+            (self.width * self.zoom - 40 * self.zoom, self.drums_y * self.zoom),
+            int(2 * self.zoom)
         )
 
     # ---------------------------------------------------------
     # Vykreslenie taktovej čiary
     # ---------------------------------------------------------
     def _draw_barline(self, x):
-        x = int(x)
+        x = int(x * self.zoom)
         pygame.draw.line(
             self.screen,
             (180, 180, 180),
-            (x, self.staff_top - 10),
-            (x, self.drums_y + 20),
-            2
+            (x, (self.staff_top - 10) * self.zoom),
+            (x, (self.drums_y + 20) * self.zoom),
+            int(2 * self.zoom)
         )
 
     # ---------------------------------------------------------
     # Vykreslenie bubnovej hlavičky
     # ---------------------------------------------------------
     def _draw_drum_notehead(self, x, y, drum):
+        x = int(x * self.zoom)
+        y = int(y * self.zoom)
+        size = int(6 * self.zoom)
+
         head = drum["notehead_type"]
 
         # ghost → bledšia farba
@@ -113,20 +123,20 @@ class GraphicNotationRenderer:
 
         # X-head
         if head == "x":
-            pygame.draw.line(self.screen, color, (x - 5, y - 5), (x + 5, y + 5), 2)
-            pygame.draw.line(self.screen, color, (x - 5, y + 5), (x + 5, y - 5), 2)
+            pygame.draw.line(self.screen, color, (x - size, y - size), (x + size, y + size), int(2 * self.zoom))
+            pygame.draw.line(self.screen, color, (x - size, y + size), (x + size, y - size), int(2 * self.zoom))
 
             # open hat → malý kruh nad X
             if drum["is_open_hat"]:
-                pygame.draw.circle(self.screen, color, (x, y - 10), 4, 1)
+                pygame.draw.circle(self.screen, color, (x, y - int(10 * self.zoom)), int(4 * self.zoom), int(1 * self.zoom))
 
         # diamond
         elif head == "diamond":
             pygame.draw.polygon(
                 self.screen,
                 color,
-                [(x, y - 6), (x + 6, y), (x, y + 6), (x - 6, y)],
-                2
+                [(x, y - size), (x + size, y), (x, y + size), (x - size, y)],
+                int(2 * self.zoom)
             )
 
         # triangle (perkusie)
@@ -134,25 +144,25 @@ class GraphicNotationRenderer:
             pygame.draw.polygon(
                 self.screen,
                 color,
-                [(x, y - 6), (x + 6, y + 6), (x - 6, y + 6)],
-                2
+                [(x, y - size), (x + size, y + size), (x - size, y + size)],
+                int(2 * self.zoom)
             )
 
         # default → normálna nota
         else:
-            pygame.draw.circle(self.screen, color, (x, y), 6, 2)
+            pygame.draw.circle(self.screen, color, (x, y), size, int(2 * self.zoom))
 
     # ---------------------------------------------------------
     # Vykreslenie noty
     # ---------------------------------------------------------
     def _draw_note(self, note):
-        x = int(note["x"])
-        y = int(note["y"])
+        x = int(note["x"] * self.zoom)
+        y = int(note["y"] * self.zoom)
         track = note.get("track_type", "melody")
 
         # layering pre bicie
         if "drum_layer_offset" in note:
-            x += int(note["drum_layer_offset"])
+            x += int(note["drum_layer_offset"] * self.zoom)
 
         # bubny majú vlastné hlavičky
         if track == "drums" and "drum" in note:
@@ -161,7 +171,7 @@ class GraphicNotationRenderer:
 
         # normálna nota
         color = self.track_colors.get(track, (255, 255, 255))
-        pygame.draw.circle(self.screen, color, (x, y), 6)
+        pygame.draw.circle(self.screen, color, (x, y), int(6 * self.zoom))
 
     # ---------------------------------------------------------
     # Hlavné vykreslenie
@@ -178,7 +188,7 @@ class GraphicNotationRenderer:
         # položky
         for item in self.items:
             base_x = item.get("x", 0)
-            screen_x = base_x - self.scroll_x
+            screen_x = (base_x - self.scroll_x)
 
             if screen_x < -100 or screen_x > self.width + 100:
                 continue
