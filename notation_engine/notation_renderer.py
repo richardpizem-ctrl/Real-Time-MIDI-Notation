@@ -32,8 +32,35 @@ class NotationRenderer:
         # posledná vykreslená tónina
         self.last_key = None
 
+        # 🔥 FÁZA 2 – playhead pozícia
+        self.playhead_x = None
+
     def set_canvas(self, canvas):
         self.canvas = canvas
+
+    # ---------------------------------------------------------
+    # FÁZA 2 – SET PLAYHEAD
+    # ---------------------------------------------------------
+    def set_playhead(self, timestamp: float):
+        """Aktualizuje x‑pozíciu prehrávacej hlavy."""
+        self.playhead_x = timestamp * self.pixel_layout.note_spacing
+
+    # ---------------------------------------------------------
+    # FÁZA 2 – DRAW PLAYHEAD
+    # ---------------------------------------------------------
+    def draw_playhead(self):
+        if self.canvas is None or self.playhead_x is None:
+            return
+
+        x = self.playhead_x
+
+        # vertikálna čiara cez celý systém
+        self.canvas.create_line(
+            x, 60,      # hore
+            x, 80 + 140 + 120,   # dole
+            fill="#FF4444",
+            width=3
+        )
 
     # ---------------------------------------------------------
     # ADD NOTE
@@ -63,17 +90,11 @@ class NotationRenderer:
     # ADD KEY CHANGE
     # ---------------------------------------------------------
     def add_key_change(self, key_item: dict):
-        """
-        Pridá zmenu tóniny do renderera.
-        """
         key = key_item["key"]
         start = key_item["start"]
 
         if self.canvas:
-            # zmažeme starý text tóniny
             self.canvas.delete("key_text")
-
-            # vykreslíme novú tóninu vľavo hore
             self.canvas.create_text(
                 300, 30,
                 text=f"Key: {key}",
@@ -263,7 +284,6 @@ class NotationRenderer:
         x2 = end_note["x"]
         y2 = end_note["y"]
 
-        # smerovanie oblúka – hore alebo dole
         direction = -20 if y2 < y1 else 20
 
         cx1 = x1 + (x2 - x1) * 0.3
@@ -321,9 +341,12 @@ class NotationRenderer:
             else:
                 self.draw_note(item)
 
-        # ligatúry (slurs) – pracujeme priamo s timeline
+        # ligatúry (slurs)
         for item in timeline:
             if item.get("type") == "slur":
                 start = self.pixel_layout.layout_note(item["start_note"])
                 end = self.pixel_layout.layout_note(item["end_note"])
                 self.draw_slur(start, end)
+
+        # 🔥 FÁZA 2 – PLAYHEAD
+        self.draw_playhead()
