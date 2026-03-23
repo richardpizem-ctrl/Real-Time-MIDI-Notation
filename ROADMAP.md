@@ -68,22 +68,22 @@
 
 ### ↔ 3.5 Posúvanie timeline  
 - automatický scroll **(hotové)**  
-- ručné posúvanie myšou **(HOTOVÉ)**  
+- ručné posúvanie myšou (drag) **(HOTOVÉ)**  
 - posúvanie kolieskom **(HOTOVÉ)**  
 - posúvanie klávesmi **(HOTOVÉ)**  
 
 ---
 
-## 🟧 FÁZA 4 — UI Components  
-**STAV: 60 %**
+## 🟩 FÁZA 4 — UI Components  
+**STAV: HOTOVÉ (100 %)**
 
 ### 🖱 4.1 Ovládanie  
-- zoom slider **(nie)**  
-- timeline scrollbar **(nie)**  
-- prepínanie stôp **(čiastočne)**  
+- zoom slider **(hotové)**  
+- timeline scrollbar **(hotové)**  
+- prepínanie stôp **(hotové)**  
 
 ### 🎛 4.2 MIDI zariadenia  
-- výber MIDI vstupu **(čiastočne)**  
+- výber MIDI vstupu **(hotové)**  
 
 ---
 
