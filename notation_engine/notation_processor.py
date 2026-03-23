@@ -33,12 +33,51 @@ class NotationProcessor:
         # 🔥 FÁZA 2 – aktuálna pozícia prehrávania
         self.current_play_position = 0.0
 
+        # 🔥 FÁZA 3 – animácia prehrávania
+        self.bpm = 120
+        self.is_running = False
+        self.last_timestamp = 0.0
+
     # ---------------------------------------------------------
     # PREPOJENIE EXTERNÉHO RENDERERA (napr. grafického)
     # ---------------------------------------------------------
     def bind_renderer(self, renderer):
         """Pripojí externý renderer (grafický alebo iný)."""
         self.renderer = renderer
+
+    # ---------------------------------------------------------
+    # FÁZA 3 – prepočet delta času
+    # ---------------------------------------------------------
+    def _compute_time_delta(self, timestamp: float) -> float:
+        dt = timestamp - self.last_timestamp
+        if dt < 0:
+            dt = 0.0
+        self.last_timestamp = timestamp
+        return dt
+
+    # ---------------------------------------------------------
+    # FÁZA 3 – animačná slučka
+    # ---------------------------------------------------------
+    def start_animation_loop(self):
+        """Spustí plynulú animáciu playheadu (60 FPS)."""
+        if not hasattr(self.renderer, "tick"):
+            return
+
+        if self.is_running:
+            return
+
+        self.is_running = True
+
+        import threading
+        import time
+
+        def loop():
+            while self.is_running:
+                time.sleep(0.016)  # ~60 FPS
+                # pevný dt – renderer si rieši plynulý posun
+                self.renderer.tick(0.016)
+
+        threading.Thread(target=loop, daemon=True).start()
 
     # ---------------------------------------------------------
     # UPDATE PLAY POSITION  🔥 FÁZA 2
@@ -111,6 +150,10 @@ class NotationProcessor:
         velocity = midi_event.get("velocity", 0)
         timestamp = midi_event.get("time", 0.0)
         channel = midi_event.get("channel", 0)
+
+        # 🔥 FÁZA 3 – spustenie animácie pri prvom evente
+        if not self.is_running:
+            self.start_animation_loop()
 
         # 🔥 FÁZA 2 – aktualizácia pozície prehrávania
         self.update_play_position(timestamp)
