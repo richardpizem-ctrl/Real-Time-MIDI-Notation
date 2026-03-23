@@ -30,12 +30,25 @@ class NotationProcessor:
         self.active_pitches = set()
         self.current_key = None
 
+        # 🔥 FÁZA 2 – aktuálna pozícia prehrávania
+        self.current_play_position = 0.0
+
     # ---------------------------------------------------------
     # PREPOJENIE EXTERNÉHO RENDERERA (napr. grafického)
     # ---------------------------------------------------------
     def bind_renderer(self, renderer):
         """Pripojí externý renderer (grafický alebo iný)."""
         self.renderer = renderer
+
+    # ---------------------------------------------------------
+    # UPDATE PLAY POSITION  🔥 FÁZA 2
+    # ---------------------------------------------------------
+    def update_play_position(self, timestamp: float):
+        """Aktualizuje aktuálnu pozíciu prehrávania a odošle ju rendereru."""
+        self.current_play_position = timestamp
+
+        if hasattr(self.renderer, "set_playhead"):
+            self.renderer.set_playhead(timestamp)
 
     # ---------------------------------------------------------
     # KEY DETECTION UPDATE
@@ -98,6 +111,9 @@ class NotationProcessor:
         velocity = midi_event.get("velocity", 0)
         timestamp = midi_event.get("time", 0.0)
         channel = midi_event.get("channel", 0)
+
+        # 🔥 FÁZA 2 – aktualizácia pozície prehrávania
+        self.update_play_position(timestamp)
 
         # -----------------------------
         # NOTE ON
