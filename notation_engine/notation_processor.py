@@ -38,6 +38,23 @@ class NotationProcessor:
         self.is_running = False
         self.last_timestamp = 0.0
 
+        # UI komponenty (doplníme cez bind)
+        self.staff_ui = None
+        self.piano_ui = None
+        self.visualizer_ui = None
+
+    # ---------------------------------------------------------
+    # PREPOJENIE UI KOMPONENTOV
+    # ---------------------------------------------------------
+    def bind_staff(self, ui):
+        self.staff_ui = ui
+
+    def bind_piano(self, ui):
+        self.piano_ui = ui
+
+    def bind_visualizer(self, ui):
+        self.visualizer_ui = ui
+
     # ---------------------------------------------------------
     # PREPOJENIE EXTERNÉHO RENDERERA (napr. grafického)
     # ---------------------------------------------------------
@@ -74,7 +91,6 @@ class NotationProcessor:
         def loop():
             while self.is_running:
                 time.sleep(0.016)  # ~60 FPS
-                # pevný dt – renderer si rieši plynulý posun
                 self.renderer.tick(0.016)
 
         threading.Thread(target=loop, daemon=True).start()
@@ -165,6 +181,16 @@ class NotationProcessor:
             self.active_pitches.add(pitch)
             self._update_key(timestamp)
 
+            # 🔥 REALTIME HIGHLIGHT – NOTE ON
+            if self.staff_ui:
+                self.staff_ui.highlight_note(pitch)
+
+            if self.piano_ui:
+                self.piano_ui.highlight_key(pitch)
+
+            if self.visualizer_ui:
+                self.visualizer_ui.show_note(pitch)
+
             self.note_mapper.handle_note_on(
                 pitch=pitch,
                 velocity=velocity,
@@ -180,6 +206,13 @@ class NotationProcessor:
             if pitch in self.active_pitches:
                 self.active_pitches.remove(pitch)
                 self._update_key(timestamp)
+
+            # 🔥 REALTIME HIGHLIGHT – NOTE OFF
+            if self.piano_ui:
+                self.piano_ui.unhighlight_key(pitch)
+
+            if self.staff_ui:
+                self.staff_ui.clear_highlight(pitch)
 
             created_note: Note | None = None
 
