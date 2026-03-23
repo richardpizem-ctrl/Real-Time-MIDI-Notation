@@ -1,4 +1,4 @@
-## 📌 Roadmap – Real-Time MIDI Notation  
+## 📌 Roadmap – Real-Time MIDI Notation
 ### (s označením HOTOVÉ / ČIASTOČNE / NIE)
 
 ---
@@ -6,8 +6,7 @@
 ## 🟩 FÁZA 1 — Stabilizácia základného engine  
 **STAV: HOTOVÉ (100 %)**
 
-### 🔧 1.1 Real‑time MIDI pipeline  
-- optimalizácia latencie **(hotové)**  
+### 🔧 1.1 Real‑time MIDI pipeline - optimalizácia latencie  
 - stabilné spracovanie MIDI udalostí **(hotové)**  
 - ochrana proti zahlteniu dát **(hotové)**  
 
@@ -30,13 +29,13 @@
 - vykreslenie osnovy pre melódiu, basu a bicie **(hotové)**  
 - dynamické rozostupy podľa počtu symbolov **(hotové)**  
 - automatické zalamovanie riadkov **(hotové)**  
-  → doplnené: **No justify on short lines**, **Minimum bars for justify**
+→ doplnené: **No justify on short lines**, **Minimum bars for justify**
 
 ### 🧩 2.2 Symbol Placement  
 - presné pozície nôt **(hotové)**  
 - taktové čiary **(hotové)**  
 - akordové symboly **(hotové)**  
-- bubnové značky **(hotové)**  
+- bubnové značky **(hotové)** ← 🔥 OPRAVENÉ
 
 ### 🎨 2.3 Farby a štýly  
 - farby stôp **(hotové)**  
@@ -47,131 +46,68 @@
 - Smart Justify 1.0 **(hotové)**  
 - Smart Justify 2.0 (rytmické váhy) **(hotové)**  
 - Center last line **(hotové)**  
-- Debug vizualizácia spacingu **(hotové)**  
 
 ---
 
-## 🟩 FÁZA 3 — Renderer (grafická vrstva)  
-**STAV: HOTOVÉ (100 %)**
+## 🟩 FÁZA 3 — Renderer  
+**STAV: 90 %**
 
-### 🖼️ 3.1 Vykresľovanie symbolov  
-- noty, stonky, bodky **(hotové)**  
-- ligatúry **(hotové)**  
-- bubnové značky **(hotové)**  
-- akordové symboly **(hotové)**  
+### 🎨 3.1 Základné vykresľovanie  
+- noty, bubny, bas, pady **(hotové)**  
+- farby podľa stopy **(hotové)**  
+- vrstvenie bicích **(hotové)**  
 
-### 🖥️ 3.2 Real‑time aktualizácia  
-- plynulé prekresľovanie **(hotové)**  
-- zvýraznenie aktuálnej pozície (playhead) **(hotové)**  
-- animácia prehrávania (plynulý tick 60 FPS) **(hotové)**  
+### 🔍 3.2 Zvýraznenie aktuálnej pozície  
+- realtime highlight **(čiastočne)**  
 
-### 🧪 3.3 Debug panel  
-- MIDI udalosti **(hotové)**  
-- analyzovaný rytmus **(hotové)**  
-- aktuálny akord **(hotové)**  
+### 🔗 3.3 Ligatúry (slurs)  
+- vykresľovanie oblúkov **(nie)**  
 
----
+### 🔎 3.4 Zoom  
+- plynulé zväčšovanie/zmenšovanie **(HOTOVÉ)**  
 
-## 🟩 FÁZA 4 — Rhythm Analyzer  
-**STAV: HOTOVÉ (100 %)**
-
-### 🥁 4.1 Kvantizácia  
-- detekcia oneskorených úderov **(hotové)**  
-- normalizácia rytmu **(hotové)**  
-
-### 🎵 4.2 Pattern Recognition  
-- rozpoznanie bicích patternov **(hotové)**  
-- rozpoznanie basových fráz **(hotové)**  
-
-### 🎚️ 4.3 Velocity → vizuálna dynamika  
-- hrúbka nôt podľa úderu **(hotové)**  
-- intenzita farby **(hotové)**  
-
-### 🧠 4.4 Pokročilá analýza  
-- swing / shuffle detection **(hotové)**  
-- microtiming analyzer **(hotové)**  
-- downbeat detection **(hotové)**  
-- groove classifier **(hotové)**  
+### ↔ 3.5 Posúvanie timeline  
+- automatický scroll **(hotové)**  
+- ručné posúvanie myšou **(HOTOVÉ)**  
+- posúvanie kolieskom **(HOTOVÉ)**  
+- posúvanie klávesmi **(HOTOVÉ)**  
 
 ---
 
-## 🟩 FÁZA 5 — UI Components  
+## 🟧 FÁZA 4 — UI Components  
 **STAV: 60 %**
 
-### 🪟 5.1 Hlavné okno  
-- canvas **(hotové)**  
-- zoom **(čiastočne)**  
-- posúvanie timeline **(čiastočne)**  
-
-### 🎛️ 5.2 Ovládacie prvky  
-- výber MIDI zariadenia **(čiastočne)**  
+### 🖱 4.1 Ovládanie  
+- zoom slider **(nie)**  
+- timeline scrollbar **(nie)**  
 - prepínanie stôp **(čiastočne)**  
-- tempo / metronóm **(nie)**  
 
-### 📊 5.3 Debug & Info panely  
-- aktuálny takt **(hotové)**  
-- BPM **(hotové)**  
-- detekovaný akord **(hotové)**  
+### 🎛 4.2 MIDI zariadenia  
+- výber MIDI vstupu **(čiastočne)**  
 
 ---
 
-## 🟩 FÁZA 6 — Export & Integrácie  
+## 🟦 FÁZA 5 — Export  
 **STAV: 0 %**
 
-### 📄 6.1 Export  
-- MusicXML **(nie)**  
-- PDF **(nie)**  
 - PNG snapshot **(nie)**  
-
-### 🎼 6.2 Import  
-- MIDI súbory **(nie)**  
-- Yamaha Style Files **(nie)**  
+- PDF export **(nie)**  
+- MusicXML export **(nie)**  
+- MIDI import **(nie)**  
 
 ---
 
-## 🟩 FÁZA 7 — Extra funkcie  
+## 🟪 FÁZA 6 — Inteligentné funkcie  
 **STAV: 40 %**
 
-### 🎹 7.1 Yamaha Arranger Mode  
-- rozpoznanie štýlov **(nie)**  
-- zobrazenie PAD stôp **(nie)**  
-- zobrazenie multi‑padov **(nie)**  
-
-### 🎧 7.2 Playback Engine  
-- prehrávanie MIDI **(nie)**  
-- synchronizácia s notáciou **(nie)**  
-
-### 🧠 7.3 Inteligentná analýza  
 - predikcia akordov **(čiastočne)**  
-- rozpoznanie tóniny **(hotové)**  
-- harmonická analýza **(nie)**  
+- harmonická analýza **(čiastočne)**  
+- Yamaha arranger mode **(nie)**  
 
 ---
 
-## 🟩 FÁZA 8 — Preview & Vizualizácia  
+## 🟫 FÁZA 7 — Preview & Vizualizácia  
 **STAV: 0 %**
 
-### 🖼️ 8.1 Auto‑screenshot  
-- generovanie `preview.png` **(nie)**  
-
-### 🗂️ 8.2 Version Previews  
-- `preview_001.png` **(nie)**  
-- `preview_002.png` **(nie)**  
-
-### 📈 8.3 Dashboard progresu  
-- % hotového layoutu **(nie)**  
-- % hotového renderera **(nie)**  
-- % hotovej MIDI logiky **(nie)**  
-
----
-
-## 🟩 FÁZA 9 — Stabilná verzia 2.0  
-**STAV: čaká**
-
-- kompletný engine  
-- finalizácia roadmapy  
-- release 2.0  
-
----
-
-### 🔥 CELKOVÝ PROGRES: **80 %**
+- auto-screenshot **(nie)**  
+- preview.png **(nie)**  
