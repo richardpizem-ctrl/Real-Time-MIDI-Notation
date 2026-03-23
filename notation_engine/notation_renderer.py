@@ -1,352 +1,289 @@
-# notation_engine/notation_renderer.py
+from .midi_note_mapper import MidiNoteMapper, Note
+from .rhythm_analyzer import RhythmAnalyzer
+from .symbol_manager import SymbolManager
+from .notation_renderer import NotationRenderer
+from .key_detector import detect_key
 
-from .layout_engine import PixelLayoutEngine
 
+class NotationProcessor:
+    """
+    Centrálna pipeline:
+    MIDI → MidiNoteMapper → RhythmAnalyzer → SymbolManager → Renderer
+    """
 
-class NotationRenderer:
-    def __init__(self, canvas=None):
-        """
-        Renderer zodpovedný za vykresľovanie nôt a akordov.
-        - canvas: tkinter canvas, pygame surface alebo vlastný objekt
-        """
-        self.canvas = canvas
-        self.last_drawn_chord = None
+    def __init__(self):
+        self.note_mapper = MidiNoteMapper()
+        self.rhythm_analyzer = RhythmAnalyzer()
+        self.symbol_manager = SymbolManager()
 
-        # Pixelový layout engine
-        self.pixel_layout = PixelLayoutEngine()
+        # defaultný renderer (textový)
+        self.renderer = NotationRenderer()
 
-        # Buffer pre noty a akordy
-        self.buffer = []
+        # Timeline pre renderer (zoznam dictov)
+        self.timeline = []
+        self.current_chord = None
 
-        # Farby pre jednotlivé stopy
-        self.track_colors = {
-            "melody": "#4DA6FF",
-            "bass": "#66CC66",
-            "drums": "#FF9933",
-            "chords": "#FFFFFF"
+        # posledný takt pre barline generáciu
+        self.last_measure = None
+
+        # KEY DETECTION
+        self.active_pitches = set()
+        self.current_key = None
+
+        # 🔥 FÁZA 1 – ligatúry (buffer posledných nôt podľa pitchu)
+        self.last_note_by_pitch = {}
+
+        # 🔥 FÁZA 2 – aktuálna pozícia prehrávania
+        self.current_play_position = 0.0
+
+        # 🔥 FÁZA 3 – animácia prehrávania
+        self.bpm = 120
+        self.is_running = False
+        self.last_timestamp = 0.0
+
+    # ---------------------------------------------------------
+    # PREPOJENIE EXTERNÉHO RENDERERA (napr. grafického)
+    # ---------------------------------------------------------
+    def bind_renderer(self, renderer):
+        """Pripojí externý renderer (grafický alebo iný)."""
+        self.renderer = renderer
+
+    # ---------------------------------------------------------
+    # FÁZA 3 – prepočet delta času
+    # ---------------------------------------------------------
+    def _compute_time_delta(self, timestamp: float) -> float:
+        dt = timestamp - self.last_timestamp
+        if dt < 0:
+            dt = 0.0
+        self.last_timestamp = timestamp
+        return dt
+
+    # ---------------------------------------------------------
+    # FÁZA 3 – animačná slučka (60 FPS)
+    # ---------------------------------------------------------
+    def start_animation_loop(self):
+        """Spustí plynulú animáciu playheadu (60 FPS)."""
+        if not hasattr(self.renderer, "tick"):
+            return
+
+        if self.is_running:
+            return
+
+        self.is_running = True
+
+        import threading
+        import time
+
+        def loop():
+            while self.is_running:
+                time.sleep(0.016)  # ~60 FPS
+                self.renderer.tick(0.016)
+
+        threading.Thread(target=loop, daemon=True).start()
+
+    # ---------------------------------------------------------
+    # UPDATE PLAY POSITION  🔥 FÁZA 2
+    # ---------------------------------------------------------
+    def update_play_position(self, timestamp: float):
+        """Aktualizuje aktuálnu pozíciu prehrávania a odošle ju rendereru."""
+        self.current_play_position = timestamp
+
+        if hasattr(self.renderer, "set_playhead"):
+            self.renderer.set_playhead(timestamp)
+
+    # ---------------------------------------------------------
+    # KEY DETECTION UPDATE
+    # ---------------------------------------------------------
+    def _update_key(self, timestamp: float):
+        if not self.active_pitches:
+            return
+
+        new_key = detect_key(self.active_pitches)
+        if new_key and new_key != self.current_key:
+            self.current_key = new_key
+
+            key_item = {
+                "type": "key_change",
+                "key": new_key,
+                "start": timestamp,
+            }
+
+            self.timeline.append(key_item)
+
+            if hasattr(self.renderer, "add_key_change"):
+                self.renderer.add_key_change(key_item)
+
+    # ---------------------------------------------------------
+    # PRIDANIE AKORDU DO TIMELINE
+    # ---------------------------------------------------------
+    def add_chord(self, name: str, start_time: float):
+        chord_item = {
+            "type": "chord",
+            "name": name,
+            "start": start_time,
+            "track_type": "chords",
         }
 
-        # Font pre akordy (ak je canvas tkinter)
-        self.chord_font = ("Arial", 16, "bold")
+        self.timeline.append(chord_item)
 
-        # posledná vykreslená tónina
-        self.last_key = None
+        if hasattr(self.renderer, "add_chord"):
+            self.renderer.add_chord(chord_item)
 
-        # 🔥 FÁZA 2 – playhead pozícia
-        self.playhead_x = None
-
-    def set_canvas(self, canvas):
-        self.canvas = canvas
+        return chord_item
 
     # ---------------------------------------------------------
-    # FÁZA 2 – SET PLAYHEAD
+    # MAPOVANIE MIDI KANÁLOV NA STOPY
     # ---------------------------------------------------------
-    def set_playhead(self, timestamp: float):
-        """Aktualizuje x‑pozíciu prehrávacej hlavy."""
-        self.playhead_x = timestamp * self.pixel_layout.note_spacing
+    def _detect_track(self, channel: int) -> str:
+        if channel == 0:
+            return "melody"
+        if channel == 1:
+            return "bass"
+        if channel == 9:
+            return "drums"
+        return "melody"
 
     # ---------------------------------------------------------
-    # FÁZA 2 – DRAW PLAYHEAD
+    # HLAVNÁ FUNKCIA – spracovanie MIDI udalosti
     # ---------------------------------------------------------
-    def draw_playhead(self):
-        if self.canvas is None or self.playhead_x is None:
-            return
+    def process_midi_event(self, midi_event: dict):
+        event_type = midi_event.get("type")
+        pitch = midi_event.get("note")
+        velocity = midi_event.get("velocity", 0)
+        timestamp = midi_event.get("time", 0.0)
+        channel = midi_event.get("channel", 0)
 
-        x = self.playhead_x
+        # 🔥 FÁZA 3 – spustenie animácie pri prvom evente
+        if not self.is_running:
+            self.start_animation_loop()
 
-        # vertikálna čiara cez celý systém
-        self.canvas.create_line(
-            x, 60,      # hore
-            x, 80 + 140 + 120,   # dole
-            fill="#FF4444",
-            width=3
-        )
+        # 🔥 FÁZA 2 – aktualizácia pozície prehrávania
+        self.update_play_position(timestamp)
 
-    # ---------------------------------------------------------
-    # ADD NOTE
-    # ---------------------------------------------------------
-    def add_note(self, note_dict):
-        positioned = self.pixel_layout.layout_single(note_dict)
-        self.buffer.append(positioned)
+        # -----------------------------
+        # NOTE ON
+        # -----------------------------
+        if event_type == "note_on" and velocity > 0:
+            self.active_pitches.add(pitch)
+            self._update_key(timestamp)
 
-        if self.canvas:
-            self.draw_note(positioned)
-        else:
-            print(f"[Renderer] Note: pitch={positioned['pitch']}, color={positioned['color']}")
-
-    # ---------------------------------------------------------
-    # ADD CHORD
-    # ---------------------------------------------------------
-    def add_chord(self, chord_dict):
-        positioned = self.pixel_layout.layout_single(chord_dict)
-        self.buffer.append(positioned)
-
-        if self.canvas:
-            self._draw_chord(positioned)
-        else:
-            print(f"[Renderer] Chord: {positioned['name']}")
-
-    # ---------------------------------------------------------
-    # ADD KEY CHANGE
-    # ---------------------------------------------------------
-    def add_key_change(self, key_item: dict):
-        key = key_item["key"]
-        start = key_item["start"]
-
-        if self.canvas:
-            self.canvas.delete("key_text")
-            self.canvas.create_text(
-                300, 30,
-                text=f"Key: {key}",
-                fill="#FFFFAA",
-                font=("Arial", 18, "bold"),
-                tags="key_text"
+            self.note_mapper.handle_note_on(
+                pitch=pitch,
+                velocity=velocity,
+                channel=channel,
+                timestamp=timestamp
             )
-        else:
-            print(f"[KEY] Zmena tóniny → {key} @ {start}")
+            return None
 
-        self.last_key = key
+        # -----------------------------
+        # NOTE OFF
+        # -----------------------------
+        if event_type in ("note_off", "note_on") and velocity == 0:
+            if pitch in self.active_pitches:
+                self.active_pitches.remove(pitch)
+                self._update_key(timestamp)
 
-    # ---------------------------------------------------------
-    # STAFF LINES
-    # ---------------------------------------------------------
-    def draw_staff(self, y_top=80, spacing=12, width=2000):
-        if self.canvas is None:
-            return
+            created_note: Note | None = None
 
-        for i in range(5):
-            y = y_top + i * spacing
-            self.canvas.create_line(0, y, width, y, fill="#666666", width=2)
+            def on_note_created(note: Note):
+                nonlocal created_note
+                created_note = note
 
-    def draw_bass_staff(self, y_top=80 + 140, spacing=12, width=2000):
-        self.draw_staff(y_top=y_top, spacing=spacing, width=width)
+            self.note_mapper.on_note_created = on_note_created
+            self.note_mapper.handle_note_off(
+                pitch=pitch,
+                channel=channel,
+                timestamp=timestamp
+            )
 
-    # ---------------------------------------------------------
-    # TRACK LABELS
-    # ---------------------------------------------------------
-    def draw_track_labels(self):
-        if self.canvas is None:
-            return
+            if created_note is None:
+                return None
 
-        self.canvas.create_text(
-            40, 80 + 24,
-            text="Melody",
-            fill="#4DA6FF",
-            font=("Arial", 12, "bold"),
-            anchor="e"
-        )
+            # Rhythm info
+            ppq = self.note_mapper.ppq
+            beats = created_note.duration.ticks / ppq if ppq > 0 else 0.0
+            rhythmic_name = self.rhythm_analyzer._quantize(beats)
 
-        self.canvas.create_text(
-            40, 80 + 140 + 24,
-            text="Bass",
-            fill="#66CC66",
-            font=("Arial", 12, "bold"),
-            anchor="e"
-        )
+            rhythm_info = {
+                "beats": beats,
+                "rhythm": rhythmic_name,
+                "measure": created_note.position.measure,
+                "beat_position": created_note.position.beat,
+            }
 
-        self.canvas.create_text(
-            40, 80 + 140 + 80,
-            text="Drums",
-            fill="#FF9933",
-            font=("Arial", 12, "bold"),
-            anchor="e"
-        )
+            # BARLINE
+            current_measure = created_note.position.measure
 
-    # ---------------------------------------------------------
-    # BARLINE
-    # ---------------------------------------------------------
-    def draw_barline(self, x, y_top=80, height=48 + 140):
-        if self.canvas is None:
-            return
+            if self.last_measure is None:
+                self.last_measure = current_measure
 
-        self.canvas.create_line(x, y_top, x, y_top + height, fill="#AAAAAA", width=2)
+            if current_measure != self.last_measure:
+                bar_item = {
+                    "type": "barline",
+                    "start": created_note.start_time,
+                    "measure": current_measure
+                }
+                self.timeline.append(bar_item)
 
-    # ---------------------------------------------------------
-    # CHORD ABOVE BARLINE
-    # ---------------------------------------------------------
-    def draw_chord_above_bar(self, chord_name, x):
-        if self.canvas is None:
-            return
+                if hasattr(self.renderer, "add_barline"):
+                    self.renderer.add_barline(bar_item["start"])
 
-        self.canvas.create_text(
-            x + 10, 50,
-            text=chord_name,
-            fill="#FFFFAA",
-            font=("Arial", 14, "bold")
-        )
+                self.last_measure = current_measure
 
-    # ---------------------------------------------------------
-    # MAIN CHORD DISPLAY
-    # ---------------------------------------------------------
-    def draw_chord(self, chord):
-        if chord is None:
-            return
+            # SymbolManager
+            symbol = self.symbol_manager.get_symbol(
+                note=created_note,
+                rhythm=rhythmic_name
+            )
 
-        chord_name = chord.name
+            # Timeline
+            visual_duration = created_note.duration.ticks / 120.0
 
-        if self.canvas is None:
-            if chord_name != self.last_drawn_chord:
-                print(f"[Renderer] Current chord: {chord_name}")
-                self.last_drawn_chord = chord_name
-            return
+            timeline_item = {
+                "pitch": created_note.pitch,
+                "start": created_note.start_time,
+                "duration": visual_duration,
+                "color": symbol.get("color", "#FFFFFF"),
+                "track_type": self._detect_track(channel),
+            }
 
-        self.canvas.delete("chord_text")
+            self.timeline.append(timeline_item)
 
-        self.canvas.create_text(
-            100, 30,
-            text=chord_name,
-            fill="#FFFFFF",
-            font=("Arial", 20, "bold"),
-            tags="chord_text"
-        )
+            # 🔥 FÁZA 1 – SLUR DETEKCIA
+            prev_note = self.last_note_by_pitch.get(created_note.pitch)
 
-        self.last_drawn_chord = chord_name
+            if prev_note:
+                slur_item = {
+                    "type": "slur",
+                    "start_note": prev_note,
+                    "end_note": {
+                        "pitch": created_note.pitch,
+                        "start": created_note.start_time,
+                        "duration": visual_duration,
+                        "track_type": self._detect_track(channel),
+                    }
+                }
+                self.timeline.append(slur_item)
 
-    # ---------------------------------------------------------
-    # DRAW CHORD SYMBOL
-    # ---------------------------------------------------------
-    def _draw_chord(self, chord):
-        if self.canvas is None:
-            print(f"[Renderer] Chord: {chord['name']}")
-            return
+            # uložíme aktuálnu notu ako poslednú
+            self.last_note_by_pitch[created_note.pitch] = {
+                "pitch": created_note.pitch,
+                "start": created_note.start_time,
+                "duration": visual_duration,
+                "track_type": self._detect_track(channel),
+            }
 
-        x = chord["x"]
-        y = chord["y"] - 40
+            # Renderer
+            if self.renderer:
+                if hasattr(self.renderer, "add_note"):
+                    self.renderer.add_note(timeline_item)
+                else:
+                    self.renderer.render(self.timeline)
 
-        self.canvas.create_text(
-            x, y,
-            text=chord["name"],
-            fill="#FFFFFF",
-            font=self.chord_font
-        )
+            return {
+                "note": created_note,
+                "rhythm": rhythm_info,
+                "symbol": symbol,
+            }
 
-    # ---------------------------------------------------------
-    # RHYTHM SYMBOLS
-    # ---------------------------------------------------------
-    def draw_rhythm_symbol(self, x, y, duration):
-        if self.canvas is None:
-            return
-
-        if duration >= 1.0:
-            symbol = "𝅝"
-        elif duration >= 0.5:
-            symbol = "𝅗𝅥"
-        elif duration >= 0.25:
-            symbol = "♩"
-        else:
-            symbol = "♪"
-
-        self.canvas.create_text(
-            x - 10, y - 15,
-            text=symbol,
-            fill="#FFFFFF",
-            font=("Arial", 14)
-        )
-
-    # ---------------------------------------------------------
-    # DRAW NOTE
-    # ---------------------------------------------------------
-    def draw_note(self, note):
-        if self.canvas is None:
-            print(f"[Renderer] Note: pitch={note['pitch']}, color={note['color']}")
-            return
-
-        x = note["x"]
-        y = note["y"]
-
-        width = note["duration"] * 50
-        height = 10
-
-        track = note.get("track_type", "melody")
-        color = self.track_colors.get(track, "#FFFFFF")
-
-        if track == "drums":
-            height = 6
-            y += 20
-
-        self.canvas.create_rectangle(
-            x, y, x + width, y + height,
-            fill=color,
-            outline=""
-        )
-
-        self.draw_rhythm_symbol(x, y, note["duration"])
-
-    # ---------------------------------------------------------
-    # DRAW SLUR (LIGATÚRA)
-    # ---------------------------------------------------------
-    def draw_slur(self, start_note, end_note):
-        if self.canvas is None:
-            return
-
-        x1 = start_note["x"]
-        y1 = start_note["y"]
-        x2 = end_note["x"]
-        y2 = end_note["y"]
-
-        direction = -20 if y2 < y1 else 20
-
-        cx1 = x1 + (x2 - x1) * 0.3
-        cy1 = y1 + direction
-
-        cx2 = x1 + (x2 - x1) * 0.7
-        cy2 = y2 + direction
-
-        self.canvas.create_line(
-            x1, y1,
-            cx1, cy1,
-            cx2, cy2,
-            x2, y2,
-            smooth=True,
-            width=2,
-            fill="#FFFFFF"
-        )
-
-    # ---------------------------------------------------------
-    # RENDER FULL TIMELINE
-    # ---------------------------------------------------------
-    def render(self, timeline, current_chord=None):
-        if self.canvas is None:
-            print("[Renderer] Canvas nie je nastavený.")
-            return
-
-        self.draw_staff(y_top=80)
-        self.draw_bass_staff(y_top=80 + 140)
-        self.draw_track_labels()
-
-        # taktové čiary + akordy nad nimi + tóniny
-        for item in timeline:
-            if item.get("type") == "barline":
-                x = item.get("start", 0) * 40
-                self.draw_barline(x)
-
-                if "chord" in item:
-                    self.draw_chord_above_bar(item["chord"], x)
-
-            if item.get("type") == "key_change":
-                self.add_key_change(item)
-
-        # hlavný akord
-        self.draw_chord(current_chord)
-
-        # layout + vykreslenie nôt a akordov
-        positioned = self.pixel_layout.layout_timeline(timeline)
-
-        for item in positioned:
-            item_type = item.get("type")
-            if item_type == "chord":
-                self._draw_chord(item)
-            elif item_type == "barline":
-                continue
-            else:
-                self.draw_note(item)
-
-        # ligatúry (slurs)
-        for item in timeline:
-            if item.get("type") == "slur":
-                start = self.pixel_layout.layout_note(item["start_note"])
-                end = self.pixel_layout.layout_note(item["end_note"])
-                self.draw_slur(start, end)
-
-        # 🔥 FÁZA 2 – PLAYHEAD
-        self.draw_playhead()
+        return None
