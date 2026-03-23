@@ -60,7 +60,7 @@ class NotationRenderer:
             print(f"[Renderer] Chord: {positioned['name']}")
 
     # ---------------------------------------------------------
-    # ADD KEY CHANGE  ← sem som to vložil
+    # ADD KEY CHANGE
     # ---------------------------------------------------------
     def add_key_change(self, key_item: dict):
         """
@@ -252,6 +252,37 @@ class NotationRenderer:
         self.draw_rhythm_symbol(x, y, note["duration"])
 
     # ---------------------------------------------------------
+    # DRAW SLUR (LIGATÚRA)
+    # ---------------------------------------------------------
+    def draw_slur(self, start_note, end_note):
+        if self.canvas is None:
+            return
+
+        x1 = start_note["x"]
+        y1 = start_note["y"]
+        x2 = end_note["x"]
+        y2 = end_note["y"]
+
+        # smerovanie oblúka – hore alebo dole
+        direction = -20 if y2 < y1 else 20
+
+        cx1 = x1 + (x2 - x1) * 0.3
+        cy1 = y1 + direction
+
+        cx2 = x1 + (x2 - x1) * 0.7
+        cy2 = y2 + direction
+
+        self.canvas.create_line(
+            x1, y1,
+            cx1, cy1,
+            cx2, cy2,
+            x2, y2,
+            smooth=True,
+            width=2,
+            fill="#FFFFFF"
+        )
+
+    # ---------------------------------------------------------
     # RENDER FULL TIMELINE
     # ---------------------------------------------------------
     def render(self, timeline, current_chord=None):
@@ -263,7 +294,7 @@ class NotationRenderer:
         self.draw_bass_staff(y_top=80 + 140)
         self.draw_track_labels()
 
-        # taktové čiary + akordy nad nimi
+        # taktové čiary + akordy nad nimi + tóniny
         for item in timeline:
             if item.get("type") == "barline":
                 x = item.get("start", 0) * 40
@@ -272,14 +303,13 @@ class NotationRenderer:
                 if "chord" in item:
                     self.draw_chord_above_bar(item["chord"], x)
 
-            # vykreslenie tóniny
             if item.get("type") == "key_change":
                 self.add_key_change(item)
 
         # hlavný akord
         self.draw_chord(current_chord)
 
-        # layout + vykreslenie
+        # layout + vykreslenie nôt a akordov
         positioned = self.pixel_layout.layout_timeline(timeline)
 
         for item in positioned:
@@ -290,3 +320,10 @@ class NotationRenderer:
                 continue
             else:
                 self.draw_note(item)
+
+        # ligatúry (slurs) – pracujeme priamo s timeline
+        for item in timeline:
+            if item.get("type") == "slur":
+                start = self.pixel_layout.layout_note(item["start_note"])
+                end = self.pixel_layout.layout_note(item["end_note"])
+                self.draw_slur(start, end)
