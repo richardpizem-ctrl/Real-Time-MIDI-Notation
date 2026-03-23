@@ -73,7 +73,7 @@
 ---
 
 ## 🟩 FÁZA 4 — Rhythm Analyzer  
-**STAV: 100 %**
+**STAV: HOTOVÉ (100 %)**
 
 ### 🥁 4.1 Kvantizácia  
 - detekcia oneskorených úderov **(hotové)**  
