@@ -3,8 +3,9 @@ from ui.staff_ui import StaffUI
 from ui.piano_roll_ui import PianoRollUI
 from ui.note_visualizer_ui import NoteVisualizerUI
 
-# StreamHandler musí byť pripojený k UI
+# MIDI routing
 from real_time_processing.stream_handler import StreamHandler
+from midi_input.event_router import EventRouter
 
 
 class UIManager:
@@ -22,8 +23,12 @@ class UIManager:
         self.piano_ui = PianoRollUI(width, 200)
         self.note_visualizer = NoteVisualizerUI(width, 200)
 
-        # 🔥 Prepojenie MIDI → StreamHandler → UI
+        # EventRouter (prepája MIDI → EventBus → UI)
+        self.event_router = EventRouter(event_bus=None, piano_roll_ui=self.piano_ui)
+
+        # StreamHandler (prepája MIDI → UI)
         self.stream_handler = StreamHandler(piano_roll_ui=self.piano_ui)
+        self.stream_handler.event_router = self.event_router
 
     # ---------------------------------------------------------
     # API pre NotationProcessor
@@ -62,10 +67,8 @@ class UIManager:
         self.staff_ui.draw(self.screen)
 
         # Piano roll (stred)
-        piano_surface = pygame.Surface((self.width, 200))
-        self.piano_ui.draw()  # kreslí do svojho vlastného surface
-        piano_surface.blit(self.piano_ui.screen, (0, 0))
-        self.screen.blit(piano_surface, (0, 200))
+        self.piano_ui.draw()
+        self.screen.blit(self.piano_ui.screen, (0, 200))
 
         # Note visualizer (dole)
         visual_surface = pygame.Surface((self.width, 200))
@@ -86,9 +89,7 @@ class UIManager:
                 if event.type == pygame.QUIT:
                     running = False
 
-            # 🔥 UI sa prekreslí
             self.draw()
-
             clock.tick(60)
 
         pygame.quit()
