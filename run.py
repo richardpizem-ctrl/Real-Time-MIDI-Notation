@@ -4,8 +4,8 @@ from event_bus.event_bus import EventBus
 from event_bus.event_types import (
     NOTE_RECORDED,
     TRACK_SELECTED,
-    MIDI_EXPORT_REQUEST,
-    MIDI_EXPORTED
+    MIDI_EXPORTED,
+    ERROR_OCCURRED
 )
 
 from track_system.track_system import TrackSystem
@@ -28,6 +28,9 @@ def on_track_selected(data):
 def on_midi_exported(data):
     print(f"[TEST] MIDI_EXPORTED event received: {data}")
 
+def on_error(data):
+    print(f"[TEST] ERROR_OCCURRED: {data}")
+
 
 # ---------------------------------------------------------
 # HLAVNÁ FUNKCIA
@@ -42,6 +45,7 @@ def main():
     event_bus.subscribe(NOTE_RECORDED, on_note_recorded)
     event_bus.subscribe(TRACK_SELECTED, on_track_selected)
     event_bus.subscribe(MIDI_EXPORTED, on_midi_exported)
+    event_bus.subscribe(ERROR_OCCURRED, on_error)
 
     # 3. TrackSystem + NotationProcessor
     track_system = TrackSystem(event_bus)
