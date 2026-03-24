@@ -41,22 +41,28 @@ class PianoRollUI:
 
         white_index = 0
 
+        # Biele klávesy
         for midi_note in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
             note_in_octave = midi_note % 12
 
             if note_in_octave in white_key_order:
                 x = white_index * self.WHITE_KEY_WIDTH
-                self.white_keys.append((midi_note, pygame.Rect(x, 0, self.WHITE_KEY_WIDTH, self.WHITE_KEY_HEIGHT)))
+                rect = pygame.Rect(x, 0, self.WHITE_KEY_WIDTH, self.WHITE_KEY_HEIGHT)
+                self.white_keys.append((midi_note, rect))
                 white_index += 1
 
-        # Black keys (musíme ich umiestniť medzi biele)
+        # Čierne klávesy
         for midi_note in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
             note_in_octave = midi_note % 12
+
             if note_in_octave in black_key_offsets:
+                # Zistíme, koľká oktáva od začiatku
                 octave = (midi_note - self.FIRST_MIDI_NOTE) // 12
                 base_white_index = octave * 7
+
                 x = int((base_white_index + black_key_offsets[note_in_octave]) * self.WHITE_KEY_WIDTH)
-                self.black_keys.append((midi_note, pygame.Rect(x, 0, self.BLACK_KEY_WIDTH, self.BLACK_KEY_HEIGHT)))
+                rect = pygame.Rect(x, 0, self.BLACK_KEY_WIDTH, self.BLACK_KEY_HEIGHT)
+                self.black_keys.append((midi_note, rect))
 
     # ---------------------------------------------------------
     # HIGHLIGHT / UNHIGHLIGHT
@@ -80,7 +86,7 @@ class PianoRollUI:
             pygame.draw.rect(self.screen, color, rect)
             pygame.draw.rect(self.screen, (0, 0, 0), rect, 2)
 
-        # Čierne klávesy
+        # Čierne klávesy (vždy nad bielymi)
         for midi_note, rect in self.black_keys:
             color = self.active_keys.get(midi_note, (0, 0, 0))
             pygame.draw.rect(self.screen, color, rect)
@@ -89,7 +95,7 @@ class PianoRollUI:
         pygame.display.flip()
 
     # ---------------------------------------------------------
-    # HLAVNÁ SLUČKA (voliteľná)
+    # HLAVNÁ SLUČKA
     # ---------------------------------------------------------
     def run(self):
         clock = pygame.time.Clock()
