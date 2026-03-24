@@ -20,6 +20,9 @@ class EventBus:
         self._subscribers: Dict[str, List[Callable[[Any], None]]] = defaultdict(list)
         self._lock = threading.Lock()
 
+    # ---------------------------------------------------------
+    # REGISTRÁCIA CALLBACKOV
+    # ---------------------------------------------------------
     def subscribe(self, event_type: str, callback: Callable[[Any], None]) -> None:
         """Zaregistruje callback pre daný typ udalosti."""
         with self._lock:
@@ -32,9 +35,13 @@ class EventBus:
             if callback in self._subscribers[event_type]:
                 self._subscribers[event_type].remove(callback)
 
+            # Ak už nemá žiadnych odberateľov, odstránime celý záznam
             if not self._subscribers[event_type]:
                 del self._subscribers[event_type]
 
+    # ---------------------------------------------------------
+    # SYNCHRÓNNE PUBLIKOVANIE
+    # ---------------------------------------------------------
     def publish(self, event_type: str, data: Any = None) -> None:
         """Synchronne odošle udalosť všetkým odberateľom."""
         with self._lock:
@@ -46,6 +53,9 @@ class EventBus:
             except Exception as e:
                 print(f"[EventBus] Error in callback for '{event_type}': {e}")
 
+    # ---------------------------------------------------------
+    # ASYNCHRÓNNE PUBLIKOVANIE
+    # ---------------------------------------------------------
     def publish_async(self, event_type: str, data: Any = None) -> None:
         """Asynchrónne odošle udalosť v samostatnom vlákne."""
         thread = threading.Thread(
