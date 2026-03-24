@@ -20,23 +20,23 @@ class NotationProcessor:
         self.renderer = NotationRenderer()
 
         # Timeline pre renderer (zoznam dictov)
-        self.timeline = []
+        self.timeline: list[dict] = []
         self.current_chord = None
 
         # posledný takt pre barline generáciu
-        self.last_measure = None
+        self.last_measure: int | None = None
 
         # KEY DETECTION
-        self.active_pitches = set()
-        self.current_key = None
+        self.active_pitches: set[int] = set()
+        self.current_key: str | None = None
 
         # 🔥 FÁZA 2 – aktuálna pozícia prehrávania
-        self.current_play_position = 0.0
+        self.current_play_position: float = 0.0
 
         # 🔥 FÁZA 3 – animácia prehrávania
-        self.bpm = 120
-        self.is_running = False
-        self.last_timestamp = 0.0
+        self.bpm: int = 120
+        self.is_running: bool = False
+        self.last_timestamp: float = 0.0
 
         # UI komponenty (doplníme cez bind)
         self.staff_ui = None
@@ -46,19 +46,19 @@ class NotationProcessor:
     # ---------------------------------------------------------
     # PREPOJENIE UI KOMPONENTOV
     # ---------------------------------------------------------
-    def bind_staff(self, ui):
+    def bind_staff(self, ui) -> None:
         self.staff_ui = ui
 
-    def bind_piano(self, ui):
+    def bind_piano(self, ui) -> None:
         self.piano_ui = ui
 
-    def bind_visualizer(self, ui):
+    def bind_visualizer(self, ui) -> None:
         self.visualizer_ui = ui
 
     # ---------------------------------------------------------
     # PREPOJENIE EXTERNÉHO RENDERERA (napr. grafického)
     # ---------------------------------------------------------
-    def bind_renderer(self, renderer):
+    def bind_renderer(self, renderer) -> None:
         """Pripojí externý renderer (grafický alebo iný)."""
         self.renderer = renderer
 
@@ -75,7 +75,7 @@ class NotationProcessor:
     # ---------------------------------------------------------
     # FÁZA 3 – animačná slučka
     # ---------------------------------------------------------
-    def start_animation_loop(self):
+    def start_animation_loop(self) -> None:
         """Spustí plynulú animáciu playheadu (60 FPS)."""
         if not hasattr(self.renderer, "tick"):
             return
@@ -98,7 +98,7 @@ class NotationProcessor:
     # ---------------------------------------------------------
     # UPDATE PLAY POSITION  🔥 FÁZA 2
     # ---------------------------------------------------------
-    def update_play_position(self, timestamp: float):
+    def update_play_position(self, timestamp: float) -> None:
         """Aktualizuje aktuálnu pozíciu prehrávania a odošle ju rendereru."""
         self.current_play_position = timestamp
 
@@ -108,7 +108,7 @@ class NotationProcessor:
     # ---------------------------------------------------------
     # KEY DETECTION UPDATE
     # ---------------------------------------------------------
-    def _update_key(self, timestamp: float):
+    def _update_key(self, timestamp: float) -> None:
         if not self.active_pitches:
             return
 
@@ -130,7 +130,7 @@ class NotationProcessor:
     # ---------------------------------------------------------
     # PRIDANIE AKORDU DO TIMELINE
     # ---------------------------------------------------------
-    def add_chord(self, name: str, start_time: float):
+    def add_chord(self, name: str, start_time: float) -> dict:
         chord_item = {
             "type": "chord",
             "name": name,
@@ -174,14 +174,11 @@ class NotationProcessor:
         # 🔥 FÁZA 2 – aktualizácia pozície prehrávania
         self.update_play_position(timestamp)
 
-        # -----------------------------
         # NOTE ON
-        # -----------------------------
         if event_type == "note_on" and velocity > 0:
             self.active_pitches.add(pitch)
             self._update_key(timestamp)
 
-            # 🔥 REALTIME HIGHLIGHT – NOTE ON
             if self.staff_ui:
                 self.staff_ui.highlight_note(pitch)
 
@@ -195,19 +192,16 @@ class NotationProcessor:
                 pitch=pitch,
                 velocity=velocity,
                 channel=channel,
-                timestamp=timestamp
+                timestamp=timestamp,
             )
             return None
 
-        # -----------------------------
-        # NOTE OFF
-        # -----------------------------
+        # NOTE OFF (alebo note_on s velocity 0)
         if event_type in ("note_off", "note_on") and velocity == 0:
             if pitch in self.active_pitches:
                 self.active_pitches.remove(pitch)
                 self._update_key(timestamp)
 
-            # 🔥 REALTIME HIGHLIGHT – NOTE OFF
             if self.piano_ui:
                 self.piano_ui.unhighlight_key(pitch)
 
@@ -224,13 +218,12 @@ class NotationProcessor:
             self.note_mapper.handle_note_off(
                 pitch=pitch,
                 channel=channel,
-                timestamp=timestamp
+                timestamp=timestamp,
             )
 
             if created_note is None:
                 return None
 
-            # Rhythm info
             ppq = self.note_mapper.ppq
             beats = created_note.duration.ticks / ppq if ppq > 0 else 0.0
             rhythmic_name = self.rhythm_analyzer._quantize(beats)
@@ -242,7 +235,6 @@ class NotationProcessor:
                 "beat_position": created_note.position.beat,
             }
 
-            # BARLINE
             current_measure = created_note.position.measure
 
             if self.last_measure is None:
@@ -252,7 +244,7 @@ class NotationProcessor:
                 bar_item = {
                     "type": "barline",
                     "start": created_note.start_time,
-                    "measure": current_measure
+                    "measure": current_measure,
                 }
                 self.timeline.append(bar_item)
 
@@ -261,13 +253,11 @@ class NotationProcessor:
 
                 self.last_measure = current_measure
 
-            # SymbolManager
             symbol = self.symbol_manager.get_symbol(
                 note=created_note,
-                rhythm=rhythmic_name
+                rhythm=rhythmic_name,
             )
 
-            # Timeline
             visual_duration = created_note.duration.ticks / 120.0
 
             timeline_item = {
@@ -280,7 +270,6 @@ class NotationProcessor:
 
             self.timeline.append(timeline_item)
 
-            # Renderer
             if self.renderer:
                 if hasattr(self.renderer, "add_note"):
                     self.renderer.add_note(timeline_item)
