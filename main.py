@@ -12,6 +12,7 @@ from notation_processor.notation_processor import NotationProcessor
 # UI + MIDI prepojenie
 from ui.ui_manager import UIManager
 from real_time_processing.stream_handler import StreamHandler
+from midi_input.event_router import EventRouter
 
 
 # ---------------------------------------------------------
@@ -48,11 +49,17 @@ def main():
     # 4. UI Manager
     ui = UIManager()
 
-    # 5. MIDI Stream Handler prepojený s Piano Roll UI
+    # 5. EventRouter pre MIDI → EventBus → UI
+    event_router = EventRouter(event_bus, piano_roll_ui=ui.piano_ui)
+
+    # 6. MIDI Stream Handler prepojený s Piano Roll UI
     stream_handler = StreamHandler(piano_roll_ui=ui.piano_ui)
 
+    # (voliteľné) prepojenie stream handlera s routerom
+    stream_handler.event_router = event_router
+
     # -----------------------------------------------------
-    # 6. Spustenie UI slučky
+    # 7. Spustenie UI slučky
     # -----------------------------------------------------
     ui.run()
 
