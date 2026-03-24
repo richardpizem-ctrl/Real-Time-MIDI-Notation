@@ -33,11 +33,16 @@ class TrackSystem:
         self.active_track_id: Optional[int] = None
 
         # 🔵 Úložisko eventov pre export MIDI
-        self.recorded_events = {i: [] for i in range(1, 17)}
+        self.recorded_events: Dict[int, list[Dict[str, Any]]] = {
+            i: [] for i in range(1, 17)
+        }
 
         self._init_tracks()
         self._load_track_names()
 
+    # ---------------------------------------------------------
+    # INIT TRAKTY
+    # ---------------------------------------------------------
     def _init_tracks(self):
         """Inicializuje 16 traktov s kanálmi 1–16."""
         for i in range(1, 17):
@@ -49,6 +54,9 @@ class TrackSystem:
             )
         self.active_track_id = 1
 
+    # ---------------------------------------------------------
+    # LOAD / SAVE NAMES
+    # ---------------------------------------------------------
     def _load_track_names(self):
         """Načíta názvy trakov z config.json, ak existujú."""
         saved_names = self.config.get("track_names", {})
@@ -63,9 +71,24 @@ class TrackSystem:
         names = {str(t.id): t.name for t in self.tracks.values()}
         self.config.set("track_names", names)
 
+    # ---------------------------------------------------------
+    # LIST / GET
+    # ---------------------------------------------------------
     def list_tracks(self):
         return list(self.tracks.values())
 
+    def get_track_name(self, track_id: int) -> Optional[str]:
+        track = self.tracks.get(track_id)
+        return track.name if track else None
+
+    def get_active_track(self) -> Optional[Track]:
+        if self.active_track_id is None:
+            return None
+        return self.tracks.get(self.active_track_id)
+
+    # ---------------------------------------------------------
+    # RENAME TRACK
+    # ---------------------------------------------------------
     def set_track_name(self, track_id: int, name: str):
         """Premenuje trakt a uloží do config.json."""
         track = self.tracks.get(track_id)
@@ -93,11 +116,9 @@ class TrackSystem:
             return False
         return self.set_track_name(self.active_track_id, name)
 
-    def get_track_name(self, track_id: int) -> Optional[str]:
-        """Vráti názov traktu."""
-        track = self.tracks.get(track_id)
-        return track.name if track else None
-
+    # ---------------------------------------------------------
+    # ENABLE / SELECT TRACK
+    # ---------------------------------------------------------
     def enable_track(self, track_id: int, enabled: bool = True):
         track = self.tracks.get(track_id)
         if not track:
@@ -123,11 +144,9 @@ class TrackSystem:
 
         return True
 
-    def get_active_track(self) -> Optional[Track]:
-        if self.active_track_id is None:
-            return None
-        return self.tracks.get(self.active_track_id)
-
+    # ---------------------------------------------------------
+    # BUILD NOTE EVENT
+    # ---------------------------------------------------------
     def build_note_event_for_track(
         self,
         track_id: int,
