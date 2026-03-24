@@ -52,10 +52,8 @@ def main():
     # 5. EventRouter pre MIDI → EventBus → UI
     event_router = EventRouter(event_bus, piano_roll_ui=ui.piano_ui)
 
-    # 6. MIDI Stream Handler prepojený s Piano Roll UI
+    # 6. MIDI Stream Handler prepojený s Piano Roll UI + EventRouter
     stream_handler = StreamHandler(piano_roll_ui=ui.piano_ui)
-
-    # (voliteľné) prepojenie stream handlera s routerom
     stream_handler.event_router = event_router
 
     # -----------------------------------------------------
