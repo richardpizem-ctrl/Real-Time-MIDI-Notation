@@ -8,7 +8,8 @@ class RhythmAnalyzer:
     - sleduje čas medzi note_on udalosťami
     - odhaduje tempo (BPM)
     - sleduje stabilitu rytmu
-    - chráni pred extrémnymi intervalmi
+    - chráni pred extrémnymi intervalmi (20 ms – 3 s)
+    - clampuje BPM do realistického rozsahu (20–300)
     - resetuje BPM po dlhom tichu
     """
 
@@ -30,6 +31,8 @@ class RhythmAnalyzer:
             if event_time - self.last_event_time > self.silence_timeout:
                 self.intervals.clear()
                 self.current_bpm = None
+                self.last_event_time = event_time
+                return  # prvý úder po tichu nepočítame ako interval
 
         # Výpočet intervalu
         if self.last_event_time is not None:
