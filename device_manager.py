@@ -1,6 +1,7 @@
 # MIDI správca zariadení
 import mido
 
+
 class DeviceManager:
     """
     Správca MIDI zariadení – zisťuje dostupné porty,
@@ -8,12 +9,12 @@ class DeviceManager:
     """
 
     def __init__(self):
-        self.available_inputs = []
-        self.selected_input = None
+        self.available_inputs: list[str] = []
+        self.selected_input: str | None = None
         self.input_port = None
         self.refresh_devices()
 
-    def refresh_devices(self):
+    def refresh_devices(self) -> None:
         """Aktualizuje zoznam dostupných MIDI vstupov."""
         try:
             self.available_inputs = mido.get_input_names()
@@ -21,14 +22,12 @@ class DeviceManager:
             print(f"[DeviceManager] Chyba pri načítaní MIDI zariadení: {e}")
             self.available_inputs = []
 
-    def list_devices(self):
+    def list_devices(self) -> list[str]:
         """Vráti zoznam dostupných MIDI vstupov."""
         return self.available_inputs
 
-    def select_device(self, index: int):
-        """
-        Vyberie MIDI zariadenie podľa indexu.
-        """
+    def select_device(self, index: int) -> bool:
+        """Vyberie MIDI zariadenie podľa indexu."""
         if not self.available_inputs:
             print("[DeviceManager] Žiadne MIDI zariadenia neboli nájdené.")
             return False
@@ -42,9 +41,7 @@ class DeviceManager:
         return True
 
     def open_input(self):
-        """
-        Otvorí vstupný MIDI port.
-        """
+        """Otvorí vstupný MIDI port."""
         if not self.selected_input:
             print("[DeviceManager] Nebolo vybrané žiadne zariadenie.")
             return None
@@ -57,7 +54,7 @@ class DeviceManager:
             print(f"[DeviceManager] Chyba pri otváraní portu: {e}")
             return None
 
-    def close_input(self):
+    def close_input(self) -> None:
         """Zatvorí vstupný port, ak je otvorený."""
         if self.input_port:
             try:
@@ -67,5 +64,3 @@ class DeviceManager:
                 print(f"[DeviceManager] Chyba pri zatváraní portu: {e}")
             finally:
                 self.input_port = None
-
-
