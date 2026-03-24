@@ -1,5 +1,30 @@
+# test_chords.py – Test detekcie akordov v projekte Real-Time MIDI Notation
+
 from notation_engine.chord_detector import detect_chord
 
-print(detect_chord([60, 64, 67]))  # C E G
-print(detect_chord([57, 60, 64]))  # A C E
-print(detect_chord([62, 65, 69]))  # D F# A
+
+def test_chord(notes):
+    chord = detect_chord(notes)
+    if chord:
+        print(f"Notes {notes} → Detected chord: {chord.name}")
+    else:
+        print(f"Notes {notes} → No chord detected")
+
+
+def main():
+    print("=== TEST: CHORD DETECTION ===")
+
+    # C major (C–E–G)
+    test_chord([60, 64, 67])
+
+    # A minor (A–C–E)
+    test_chord([57, 60, 64])
+
+    # D major (D–F#–A)
+    test_chord([62, 65, 69])
+
+    print("=== END ===")
+
+
+if __name__ == "__main__":
+    main()
