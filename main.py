@@ -5,10 +5,18 @@ from event_bus.event_types import (
     MIDI_EXPORT_REQUEST,
     MIDI_EXPORTED
 )
+
 from track_system.track_system import TrackSystem
 from notation_processor.notation_processor import NotationProcessor
 
+# UI + MIDI prepojenie
+from ui.ui_manager import UIManager
+from real_time_processing.stream_handler import StreamHandler
 
+
+# ---------------------------------------------------------
+# TEST HANDLERY (ponechané podľa tvojej architektúry)
+# ---------------------------------------------------------
 def on_note_recorded(data):
     print(f"[TEST] NOTE_RECORDED event received: {data}")
 
@@ -19,39 +27,36 @@ def on_midi_exported(data):
     print(f"[TEST] MIDI_EXPORTED event received: {data}")
 
 
+# ---------------------------------------------------------
+# HLAVNÁ FUNKCIA
+# ---------------------------------------------------------
 def main():
-    print("=== TEST START ===")
+    print("=== REAL-TIME MIDI NOTATION START ===")
 
-    # 1. Vytvoríme EventBus
+    # 1. EventBus
     event_bus = EventBus()
 
-    # 2. Registrujeme testovacie handlery
+    # 2. Registrácia handlerov
     event_bus.subscribe(NOTE_RECORDED, on_note_recorded)
     event_bus.subscribe(TRACK_SELECTED, on_track_selected)
     event_bus.subscribe(MIDI_EXPORTED, on_midi_exported)
 
-    # 3. Vytvoríme TrackSystem a NotationProcessor
+    # 3. TrackSystem + NotationProcessor
     track_system = TrackSystem(event_bus)
     notation_processor = NotationProcessor(track_system, event_bus)
 
-    # 4. Simulujeme výber tracku
-    print("\n--- Selecting track 1 ---")
-    track_system.select_track(1)
+    # 4. UI Manager
+    ui = UIManager()
 
-    # 5. Simulujeme nahratie noty
-    print("\n--- Recording note C4 ---")
-    track_system.record_note(
-        track_id=1,
-        note="C4",
-        velocity=100,
-        timestamp=123.45
-    )
+    # 5. MIDI Stream Handler prepojený s Piano Roll UI
+    stream_handler = StreamHandler(piano_roll_ui=ui.piano_ui)
 
-    # 6. Simulujeme export MIDI
-    print("\n--- Requesting MIDI export ---")
-    event_bus.publish(MIDI_EXPORT_REQUEST, {"filename": "test_output.mid"})
+    # -----------------------------------------------------
+    # 6. Spustenie UI slučky
+    # -----------------------------------------------------
+    ui.run()
 
-    print("\n=== TEST END ===")
+    print("=== END ===")
 
 
 if __name__ == "__main__":
