@@ -25,6 +25,9 @@ class NotationProcessor:
         self.track_system = track_system
         self.event_bus = event_bus
 
+    # ---------------------------------------------------------
+    # EXPORT MIDI
+    # ---------------------------------------------------------
     def export_to_midi(self, filename: str = "export.mid") -> None:
         """
         Exportuje všetky zaznamenané udalosti z TrackSystem.recorded_events
@@ -66,6 +69,9 @@ class NotationProcessor:
             if self.event_bus:
                 self.event_bus.publish(ERROR_OCCURRED, str(e))
 
+    # ---------------------------------------------------------
+    # KONVERZIA EVENTU NA MIDO MESSAGE
+    # ---------------------------------------------------------
     def _event_to_mido_message(self, event: Dict[str, Any]) -> Any:
         """
         Konvertuje dict event (z TrackSystem.build_note_event_for_track)
@@ -84,7 +90,8 @@ class NotationProcessor:
                 channel=channel,
                 time=0,
             )
-        elif etype == "note_off":
+
+        if etype == "note_off":
             return Message(
                 "note_off",
                 note=note,
