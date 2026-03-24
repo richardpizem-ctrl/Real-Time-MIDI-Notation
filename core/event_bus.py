@@ -31,8 +31,10 @@ class EventBus:
         with self._lock:
             if callback in self._subscribers[event_type]:
                 self._subscribers[event_type].remove(callback)
-                if not self._subscribers[event_type]:
-                    del self._subscribers[event_type]
+
+            # Ak už nemá žiadnych odberateľov, odstránime celý záznam
+            if not self._subscribers[event_type]:
+                del self._subscribers[event_type]
 
     def publish(self, event_type: str, data: Any = None) -> None:
         """Synchronne odošle udalosť všetkým odberateľom."""
@@ -47,5 +49,9 @@ class EventBus:
 
     def publish_async(self, event_type: str, data: Any = None) -> None:
         """Asynchrónne odošle udalosť v samostatnom vlákne."""
-        thread = threading.Thread(target=self.publish, args=(event_type, data), daemon=True)
+        thread = threading.Thread(
+            target=self.publish,
+            args=(event_type, data),
+            daemon=True
+        )
         thread.start()
