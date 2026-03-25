@@ -1,7 +1,7 @@
 # Správa 16 MIDI traktov (stôp)
 
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from core.config_manager import ConfigManager
 
 # 🔵 Import event typov
@@ -33,7 +33,7 @@ class TrackSystem:
         self.active_track_id: Optional[int] = None
 
         # 🔵 Úložisko eventov pre export MIDI
-        self.recorded_events: Dict[int, list[Dict[str, Any]]] = {
+        self.recorded_events: Dict[int, List[Dict[str, Any]]] = {
             i: [] for i in range(1, 17)
         }
 
