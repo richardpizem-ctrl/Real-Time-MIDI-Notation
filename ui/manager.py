@@ -37,62 +37,77 @@ class UIManager:
         # BPM LABEL + BPM VIZUALIZÁCIA
         # ---------------------------------------------------------
         self.font = pygame.font.SysFont("Arial", 28)
+        self.small_font = pygame.font.SysFont("Arial", 18)
         self.current_bpm_text = "BPM: —"
 
-        # Pulz kruhu
         self.bpm_value = None
+        self.last_bpm = None
+        self.beat_interval = 1.0
         self.last_beat_time = time.time()
-        self.beat_interval = 1.0  # default (60 BPM)
-        self.stability = 1.0  # 1 = stabilné, 0 = nestabilné
+        self.stability = 1.0
 
         # Dýchanie kruhu
         self.breath_phase = 0.0
 
+        # História BPM
+        self.bpm_history = []
+        self.max_history = 60
+
+        # Metronóm klik
+        self.metronome_flash = 0.0
+
     # ---------------------------------------------------------
-    # BPM UPDATE – text + beat interval + stabilita
+    # BPM UPDATE – text, interval, stabilita, história
     # ---------------------------------------------------------
     def update_bpm(self, bpm):
-        """Aktualizuje BPM text, beat interval a stabilitu."""
         if bpm is None:
             self.current_bpm_text = "BPM: —"
             self.bpm_value = None
             return
 
-        # Text
         self.current_bpm_text = f"BPM: {bpm:.1f}"
-
-        # Beat interval
-        self.beat_interval = 60.0 / bpm
         self.bpm_value = bpm
+        self.beat_interval = 60.0 / bpm
 
-        # Stabilita (čím menšia zmena, tým stabilnejšie)
-        if hasattr(self, "last_bpm"):
+        # Stabilita
+        if self.last_bpm is not None:
             diff = abs(self.last_bpm - bpm)
             self.stability = max(0.0, min(1.0, 1.0 - diff / 10.0))
         self.last_bpm = bpm
 
+        # História BPM
+        self.bpm_history.append(bpm)
+        if len(self.bpm_history) > self.max_history:
+            self.bpm_history.pop(0)
+
     # ---------------------------------------------------------
-    # KRESLENIE BPM VIZUALIZÁCIE
+    # BPM VIZUALIZÁCIA
     # ---------------------------------------------------------
     def draw_bpm_visual(self):
         x, y = 120, 30
 
-        # Farba podľa stability
-        # stabilné = zelené, nestabilné = červené
-        color = (
-            int(255 * (1 - self.stability)),
-            int(255 * self.stability),
-            0
+        # Farebný gradient podľa tempa (60–180 BPM)
+        if self.bpm_value is not None:
+            tempo_norm = (self.bpm_value - 60.0) / 120.0
+            tempo_norm = max(0.0, min(1.0, tempo_norm))
+        else:
+            tempo_norm = 0.0
+
+        base_color = (
+            int(tempo_norm * 255),          # červená rastie s tempom
+            int((1.0 - tempo_norm) * 255),  # zelená klesá s tempom
+            100
         )
 
         # Čas od posledného beatu
         now = time.time()
         beat_progress = (now - self.last_beat_time) / self.beat_interval
 
-        # Ak prešiel beat → pulz
+        # Nový beat → metronómový klik
         if beat_progress >= 1.0:
             self.last_beat_time = now
             beat_progress = 0.0
+            self.metronome_flash = 1.0
 
         # Pulzujúci hlavný kruh
         base_radius = 20 + 10 * (1 - beat_progress)
@@ -101,25 +116,73 @@ class UIManager:
         self.breath_phase += 0.05
         breathing = 3 * math.sin(self.breath_phase)
 
-        # Konečný polomer
         radius = int(base_radius + breathing)
 
-        # Hlavný kruh
-        pygame.draw.circle(self.screen, color, (x, y), radius, 3)
+        # Metronóm klik – malý blikajúci štvorec
+        if self.metronome_flash > 0:
+            flash_intensity = int(255 * self.metronome_flash)
+            click_color = (flash_intensity, flash_intensity, flash_intensity)
+            pygame.draw.rect(self.screen, click_color, pygame.Rect(x + 40, y - 10, 16, 20))
+            self.metronome_flash -= 0.1
+        else:
+            pygame.draw.rect(self.screen, (60, 60, 60), pygame.Rect(x + 40, y - 10, 16, 20), 1)
 
-        # ---------------------------------------------------------
-        # Metronómové vlny (viac vrstiev)
-        # ---------------------------------------------------------
+        # Hlavný kruh
+        pygame.draw.circle(self.screen, base_color, (x, y), radius, 3)
+
+        # Metronómové vlny
         for i in range(1, 4):
             wave_radius = radius + i * 12 + (beat_progress * 20)
             alpha = max(0, 255 - i * 80)
 
-            wave_color = (color[0], color[1], color[2], alpha)
-
-            # Pygame nepodporuje alfa v draw.circle → riešime Surface
+            wave_color = (base_color[0], base_color[1], base_color[2], alpha)
             wave_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
             pygame.draw.circle(wave_surface, wave_color, (x, y), int(wave_radius), 2)
             self.screen.blit(wave_surface, (0, 0))
+
+        # Stabilita ako číslo
+        stability_text = f"Stability: {self.stability * 100:.0f}%"
+        stability_surface = self.small_font.render(stability_text, True, (200, 200, 200))
+        self.screen.blit(stability_surface, (10, 40))
+
+    # ---------------------------------------------------------
+    # BPM HISTORY GRAF
+    # ---------------------------------------------------------
+    def draw_bpm_history(self):
+        if not self.bpm_history:
+            return
+
+        graph_width = 200
+        graph_height = 60
+        x = 10
+        y = 70
+
+        pygame.draw.rect(self.screen, (30, 30, 30), pygame.Rect(x, y, graph_width, graph_height))
+        pygame.draw.rect(self.screen, (80, 80, 80), pygame.Rect(x, y, graph_width, graph_height), 1)
+
+        min_bpm = min(self.bpm_history)
+        max_bpm = max(self.bpm_history)
+        if max_bpm == min_bpm:
+            max_bpm += 1.0
+
+        n = len(self.bpm_history)
+        if n < 2:
+            return
+
+        step_x = graph_width / (n - 1)
+        points = []
+
+        for i, bpm in enumerate(self.bpm_history):
+            norm = (bpm - min_bpm) / (max_bpm - min_bpm)
+            px = x + i * step_x
+            py = y + graph_height - norm * graph_height
+            points.append((px, py))
+
+        pygame.draw.lines(self.screen, (0, 200, 255), False, points, 2)
+
+        label = f"History ({min_bpm:.0f}-{max_bpm:.0f} BPM)"
+        label_surface = self.small_font.render(label, True, (180, 180, 180))
+        self.screen.blit(label_surface, (x, y + graph_height + 2))
 
     # ---------------------------------------------------------
     # KRESLENIE
@@ -127,25 +190,21 @@ class UIManager:
     def draw(self):
         self.screen.fill((20, 20, 20))
 
-        # Staff (vrch)
         self.staff_ui.draw(self.screen)
-
-        # Piano roll (stred)
         self.piano_ui.draw()
         self.screen.blit(self.piano_ui.screen, (0, 200))
 
-        # Note visualizer (dole)
         visual_surface = pygame.Surface((self.width, 200))
         self.note_visualizer.draw(visual_surface)
         self.screen.blit(visual_surface, (0, 400))
 
-        # BPM text
         bpm_surface = self.font.render(self.current_bpm_text, True, (255, 255, 0))
         self.screen.blit(bpm_surface, (10, 10))
 
-        # BPM vizualizácia
         if self.bpm_value is not None:
             self.draw_bpm_visual()
+
+        self.draw_bpm_history()
 
         pygame.display.flip()
 
