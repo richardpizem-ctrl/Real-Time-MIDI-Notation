@@ -76,7 +76,7 @@ class NotationProcessor:
     # FÁZA 3 – animačná slučka
     # ---------------------------------------------------------
     def start_animation_loop(self) -> None:
-        """Spustí plynulú animáciu playheadu (60 FPS)."""
+        """Spustí plynulú animáciu playheadu (60 FPS), ak renderer podporuje tick()."""
         if not hasattr(self.renderer, "tick"):
             return
 
@@ -167,6 +167,9 @@ class NotationProcessor:
         timestamp = midi_event.get("time", 0.0)
         channel = midi_event.get("channel", 0)
 
+        if pitch is None:
+            return None
+
         # 🔥 FÁZA 3 – spustenie animácie pri prvom evente
         if not self.is_running:
             self.start_animation_loop()
@@ -179,13 +182,13 @@ class NotationProcessor:
             self.active_pitches.add(pitch)
             self._update_key(timestamp)
 
-            if self.staff_ui:
+            if self.staff_ui and hasattr(self.staff_ui, "highlight_note"):
                 self.staff_ui.highlight_note(pitch)
 
-            if self.piano_ui:
+            if self.piano_ui and hasattr(self.piano_ui, "highlight_key"):
                 self.piano_ui.highlight_key(pitch)
 
-            if self.visualizer_ui:
+            if self.visualizer_ui and hasattr(self.visualizer_ui, "show_note"):
                 self.visualizer_ui.show_note(pitch)
 
             self.note_mapper.handle_note_on(
@@ -202,11 +205,15 @@ class NotationProcessor:
                 self.active_pitches.remove(pitch)
                 self._update_key(timestamp)
 
-            if self.piano_ui:
+            if self.piano_ui and hasattr(self.piano_ui, "unhighlight_key"):
                 self.piano_ui.unhighlight_key(pitch)
 
             if self.staff_ui:
-                self.staff_ui.clear_highlight(pitch)
+                # podpora rôznych API názvov
+                if hasattr(self.staff_ui, "clear_highlight"):
+                    self.staff_ui.clear_highlight(pitch)
+                elif hasattr(self.staff_ui, "unhighlight_note"):
+                    self.staff_ui.unhighlight_note(pitch)
 
             created_note: Note | None = None
 
@@ -237,6 +244,7 @@ class NotationProcessor:
 
             current_measure = created_note.position.measure
 
+            # taktové čiary
             if self.last_measure is None:
                 self.last_measure = current_measure
 
@@ -249,6 +257,7 @@ class NotationProcessor:
                 self.timeline.append(bar_item)
 
                 if hasattr(self.renderer, "add_barline"):
+                    # renderer si môže premapovať čas → x pozíciu
                     self.renderer.add_barline(bar_item["start"])
 
                 self.last_measure = current_measure
@@ -258,6 +267,7 @@ class NotationProcessor:
                 rhythm=rhythmic_name,
             )
 
+            # vizuálna dĺžka – zatiaľ jednoduchý prepočet
             visual_duration = created_note.duration.ticks / 120.0
 
             timeline_item = {
@@ -274,7 +284,9 @@ class NotationProcessor:
                 if hasattr(self.renderer, "add_note"):
                     self.renderer.add_note(timeline_item)
                 else:
-                    self.renderer.render(self.timeline)
+                    # fallback – ak renderer nemá add_note, len ho necháme prekresliť
+                    if hasattr(self.renderer, "render"):
+                        self.renderer.render()
 
             return {
                 "note": created_note,
