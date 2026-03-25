@@ -14,6 +14,8 @@ class GraphicNotationRenderer:
     - bubnové noteheady (X, diamond, open hat, ghost)
     - zoom
     - dragovanie timeline
+    - playhead (aktuálna pozícia prehrávania)
+    - key changes, chords
     """
 
     def __init__(self, width=1200, height=500):
@@ -21,7 +23,7 @@ class GraphicNotationRenderer:
         self.width = width
         self.height = height
 
-        # Renderer už NEVYTVÁRA vlastné okno
+        # Renderer NEVYTVÁRA okno – UIManager ho vloží ako Surface
         self.screen = pygame.Surface((width, height))
 
         self.background_color = (20, 20, 20)
@@ -32,9 +34,10 @@ class GraphicNotationRenderer:
             "melody": (80, 160, 255),
             "bass": (120, 220, 120),
             "drums": (255, 150, 60),
+            "chords": (255, 255, 120),
         }
 
-        # uložené prvky (noty, taktové čiary…)
+        # uložené prvky (noty, taktové čiary, akordy, key changes…)
         self.items = []
 
         # rozloženie
@@ -49,6 +52,12 @@ class GraphicNotationRenderer:
 
         # zoom
         self.zoom = 1.0
+
+        # čas → px konverzia
+        self.pixels_per_second = 120.0
+
+        # playhead
+        self.playhead_time = 0.0
 
         # dragovanie
         self.dragging = False
@@ -67,9 +76,28 @@ class GraphicNotationRenderer:
         else:
             print("Warning: add_note dostal neplatný objekt:", note)
 
-    def add_barline(self, x):
-        """Pridá taktovú čiaru."""
+    def add_barline(self, start_time):
+        """Pridá taktovú čiaru podľa času."""
+        x = start_time * self.pixels_per_second
         self.items.append({"type": "barline", "x": x})
+
+    def add_key_change(self, item):
+        """Pridá zmenu tóniny."""
+        x = item["start"] * self.pixels_per_second
+        self.items.append({
+            "type": "key_change",
+            "key": item["key"],
+            "x": x
+        })
+
+    def add_chord(self, item):
+        """Pridá akordový symbol."""
+        x = item["start"] * self.pixels_per_second
+        self.items.append({
+            "type": "chord",
+            "name": item["name"],
+            "x": x
+        })
 
     def clear(self):
         """Vymaže všetky položky."""
@@ -83,6 +111,14 @@ class GraphicNotationRenderer:
 
     def set_zoom(self, value):
         self.zoom = max(0.2, min(3.0, float(value)))
+
+    def set_playhead(self, timestamp):
+        """Aktualizuje playhead podľa času."""
+        self.playhead_time = timestamp
+
+    def tick(self, dt):
+        """Používa sa pri animácii (ak ju UIManager spustí)."""
+        self.update(dt)
 
     def update(self, dt):
         """Posúva timeline podľa času."""
@@ -152,7 +188,6 @@ class GraphicNotationRenderer:
             pygame.draw.line(self.screen, color, (x - size, y - size), (x + size, y + size), int(2 * self.zoom))
             pygame.draw.line(self.screen, color, (x - size, y + size), (x + size, y - size), int(2 * self.zoom))
 
-            # open hat → malý kruh nad X
             if drum.get("is_open_hat", False):
                 pygame.draw.circle(self.screen, color, (x, y - int(10 * self.zoom)), int(4 * self.zoom), int(1 * self.zoom))
 
@@ -200,6 +235,21 @@ class GraphicNotationRenderer:
         pygame.draw.circle(self.screen, color, (x, y), int(6 * self.zoom))
 
     # ---------------------------------------------------------
+    # Playhead
+    # ---------------------------------------------------------
+    def _draw_playhead(self):
+        x = self.playhead_time * self.pixels_per_second - self.scroll_x
+        x = int(x * self.zoom)
+
+        pygame.draw.line(
+            self.screen,
+            (255, 80, 80),
+            (x, 0),
+            (x, self.height),
+            int(2 * self.zoom)
+        )
+
+    # ---------------------------------------------------------
     # Hlavné vykreslenie
     # ---------------------------------------------------------
     def render(self):
@@ -216,16 +266,29 @@ class GraphicNotationRenderer:
             base_x = item.get("x", 0)
             screen_x = (base_x - self.scroll_x)
 
-            # mimo obrazovky
-            if screen_x < -100 or screen_x > self.width + 100:
+            if screen_x < -200 or screen_x > self.width + 200:
                 continue
 
             if item.get("type") == "barline":
                 self._draw_barline(screen_x)
+
+            elif item.get("type") == "chord":
+                font = pygame.font.SysFont("Arial", int(18 * self.zoom))
+                text = font.render(item["name"], True, (255, 255, 120))
+                self.screen.blit(text, (screen_x, self.staff_top * self.zoom - 40))
+
+            elif item.get("type") == "key_change":
+                font = pygame.font.SysFont("Arial", int(16 * self.zoom))
+                text = font.render(item["key"], True, (200, 200, 255))
+                self.screen.blit(text, (screen_x, self.staff_top * self.zoom - 70))
+
             else:
                 shifted = dict(item)
                 shifted["x"] = screen_x
                 self._draw_note(shifted)
+
+        # playhead
+        self._draw_playhead()
 
         return self.screen
 
