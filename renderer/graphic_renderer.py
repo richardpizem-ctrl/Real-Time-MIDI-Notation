@@ -3,24 +3,26 @@ import pygame
 
 class GraphicNotationRenderer:
     """
-    Jednoduchý grafický renderer pre real-time MIDI notáciu.
+    Grafický renderer pre real-time MIDI notáciu.
     Podporuje:
-    - päťčiarie
-    - basovú osnovu
+    - päťčiarie (melódia + basa)
     - bubnový grid
     - taktové čiary
     - farby podľa stopy
     - x/y pozície z PixelLayoutEngine
     - real-time horizontálny scrolling
     - bubnové noteheady (X, diamond, open hat, ghost)
+    - zoom
+    - dragovanie timeline
     """
 
     def __init__(self, width=1200, height=500):
         pygame.init()
         self.width = width
         self.height = height
-        self.screen = pygame.display.set_mode((width, height))
-        pygame.display.set_caption("Real-Time MIDI Notation")
+
+        # Renderer už NEVYTVÁRA vlastné okno
+        self.screen = pygame.Surface((width, height))
 
         self.background_color = (20, 20, 20)
         self.staff_color = (200, 200, 200)
@@ -32,7 +34,7 @@ class GraphicNotationRenderer:
             "drums": (255, 150, 60),
         }
 
-        # uložené prvky
+        # uložené prvky (noty, taktové čiary…)
         self.items = []
 
         # rozloženie
@@ -45,26 +47,46 @@ class GraphicNotationRenderer:
         self.scroll_x = 0.0
         self.scroll_speed = 40.0  # px/s
 
-        # 🔥 ZOOM faktor
+        # zoom
         self.zoom = 1.0
 
-        # 🔥 Dragovanie timeline
+        # dragovanie
         self.dragging = False
         self.last_mouse_x = 0
 
-        self._running = True
+        # čas
         self.clock = pygame.time.Clock()
 
     # ---------------------------------------------------------
     # API pre NotationProcessor
     # ---------------------------------------------------------
     def add_note(self, note):
-        self.items.append(note)
-        self.render()
+        """Pridá notu do renderera."""
+        if isinstance(note, dict):
+            self.items.append(note.copy())
+        else:
+            print("Warning: add_note dostal neplatný objekt:", note)
 
     def add_barline(self, x):
+        """Pridá taktovú čiaru."""
         self.items.append({"type": "barline", "x": x})
-        self.render()
+
+    def clear(self):
+        """Vymaže všetky položky."""
+        self.items.clear()
+
+    # ---------------------------------------------------------
+    # Externé API pre UIManager
+    # ---------------------------------------------------------
+    def set_scroll_x(self, value):
+        self.scroll_x = float(value)
+
+    def set_zoom(self, value):
+        self.zoom = max(0.2, min(3.0, float(value)))
+
+    def update(self, dt):
+        """Posúva timeline podľa času."""
+        self.scroll_x += dt * self.scroll_speed
 
     # ---------------------------------------------------------
     # Vykresľovanie osnov
@@ -97,7 +119,7 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
-    # Vykreslenie taktovej čiary
+    # Taktová čiara
     # ---------------------------------------------------------
     def _draw_barline(self, x):
         x = int(x * self.zoom)
@@ -110,17 +132,17 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
-    # Vykreslenie bubnovej hlavičky
+    # Bubnové hlavičky
     # ---------------------------------------------------------
     def _draw_drum_notehead(self, x, y, drum):
         x = int(x * self.zoom)
         y = int(y * self.zoom)
         size = int(6 * self.zoom)
 
-        head = drum["notehead_type"]
+        head = drum.get("notehead_type", "circle")
 
         # ghost → bledšia farba
-        if drum["is_ghost"]:
+        if drum.get("is_ghost", False):
             color = (180, 180, 180)
         else:
             color = (255, 150, 60)
@@ -131,7 +153,7 @@ class GraphicNotationRenderer:
             pygame.draw.line(self.screen, color, (x - size, y + size), (x + size, y - size), int(2 * self.zoom))
 
             # open hat → malý kruh nad X
-            if drum["is_open_hat"]:
+            if drum.get("is_open_hat", False):
                 pygame.draw.circle(self.screen, color, (x, y - int(10 * self.zoom)), int(4 * self.zoom), int(1 * self.zoom))
 
         # diamond
@@ -143,7 +165,7 @@ class GraphicNotationRenderer:
                 int(2 * self.zoom)
             )
 
-        # triangle (perkusie)
+        # triangle
         elif head == "triangle":
             pygame.draw.polygon(
                 self.screen,
@@ -157,7 +179,7 @@ class GraphicNotationRenderer:
             pygame.draw.circle(self.screen, color, (x, y), size, int(2 * self.zoom))
 
     # ---------------------------------------------------------
-    # Vykreslenie noty
+    # Normálna nota
     # ---------------------------------------------------------
     def _draw_note(self, note):
         x = int(note["x"] * self.zoom)
@@ -182,7 +204,7 @@ class GraphicNotationRenderer:
     # ---------------------------------------------------------
     def render(self):
         dt = self.clock.tick(60) / 1000.0
-        self.scroll_x += dt * self.scroll_speed
+        self.update(dt)
 
         self.screen.fill(self.background_color)
 
@@ -194,6 +216,7 @@ class GraphicNotationRenderer:
             base_x = item.get("x", 0)
             screen_x = (base_x - self.scroll_x)
 
+            # mimo obrazovky
             if screen_x < -100 or screen_x > self.width + 100:
                 continue
 
@@ -204,23 +227,20 @@ class GraphicNotationRenderer:
                 shifted["x"] = screen_x
                 self._draw_note(shifted)
 
-        pygame.display.flip()
+        return self.screen
 
     # ---------------------------------------------------------
-    # Event loop + timeline posúvanie
+    # Event loop (len ak beží samostatne)
     # ---------------------------------------------------------
     def run_event_loop_step(self):
         for event in pygame.event.get():
 
-            # zavretie okna
             if event.type == pygame.QUIT:
-                self._running = False
+                return False
 
-            # -----------------------------
-            # DRAGOVANIE TIMELINE MYŠOU
-            # -----------------------------
+            # dragovanie timeline
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # ľavé tlačidlo
+                if event.button == 1:
                     self.dragging = True
                     self.last_mouse_x = event.pos[0]
 
@@ -228,26 +248,20 @@ class GraphicNotationRenderer:
                 if event.button == 1:
                     self.dragging = False
 
-            if event.type == pygame.MOUSEMOTION:
-                if self.dragging:
-                    dx = event.pos[0] - self.last_mouse_x
-                    self.last_mouse_x = event.pos[0]
-                    self.scroll_x -= dx / self.zoom  # zoom-corrected dragging
+            if event.type == pygame.MOUSEMOTION and self.dragging:
+                dx = event.pos[0] - self.last_mouse_x
+                self.last_mouse_x = event.pos[0]
+                self.scroll_x -= dx / self.zoom
 
-            # -----------------------------
-            # SCROLL WHEEL POSÚVANIE
-            # -----------------------------
+            # scroll wheel
             if event.type == pygame.MOUSEWHEEL:
                 self.scroll_x -= event.y * 40 / self.zoom
 
-            # -----------------------------
-            # KLÁVESY ← →
-            # -----------------------------
+            # klávesy ← →
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     self.scroll_x -= 50 / self.zoom
                 if event.key == pygame.K_RIGHT:
                     self.scroll_x += 50 / self.zoom
 
-    def is_running(self):
-        return self._running
+        return True
