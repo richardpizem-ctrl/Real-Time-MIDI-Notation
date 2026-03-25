@@ -3,7 +3,14 @@
 from ..core.logger import Logger
 
 class StatusBar:
-    def __init__(self):
+    def __init__(self, enabled=True, print_enabled=True):
+        """
+        enabled = či sa status bar používa
+        print_enabled = či sa majú vypisovať print() do konzoly
+        """
+        self.enabled = enabled
+        self.print_enabled = print_enabled
+
         self.tempo = 120
         self.latency_ms = 0
         self.fps = 0
@@ -12,8 +19,21 @@ class StatusBar:
 
         Logger.info("StatusBar initialized.")
 
+    # ---------------------------------------------------------
+    # ENABLE / DISABLE
+    # ---------------------------------------------------------
+    def toggle(self):
+        self.enabled = not self.enabled
+        Logger.info(f"StatusBar toggled: {self.enabled}")
+
+    # ---------------------------------------------------------
+    # UPDATE VALUES
+    # ---------------------------------------------------------
     def update(self, tempo=None, latency=None, fps=None, last_note=None, midi_status=None):
         """Updates status bar values."""
+        if not self.enabled:
+            return
+
         try:
             if tempo is not None:
                 self.tempo = tempo
@@ -35,20 +55,37 @@ class StatusBar:
         except Exception as e:
             Logger.error(f"StatusBar update error: {e}")
 
+    # ---------------------------------------------------------
+    # DISPLAY (TEMPORARY CONSOLE OUTPUT)
+    # ---------------------------------------------------------
     def display(self):
         """Temporary console output for debugging."""
+        if not self.enabled:
+            return
+
         try:
             text = (
-                f"TEMPO: {self.tempo} BPM | "
-                f"LATENCY: {self.latency_ms} ms | "
-                f"FPS: {self.fps} | "
-                f"LAST NOTE: {self.last_note} | "
-                f"MIDI: {self.midi_status}"
+                f"TEMPO: {self._safe(self.tempo)} BPM | "
+                f"LATENCY: {self._safe(self.latency_ms)} ms | "
+                f"FPS: {self._safe(self.fps)} | "
+                f"LAST NOTE: {self._safe(self.last_note)} | "
+                f"MIDI: {self._safe(self.midi_status)}"
             )
 
-            print(text)
+            if self.print_enabled:
+                print(text)
+
             Logger.info(f"StatusBar: {text}")
 
         except Exception as e:
             Logger.error(f"StatusBar display error: {e}")
 
+    # ---------------------------------------------------------
+    # SAFE FORMATTER
+    # ---------------------------------------------------------
+    def _safe(self, value):
+        """Bezpečne prevedie hodnotu na string."""
+        try:
+            return str(value)
+        except Exception:
+            return "<unprintable>"
