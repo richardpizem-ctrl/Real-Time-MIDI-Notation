@@ -124,7 +124,6 @@ class UIManager:
         # Aktívny track
         active_track = self.track_system.get_active_track()
         if active_track is not None:
-            # ak má track vlastnú farbu, použijeme ju, inak fallback podľa id
             color = getattr(
                 active_track,
                 "color",
@@ -147,25 +146,17 @@ class UIManager:
     # JEMNEJŠIA BPM VIZUALIZÁCIA
     # ---------------------------------------------------------
     def draw_bpm_visual(self):
-        """
-        Pulzujúci kruh podľa BPM + stabilita.
-        """
         center_x = self.width - 150
         center_y = 80
 
-        # základný polomer podľa BPM
         base_radius = 20
         bpm_factor = min(max(self.bpm_value / 120.0, 0.5), 2.0)
         radius = int(base_radius * bpm_factor)
 
-        # dýchanie kruhu
-        t = time.time()
         self.breath_phase += 0.05
-        breath = (math.sin(self.breath_phase) + 1) / 2  # 0–1
+        breath = (math.sin(self.breath_phase) + 1) / 2
         radius += int(5 * breath)
 
-        # farba podľa stability
-        # stabilita 1.0 = zelená, nižšia = viac do oranžovej/červenej
         stability_clamped = max(0.0, min(self.stability, 1.0))
         r = int(255 * (1.0 - stability_clamped))
         g = int(255 * stability_clamped)
@@ -174,35 +165,27 @@ class UIManager:
         pygame.draw.circle(self.screen, (r, g, b), (center_x, center_y), radius, 0)
         pygame.draw.circle(self.screen, (255, 255, 255), (center_x, center_y), radius, 2)
 
-        # text BPM
         bpm_text = f"{int(self.bpm_value)}"
         bpm_surface = self.font.render(bpm_text, True, (255, 255, 255))
         text_rect = bpm_surface.get_rect(center=(center_x, center_y))
         self.screen.blit(bpm_surface, text_rect)
 
     def draw_bpm_history(self):
-        """
-        Jednoduchý graf BPM histórie v spodnej časti horného panelu.
-        """
         if not self.bpm_history:
             return
 
-        # oblasť grafu
         graph_x = 10
         graph_y = 120
         graph_width = 260
         graph_height = 60
 
-        # rámik
         pygame.draw.rect(self.screen, (80, 80, 80), (graph_x, graph_y, graph_width, graph_height), 1)
 
-        # rozsah BPM
         min_bpm = min(self.bpm_history)
         max_bpm = max(self.bpm_history)
         if max_bpm == min_bpm:
-            max_bpm += 1  # aby sme sa vyhli deleniu nulou
+            max_bpm += 1
 
-        # body
         n = len(self.bpm_history)
         if n < 2:
             return
@@ -230,9 +213,8 @@ class UIManager:
                 if event.type == pygame.QUIT:
                     running = False
 
-                # prepínanie trackov – čísla 1–9
                 if event.type == pygame.KEYDOWN:
-                    # čísla 1–9 ako priame voľby tracku (ak TrackSystem niečo také podporuje)
+                    # čísla 1–9 → priame voľby tracku (ak TrackSystem niečo také má)
                     if pygame.K_1 <= event.key <= pygame.K_9:
                         index = event.key - pygame.K_1  # 0–8
                         if hasattr(self.track_system, "set_active_track_index"):
@@ -246,9 +228,7 @@ class UIManager:
                         if hasattr(self.track_system, "previous_track"):
                             self.track_system.previous_track()
 
-            # Renderer spracuje eventy až po event loope
             self.renderer.run_event_loop_step()
-
             self.draw()
             clock.tick(60)
 
