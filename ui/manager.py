@@ -10,6 +10,9 @@ from ui.note_visualizer_ui import NoteVisualizerUI
 from real_time_processing.stream_handler import StreamHandler
 from midi_input.event_router import EventRouter
 
+# Track systém (16 MIDI stôp)
+from tracks.track_manager import TrackSystem
+
 
 class UIManager:
     def __init__(self, width=1400, height=600):
@@ -25,6 +28,9 @@ class UIManager:
         self.staff_ui = StaffUI(width, 200)
         self.piano_ui = PianoRollUI(width, 200)
         self.note_visualizer = NoteVisualizerUI(width, 200)
+
+        # Track systém – 16 MIDI stôp
+        self.track_system = TrackSystem(event_bus=None)
 
         # Event routing
         self.event_router = EventRouter(event_bus=None, piano_roll_ui=self.piano_ui)
@@ -256,16 +262,29 @@ class UIManager:
     def draw(self):
         self.screen.fill((20, 20, 20))
 
+        # Notová osnova
         self.staff_ui.draw(self.screen)
+
+        # Piano roll
         self.piano_ui.draw()
         self.screen.blit(self.piano_ui.screen, (0, 200))
 
+        # Note visualizer
         visual_surface = pygame.Surface((self.width, 200))
         self.note_visualizer.draw(visual_surface)
         self.screen.blit(visual_surface, (0, 400))
 
+        # BPM text
         bpm_surface = self.font.render(self.current_bpm_text, True, (255, 255, 0))
         self.screen.blit(bpm_surface, (10, 10))
+
+        # Aktívny track – názov + kanál + farba
+        active_track = self.track_system.get_active_track()
+        if active_track is not None:
+            track_text = f"Track {active_track.id}: {active_track.name} (CH {active_track.channel})"
+            color = active_track.color if hasattr(active_track, "color") else (200, 200, 200)
+            track_surface = self.small_font.render(track_text, True, color)
+            self.screen.blit(track_surface, (300, 10))
 
         if self.bpm_value is not None:
             self.draw_bpm_visual()
