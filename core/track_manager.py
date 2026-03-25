@@ -1,7 +1,7 @@
 # Správa 16 MIDI traktov (stôp)
 
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 from core.config_manager import ConfigManager
 
 # 🔵 Import event typov
@@ -11,6 +11,28 @@ from .event_types import (
     TRACK_NAME_CHANGED
 )
 
+# ---------------------------------------------------------
+# FARBY PRE 16 TRACKOV (MIDI KANÁLY 1–16)
+# ---------------------------------------------------------
+TRACK_COLORS: Dict[int, Tuple[int, int, int]] = {
+    1:  (255, 99, 132),
+    2:  (54, 162, 235),
+    3:  (255, 206, 86),
+    4:  (75, 192, 192),
+    5:  (153, 102, 255),
+    6:  (255, 159, 64),
+    7:  (255, 255, 255),
+    8:  (200, 200, 200),
+    9:  (255, 0, 128),
+    10: (0, 255, 128),
+    11: (128, 0, 255),
+    12: (0, 200, 255),
+    13: (255, 200, 0),
+    14: (0, 255, 200),
+    15: (200, 0, 255),
+    16: (128, 128, 128),
+}
+
 
 @dataclass
 class Track:
@@ -18,6 +40,7 @@ class Track:
     name: str
     channel: int
     enabled: bool = True
+    color: Tuple[int, int, int] = (255, 255, 255)
 
 
 class TrackSystem:
@@ -46,11 +69,13 @@ class TrackSystem:
     def _init_tracks(self):
         """Inicializuje 16 traktov s kanálmi 1–16."""
         for i in range(1, 17):
+            color = TRACK_COLORS.get(i, (255, 255, 255))
             self.tracks[i] = Track(
                 id=i,
                 name=f"Track {i}",
                 channel=i,
-                enabled=True
+                enabled=True,
+                color=color
             )
         self.active_track_id = 1
 
@@ -72,9 +97,9 @@ class TrackSystem:
         self.config.set("track_names", names)
 
     # ---------------------------------------------------------
-    # LIST / GET
+    # LIST / GET – PODPORA PRE UI
     # ---------------------------------------------------------
-    def list_tracks(self):
+    def list_tracks(self) -> List[Track]:
         return list(self.tracks.values())
 
     def get_track_name(self, track_id: int) -> Optional[str]:
@@ -85,6 +110,32 @@ class TrackSystem:
         if self.active_track_id is None:
             return None
         return self.tracks.get(self.active_track_id)
+
+    def get_track_color(self, track_id: int) -> Optional[Tuple[int, int, int]]:
+        track = self.tracks.get(track_id)
+        return track.color if track else None
+
+    def get_ui_track_list(self) -> List[Dict[str, Any]]:
+        """
+        Stručná štruktúra pre UI:
+        - id
+        - name
+        - channel
+        - enabled
+        - color
+        - is_active
+        """
+        return [
+            {
+                "id": t.id,
+                "name": t.name,
+                "channel": t.channel,
+                "enabled": t.enabled,
+                "color": t.color,
+                "is_active": (t.id == self.active_track_id),
+            }
+            for t in self.tracks.values()
+        ]
 
     # ---------------------------------------------------------
     # RENAME TRACK
@@ -136,13 +187,31 @@ class TrackSystem:
             return False
 
         self.active_track_id = track_id
-        print(f"[TrackSystem] Aktívny trakt: {track_id} ({self.tracks[track_id].name})")
+        track = self.tracks[track_id]
+        print(f"[TrackSystem] Aktívny trakt: {track_id} ({track.name})")
 
         # 🔵 Publikujeme event o zmene aktívneho traktu
         if self.event_bus:
-            self.event_bus.publish(TRACK_SELECTED, track_id)
+            self.event_bus.publish(TRACK_SELECTED, {
+                "track_id": track_id,
+                "name": track.name,
+                "channel": track.channel,
+                "color": track.color,
+            })
 
         return True
+
+    def set_active_track_by_channel(self, channel: int) -> bool:
+        """
+        Automatické prepnutie aktívneho tracku podľa MIDI kanála.
+        Použiteľné pri realtime MIDI vstupoch.
+        """
+        for track in self.tracks.values():
+            if track.channel == channel and track.enabled:
+                return self.set_active_track(track.id)
+
+        print(f"[TrackSystem] Žiadny aktívny track pre channel {channel}.")
+        return False
 
     # ---------------------------------------------------------
     # BUILD NOTE EVENT
@@ -171,6 +240,7 @@ class TrackSystem:
             "channel": track.channel,
             "track_id": track.id,
             "track_name": track.name,
+            "track_color": track.color,
             "time": time,
         }
 
