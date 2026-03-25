@@ -92,10 +92,9 @@ class UIManager:
         self.piano_ui.draw(piano_surface)
         self.screen.blit(piano_surface, (0, 400))
 
-        # 4) Note visualizer (voliteľné, momentálne mimo obrazovky pri výške 600)
+        # 4) Note visualizer (voliteľné)
         visual_surface = pygame.Surface((self.width, 200))
         self.note_visualizer.draw(visual_surface)
-        # self.screen.blit(visual_surface, (0, 600))
 
         # BPM text
         bpm_surface = self.font.render(self.current_bpm_text, True, (255, 255, 0))
