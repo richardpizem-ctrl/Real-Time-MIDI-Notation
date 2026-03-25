@@ -31,10 +31,15 @@ class UIManager:
         self.stream_handler.event_router = self.event_router
 
         # ---------------------------------------------------------
-        # BPM LABEL – nový prvok v UI
+        # BPM LABEL + PULZUJÚCI KRUH
         # ---------------------------------------------------------
         self.font = pygame.font.SysFont("Arial", 28)
         self.current_bpm_text = "BPM: —"
+
+        # Pulz kruhu
+        self.bpm_pulse_radius = 20
+        self.bpm_pulse_growth = 0
+        self.bpm_last_value = None
 
     # ---------------------------------------------------------
     # API pre NotationProcessor
@@ -64,14 +69,21 @@ class UIManager:
         self.note_visualizer.clear_note()
 
     # ---------------------------------------------------------
-    # BPM UPDATE – nový API vstup pre RhythmAnalyzer
+    # BPM UPDATE – text + pulz
     # ---------------------------------------------------------
     def update_bpm(self, bpm):
-        """Aktualizuje BPM text v UI."""
+        """Aktualizuje BPM text aj pulz kruhu."""
         if bpm is None:
             self.current_bpm_text = "BPM: —"
-        else:
-            self.current_bpm_text = f"BPM: {bpm:.1f}"
+            self.bpm_last_value = None
+            return
+
+        self.current_bpm_text = f"BPM: {bpm:.1f}"
+
+        # Ak sa BPM zmenilo → spusti pulz
+        if self.bpm_last_value != bpm:
+            self.bpm_pulse_growth = 12  # sila pulzu
+            self.bpm_last_value = bpm
 
     # ---------------------------------------------------------
     # KRESLENIE
@@ -92,10 +104,20 @@ class UIManager:
         self.screen.blit(visual_surface, (0, 400))
 
         # ---------------------------------------------------------
-        # BPM TEXT – vykreslenie v ľavom hornom rohu
+        # BPM TEXT
         # ---------------------------------------------------------
         bpm_surface = self.font.render(self.current_bpm_text, True, (255, 255, 0))
         self.screen.blit(bpm_surface, (10, 10))
+
+        # ---------------------------------------------------------
+        # PULZUJÚCI BPM KRUH
+        # ---------------------------------------------------------
+        pulse_radius = self.bpm_pulse_radius + self.bpm_pulse_growth
+        pygame.draw.circle(self.screen, (255, 200, 0), (120, 30), pulse_radius, 3)
+
+        # postupné zmenšovanie pulzu
+        if self.bpm_pulse_growth > 0:
+            self.bpm_pulse_growth -= 0.8
 
         pygame.display.flip()
 
