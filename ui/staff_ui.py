@@ -16,34 +16,29 @@ class StaffUI:
         # Noty vo formáte: {note_id: {"x": int, "y": int, "color": (r,g,b)}}
         self.notes = {}
 
-        # Posúvanie osnove
+        # Posúvanie osnovy
         self.scroll_x = 0
-        self.note_spacing = 22  # horizontálny posun medzi notami
-        self.scroll_speed = 2   # px per note (rovnaké ako PianoRollUI)
+        self.note_spacing = 22
+        self.scroll_speed = 2
 
     # ---------------------------------------------------------
-    # PREPOJENIE S EVENT ROUTEROM / TRACK SYSTEMOM
+    # PRIDANIE NÔT
     # ---------------------------------------------------------
     def add_note(self, event):
         """
-        event = dict z TrackSystemu:
-        {
+        event = {
             "note": int,
+            "track_id": int,
             "track_color": (r,g,b),
-            "time": float,
-            ...
+            "time": float
         }
         """
 
         note_id = f"{event['track_id']}_{event['note']}_{event['time']}"
 
-        # Pri každej note posunieme scroll
-        self.scroll_x += self.scroll_speed
+        # X pozícia podľa poradia
+        x = len(self.notes) * self.note_spacing + 100
 
-        # X pozícia – posúvame sa doprava pri každej note
-        x = 80 + len(self.notes) * self.note_spacing - self.scroll_x
-
-        # Y pozícia – jednoduché mapovanie MIDI noty na osnovu
         midi_note = event["note"]
         y = self._midi_to_staff_y(midi_note)
 
@@ -55,15 +50,15 @@ class StaffUI:
             "color": color
         }
 
+        # Scroll sa posúva len raz
+        self.scroll_x += self.scroll_speed
+
+    # ---------------------------------------------------------
+    # ODSTRÁNENIE NÔT
+    # ---------------------------------------------------------
     def remove_note(self, event):
-        """Odstráni notu podľa eventu."""
-        to_delete = []
-
-        for note_id, data in self.notes.items():
-            if note_id.startswith(f"{event['track_id']}_{event['note']}"):
-                to_delete.append(note_id)
-
-        for note_id in to_delete:
+        note_id = f"{event['track_id']}_{event['note']}_{event['time']}"
+        if note_id in self.notes:
             del self.notes[note_id]
 
     # ---------------------------------------------------------
@@ -71,7 +66,7 @@ class StaffUI:
     # ---------------------------------------------------------
     def highlight_note(self, note_id, color=None):
         if note_id in self.notes:
-            self.notes[note_id]["color"] = color if color else self.HIGHLIGHT_COLOR
+            self.notes[note_id]["color"] = color or self.HIGHLIGHT_COLOR
 
     def unhighlight_note(self, note_id):
         if note_id in self.notes:
@@ -81,12 +76,7 @@ class StaffUI:
     # MIDI → STAFF Y MAPOVANIE
     # ---------------------------------------------------------
     def _midi_to_staff_y(self, midi_note):
-        """
-        Jednoduché mapovanie MIDI noty na osnovu.
-        Neskôr sa môže nahradiť skutočným notovým systémom.
-        """
-        # C4 = 60 → stred osnovy
-        offset = midi_note - 60
+        offset = midi_note - 60  # C4
         return self.STAFF_TOP + 2 * self.STAFF_SPACING - offset * 3
 
     # ---------------------------------------------------------
