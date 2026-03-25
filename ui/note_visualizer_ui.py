@@ -14,16 +14,26 @@ class NoteVisualizerUI:
         self.font = pygame.font.SysFont("Arial", 64, bold=True)
 
     # ---------------------------------------------------------
-    # API pre NotationProcessor / UIManager
+    # API pre EventRouter / TrackSystem
     # ---------------------------------------------------------
-    def set_note(self, note_name, color=None):
-        """Nastaví aktuálnu notu na zobrazenie."""
-        self.current_note = note_name
-        if color:
-            self.current_color = color
+    def on_note(self, event):
+        """
+        event = dict:
+        {
+            "note": int,
+            "note_name": str,
+            "track_color": (r,g,b),
+            ...
+        }
+        """
+        note_name = event.get("note_name", None)
+        color = event.get("track_color", (255, 255, 255))
 
-    def clear_note(self):
-        """Vymaže aktuálnu notu."""
+        self.current_note = note_name
+        self.current_color = color
+
+    def on_note_off(self, event):
+        """Vymaže aktuálnu notu pri note_off."""
         self.current_note = None
 
     # ---------------------------------------------------------
