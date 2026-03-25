@@ -26,15 +26,13 @@ class UIManager:
         self.piano_ui = PianoRollUI(width, 200)
         self.note_visualizer = NoteVisualizerUI(width, 200)
 
-        # EventRouter (prepája MIDI → EventBus → UI)
+        # Event routing
         self.event_router = EventRouter(event_bus=None, piano_roll_ui=self.piano_ui)
-
-        # StreamHandler (prepája MIDI → UI)
         self.stream_handler = StreamHandler(piano_roll_ui=self.piano_ui)
         self.stream_handler.event_router = self.event_router
 
         # ---------------------------------------------------------
-        # BPM LABEL + BPM VIZUALIZÁCIA
+        # BPM / rytmická vizualizácia
         # ---------------------------------------------------------
         self.font = pygame.font.SysFont("Arial", 28)
         self.small_font = pygame.font.SysFont("Arial", 18)
@@ -46,6 +44,14 @@ class UIManager:
         self.last_beat_time = time.time()
         self.stability = 1.0
 
+        # Beat counter a takt
+        self.beat_counter = 1
+        self.time_signature = (4, 4)
+        self.beats_per_bar = 4
+
+        # Subdivízie (1 e & a)
+        self.subdivisions = ["1", "e", "&", "a"]
+
         # Dýchanie kruhu
         self.breath_phase = 0.0
 
@@ -55,6 +61,10 @@ class UIManager:
 
         # Metronóm klik
         self.metronome_flash = 0.0
+
+        # Tempo warning
+        self.tempo_warning = False
+        self.warning_timer = 0.0
 
     # ---------------------------------------------------------
     # BPM UPDATE – text, interval, stabilita, história
@@ -80,8 +90,13 @@ class UIManager:
         if len(self.bpm_history) > self.max_history:
             self.bpm_history.pop(0)
 
+        # Tempo warning (napr. BPM > 180)
+        if bpm > 180:
+            self.tempo_warning = True
+            self.warning_timer = 1.0
+
     # ---------------------------------------------------------
-    # BPM VIZUALIZÁCIA
+    # BPM VIZUALIZÁCIA + takt + subdivízie + pendulum
     # ---------------------------------------------------------
     def draw_bpm_visual(self):
         x, y = 120, 30
@@ -103,11 +118,16 @@ class UIManager:
         now = time.time()
         beat_progress = (now - self.last_beat_time) / self.beat_interval
 
-        # Nový beat → metronómový klik
+        # Nový beat
         if beat_progress >= 1.0:
             self.last_beat_time = now
             beat_progress = 0.0
             self.metronome_flash = 1.0
+
+            # Beat counter podľa taktu
+            self.beat_counter += 1
+            if self.beat_counter > self.beats_per_bar:
+                self.beat_counter = 1
 
         # Pulzujúci hlavný kruh
         base_radius = 20 + 10 * (1 - beat_progress)
@@ -117,6 +137,11 @@ class UIManager:
         breathing = 3 * math.sin(self.breath_phase)
 
         radius = int(base_radius + breathing)
+
+        # Accent beat (silný prvý beat v takte)
+        if self.beat_counter == 1:
+            accent_color = (255, 220, 120)
+            pygame.draw.circle(self.screen, accent_color, (x, y), radius + 4, 4)
 
         # Metronóm klik – malý blikajúci štvorec
         if self.metronome_flash > 0:
@@ -145,6 +170,51 @@ class UIManager:
         stability_surface = self.small_font.render(stability_text, True, (200, 200, 200))
         self.screen.blit(stability_surface, (10, 40))
 
+        # Beat counter
+        beat_text = f"Beat: {self.beat_counter}"
+        beat_surface = self.small_font.render(beat_text, True, (255, 255, 255))
+        self.screen.blit(beat_surface, (10, 60))
+
+        # Taktový meter
+        ts_text = f"TS: {self.time_signature[0]}/{self.time_signature[1]}"
+        ts_surface = self.small_font.render(ts_text, True, (180, 180, 180))
+        self.screen.blit(ts_surface, (10, 80))
+
+        # Subdivízie (1 e & a)
+        if self.subdivisions and self.beat_interval > 0:
+            sub_count = len(self.subdivisions)
+            sub_index = int(beat_progress * sub_count)
+            if sub_index >= sub_count:
+                sub_index = sub_count - 1
+            subdiv_label = self.subdivisions[sub_index]
+            subdiv_text = f"Subdiv: {subdiv_label}"
+            subdiv_surface = self.small_font.render(subdiv_text, True, (200, 200, 255))
+            self.screen.blit(subdiv_surface, (10, 100))
+
+        # Tempo warning
+        if self.tempo_warning:
+            warning_color = (255, 50, 50)
+            warning_surface = self.small_font.render("WARNING: HIGH TEMPO!", True, warning_color)
+            self.screen.blit(warning_surface, (10, 120))
+            self.warning_timer -= 0.02
+            if self.warning_timer <= 0:
+                self.tempo_warning = False
+
+        # Vizuálny „pendulum“ metronóm
+        if self.bpm_value is not None and self.beat_interval > 0:
+            pendulum_origin = (x + 80, y + 40)
+            length = 40
+            max_angle = math.radians(35)
+
+            omega = math.pi / self.beat_interval
+            angle = math.sin(now * omega) * max_angle
+
+            end_x = pendulum_origin[0] + length * math.sin(angle)
+            end_y = pendulum_origin[1] + length * math.cos(angle)
+
+            pygame.draw.line(self.screen, (220, 220, 220), pendulum_origin, (end_x, end_y), 3)
+            pygame.draw.circle(self.screen, (240, 240, 240), (int(end_x), int(end_y)), 6)
+
     # ---------------------------------------------------------
     # BPM HISTORY GRAF
     # ---------------------------------------------------------
@@ -155,7 +225,7 @@ class UIManager:
         graph_width = 200
         graph_height = 60
         x = 10
-        y = 70
+        y = 160
 
         pygame.draw.rect(self.screen, (30, 30, 30), pygame.Rect(x, y, graph_width, graph_height))
         pygame.draw.rect(self.screen, (80, 80, 80), pygame.Rect(x, y, graph_width, graph_height), 1)
@@ -179,10 +249,6 @@ class UIManager:
             points.append((px, py))
 
         pygame.draw.lines(self.screen, (0, 200, 255), False, points, 2)
-
-        label = f"History ({min_bpm:.0f}-{max_bpm:.0f} BPM)"
-        label_surface = self.small_font.render(label, True, (180, 180, 180))
-        self.screen.blit(label_surface, (x, y + graph_height + 2))
 
     # ---------------------------------------------------------
     # KRESLENIE
