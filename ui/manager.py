@@ -13,7 +13,7 @@ from midi_input.event_router import EventRouter
 # Track systém (16 MIDI stôp)
 from tracks.track_manager import TrackSystem
 
-# 🔥 NOVÝ IMPORT – grafický renderer
+# Grafický renderer
 from renderer.graphic_renderer import GraphicNotationRenderer
 
 
@@ -29,10 +29,7 @@ class UIManager:
 
         # UI komponenty
         self.staff_ui = StaffUI(width, 200)
-
-        # 🔥 NOVÁ VRSTVA – grafický renderer
         self.renderer = GraphicNotationRenderer(width, 200)
-
         self.piano_ui = PianoRollUI(width, 200)
         self.note_visualizer = NoteVisualizerUI(width, 200)
 
@@ -44,9 +41,7 @@ class UIManager:
         self.stream_handler = StreamHandler(piano_roll_ui=self.piano_ui)
         self.stream_handler.event_router = self.event_router
 
-        # ---------------------------------------------------------
         # BPM / rytmická vizualizácia
-        # ---------------------------------------------------------
         self.font = pygame.font.SysFont("Arial", 28)
         self.small_font = pygame.font.SysFont("Arial", 18)
         self.current_bpm_text = "BPM: —"
@@ -78,6 +73,7 @@ class UIManager:
         # Tempo warning
         self.tempo_warning = False
         self.warning_timer = 0.0
+
     # ---------------------------------------------------------
     # KRESLENIE
     # ---------------------------------------------------------
@@ -91,14 +87,15 @@ class UIManager:
         renderer_surface = self.renderer.render()
         self.screen.blit(renderer_surface, (0, 200))
 
-        # 3) Piano roll – posunutý nižšie, aby sa neprekrýval
-        self.piano_ui.draw()
-        self.screen.blit(self.piano_ui.screen, (0, 400))
+        # 3) Piano roll
+        piano_surface = pygame.Surface((self.width, 200))
+        self.piano_ui.draw(piano_surface)
+        self.screen.blit(piano_surface, (0, 400))
 
-        # 4) Note visualizer – voliteľné (mimo obrazovky pri výške 600)
+        # 4) Note visualizer (voliteľné, momentálne mimo obrazovky pri výške 600)
         visual_surface = pygame.Surface((self.width, 200))
         self.note_visualizer.draw(visual_surface)
-        # self.screen.blit(visual_surface, (0, 600))  # ak chceš
+        # self.screen.blit(visual_surface, (0, 600))
 
         # BPM text
         bpm_surface = self.font.render(self.current_bpm_text, True, (255, 255, 0))
@@ -108,7 +105,7 @@ class UIManager:
         active_track = self.track_system.get_active_track()
         if active_track is not None:
             track_text = f"Track {active_track.id}: {active_track.name} (CH {active_track.channel})"
-            color = active_track.color if hasattr(active_track, "color") else (200, 200, 200)
+            color = getattr(active_track, "color", (200, 200, 200))
             track_surface = self.small_font.render(track_text, True, color)
             self.screen.blit(track_surface, (300, 10))
 
