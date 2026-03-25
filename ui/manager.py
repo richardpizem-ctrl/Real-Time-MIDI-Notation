@@ -18,7 +18,7 @@ from renderer.graphic_renderer import GraphicNotationRenderer
 
 
 class UIManager:
-    def __init__(self, width=1400, height=600):
+    def __init__(self, width=1400, height=800):
         pygame.init()
         self.width = width
         self.height = height
@@ -28,10 +28,10 @@ class UIManager:
         pygame.display.set_caption("Real-Time MIDI Notation")
 
         # UI komponenty
-        self.staff_ui = StaffUI(width, 200)
-        self.renderer = GraphicNotationRenderer(width, 200)
-        self.piano_ui = PianoRollUI(width, 200)
-        self.note_visualizer = NoteVisualizerUI(width, 200)
+        self.staff_ui = StaffUI(width, 200)                 # 0–200
+        self.renderer = GraphicNotationRenderer(width, 200) # 200–400
+        self.piano_ui = PianoRollUI(width, 200)             # 400–600
+        self.note_visualizer = NoteVisualizerUI(width, 200) # 600–800
 
         # Track systém – 16 MIDI stôp
         self.track_system = TrackSystem(event_bus=None)
@@ -80,21 +80,22 @@ class UIManager:
     def draw(self):
         self.screen.fill((20, 20, 20))
 
-        # 1) Notová osnova
+        # 1) Notová osnova (0–200)
         self.staff_ui.draw(self.screen)
 
-        # 2) Grafický renderer
+        # 2) Grafický renderer (200–400)
         renderer_surface = self.renderer.render()
         self.screen.blit(renderer_surface, (0, 200))
 
-        # 3) Piano roll
+        # 3) Piano roll (400–600)
         piano_surface = pygame.Surface((self.width, 200))
         self.piano_ui.draw(piano_surface)
         self.screen.blit(piano_surface, (0, 400))
 
-        # 4) Note visualizer (voliteľné)
+        # 4) Note visualizer (600–800)
         visual_surface = pygame.Surface((self.width, 200))
         self.note_visualizer.draw(visual_surface)
+        self.screen.blit(visual_surface, (0, 600))
 
         # BPM text
         bpm_surface = self.font.render(self.current_bpm_text, True, (255, 255, 0))
