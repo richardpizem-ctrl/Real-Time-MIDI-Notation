@@ -6,22 +6,17 @@ class PianoRollUI:
     BLACK_KEY_WIDTH = 12
     BLACK_KEY_HEIGHT = 80
 
-    # MIDI rozsah pre 61-klávesovú Yamaha klaviatúru
     FIRST_MIDI_NOTE = 36   # C2
     LAST_MIDI_NOTE = 96    # C7
 
-    def __init__(self, window_width=1400, window_height=200):
-        pygame.init()
-        self.window_width = window_width
-        self.window_height = window_height
-
-        self.screen = pygame.display.set_mode((window_width, window_height))
-        pygame.display.set_caption("Piano Roll UI")
+    def __init__(self, width=1400, height=200):
+        self.width = width
+        self.height = height
 
         # Stav klávesov: midi_note → farba
         self.active_keys = {}
 
-        # Prepočítame pozície klávesov
+        # Prepočítané pozície klávesov
         self.white_keys = []
         self.black_keys = []
         self._calculate_key_positions()
@@ -56,7 +51,6 @@ class PianoRollUI:
             note_in_octave = midi_note % 12
 
             if note_in_octave in black_key_offsets:
-                # Zistíme, koľká oktáva od začiatku
                 octave = (midi_note - self.FIRST_MIDI_NOTE) // 12
                 base_white_index = octave * 7
 
@@ -75,38 +69,19 @@ class PianoRollUI:
             del self.active_keys[midi_note]
 
     # ---------------------------------------------------------
-    # KRESLENIE
+    # KRESLENIE NA SURFACE
     # ---------------------------------------------------------
-    def draw(self):
-        self.screen.fill((30, 30, 30))
+    def draw(self, surface):
+        surface.fill((30, 30, 30))
 
         # Biele klávesy
         for midi_note, rect in self.white_keys:
             color = self.active_keys.get(midi_note, (255, 255, 255))
-            pygame.draw.rect(self.screen, color, rect)
-            pygame.draw.rect(self.screen, (0, 0, 0), rect, 2)
+            pygame.draw.rect(surface, color, rect)
+            pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
-        # Čierne klávesy (vždy nad bielymi)
+        # Čierne klávesy
         for midi_note, rect in self.black_keys:
             color = self.active_keys.get(midi_note, (0, 0, 0))
-            pygame.draw.rect(self.screen, color, rect)
-            pygame.draw.rect(self.screen, (50, 50, 50), rect, 1)
-
-        pygame.display.flip()
-
-    # ---------------------------------------------------------
-    # HLAVNÁ SLUČKA
-    # ---------------------------------------------------------
-    def run(self):
-        clock = pygame.time.Clock()
-        running = True
-
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-
-            self.draw()
-            clock.tick(60)
-
-        pygame.quit()
+            pygame.draw.rect(surface, color, rect)
+            pygame.draw.rect(surface, (50, 50, 50), rect, 1)
