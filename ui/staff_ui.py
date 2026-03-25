@@ -19,6 +19,7 @@ class StaffUI:
         # Posúvanie osnove
         self.scroll_x = 0
         self.note_spacing = 22  # horizontálny posun medzi notami
+        self.scroll_speed = 2   # px per note (rovnaké ako PianoRollUI)
 
     # ---------------------------------------------------------
     # PREPOJENIE S EVENT ROUTEROM / TRACK SYSTEMOM
@@ -35,6 +36,9 @@ class StaffUI:
         """
 
         note_id = f"{event['track_id']}_{event['note']}_{event['time']}"
+
+        # Pri každej note posunieme scroll
+        self.scroll_x += self.scroll_speed
 
         # X pozícia – posúvame sa doprava pri každej note
         x = 80 + len(self.notes) * self.note_spacing - self.scroll_x
@@ -98,7 +102,8 @@ class StaffUI:
     # ---------------------------------------------------------
     def draw_notes(self, surface):
         for note in self.notes.values():
-            pygame.draw.circle(surface, note["color"], (note["x"], note["y"]), 7)
+            shifted_x = note["x"] - self.scroll_x
+            pygame.draw.circle(surface, note["color"], (shifted_x, note["y"]), 7)
 
     # ---------------------------------------------------------
     # HLAVNÁ DRAW FUNKCIA
