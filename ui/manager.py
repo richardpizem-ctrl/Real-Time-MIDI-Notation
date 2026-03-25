@@ -30,6 +30,12 @@ class UIManager:
         self.stream_handler = StreamHandler(piano_roll_ui=self.piano_ui)
         self.stream_handler.event_router = self.event_router
 
+        # ---------------------------------------------------------
+        # BPM LABEL – nový prvok v UI
+        # ---------------------------------------------------------
+        self.font = pygame.font.SysFont("Arial", 28)
+        self.current_bpm_text = "BPM: —"
+
     # ---------------------------------------------------------
     # API pre NotationProcessor
     # ---------------------------------------------------------
@@ -58,6 +64,16 @@ class UIManager:
         self.note_visualizer.clear_note()
 
     # ---------------------------------------------------------
+    # BPM UPDATE – nový API vstup pre RhythmAnalyzer
+    # ---------------------------------------------------------
+    def update_bpm(self, bpm):
+        """Aktualizuje BPM text v UI."""
+        if bpm is None:
+            self.current_bpm_text = "BPM: —"
+        else:
+            self.current_bpm_text = f"BPM: {bpm:.1f}"
+
+    # ---------------------------------------------------------
     # KRESLENIE
     # ---------------------------------------------------------
     def draw(self):
@@ -74,6 +90,12 @@ class UIManager:
         visual_surface = pygame.Surface((self.width, 200))
         self.note_visualizer.draw(visual_surface)
         self.screen.blit(visual_surface, (0, 400))
+
+        # ---------------------------------------------------------
+        # BPM TEXT – vykreslenie v ľavom hornom rohu
+        # ---------------------------------------------------------
+        bpm_surface = self.font.render(self.current_bpm_text, True, (255, 255, 0))
+        self.screen.blit(bpm_surface, (10, 10))
 
         pygame.display.flip()
 
