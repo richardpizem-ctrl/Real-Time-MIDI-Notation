@@ -50,6 +50,11 @@ class NoteVisualizerUI:
         # Trail buffer (jemné doznievanie)
         self.trail_surface = pygame.Surface((width, height), pygame.SRCALPHA)
 
+        # Color morphing (KROK 11)
+        self.current_chord_color = (255, 255, 255)
+        self.target_chord_color = (255, 255, 255)
+        self.color_morph_speed = 0.12
+
         pygame.font.init()
         self.font_size = 64
         self.font = pygame.font.SysFont("Arial", self.font_size, bold=True)
@@ -164,6 +169,16 @@ class NoteVisualizerUI:
         return depth
 
     # ---------------------------------------------------------
+    # COLOR LERP (KROK 11)
+    # ---------------------------------------------------------
+    def lerp_color(self, a, b, t):
+        return (
+            int(a[0] + (b[0] - a[0]) * t),
+            int(a[1] + (b[1] - a[1]) * t),
+            int(a[2] + (b[2] - a[2]) * t),
+        )
+
+    # ---------------------------------------------------------
     # KRESLENIE
     # ---------------------------------------------------------
     def draw(self, surface):
@@ -174,11 +189,17 @@ class NoteVisualizerUI:
         self.trail_surface.fill((0, 0, 0, 40), special_flags=pygame.BLEND_RGBA_SUB)
         surface.blit(self.trail_surface, (0, 0))
 
-        # Harmónia → farba akordu
+        # Harmónia → cieľová farba akordu
         chord_color = self.detect_chord_color()
         if chord_color:
-            for n in self.active_notes:
-                n["color"] = chord_color
+            self.target_chord_color = chord_color
+
+        # Color morphing – plynulý prechod medzi farbami akordov
+        self.current_chord_color = self.lerp_color(
+            self.current_chord_color,
+            self.target_chord_color,
+            self.color_morph_speed
+        )
 
         notes_to_remove = []
 
@@ -195,7 +216,8 @@ class NoteVisualizerUI:
         y_base = self.height // 2
 
         for index, (depth, n) in enumerate(notes_with_depth):
-            color = n["color"]
+            # základná farba z color morphingu
+            color = self.current_chord_color
 
             # Fade-out
             if n["fade_start"] is not None:
@@ -255,9 +277,9 @@ class NoteVisualizerUI:
 
             text_rect = text_surface.get_rect(center=(x_pos, y_pos))
 
-            # HALO so zohľadnením hĺbky
+            # HALO so zohľadnením hĺbky, farba z current_chord_color
             halo_strength = n["halo_strength"] * depth
-            self.draw_halo(surface, text_surface, text_rect, n["color"], halo_strength)
+            self.draw_halo(surface, text_surface, text_rect, self.current_chord_color, halo_strength)
 
             # Text
             surface.blit(text_surface, text_rect)
