@@ -2,6 +2,36 @@ import pygame
 import time
 import math
 
+# ---------------------------------------------------------
+# Pomocné tabuľky pre harmóniu
+# ---------------------------------------------------------
+
+NOTE_TO_SEMITONE = {
+    "C": 0,  "C#": 1, "Db": 1,
+    "D": 2,  "D#": 3, "Eb": 3,
+    "E": 4,
+    "F": 5,  "F#": 6, "Gb": 6,
+    "G": 7,  "G#": 8, "Ab": 8,
+    "A": 9,  "A#": 10, "Bb": 10,
+    "B": 11
+}
+
+CHORD_PATTERNS = {
+    (0, 4, 7): ("Dur", (255, 220, 50)),        # žltá
+    (0, 3, 7): ("Mol", (80, 140, 255)),        # modrá
+    (0, 3, 6): ("Dim", (180, 80, 255)),        # fialová
+    (0, 4, 8): ("Aug", (255, 140, 60)),        # oranžová
+    (0, 2, 7): ("Sus2", (80, 255, 220)),       # tyrkysová
+    (0, 5, 7): ("Sus4", (80, 255, 220)),       # tyrkysová
+    (0, 7):    ("Power", (230, 230, 230)),     # biela
+    (0, 4, 7, 10): ("7", (255, 80, 80)),       # červená
+}
+
+def normalize_intervals(semitones):
+    root = min(semitones)
+    return tuple(sorted((s - root) % 12 for s in semitones))
+
+
 class NoteVisualizerUI:
     def __init__(self, width=1400, height=200):
         self.width = width
@@ -44,6 +74,7 @@ class NoteVisualizerUI:
         color = event.get("track_color", (255, 255, 255))
         velocity = event.get("velocity", 100)
         velocity_factor = min(1.0, velocity / 127)
+        pitch = event.get("note")  # MIDI pitch, ak je k dispozícii
 
         note_data = {
             "note": note_name,
@@ -54,9 +85,9 @@ class NoteVisualizerUI:
 
             "bounce": 1.0 * velocity_factor,
             "glow": 1.0 * velocity_factor,
-
-            # pre halo efekt
             "halo_strength": 1.0 * velocity_factor,
+
+            "pitch": pitch,
         }
 
         self.active_notes.append(note_data)
@@ -71,6 +102,30 @@ class NoteVisualizerUI:
             if n["note"] == note_name and n["fade_start"] is None:
                 n["fade_start"] = time.time()
                 break
+
+    # ---------------------------------------------------------
+    # HARMONICKÁ ANALÝZA
+    # ---------------------------------------------------------
+    def detect_chord_color(self):
+        if len(self.active_notes) < 2:
+            return None
+
+        semitones = []
+        for n in self.active_notes:
+            name = ''.join([c for c in n["note"] if c.isalpha() or c in "#b"])
+            if name in NOTE_TO_SEMITONE:
+                semitones.append(NOTE_TO_SEMITONE[name])
+
+        if not semitones:
+            return None
+
+        intervals = normalize_intervals(semitones)
+
+        if intervals in CHORD_PATTERNS:
+            _, color = CHORD_PATTERNS[intervals]
+            return color
+
+        return None
 
     # ---------------------------------------------------------
     # HALO EFEKT
@@ -94,8 +149,19 @@ class NoteVisualizerUI:
                 )
 
         halo_surface.fill(halo_color, special_flags=pygame.BLEND_RGBA_MULT)
-
         surface.blit(halo_surface, (rect.x - 20, rect.y - 20))
+
+    # ---------------------------------------------------------
+    # VÝPOČET HĹBKY PODĽA PITCH
+    # ---------------------------------------------------------
+    def compute_depth(self, pitch):
+        if pitch is None:
+            return 1.0
+        # normalizácia približne pre rozsah 36–84
+        norm = max(0.0, min(1.0, (pitch - 36) / 48.0))
+        # nízke tóny bližšie (väčšie), vysoké ďalej (menšie)
+        depth = 1.3 - norm * 0.6  # 1.3 → 0.7
+        return depth
 
     # ---------------------------------------------------------
     # KRESLENIE
@@ -108,13 +174,27 @@ class NoteVisualizerUI:
         self.trail_surface.fill((0, 0, 0, 40), special_flags=pygame.BLEND_RGBA_SUB)
         surface.blit(self.trail_surface, (0, 0))
 
+        # Harmónia → farba akordu
+        chord_color = self.detect_chord_color()
+        if chord_color:
+            for n in self.active_notes:
+                n["color"] = chord_color
+
         notes_to_remove = []
 
-        # Horizontálne rozloženie nôt (akordový layout)
-        count = len(self.active_notes)
-        y_pos = self.height // 2
+        # Pripravíme si zoznam s hĺbkou
+        notes_with_depth = []
+        for n in self.active_notes:
+            depth = self.compute_depth(n.get("pitch"))
+            notes_with_depth.append((depth, n))
 
-        for index, n in enumerate(self.active_notes):
+        # Zoradenie podľa hĺbky (vzdialenejšie najprv, bližšie nakoniec)
+        notes_with_depth.sort(key=lambda x: x[0])
+
+        count = len(notes_with_depth)
+        y_base = self.height // 2
+
+        for index, (depth, n) in enumerate(notes_with_depth):
             color = n["color"]
 
             # Fade-out
@@ -145,8 +225,8 @@ class NoteVisualizerUI:
                 else:
                     n["fade_in_start"] = None
 
-            # BPM pulz
-            scale = self.pulse_strength
+            # BPM pulz + hĺbka
+            scale = self.pulse_strength * depth
 
             # Bounce
             if n["bounce"] > 0:
@@ -155,7 +235,7 @@ class NoteVisualizerUI:
 
             # Glow
             if n["glow"] > 0:
-                glow_strength = int(80 * n["glow"])
+                glow_strength = int(80 * n["glow"] * depth)
                 color = (
                     min(255, color[0] + glow_strength),
                     min(255, color[1] + glow_strength),
@@ -167,13 +247,17 @@ class NoteVisualizerUI:
             scaled_font = pygame.font.SysFont("Arial", int(self.font_size * scale), bold=True)
             text_surface = scaled_font.render(n["note"], True, color)
 
-            # Horizontálne rozloženie X pozície
+            # Horizontálne rozloženie
             x_pos = int(self.width * (index + 1) / (count + 1))
+
+            # Vertikálny posun podľa hĺbky (parallax)
+            y_pos = int(y_base - (depth - 1.0) * 25)
 
             text_rect = text_surface.get_rect(center=(x_pos, y_pos))
 
-            # HALO
-            self.draw_halo(surface, text_surface, text_rect, n["color"], n["halo_strength"])
+            # HALO so zohľadnením hĺbky
+            halo_strength = n["halo_strength"] * depth
+            self.draw_halo(surface, text_surface, text_rect, n["color"], halo_strength)
 
             # Text
             surface.blit(text_surface, text_rect)
@@ -183,4 +267,5 @@ class NoteVisualizerUI:
 
         # Odstránenie zaniknutých nôt
         for n in notes_to_remove:
-            self.active_notes
+            if n in self.active_notes:
+                self.active_notes.remove(n)
