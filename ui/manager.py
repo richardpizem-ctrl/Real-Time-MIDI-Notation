@@ -16,6 +16,9 @@ from tracks.track_manager import TrackSystem
 # Grafický renderer
 from renderer.graphic_renderer import GraphicNotationRenderer
 
+# Performance tracker
+from performance.performance_tracker import PerformanceTracker
+
 
 class UIManager:
     def __init__(self, width=1400, height=800):
@@ -41,8 +44,12 @@ class UIManager:
         self.stream_handler = StreamHandler(piano_roll_ui=self.piano_ui)
         self.stream_handler.event_router = self.event_router
 
+        # Performance tracker
+        self.perf = PerformanceTracker()
+        self.font = pygame.font.SysFont("Arial", 20)
+
         # BPM / rytmická vizualizácia
-        self.font = pygame.font.SysFont("Arial", 28)
+        self.font_big = pygame.font.SysFont("Arial", 28)
         self.small_font = pygame.font.SysFont("Arial", 18)
         self.current_bpm_text = "BPM: —"
 
@@ -74,24 +81,12 @@ class UIManager:
         self.tempo_warning = False
         self.warning_timer = 0.0
 
-        # Farby pre tracky (fallback, ak Track nemá vlastnú farbu)
+        # Farby pre tracky
         self.track_colors = [
-            (255, 80, 80),
-            (80, 255, 80),
-            (80, 160, 255),
-            (255, 200, 80),
-            (255, 80, 200),
-            (80, 255, 200),
-            (200, 80, 255),
-            (180, 180, 255),
-            (255, 180, 180),
-            (180, 255, 180),
-            (255, 255, 80),
-            (80, 255, 255),
-            (255, 120, 120),
-            (120, 255, 120),
-            (120, 120, 255),
-            (255, 255, 255),
+            (255, 80, 80), (80, 255, 80), (80, 160, 255), (255, 200, 80),
+            (255, 80, 200), (80, 255, 200), (200, 80, 255), (180, 180, 255),
+            (255, 180, 180), (180, 255, 180), (255, 255, 80), (80, 255, 255),
+            (255, 120, 120), (120, 255, 120), (120, 120, 255), (255, 255, 255),
         ]
 
     # ---------------------------------------------------------
@@ -118,7 +113,7 @@ class UIManager:
         self.screen.blit(visual_surface, (0, 600))
 
         # BPM text
-        bpm_surface = self.font.render(self.current_bpm_text, True, (255, 255, 0))
+        bpm_surface = self.font_big.render(self.current_bpm_text, True, (255, 255, 0))
         self.screen.blit(bpm_surface, (10, 10))
 
         # Aktívny track
@@ -140,7 +135,22 @@ class UIManager:
         # História BPM
         self.draw_bpm_history()
 
+        # Performance metrics
+        self.draw_performance_metrics()
+
         pygame.display.flip()
+
+    # ---------------------------------------------------------
+    # PERFORMANCE METRICS
+    # ---------------------------------------------------------
+    def draw_performance_metrics(self):
+        fps = self.perf.get_fps()
+        cpu = self.perf.get_cpu_load()
+        latency = self.perf.get_event_latency()
+
+        text = f"FPS: {fps:.1f}   CPU: {cpu:.1f}%   Latency: {latency:.2f} ms"
+        surf = self.font.render(text, True, (200, 200, 200))
+        self.screen.blit(surf, (self.width - 420, 10))
 
     # ---------------------------------------------------------
     # JEMNEJŠIA BPM VIZUALIZÁCIA
@@ -166,7 +176,7 @@ class UIManager:
         pygame.draw.circle(self.screen, (255, 255, 255), (center_x, center_y), radius, 2)
 
         bpm_text = f"{int(self.bpm_value)}"
-        bpm_surface = self.font.render(bpm_text, True, (255, 255, 255))
+        bpm_surface = self.font_big.render(bpm_text, True, (255, 255, 255))
         text_rect = bpm_surface.get_rect(center=(center_x, center_y))
         self.screen.blit(bpm_surface, text_rect)
 
@@ -209,18 +219,18 @@ class UIManager:
         running = True
 
         while running:
+            self.perf.start_frame()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
                 if event.type == pygame.KEYDOWN:
-                    # čísla 1–9 → priame voľby tracku (ak TrackSystem niečo také má)
                     if pygame.K_1 <= event.key <= pygame.K_9:
-                        index = event.key - pygame.K_1  # 0–8
+                        index = event.key - pygame.K_1
                         if hasattr(self.track_system, "set_active_track_index"):
                             self.track_system.set_active_track_index(index)
 
-                    # šípky – next/prev track (ak existujú metódy)
                     if event.key == pygame.K_RIGHT:
                         if hasattr(self.track_system, "next_track"):
                             self.track_system.next_track()
@@ -230,6 +240,8 @@ class UIManager:
 
             self.renderer.run_event_loop_step()
             self.draw()
+
+            self.perf.end_frame()
             clock.tick(60)
 
         pygame.quit()
