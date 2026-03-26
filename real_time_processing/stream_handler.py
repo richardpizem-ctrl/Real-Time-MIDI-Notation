@@ -11,7 +11,8 @@ class StreamHandler:
     - Posiela ich do PianoRollUI
     - Meria pipeline latency (čas spracovania jedného eventu)
     - Meria event processing time
-    - Prepojené s PerformanceTracker
+    - Meria UI processing time
+    - Prepojené s PerformanceTracker (FPS/CPU/Latency grafy)
     """
 
     def __init__(self, piano_roll_ui=None, event_router=None, perf=None):
@@ -69,7 +70,10 @@ class StreamHandler:
             event_start = time.perf_counter()
 
             if self.event_router:
-                self.event_router.route(midi_event)
+                try:
+                    self.event_router.route(midi_event)
+                except Exception as e:
+                    print(f"❌ EventRouter error: {e}")
 
             event_end = time.perf_counter()
             event_processing_ms = (event_end - event_start) * 1000.0
@@ -80,7 +84,10 @@ class StreamHandler:
             ui_start = time.perf_counter()
 
             if self.piano_roll_ui:
-                self.piano_roll_ui.handle_midi_event(midi_event)
+                try:
+                    self.piano_roll_ui.handle_midi_event(midi_event)
+                except Exception as e:
+                    print(f"❌ PianoRollUI error: {e}")
 
             ui_end = time.perf_counter()
             ui_processing_ms = (ui_end - ui_start) * 1000.0
@@ -95,10 +102,12 @@ class StreamHandler:
             # 4) PERFORMANCE TRACKER
             # -----------------------------
             if self.perf:
-                # celková latencia eventu
-                self.perf.record_event_latency(pipeline_latency_ms)
 
-                # detailné metriky
+                # celková latencia eventu
+                if hasattr(self.perf, "record_event_latency"):
+                    self.perf.record_event_latency(pipeline_latency_ms)
+
+                # detailné metriky pre debug overlay
                 if hasattr(self.perf, "record_pipeline_step"):
                     self.perf.record_pipeline_step(
                         event_processing_ms,
