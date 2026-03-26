@@ -45,7 +45,7 @@ class EventRouter:
             event_type = midi_event.get("type")
             note = midi_event.get("note")
             velocity = midi_event.get("velocity", 0)
-            channel = midi_event.get("channel", 0)  # nechávame 0–15
+            channel = midi_event.get("channel", 0)
 
             event = None
 
@@ -98,7 +98,7 @@ class EventRouter:
                         self.staff_ui.remove_note(event)
 
                 # ---------------------------------------------------------
-                # 🔥 Note Visualizer
+                # 🔥 NOTE VISUALIZER (FÁZA 3 – KROK 3)
                 # ---------------------------------------------------------
                 if self.note_visualizer and event:
                     if event_type == "note_on" and velocity > 0:
