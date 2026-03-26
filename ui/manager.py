@@ -54,6 +54,7 @@ class UIManager:
         # História FPS / CPU pre mini grafy
         self.fps_history = []
         self.cpu_history = []
+        self.pipeline_history = []
         self.max_perf_history = 60
 
         # BPM / rytmická vizualizácia
@@ -153,69 +154,45 @@ class UIManager:
     # PERFORMANCE PANEL (oddelený box + mini grafy)
     # ---------------------------------------------------------
     def draw_performance_panel(self):
-        panel_x = self.width - 280
-        panel_y = 50
-        panel_w = 260
-        panel_h = 120
+        summary = self.perf.get_summary()
 
-        # Pozadie panelu
-        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, panel_y, panel_w, panel_h))
-        pygame.draw.rect(self.screen, (200, 200, 200), (panel_x, panel_y, panel_w, panel_h), 2)
-
-        fps = self.perf.get_fps()
-        cpu = self.perf.get_cpu_load()
-        latency = self.perf.get_event_latency()
+        fps = summary["fps"]
+        cpu = summary["cpu_percent"] or 0.0
+        pipeline = summary["avg_pipeline_latency_ms"]
 
         # Uloženie do histórie
         self.fps_history.append(fps)
         self.cpu_history.append(cpu)
+        self.pipeline_history.append(pipeline)
+
         if len(self.fps_history) > self.max_perf_history:
             self.fps_history.pop(0)
         if len(self.cpu_history) > self.max_perf_history:
             self.cpu_history.pop(0)
+        if len(self.pipeline_history) > self.max_perf_history:
+            self.pipeline_history.pop(0)
 
-        # Farebné zvýraznenie pri vysokom CPU
-        if cpu >= 90:
-            cpu_color = (255, 80, 80)
-        elif cpu >= 70:
-            cpu_color = (255, 180, 80)
-        else:
-            cpu_color = (220, 220, 220)
+        panel_x = self.width - 280
+        panel_y = 50
+        panel_w = 260
+        panel_h = 160
+
+        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, panel_y, panel_w, panel_h))
+        pygame.draw.rect(self.screen, (200, 200, 200), (panel_x, panel_y, panel_w, panel_h), 2)
 
         # Textové metriky
-        fps_text = f"FPS: {fps:.1f}"
-        cpu_text = f"CPU: {cpu:.1f}%"
-        lat_text = f"Latency: {latency:.2f} ms"
-
-        fps_surf = self.font.render(fps_text, True, (220, 220, 220))
-        cpu_surf = self.font.render(cpu_text, True, cpu_color)
-        lat_surf = self.font.render(lat_text, True, (220, 220, 220))
+        fps_surf = self.font.render(f"FPS: {fps:.1f}", True, (220, 220, 220))
+        cpu_surf = self.font.render(f"CPU: {cpu:.1f}%", True, (255, 200, 80))
+        lat_surf = self.font.render(f"Pipeline: {pipeline:.2f} ms", True, (220, 220, 220))
 
         self.screen.blit(fps_surf, (panel_x + 10, panel_y + 8))
-        self.screen.blit(cpu_surf, (panel_x + 10, panel_y + 8 + 24))
-        self.screen.blit(lat_surf, (panel_x + 10, panel_y + 8 + 48))
+        self.screen.blit(cpu_surf, (panel_x + 10, panel_y + 32))
+        self.screen.blit(lat_surf, (panel_x + 10, panel_y + 56))
 
-        # Mini graf FPS
-        self.draw_perf_graph(
-            history=self.fps_history,
-            x=panel_x + 10,
-            y=panel_y + 8 + 72,
-            w=panel_w - 20,
-            h=18,
-            color=(0, 200, 255),
-            label="FPS"
-        )
-
-        # Mini graf CPU
-        self.draw_perf_graph(
-            history=self.cpu_history,
-            x=panel_x + 10,
-            y=panel_y + 8 + 72 + 22,
-            w=panel_w - 20,
-            h=18,
-            color=cpu_color,
-            label="CPU"
-        )
+        # Mini grafy
+        self.draw_perf_graph(self.fps_history, panel_x + 10, panel_y + 80, panel_w - 20, 18, (0, 200, 255), "FPS")
+        self.draw_perf_graph(self.cpu_history, panel_x + 10, panel_y + 102, panel_w - 20, 18, (255, 200, 80), "CPU")
+        self.draw_perf_graph(self.pipeline_history, panel_x + 10, panel_y + 124, panel_w - 20, 18, (255, 80, 80), "PIPE")
 
     def draw_perf_graph(self, history, x, y, w, h, color, label=None):
         if len(history) < 2:
@@ -246,65 +223,6 @@ class UIManager:
             self.screen.blit(label_surf, (x + 4, y + 1))
 
     # ---------------------------------------------------------
-    # JEMNEJŠIA BPM VIZUALIZÁCIA
-    # ---------------------------------------------------------
-    def draw_bpm_visual(self):
-        center_x = self.width - 150
-        center_y = 80
-
-        base_radius = 20
-        bpm_factor = min(max(self.bpm_value / 120.0, 0.5), 2.0)
-        radius = int(base_radius * bpm_factor)
-
-        self.breath_phase += 0.05
-        breath = (math.sin(self.breath_phase) + 1) / 2
-        radius += int(5 * breath)
-
-        stability_clamped = max(0.0, min(self.stability, 1.0))
-        r = int(255 * (1.0 - stability_clamped))
-        g = int(255 * stability_clamped)
-        b = 80
-
-        pygame.draw.circle(self.screen, (r, g, b), (center_x, center_y), radius, 0)
-        pygame.draw.circle(self.screen, (255, 255, 255), (center_x, center_y), radius, 2)
-
-        bpm_text = f"{int(self.bpm_value)}"
-        bpm_surface = self.font_big.render(bpm_text, True, (255, 255, 255))
-        text_rect = bpm_surface.get_rect(center=(center_x, center_y))
-        self.screen.blit(bpm_surface, text_rect)
-
-    def draw_bpm_history(self):
-        if not self.bpm_history:
-            return
-
-        graph_x = 10
-        graph_y = 120
-        graph_width = 260
-        graph_height = 60
-
-        pygame.draw.rect(self.screen, (80, 80, 80), (graph_x, graph_y, graph_width, graph_height), 1)
-
-        min_bpm = min(self.bpm_history)
-        max_bpm = max(self.bpm_history)
-        if max_bpm == min_bpm:
-            max_bpm += 1
-
-        n = len(self.bpm_history)
-        if n < 2:
-            return
-
-        step_x = graph_width / (n - 1)
-        points = []
-        for i, bpm in enumerate(self.bpm_history):
-            x = graph_x + i * step_x
-            norm = (bpm - min_bpm) / (max_bpm - min_bpm)
-            y = graph_y + graph_height - norm * graph_height
-            points.append((x, y))
-
-        if len(points) >= 2:
-            pygame.draw.lines(self.screen, (0, 200, 255), False, points, 2)
-
-    # ---------------------------------------------------------
     # HLAVNÁ SLUČKA UI
     # ---------------------------------------------------------
     def run(self):
@@ -312,14 +230,13 @@ class UIManager:
         running = True
 
         while running:
-            self.perf.start_frame()
+            self.perf.frame_start()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
                 if event.type == pygame.KEYDOWN:
-                    # prepínanie debug panelu (napr. F3)
                     if event.key == pygame.K_F3:
                         self.debug_mode = not self.debug_mode
 
@@ -338,7 +255,7 @@ class UIManager:
             self.renderer.run_event_loop_step()
             self.draw()
 
-            self.perf.end_frame()
+            self.perf.frame_end()
             clock.tick(60)
 
         pygame.quit()
