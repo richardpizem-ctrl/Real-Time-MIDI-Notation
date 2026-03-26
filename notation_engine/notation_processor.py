@@ -257,7 +257,6 @@ class NotationProcessor:
                 self.timeline.append(bar_item)
 
                 if hasattr(self.renderer, "add_barline"):
-                    # renderer si môže premapovať čas → x pozíciu
                     self.renderer.add_barline(bar_item["start"])
 
                 self.last_measure = current_measure
@@ -271,6 +270,7 @@ class NotationProcessor:
             visual_duration = created_note.duration.ticks / 120.0
 
             timeline_item = {
+                "type": "note",
                 "pitch": created_note.pitch,
                 "start": created_note.start_time,
                 "duration": visual_duration,
@@ -284,7 +284,6 @@ class NotationProcessor:
                 if hasattr(self.renderer, "add_note"):
                     self.renderer.add_note(timeline_item)
                 else:
-                    # fallback – ak renderer nemá add_note, len ho necháme prekresliť
                     if hasattr(self.renderer, "render"):
                         self.renderer.render()
 
