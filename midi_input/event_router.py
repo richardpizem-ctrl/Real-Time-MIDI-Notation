@@ -37,7 +37,7 @@ class EventRouter:
             "type": "note_on" / "note_off" / "control_change",
             "note": int,
             "velocity": int,
-            "channel": int,
+            "channel": int,   # 0–15
             "timestamp": float
         }
         """
@@ -45,38 +45,45 @@ class EventRouter:
             event_type = midi_event.get("type")
             note = midi_event.get("note")
             velocity = midi_event.get("velocity", 0)
-            channel = midi_event.get("channel", 0) + 1  # MIDI kanály 1–16
+            channel = midi_event.get("channel", 0)  # nechávame 0–15
+
+            event = None
 
             # ---------------------------------------------------------
             # 🔥 PREPOJENIE TRACK SYSTEMU
             # ---------------------------------------------------------
-            event = None
             if self.track_system and event_type in ("note_on", "note_off"):
 
                 # 1) automatické prepnutie tracku podľa MIDI kanála
                 self.track_system.set_active_track_by_channel(channel)
 
-                # 2) vytvorenie note eventu
+                # 2) vytvorenie note eventu pre aktívny track
                 event = self.track_system.build_note_event_for_active_track(
                     note=note,
                     velocity=velocity,
                     event_type=event_type
                 )
 
+                # ak track_system vráti None, event UI sa preskočí
+                if event:
+                    midi_event["track_id"] = event.get("track_id")
+                    midi_event["track_color"] = event.get("track_color")
+
             # ---------------------------------------------------------
             # NOTE ON / NOTE OFF
             # ---------------------------------------------------------
             if event_type in ("note_on", "note_off"):
 
-                # Posielame do EventBus
-                self.event_bus.publish("note_event", midi_event)
+                # Posielame do EventBus (aj s track_id)
+                if self.event_bus:
+                    self.event_bus.publish("note_event", midi_event)
 
                 # ---------------------------------------------------------
                 # 🔥 Piano Roll UI
                 # ---------------------------------------------------------
                 if self.piano_roll:
                     if event_type == "note_on" and velocity > 0:
-                        color = event["track_color"] if event else (255, 80, 80)
+                        color = midi_event.get("track_color", (255, 80, 80))
                         self.piano_roll.highlight_key(note, color=color)
                     else:
                         self.piano_roll.unhighlight_key(note)
@@ -103,7 +110,8 @@ class EventRouter:
             # CONTROL CHANGE
             # ---------------------------------------------------------
             elif event_type == "control_change":
-                self.event_bus.publish("control_event", midi_event)
+                if self.event_bus:
+                    self.event_bus.publish("control_event", midi_event)
 
             # ---------------------------------------------------------
             # UNKNOWN
