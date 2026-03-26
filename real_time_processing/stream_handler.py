@@ -1,13 +1,17 @@
 import time
 import pygame.midi
 
+
 class StreamHandler:
     """
-    Čistý MIDI Stream Handler pre real-time spracovanie.
+    Real-time MIDI Stream Handler
+    --------------------------------
     - Číta MIDI eventy z default input zariadenia
     - Posiela ich do EventRoutera
     - Posiela ich do PianoRollUI
     - Meria pipeline latency (čas spracovania jedného eventu)
+    - Meria event processing time
+    - Prepojené s PerformanceTracker
     """
 
     def __init__(self, piano_roll_ui=None, event_router=None, perf=None):
@@ -41,10 +45,12 @@ class StreamHandler:
         if not self.midi_input.poll():
             return
 
-        events = self.midi_input.read(32)  # batch
+        # Prečítaj batch eventov
+        events = self.midi_input.read(32)
+
         for data, timestamp in events:
 
-            start = time.perf_counter()
+            pipeline_start = time.perf_counter()
 
             status = data[0]
             note = data[1]
@@ -57,20 +63,48 @@ class StreamHandler:
                 "timestamp": timestamp
             }
 
-            # 1) Pošli do EventRoutera
+            # -----------------------------
+            # 1) ROUTING
+            # -----------------------------
+            event_start = time.perf_counter()
+
             if self.event_router:
                 self.event_router.route(midi_event)
 
-            # 2) Pošli do PianoRollUI
+            event_end = time.perf_counter()
+            event_processing_ms = (event_end - event_start) * 1000.0
+
+            # -----------------------------
+            # 2) UI UPDATE
+            # -----------------------------
+            ui_start = time.perf_counter()
+
             if self.piano_roll_ui:
                 self.piano_roll_ui.handle_midi_event(midi_event)
 
-            # 3) Pipeline latency
-            end = time.perf_counter()
-            latency_ms = (end - start) * 1000.0
+            ui_end = time.perf_counter()
+            ui_processing_ms = (ui_end - ui_start) * 1000.0
 
+            # -----------------------------
+            # 3) PIPELINE LATENCY
+            # -----------------------------
+            pipeline_end = time.perf_counter()
+            pipeline_latency_ms = (pipeline_end - pipeline_start) * 1000.0
+
+            # -----------------------------
+            # 4) PERFORMANCE TRACKER
+            # -----------------------------
             if self.perf:
-                self.perf.record_event_latency(latency_ms)
+                # celková latencia eventu
+                self.perf.record_event_latency(pipeline_latency_ms)
+
+                # detailné metriky
+                if hasattr(self.perf, "record_pipeline_step"):
+                    self.perf.record_pipeline_step(
+                        event_processing_ms,
+                        ui_processing_ms,
+                        pipeline_latency_ms
+                    )
 
     # ---------------------------------------------------------
     # UKONČENIE
