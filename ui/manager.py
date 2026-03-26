@@ -43,7 +43,7 @@ class UIManager:
         self.event_router = EventRouter(
             event_bus=None,
             piano_roll_ui=self.piano_ui,
-            note_visualizer_ui=self.note_visualizer  # 🔥 PREPOJENIE NOTE VISUALIZERU
+            note_visualizer=self.note_visualizer
         )
 
         # Stream handler
@@ -128,71 +128,4 @@ class UIManager:
         self.screen.blit(visual_surface, (0, 600))
 
         # BPM text
-        bpm_surface = self.font_big.render(self.current_bpm_text, True, (255, 255, 0))
-        self.screen.blit(bpm_surface, (10, 10))
-
-        # Aktívny track
-        active_track = self.track_system.get_active_track()
-        if active_track is not None:
-            color = getattr(
-                active_track,
-                "color",
-                self.track_colors[active_track.id % len(self.track_colors)],
-            )
-            track_text = f"Track {active_track.id}: {active_track.name} (CH {active_track.channel})"
-            track_surface = self.small_font.render(track_text, True, color)
-            self.screen.blit(track_surface, (300, 10))
-
-        # BPM vizualizácia
-        if self.bpm_value is not None:
-            self.draw_bpm_visual()
-
-        # História BPM
-        self.draw_bpm_history()
-
-        # Performance panel
-        if self.debug_mode:
-            self.draw_performance_panel()
-
-        pygame.display.flip()
-
-    # ---------------------------------------------------------
-    # HLAVNÁ SLUČKA UI
-    # ---------------------------------------------------------
-    def run(self):
-        clock = pygame.time.Clock()
-        running = True
-
-        while running:
-            self.perf.frame_start()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_F3:
-                        self.debug_mode = not self.debug_mode
-
-                    if pygame.K_1 <= event.key <= pygame.K_9:
-                        index = event.key - pygame.K_1
-                        if hasattr(self.track_system, "set_active_track_index"):
-                            self.track_system.set_active_track_index(index)
-
-                    if event.key == pygame.K_RIGHT:
-                        if hasattr(self.track_system, "next_track"):
-                            self.track_system.next_track()
-                    if event.key == pygame.K_LEFT:
-                        if hasattr(self.track_system, "previous_track"):
-                            self.track_system.previous_track()
-
-            # MIDI pipeline
-            self.renderer.run_event_loop_step()
-
-            # Kreslenie
-            self.draw()
-
-            self.perf.frame_end()
-            clock.tick(60)
-
-        pygame.quit()
+        bpm_surface = self
