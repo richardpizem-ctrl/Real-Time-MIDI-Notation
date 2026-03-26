@@ -41,6 +41,14 @@ class NotationProcessor:
         self.is_running = False
         self.last_timestamp = 0.0
 
+        # Multi‑track schéma – zarovnaná s GraphicNotationRenderer
+        self.track_colors = {
+            "melody": (80, 160, 255),
+            "bass": (120, 220, 120),
+            "drums": (255, 150, 60),
+            "chords": (255, 255, 120),
+        }
+
     # ---------------------------------------------------------
     # PREPOJENIE EXTERNÉHO RENDERERA (napr. grafického)
     # ---------------------------------------------------------
@@ -143,6 +151,9 @@ class NotationProcessor:
             return "drums"
         return "melody"
 
+    def _get_track_color(self, track_type: str):
+        return self.track_colors.get(track_type, (255, 120, 120))
+
     # ---------------------------------------------------------
     # HLAVNÁ FUNKCIA – spracovanie MIDI udalosti
     # ---------------------------------------------------------
@@ -238,13 +249,17 @@ class NotationProcessor:
 
             # Timeline
             visual_duration = created_note.duration.ticks / 120.0
+            track_type = self._detect_track(channel)
+            track_color = self._get_track_color(track_type)
 
             timeline_item = {
+                "type": "note",
                 "pitch": created_note.pitch,
                 "start": created_note.start_time,
                 "duration": visual_duration,
                 "color": symbol.get("color", "#FFFFFF"),
-                "track_type": self._detect_track(channel),
+                "track_type": track_type,
+                "track_color": track_color,
             }
 
             self.timeline.append(timeline_item)
@@ -260,7 +275,8 @@ class NotationProcessor:
                         "pitch": created_note.pitch,
                         "start": created_note.start_time,
                         "duration": visual_duration,
-                        "track_type": self._detect_track(channel),
+                        "track_type": track_type,
+                        "track_color": track_color,
                     }
                 }
                 self.timeline.append(slur_item)
@@ -270,7 +286,8 @@ class NotationProcessor:
                 "pitch": created_note.pitch,
                 "start": created_note.start_time,
                 "duration": visual_duration,
-                "track_type": self._detect_track(channel),
+                "track_type": track_type,
+                "track_color": track_color,
             }
 
             # Renderer
