@@ -179,6 +179,45 @@ class NoteVisualizerUI:
         )
 
     # ---------------------------------------------------------
+    # INTERVALY – výpočet intervalov medzi pitch hodnotami
+    # ---------------------------------------------------------
+    def compute_intervals(self, notes_with_depth):
+        pitches = [n["pitch"] for _, n in notes_with_depth if n.get("pitch") is not None]
+        if len(pitches) < 2:
+            return []
+
+        pitches = sorted(pitches)
+        intervals = []
+
+        for i in range(len(pitches) - 1):
+            interval = abs(pitches[i + 1] - pitches[i])
+            intervals.append(interval)
+
+        return intervals
+
+    # ---------------------------------------------------------
+    # INTERVALY – prepočet vizuálnych rozostupov
+    # ---------------------------------------------------------
+    def compute_interval_offsets(self, intervals):
+        offsets = []
+
+        for interval in intervals:
+            if interval in (3,):          # malá tercia
+                offsets.append(40)
+            elif interval in (4,):        # veľká tercia
+                offsets.append(55)
+            elif interval in (5,):        # kvarta
+                offsets.append(70)
+            elif interval in (7,):        # kvinta
+                offsets.append(90)
+            elif interval >= 12:          # oktáva
+                offsets.append(120)
+            else:
+                offsets.append(50)        # default
+
+        return offsets
+
+    # ---------------------------------------------------------
     # KRESLENIE
     # ---------------------------------------------------------
     def draw(self, surface):
@@ -214,6 +253,10 @@ class NoteVisualizerUI:
 
         count = len(notes_with_depth)
         y_base = self.height // 2
+
+        # Intervaly a offsety pre aktuálny akord
+        intervals = self.compute_intervals(notes_with_depth)
+        offsets = self.compute_interval_offsets(intervals) if intervals else []
 
         for index, (depth, n) in enumerate(notes_with_depth):
             # základná farba z color morphingu
@@ -269,8 +312,15 @@ class NoteVisualizerUI:
             scaled_font = pygame.font.SysFont("Arial", int(self.font_size * scale), bold=True)
             text_surface = scaled_font.render(n["note"], True, color)
 
-            # Horizontálne rozloženie
-            x_pos = int(self.width * (index + 1) / (count + 1))
+            # Intervalové rozostupy (KROK 12)
+            base_x = self.width // 2
+            x_pos = base_x
+
+            if count > 1:
+                left = index - (count - 1) / 2
+                if index > 0 and index - 1 < len(offsets):
+                    x_pos += sum(offsets[:index]) * 0.8
+                x_pos += int(left * 20)
 
             # Vertikálny posun podľa hĺbky (parallax)
             y_pos = int(y_base - (depth - 1.0) * 25)
