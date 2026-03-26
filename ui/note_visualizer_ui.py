@@ -15,6 +15,14 @@ class NoteVisualizerUI:
         self.fade_start = None
         self.fade_duration = 0.25  # sekundy
 
+        # Fade-in
+        self.fade_in_start = None
+        self.fade_in_duration = 0.12
+
+        # Bounce & Glow animácie
+        self.bounce = 0.0
+        self.glow = 0.0
+
         # BPM pulz
         self.pulse_strength = 1.0
 
@@ -45,10 +53,21 @@ class NoteVisualizerUI:
             note_name = str(event.get("note", "?"))
 
         color = event.get("track_color", (255, 255, 255))
+        velocity = event.get("velocity", 100)
+        velocity_factor = min(1.0, velocity / 127)
 
         self.current_note = note_name
         self.current_color = color
-        self.fade_start = None  # reset fade-out
+
+        # Reset fade-out
+        self.fade_start = None
+
+        # Spusti fade-in
+        self.fade_in_start = time.time()
+
+        # Bounce & Glow podľa velocity
+        self.bounce = 1.0 * velocity_factor
+        self.glow = 1.0 * velocity_factor
 
     def on_note_off(self, event):
         self.fade_start = time.time()
@@ -78,11 +97,5 @@ class NoteVisualizerUI:
                 int(color[2] * t)
             )
 
-        # BPM pulz – zväčšenie textu
-        scale = self.pulse_strength
-        scaled_font = pygame.font.SysFont("Arial", int(self.font_size * scale), bold=True)
-
-        text_surface = scaled_font.render(self.current_note, True, color)
-        text_rect = text_surface.get_rect(center=(self.width // 2, self.height // 2))
-
-        surface.blit(text_surface, text_rect)
+        # Fade-in efekt
+        if self.fade_in_start
