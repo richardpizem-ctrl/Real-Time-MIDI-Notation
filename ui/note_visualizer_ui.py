@@ -108,12 +108,13 @@ class NoteVisualizerUI:
         self.trail_surface.fill((0, 0, 0, 40), special_flags=pygame.BLEND_RGBA_SUB)
         surface.blit(self.trail_surface, (0, 0))
 
-        y_step = self.height // (len(self.active_notes) + 1)
-        y_pos = y_step
-
         notes_to_remove = []
 
-        for n in self.active_notes:
+        # Horizontálne rozloženie nôt (akordový layout)
+        count = len(self.active_notes)
+        y_pos = self.height // 2
+
+        for index, n in enumerate(self.active_notes):
             color = n["color"]
 
             # Fade-out
@@ -165,7 +166,21 @@ class NoteVisualizerUI:
             # Render textu
             scaled_font = pygame.font.SysFont("Arial", int(self.font_size * scale), bold=True)
             text_surface = scaled_font.render(n["note"], True, color)
-            text_rect = text_surface.get_rect(center=(self.width // 2, y_pos))
+
+            # Horizontálne rozloženie X pozície
+            x_pos = int(self.width * (index + 1) / (count + 1))
+
+            text_rect = text_surface.get_rect(center=(x_pos, y_pos))
 
             # HALO
-            self.draw_halo(surface, text_surface, text
+            self.draw_halo(surface, text_surface, text_rect, n["color"], n["halo_strength"])
+
+            # Text
+            surface.blit(text_surface, text_rect)
+
+            # Trail buffer
+            self.trail_surface.blit(text_surface, text_rect)
+
+        # Odstránenie zaniknutých nôt
+        for n in notes_to_remove:
+            self.active_notes
