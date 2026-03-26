@@ -1,5 +1,6 @@
 import pygame
 import time
+import math
 
 class NoteVisualizerUI:
     def __init__(self, width=1400, height=200):
@@ -14,21 +15,31 @@ class NoteVisualizerUI:
         self.fade_start = None
         self.fade_duration = 0.25  # sekundy
 
+        # BPM pulz
+        self.pulse_strength = 1.0
+
         pygame.font.init()
-        self.font = pygame.font.SysFont("Arial", 64, bold=True)
+        self.font_size = 64
+        self.font = pygame.font.SysFont("Arial", self.font_size, bold=True)
+
+    # ---------------------------------------------------------
+    # BPM PULSE (FÁZA 3 – KROK 4)
+    # ---------------------------------------------------------
+    def update_bpm_pulse(self, bpm, timestamp):
+        if bpm is None:
+            self.pulse_strength = 1.0
+            return
+
+        beat_interval = 60.0 / bpm
+        phase = (timestamp % beat_interval) / beat_interval
+
+        # jemný pulz 1.0 → 1.15
+        self.pulse_strength = 1.0 + 0.15 * math.sin(phase * math.pi * 2)
 
     # ---------------------------------------------------------
     # API pre EventRouter / TrackSystem
     # ---------------------------------------------------------
     def on_note(self, event):
-        """
-        event = {
-            "note": int,
-            "note_name": str,
-            "track_color": (r,g,b),
-            ...
-        }
-        """
         note_name = event.get("note_name")
         if note_name is None:
             note_name = str(event.get("note", "?"))
@@ -40,7 +51,6 @@ class NoteVisualizerUI:
         self.fade_start = None  # reset fade-out
 
     def on_note_off(self, event):
-        """Spustí fade-out pri note_off."""
         self.fade_start = time.time()
 
     # ---------------------------------------------------------
@@ -68,7 +78,11 @@ class NoteVisualizerUI:
                 int(color[2] * t)
             )
 
-        text_surface = self.font.render(self.current_note, True, color)
+        # BPM pulz – zväčšenie textu
+        scale = self.pulse_strength
+        scaled_font = pygame.font.SysFont("Arial", int(self.font_size * scale), bold=True)
+
+        text_surface = scaled_font.render(self.current_note, True, color)
         text_rect = text_surface.get_rect(center=(self.width // 2, self.height // 2))
 
         surface.blit(text_surface, text_rect)
