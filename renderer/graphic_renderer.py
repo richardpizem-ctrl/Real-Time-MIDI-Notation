@@ -153,6 +153,34 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
+    # 🔥 Kreslenie NOTOVEJ HLAVIČKY
+    # ---------------------------------------------------------
+    def _draw_note_head(self, item):
+        x = (item["start"] * self.pixels_per_second - self.scroll_x) * self.zoom
+
+        # Y podľa stopy
+        if item["track_type"] == "melody":
+            base_y = self.staff_top * self.zoom + 20
+        elif item["track_type"] == "bass":
+            base_y = self.bass_staff_top * self.zoom + 20
+        elif item["track_type"] == "drums":
+            base_y = self.drums_y * self.zoom - 5
+        else:
+            base_y = self.staff_top * self.zoom + 20
+
+        # Rozmery hlavičky
+        w = 14 * self.zoom
+        h = 10 * self.zoom
+
+        color = self.track_colors.get(item["track_type"], (255, 255, 255))
+
+        pygame.draw.ellipse(
+            self.screen,
+            color,
+            (x, base_y, w, h)
+        )
+
+    # ---------------------------------------------------------
     # 🔥 Kreslenie ligatúry (oblúk)
     # ---------------------------------------------------------
     def _draw_tie(self, tie):
@@ -234,6 +262,9 @@ class GraphicNotationRenderer:
                 x = (item["x"] - self.scroll_x) * self.zoom
                 text = self.font_key.render(item["key"], True, (255, 200, 200))
                 self.screen.blit(text, (x + 5, 20))
+
+            elif item["type"] == "note":
+                self._draw_note_head(item)
 
         # ---------------------------------------------------------
         # 🔥 LIGATÚRY
