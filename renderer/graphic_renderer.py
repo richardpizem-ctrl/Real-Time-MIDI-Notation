@@ -132,3 +132,53 @@ class GraphicNotationRenderer:
             self.screen,
             self.staff_color,
             (40, self.drums_y * self.zoom),
+            (self.width - 40, self.drums_y * self.zoom),
+            int(2 * self.zoom)
+        )
+
+    # ---------------------------------------------------------
+    # Hlavné kreslenie
+    # ---------------------------------------------------------
+    def render(self):
+        self.screen.fill(self.background_color)
+
+        # Osnovy
+        self._draw_all_staffs()
+
+        # Kreslenie položiek
+        for item in self.items:
+            if item["type"] == "barline":
+                x = (item["x"] - self.scroll_x) * self.zoom
+                pygame.draw.line(
+                    self.screen,
+                    (180, 180, 180),
+                    (x, 50),
+                    (x, self.height - 50),
+                    int(2 * self.zoom)
+                )
+
+            elif item["type"] == "chord":
+                x = (item["x"] - self.scroll_x) * self.zoom
+                text = self.font_chord.render(item["name"], True, (255, 255, 120))
+                self.screen.blit(text, (x + 5, 40))
+
+            elif item["type"] == "key_change":
+                x = (item["x"] - self.scroll_x) * self.zoom
+                text = self.font_key.render(item["key"], True, (255, 200, 200))
+                self.screen.blit(text, (x + 5, 20))
+
+        # ---------------------------------------------------------
+        # PLAYHEAD LINE (NOVÉ)
+        # ---------------------------------------------------------
+        playhead_x = (self.playhead_time * self.pixels_per_second - self.scroll_x) * self.zoom
+
+        if 0 <= playhead_x <= self.width:
+            pygame.draw.line(
+                self.screen,
+                (80, 200, 255),  # jemná tyrkysová
+                (playhead_x, 0),
+                (playhead_x, self.height),
+                int(3 * self.zoom)
+            )
+
+        return self.screen
