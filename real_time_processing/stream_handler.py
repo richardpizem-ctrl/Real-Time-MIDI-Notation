@@ -9,10 +9,10 @@ class StreamHandler:
     - Číta MIDI eventy z default input zariadenia
     - Posiela ich do EventRoutera
     - Posiela ich do PianoRollUI
-    - Meria pipeline latency (čas spracovania jedného eventu)
+    - Meria pipeline latency
     - Meria event processing time
     - Meria UI processing time
-    - Prepojené s PerformanceTracker (FPS/CPU/Latency grafy)
+    - Prepojené s PerformanceTracker
     """
 
     def __init__(self, piano_roll_ui=None, event_router=None, perf=None):
@@ -22,7 +22,6 @@ class StreamHandler:
 
         pygame.midi.init()
 
-        # Nájde default MIDI vstup
         default_id = pygame.midi.get_default_input_id()
         if default_id == -1:
             print("⚠️  Žiadne MIDI zariadenie nebolo nájdené.")
@@ -46,7 +45,6 @@ class StreamHandler:
         if not self.midi_input.poll():
             return
 
-        # Prečítaj batch eventov
         events = self.midi_input.read(32)
 
         for data, timestamp in events:
@@ -57,10 +55,26 @@ class StreamHandler:
             note = data[1]
             velocity = data[2]
 
+            # MIDI status → event_type + channel
+            event_type = None
+            channel = status & 0x0F
+            status_type = status & 0xF0
+
+            if status_type == 0x90 and velocity > 0:
+                event_type = "note_on"
+            elif status_type == 0x90 and velocity == 0:
+                event_type = "note_off"
+            elif status_type == 0x80:
+                event_type = "note_off"
+            elif status_type == 0xB0:
+                event_type = "control_change"
+
             midi_event = {
+                "type": event_type,
                 "status": status,
                 "note": note,
                 "velocity": velocity,
+                "channel": channel,
                 "timestamp": timestamp
             }
 
@@ -69,7 +83,7 @@ class StreamHandler:
             # -----------------------------
             event_start = time.perf_counter()
 
-            if self.event_router:
+            if self.event_router and event_type:
                 try:
                     self.event_router.route(midi_event)
                 except Exception as e:
@@ -103,22 +117,10 @@ class StreamHandler:
             # -----------------------------
             if self.perf:
 
-                # celková latencia eventu
                 if hasattr(self.perf, "record_event_latency"):
                     self.perf.record_event_latency(pipeline_latency_ms)
 
-                # detailné metriky pre debug overlay
                 if hasattr(self.perf, "record_pipeline_step"):
                     self.perf.record_pipeline_step(
                         event_processing_ms,
                         ui_processing_ms,
-                        pipeline_latency_ms
-                    )
-
-    # ---------------------------------------------------------
-    # UKONČENIE
-    # ---------------------------------------------------------
-    def close(self):
-        if self.midi_input:
-            self.midi_input.close()
-        pygame.midi.quit()
