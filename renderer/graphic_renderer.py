@@ -29,8 +29,18 @@ class GraphicNotationRenderer:
         }
 
         # Položky na vykreslenie
+        # - items: globálne veci (barlines, key_changes, chords)
+        # - items_by_track: noty rozdelené podľa stopy
         self.items = []
-        self.tie_items = []  # 🔥 LIGATÚRY
+        self.items_by_track = {
+            "melody": [],
+            "bass": [],
+            "drums": [],
+            "chords": []
+        }
+
+        # 🔥 LIGATÚRY
+        self.tie_items = []
 
         # Rozloženie
         self.staff_top = 80
@@ -67,10 +77,23 @@ class GraphicNotationRenderer:
     # API pre NotationProcessor
     # ---------------------------------------------------------
     def add_note(self, note):
-        if isinstance(note, dict):
-            self.items.append(note.copy())
-        else:
+        """
+        Očakáva dict s kľúčmi:
+        - type: "note"
+        - start, duration, pitch, track_type, ...
+        """
+        if not isinstance(note, dict):
             print("Warning: add_note dostal neplatný objekt:", note)
+            return
+
+        track_type = note.get("track_type", "melody")
+
+        if track_type not in self.items_by_track:
+            # fallback – ak príde neznáma stopa, hodíme ju do melody
+            track_type = "melody"
+
+        # Ukladáme kópiu, aby sme si nepokazili originál
+        self.items_by_track[track_type].append(note.copy())
 
     def add_barline(self, start_time):
         x = start_time * self.pixels_per_second
@@ -95,12 +118,15 @@ class GraphicNotationRenderer:
             "type": "tie",
             "pitch": tie_item["pitch"],
             "start_x": start_x,
-            "end_x": end_x
+            "end_x": end_x,
+            "track_type": tie_item.get("track_type", "melody")
         })
 
     def clear(self):
         self.items.clear()
         self.tie_items.clear()
+        for k in self.items_by_track:
+            self.items_by_track[k].clear()
 
     # ---------------------------------------------------------
     # Externé API pre UIManager
@@ -159,11 +185,13 @@ class GraphicNotationRenderer:
         x = (item["start"] * self.pixels_per_second - self.scroll_x) * self.zoom
 
         # Y podľa stopy
-        if item["track_type"] == "melody":
+        track_type = item.get("track_type", "melody")
+
+        if track_type == "melody":
             base_y = self.staff_top * self.zoom + 20
-        elif item["track_type"] == "bass":
+        elif track_type == "bass":
             base_y = self.bass_staff_top * self.zoom + 20
-        elif item["track_type"] == "drums":
+        elif track_type == "drums":
             base_y = self.drums_y * self.zoom - 5
         else:
             base_y = self.staff_top * self.zoom + 20
@@ -172,7 +200,7 @@ class GraphicNotationRenderer:
         w = 14 * self.zoom
         h = 10 * self.zoom
 
-        color = self.track_colors.get(item["track_type"], (255, 255, 255))
+        color = self.track_colors.get(track_type, (255, 255, 255))
 
         pygame.draw.ellipse(
             self.screen,
@@ -214,6 +242,7 @@ class GraphicNotationRenderer:
         width = x2 - x1
         arc_height = 18 * self.zoom
 
+        # Zatiaľ fixne nad hornou osnovou – neskôr môžeme posúvať podľa pitch/track
         rect = pygame.Rect(
             x1,
             self.staff_top * self.zoom + 40,
@@ -239,7 +268,9 @@ class GraphicNotationRenderer:
         # Osnovy
         self._draw_all_staffs()
 
-        # Kreslenie položiek
+        # -----------------------------------------------------
+        # 1) Globálne položky – barlines, chords, key_changes
+        # -----------------------------------------------------
         for item in self.items:
             if item["type"] == "barline":
                 x = (item["x"] - self.scroll_x) * self.zoom
@@ -284,9 +315,18 @@ class GraphicNotationRenderer:
                 text = self.font_key.render(item["key"], True, (255, 200, 200))
                 self.screen.blit(text, (x + 5, 20))
 
-            elif item["type"] == "note":
-                self._draw_note_head(item)
-                self._draw_stem(item)
+        # -----------------------------------------------------
+        # 2) Noty – multi-track, v definovanom poradí vrstiev
+        # -----------------------------------------------------
+        track_draw_order = ["melody", "chords", "bass", "drums"]
+
+        for track_type in track_draw_order:
+            for note in self.items_by_track.get(track_type, []):
+                if note.get("type") != "note":
+                    continue
+                # Zabezpečíme, že track_type je v note
+                note["track_type"] = track_type
+                self._draw_stem(note)
 
         # ---------------------------------------------------------
         # 🔥 LIGATÚRY
