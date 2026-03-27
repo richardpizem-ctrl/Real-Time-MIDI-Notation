@@ -55,11 +55,16 @@ def main():
     ui = UIManager()
 
     # 5. EventRouter pre MIDI → EventBus → UI
-    event_router = EventRouter(event_bus, piano_roll_ui=ui.piano_ui)
+    event_router = EventRouter(
+        event_bus=event_bus,
+        piano_roll_ui=ui.piano_ui
+    )
 
     # 6. MIDI Stream Handler prepojený s Piano Roll UI + EventRouter
-    stream_handler = StreamHandler(piano_roll_ui=ui.piano_ui)
-    stream_handler.event_router = event_router
+    stream_handler = StreamHandler(
+        piano_roll_ui=ui.piano_ui,
+        event_router=event_router
+    )
 
     # -----------------------------------------------------
     # 7. Spustenie UI slučky
