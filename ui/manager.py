@@ -113,10 +113,11 @@ class UIManager:
         # 1) Získanie metrík z Performance Trackeru
         self.performance_stats = self.perf.get_metrics()
 
-        # 2) BPM pulz → NoteVisualizerUI
+        # 2) BPM pulz → NoteVisualizerUI + GraphicNotationRenderer
         bpm = self.performance_stats.get("bpm")
         now = time.time()
         self.note_visualizer.update_bpm_pulse(bpm, now)
+        self.renderer.update_bpm_pulse(bpm, now)
 
         # 3) Odovzdanie metrík UI komponentom
         self.piano_ui.update(self.performance_stats)
