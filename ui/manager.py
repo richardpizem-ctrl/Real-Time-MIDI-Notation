@@ -52,7 +52,12 @@ class UIManager:
 
         # Performance tracker
         self.perf = PerformanceTracker()
+        self.performance_stats = {}
+
+        # Fonty
         self.font = pygame.font.SysFont("Arial", 20)
+        self.font_big = pygame.font.SysFont("Arial", 28)
+        self.small_font = pygame.font.SysFont("Arial", 18)
 
         # Debug mode
         self.debug_mode = True
@@ -64,10 +69,7 @@ class UIManager:
         self.max_perf_history = 60
 
         # BPM / rytmická vizualizácia
-        self.font_big = pygame.font.SysFont("Arial", 28)
-        self.small_font = pygame.font.SysFont("Arial", 18)
         self.current_bpm_text = "BPM: —"
-
         self.bpm_value = None
         self.last_bpm = None
         self.beat_interval = 1.0
@@ -105,6 +107,18 @@ class UIManager:
         ]
 
     # ---------------------------------------------------------
+    # UPDATE LOOP – Performance Tracker + UI
+    # ---------------------------------------------------------
+    def update(self):
+        # Získanie metrík z Performance Trackeru
+        self.performance_stats = self.perf.get_metrics()
+
+        # Odovzdanie metrík UI komponentom
+        self.piano_ui.update(self.performance_stats)
+        self.note_visualizer.update(self.performance_stats)
+        self.renderer.update_performance(self.performance_stats)
+
+    # ---------------------------------------------------------
     # KRESLENIE
     # ---------------------------------------------------------
     def draw(self):
@@ -127,5 +141,22 @@ class UIManager:
         self.note_visualizer.draw(visual_surface)
         self.screen.blit(visual_surface, (0, 600))
 
-        # BPM text
-        bpm_surface = self
+        # Debug text – Performance Tracker
+        if self.debug_mode:
+            latency = self.performance_stats.get("latency", 0)
+            accuracy = self.performance_stats.get("accuracy", 0)
+            bpm = self.performance_stats.get("bpm", 0)
+
+            debug_text = [
+                f"Latency: {latency:.2f} ms",
+                f"Accuracy: {accuracy:.1f} %",
+                f"Detected BPM: {bpm}"
+            ]
+
+            y = 10
+            for line in debug_text:
+                text_surface = self.font.render(line, True, (255, 255, 255))
+                self.screen.blit(text_surface, (10, y))
+                y += 22
+
+        pygame.display.flip()
