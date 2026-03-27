@@ -80,6 +80,7 @@ class UIManager:
         self.beat_counter = 1
         self.time_signature = (4, 4)
         self.beats_per_bar = 4
+        self.last_beat_index = 0  # pre downbeat detekciu
 
         # Subdivízie
         self.subdivisions = ["1", "e", "&", "a"]
@@ -91,7 +92,7 @@ class UIManager:
         self.bpm_history = []
         self.max_history = 60
 
-        # Metronóm klik
+        # Metronóm klik / downbeat flash
         self.metronome_flash = 0.0
 
         # Tempo warning
@@ -118,6 +119,23 @@ class UIManager:
         now = time.time()
         self.note_visualizer.update_bpm_pulse(bpm, now)
         self.renderer.update_bpm_pulse(bpm, now)
+
+        # 2a) Downbeat flash – detekcia prvej doby v takte
+        if bpm and bpm > 0:
+            beats_per_sec = bpm / 60.0
+            beat_pos = now * beats_per_sec
+            beat_index = int(beat_pos) % self.beats_per_bar
+
+            # downbeat = prechod na 0
+            if beat_index == 0 and self.last_beat_index != 0:
+                self.metronome_flash = 1.0
+
+            self.last_beat_index = beat_index
+
+            # jemný decay flashu
+            self.metronome_flash *= 0.88
+        else:
+            self.metronome_flash = 0.0
 
         # 3) Odovzdanie metrík UI komponentom
         self.piano_ui.update(self.performance_stats)
@@ -146,6 +164,17 @@ class UIManager:
         visual_surface = pygame.Surface((self.width, 200))
         self.note_visualizer.draw(visual_surface)
         self.screen.blit(visual_surface, (0, 600))
+
+        # Downbeat flash – vizuálny beat na prvej dobe
+        if self.metronome_flash > 0.01:
+            alpha = int(140 * max(0.0, min(1.0, self.metronome_flash)))
+            flash_surface = pygame.Surface((self.width, 200), pygame.SRCALPHA)
+            flash_surface.fill((255, 255, 255, alpha))
+
+            # flash nad grafickým rendererom
+            self.screen.blit(flash_surface, (0, 200))
+            # flash nad note visualizerom
+            self.screen.blit(flash_surface, (0, 600))
 
         # Debug text – Performance Tracker
         if self.debug_mode:
