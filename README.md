@@ -1,7 +1,7 @@
 ## 🎯 Project Vision
 
-The purpose of this project is to build a real‑time MIDI notation system for musicians who do not read traditional sheet music.  
-It is specifically designed for arranger keyboards (Yamaha PSR‑SX, Genos, Tyros, etc.) and aims to visualize accompaniment tracks such as bass, drums, pads, and chord layers in a clear and intuitive way.
+The goal of this project is to build a **real‑time MIDI notation system** for musicians who do not read traditional sheet music.  
+It is specifically designed for **Yamaha arranger keyboards** (PSR‑SX, Genos, Tyros, etc.) and aims to visualize accompaniment tracks such as bass, drums, pads, and chord layers in a clear and intuitive way.
 
 ### Long‑term goals:
 - Real‑time multi‑track score rendering  
@@ -20,36 +20,6 @@ This project is intended to grow into a full‑featured, intelligent MIDI visual
 To install and run the Real‑Time MIDI Notation project locally:
 
 ### 1. Clone the repository
+```bash
 git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation.git
 cd Real-Time-MIDI-Notation
-
-### 2. Install dependencies  
-Make sure you have Python 3.10+ installed.
-
-pip install -r requirements.txt
-
-### 3. Run the application
-python run.py
-
-### 4. (Optional) Test MIDI input
-You can test the system using the included test files:
-
-python test_chords.py  
-python test_no_midi.py
-
----
-
-## 👤 Author
-
-Created by **Richard Pizem**  
-Real‑Time MIDI Notation Project  
-2024–2026
-
----
-
-## 🧑‍💻 About the Author
-
-I am a developer focused on music technology, real‑time systems, and MIDI processing.  
-My goal is to create tools that help musicians understand and visualize what their instruments are playing — even if they do not read sheet music.
-
-This project represents my long‑term work on real‑time MIDI analysis, notation rendering, and intelligent accompaniment visualization.
