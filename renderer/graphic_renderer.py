@@ -18,6 +18,7 @@ class GraphicNotationRenderer:
         self.background_color = (20, 20, 20)
         self.staff_color = (200, 200, 200)
 
+        # Základné farby stôp
         self.track_colors = {
             "melody": (80, 160, 255),
             "bass": (120, 220, 120),
@@ -58,6 +59,9 @@ class GraphicNotationRenderer:
         self.font_chord = pygame.font.SysFont("Arial", 18)
         self.font_key = pygame.font.SysFont("Arial", 16)
 
+    # ---------------------------------------------------------
+    # API pre NotationProcessor
+    # ---------------------------------------------------------
     def add_note(self, note):
         if not isinstance(note, dict):
             print("Warning: add_note dostal neplatný objekt:", note)
@@ -100,6 +104,9 @@ class GraphicNotationRenderer:
         for k in self.items_by_track:
             self.items_by_track[k].clear()
 
+    # ---------------------------------------------------------
+    # Externé API
+    # ---------------------------------------------------------
     def set_scroll_x(self, value):
         self.scroll_x = max(0.0, float(value))
 
@@ -116,59 +123,85 @@ class GraphicNotationRenderer:
         if not self.dragging:
             self.scroll_x += dt * self.scroll_speed
 
-    def _draw_staff(self, y_top):
-        spacing = self.staff_spacing * self.zoom
-        y_top *= self.zoom
+    # ---------------------------------------------------------
+    # Pitch → Y konverzia
+    # ---------------------------------------------------------
+    def _pitch_to_y(self, pitch, track_type):
+        """
+        MIDI pitch → Y pozícia na osnove.
+        60 = C4 = stredná osnova
+        Každý poltón = 6 px (upravené zoomom)
+        """
+        if track_type == "melody":
+            base_y = self.staff_top * self.zoom + 40
+        elif track_type == "bass":
+            base_y = self.bass_staff_top * self.zoom + 40
+        else:
+            return self.drums_y * self.zoom
 
-        for i in range(5):
-            y = y_top + i * spacing
-            pygame.draw.line(
-                self.screen,
-                self.staff_color,
-                (40, y),
-                (self.width - 40, y),
-                int(2 * self.zoom)
-            )
+        offset = (60 - pitch) * 6 * self.zoom
+        return base_y + offset
 
-    def _draw_all_staffs(self):
-        self._draw_staff(self.staff_top)
-        self._draw_staff(self.bass_staff_top)
+    # ---------------------------------------------------------
+    # Velocity → farba
+    # ---------------------------------------------------------
+    def _velocity_color(self, base_color, velocity):
+        """
+        Velocity 0–127 → zosvetlenie farby.
+        """
+        factor = 0.4 + (velocity / 127) * 0.6
+        r = min(255, int(base_color[0] * factor))
+        g = min(255, int(base_color[1] * factor))
+        b = min(255, int(base_color[2] * factor))
+        return (r, g, b)
 
-        pygame.draw.line(
-            self.screen,
-            self.staff_color,
-            (40, self.drums_y * self.zoom),
-            (self.width - 40, self.drums_y * self.zoom),
-            int(2 * self.zoom)
+    # ---------------------------------------------------------
+    # Duration bar
+    # ---------------------------------------------------------
+    def _draw_duration_bar(self, item):
+        start_x = (item["start"] * self.pixels_per_second - self.scroll_x) * self.zoom
+        end_x = ((item["start"] + item["duration"]) * self.pixels_per_second - self.scroll_x) * self.zoom
+        width = max(0, end_x - start_x)
+
+        y = self._pitch_to_y(item["pitch"], item["track_type"])
+
+        color = self._velocity_color(
+            self.track_colors.get(item["track_type"], (255, 255, 255)),
+            item.get("velocity", 100)
         )
 
+        pygame.draw.rect(
+            self.screen,
+            color,
+            (start_x + 10 * self.zoom, y + 4 * self.zoom, width, 3 * self.zoom)
+        )
+
+    # ---------------------------------------------------------
+    # Kreslenie hlavičky
+    # ---------------------------------------------------------
     def _draw_note_head(self, item):
         x = (item["start"] * self.pixels_per_second - self.scroll_x) * self.zoom
-
-        track_type = item.get("track_type", "melody")
-
-        if track_type == "melody":
-            base_y = self.staff_top * self.zoom + 20
-        elif track_type == "bass":
-            base_y = self.bass_staff_top * self.zoom + 20
-        elif track_type == "drums":
-            base_y = self.drums_y * self.zoom - 5
-        else:
-            base_y = self.staff_top * self.zoom + 20
+        y = self._pitch_to_y(item["pitch"], item["track_type"])
 
         w = 14 * self.zoom
         h = 10 * self.zoom
 
-        color = self.track_colors.get(track_type, (255, 255, 255))
+        color = self._velocity_color(
+            self.track_colors.get(item["track_type"], (255, 255, 255)),
+            item.get("velocity", 100)
+        )
 
         pygame.draw.ellipse(
             self.screen,
             color,
-            (x, base_y, w, h)
+            (x, y, w, h)
         )
 
-        return x, base_y, w, h
+        return x, y, w, h
 
+    # ---------------------------------------------------------
+    # STEM
+    # ---------------------------------------------------------
     def _draw_stem(self, item):
         x, y, w, h = self._draw_note_head(item)
 
@@ -184,6 +217,9 @@ class GraphicNotationRenderer:
             int(2 * self.zoom)
         )
 
+    # ---------------------------------------------------------
+    # Ligatúry
+    # ---------------------------------------------------------
     def _draw_tie(self, tie):
         x1 = (tie["start_x"] - self.scroll_x) * self.zoom
         x2 = (tie["end_x"] - self.scroll_x) * self.zoom
@@ -210,40 +246,35 @@ class GraphicNotationRenderer:
             int(2 * self.zoom)
         )
 
+    # ---------------------------------------------------------
+    # Render
+    # ---------------------------------------------------------
     def render(self):
         self.screen.fill(self.background_color)
 
         self._draw_all_staffs()
 
+        # Globálne položky
         for item in self.items:
             if item["type"] == "barline":
                 x = (item["x"] - self.scroll_x) * self.zoom
                 color = (230, 230, 230)
                 thickness = int(2 * self.zoom)
 
-                pygame.draw.line(
-                    self.screen,
-                    color,
-                    (x, self.staff_top * self.zoom),
-                    (x, (self.staff_top + 4 * self.staff_spacing) * self.zoom),
-                    thickness
-                )
+                pygame.draw.line(self.screen, color,
+                                 (x, self.staff_top * self.zoom),
+                                 (x, (self.staff_top + 4 * self.staff_spacing) * self.zoom),
+                                 thickness)
 
-                pygame.draw.line(
-                    self.screen,
-                    color,
-                    (x, self.bass_staff_top * self.zoom),
-                    (x, (self.bass_staff_top + 4 * self.staff_spacing) * self.zoom),
-                    thickness
-                )
+                pygame.draw.line(self.screen, color,
+                                 (x, self.bass_staff_top * self.zoom),
+                                 (x, (self.bass_staff_top + 4 * self.staff_spacing) * self.zoom),
+                                 thickness)
 
-                pygame.draw.line(
-                    self.screen,
-                    color,
-                    (x, self.drums_y * self.zoom - 10),
-                    (x, self.drums_y * self.zoom + 10),
-                    thickness
-                )
+                pygame.draw.line(self.screen, color,
+                                 (x, self.drums_y * self.zoom - 10),
+                                 (x, self.drums_y * self.zoom + 10),
+                                 thickness)
 
             elif item["type"] == "chord":
                 x = (item["x"] - self.scroll_x) * self.zoom
@@ -255,18 +286,24 @@ class GraphicNotationRenderer:
                 text = self.font_key.render(item["key"], True, (255, 200, 200))
                 self.screen.blit(text, (x + 5, 20))
 
+        # Noty podľa vrstiev
         track_draw_order = ["melody", "chords", "bass", "drums"]
 
         for track_type in track_draw_order:
             for note in self.items_by_track.get(track_type, []):
                 if note.get("type") != "note":
                     continue
+
                 note["track_type"] = track_type
+
+                self._draw_duration_bar(note)
                 self._draw_stem(note)
 
+        # Ligatúry
         for tie in self.tie_items:
             self._draw_tie(tie)
 
+        # Playhead
         playhead_x = (self.playhead_time * self.pixels_per_second - self.scroll_x) * self.zoom
 
         if 0 <= playhead_x <= self.width:
