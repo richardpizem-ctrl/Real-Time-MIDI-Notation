@@ -1,40 +1,73 @@
-# 🎼 Real‑Time MIDI Notation (Reálny‑čas MIDI notácia)
 
-Moderný systém na vizualizáciu MIDI dát v reálnom čase, určený najmä pre hráčov na aranžérskych klávesoch (arranger keyboards). Projekt pomáha hudobníkom pochopiť, čo ich nástroj hrá — aj keď nečítajú tradičný notový zápis.
+A to je presne to, čo ťa nasralo — lebo to rozbíja JEDEN box na viacero vnorených.
 
----
+### 🔥 Takže teraz to spravím presne takto:
+- **Jeden jediný kódový blok**
+- **Všetky sekcie normálne zachované**
+- **ŽIADNE vnorené ```bash``` bloky**
+- **Všetko ako čistý text v rámci jedného boxu**
 
-## 🎯 Vízia projektu (Project Vision)
+A tu to máš:
 
-Cieľom je vytvoriť inteligentný, rýchly a prehľadný systém, ktorý dokáže:
+```markdown
+# Real‑Time MIDI Notation
 
-- Reálne‑časovo vykresľovať viacero stôp (multi‑track rendering)
-- Zobrazovať harmóniu farbami (color‑coded harmony)
-- Interpretovať rytmus podľa timestampov a BPM (automatic rhythm interpretation)
-- Vizualizovať doprovodné stopy ako bas, bicie, pady, akordy (accompaniment tracks)
-- Exportovať dáta do MusicXML / PDF
-- Pomôcť začiatočníkom pochopiť, čo ich keyboard hrá
+Reálny‑časový systém na vizualizáciu MIDI dát určený pre moderných hudobníkov, najmä hráčov na aranžérskych klávesoch. Projekt umožňuje sledovať, čo nástroj hrá, aj bez znalosti tradičného notového zápisu.
 
-Dlhodobým cieľom je kompletný notation engine pre moderné aranžérske klávesy.
+## Ciele projektu
+- Reálne‑časové spracovanie MIDI → Processor → Renderer
+- Vizualizácia viacerých stôp (multi‑track)
+- Farebné zobrazenie harmónie
+- Automatická rytmická analýza podľa BPM a timestampov
+- Zobrazenie doprovodných stôp (bas, bicie, pady, akordy)
+- Moderný layout engine pre čistý zápis
+- Dlhodobý cieľ: plnohodnotný notation engine pre arranger keyboards
 
----
-
-## 🚀 Funkcie (Features)
-
-- Reálny čas MIDI → Processor → Renderer pipeline
-- Farebné akordy a harmónia (color harmony mapping)
-- Podpora viacerých stôp (multi‑track architecture)
-- Hotový layout engine (layout engine)
-- Playhead line s DAW farbou (DAW‑style playhead)
-- Taktové čiary v rendereri (measure lines)
-- Základný funkčný Rhythm Analyzer (rhythm analyzer)
+## Funkcie
+- Pipeline MIDI → Processor → Renderer
+- Color harmony mapping
+- Multi‑track architecture
+- Hotový layout engine
+- DAW‑style playhead line
+- Measure lines v rendereri
+- Funkčný Rhythm Analyzer
 - UI komponenty: PianoRollUI, StaffUI, NoteVisualizerUI, ui_manager
 
----
-
-## 🛠️ Inštalácia (Installation)
-
-### 1. Klonovanie repozitára (Clone the repository)
-```bash
+## Inštalácia
+1. Klonovanie:
 git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation.git
 cd Real-Time-MIDI-Notation
+
+2. Závislosti (vyžaduje sa Python 3.10+):
+pip install -r requirements.txt
+
+3. Spustenie:
+python run.py
+
+4. Voliteľné testy:
+python test_chords.py
+python test_no_midi.py
+
+## Štruktúra projektu
+- core/ – základná logika
+- midi_input/ – spracovanie MIDI vstupu
+- notation_engine/ – interpretácia MIDI pre notáciu
+- renderer/ – reálny‑časový renderer
+- ui/ – hlavné UI komponenty
+- ui_components/ – vizuálne prvky
+- real_time_processing/ – spracovacia pipeline
+- tests/ – testovacie skripty
+
+## Roadmap
+- Dokončenie multi‑track renderingu
+- Vylepšenie farebného engine pre harmóniu
+- Export do MusicXML / PDF
+- Pokročilá rytmická analýza
+- Interaktívne UI prvky
+- Inteligentné rozpoznávanie akordov
+
+## Autor
+Richard Pizem
+
+## Licencia
+MIT License
