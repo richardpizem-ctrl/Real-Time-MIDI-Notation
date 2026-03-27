@@ -30,6 +30,7 @@ class GraphicNotationRenderer:
 
         # Položky na vykreslenie
         self.items = []
+        self.tie_items = []  # 🔥 LIGATÚRY
 
         # Rozloženie
         self.staff_top = 80
@@ -83,8 +84,23 @@ class GraphicNotationRenderer:
         x = item["start"] * self.pixels_per_second
         self.items.append({"type": "chord", "name": item["name"], "x": x})
 
+    # ---------------------------------------------------------
+    # 🔥 LIGATÚRY – nový typ položky
+    # ---------------------------------------------------------
+    def add_tie(self, tie_item):
+        start_x = tie_item["start"] * self.pixels_per_second
+        end_x = tie_item["end"] * self.pixels_per_second
+
+        self.tie_items.append({
+            "type": "tie",
+            "pitch": tie_item["pitch"],
+            "start_x": start_x,
+            "end_x": end_x
+        })
+
     def clear(self):
         self.items.clear()
+        self.tie_items.clear()
 
     # ---------------------------------------------------------
     # Externé API pre UIManager
@@ -137,6 +153,35 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
+    # 🔥 Kreslenie ligatúry (oblúk)
+    # ---------------------------------------------------------
+    def _draw_tie(self, tie):
+        x1 = (tie["start_x"] - self.scroll_x) * self.zoom
+        x2 = (tie["end_x"] - self.scroll_x) * self.zoom
+
+        if x2 < 0 or x1 > self.width:
+            return
+
+        width = x2 - x1
+        arc_height = 18 * self.zoom
+
+        rect = pygame.Rect(
+            x1,
+            self.staff_top * self.zoom + 40,
+            width,
+            arc_height
+        )
+
+        pygame.draw.arc(
+            self.screen,
+            (230, 230, 230),
+            rect,
+            math.pi,
+            2 * math.pi,
+            int(2 * self.zoom)
+        )
+
+    # ---------------------------------------------------------
     # Hlavné kreslenie
     # ---------------------------------------------------------
     def render(self):
@@ -150,9 +195,6 @@ class GraphicNotationRenderer:
             if item["type"] == "barline":
                 x = (item["x"] - self.scroll_x) * self.zoom
 
-                # ---------------------------------------------------------
-                # TAKTOVÉ ČIARY (PROFESIONÁLNE)
-                # ---------------------------------------------------------
                 color = (230, 230, 230)
                 thickness = int(2 * self.zoom)
 
@@ -174,7 +216,7 @@ class GraphicNotationRenderer:
                     thickness
                 )
 
-                # Drums (voliteľné – zatiaľ jemná čiara)
+                # Drums
                 pygame.draw.line(
                     self.screen,
                     color,
@@ -194,7 +236,13 @@ class GraphicNotationRenderer:
                 self.screen.blit(text, (x + 5, 20))
 
         # ---------------------------------------------------------
-        # PLAYHEAD LINE (PROFESIONÁLNA DAW FARBA)
+        # 🔥 LIGATÚRY
+        # ---------------------------------------------------------
+        for tie in self.tie_items:
+            self._draw_tie(tie)
+
+        # ---------------------------------------------------------
+        # PLAYHEAD LINE
         # ---------------------------------------------------------
         playhead_x = (self.playhead_time * self.pixels_per_second - self.scroll_x) * self.zoom
 
