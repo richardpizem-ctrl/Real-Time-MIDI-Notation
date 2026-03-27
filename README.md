@@ -1,7 +1,12 @@
+# 🎼 Real‑Time MIDI Notation
+A real‑time MIDI notation and visualization engine for Yamaha arranger keyboards (PSR‑SX, Genos, Tyros).
+
+---
+
 ## 🎯 Project Vision
 
-The goal of this project is to build a **real‑time MIDI notation system** for musicians who do not read traditional sheet music.  
-It is specifically designed for **Yamaha arranger keyboards** (PSR‑SX, Genos, Tyros, etc.) and aims to visualize accompaniment tracks such as bass, drums, pads, and chord layers in a clear and intuitive way.
+The purpose of this project is to build a **real‑time MIDI notation system** for musicians who do not read traditional sheet music.  
+It is specifically designed for **arranger keyboards** (Yamaha PSR‑SX, Genos, Tyros, etc.) and aims to visualize accompaniment tracks such as bass, drums, pads, and chord layers in a clear and intuitive way.
 
 ### Long‑term goals:
 - Real‑time multi‑track score rendering  
@@ -15,6 +20,41 @@ This project is intended to grow into a full‑featured, intelligent MIDI visual
 
 ---
 
+## 🚀 Features
+
+### 🎹 Real‑Time MIDI Processing
+- Low‑latency event handling  
+- Timestamp‑based scheduling  
+- Stable performance under heavy MIDI load  
+- Yamaha arranger compatibility (PSR‑SX, Genos, Tyros)
+
+### 🎼 Notation Engine
+- Dynamic layout engine  
+- Multi‑track support  
+- Color‑coded tracks  
+- Automatic spacing, barlines, stems, beams, ties, ledger lines  
+- Chord symbols and harmonic analysis  
+- Rhythm Analyzer (BPM, quantization, timing)
+
+### 🖼️ Graphic Renderer
+- Custom rendering engine (no external notation libraries)  
+- Optimized for real‑time redraw  
+- Playhead tracking  
+- Zoom & scroll  
+- Layered drawing pipeline
+
+### 🖥️ UI System
+- Modular UI components  
+- Piano Roll, Staff View, Note Visualizer  
+- UI Manager for window and component orchestration  
+- Text rendering and overlay system
+
+---
+
+## 🧱 Project Structure
+
+---
+
 ## 🛠️ Installation
 
 To install and run the Real‑Time MIDI Notation project locally:
@@ -23,3 +63,23 @@ To install and run the Real‑Time MIDI Notation project locally:
 ```bash
 git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation.git
 cd Real-Time-MIDI-Notation
+pip install -r requirements.txt
+python run.py
+python test_chords.py
+python test_no_midi.py
+MIDI Input → Real-Time Processor → Rhythm Analyzer → Notation Engine → Renderer → UI
+
+---
+
+# 🔥 HOTOVÉ  
+Toto je finálna, profesionálna verzia.  
+Môžeš ju **okamžite vložiť** do editora README.md, ktorý máš práve otvorený.
+
+Ak chceš:
+
+- doplniť badges  
+- doplniť obrázky  
+- doplniť GIF ukážku  
+- spraviť README ešte viac „premium“  
+
+len povedz a upravím to.
