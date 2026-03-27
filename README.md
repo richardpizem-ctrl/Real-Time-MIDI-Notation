@@ -1,24 +1,24 @@
 # Real‑Time MIDI Notation
 
-Reálny‑časový systém na vizualizáciu MIDI dát určený pre moderných hudobníkov, najmä hráčov na aranžérskych klávesoch. Projekt umožňuje sledovať, čo nástroj hrá, aj bez znalosti tradičného notového zápisu.
+Reálny‑časový systém na vizualizáciu MIDI dát určený pre moderných hudobníkov, najmä hráčov na aranžérskych klávesoch. Projekt umožňuje sledovať, čo nástroj hrá, aj bez znalosti tradičného notového zápisu. Cieľom je vytvoriť moderný, rýchly a presný notation engine, ktorý dokáže v reálnom čase zobrazovať hudobné informácie z MIDI vstupu.
 
 ## Ciele projektu
-- Reálne‑časové spracovanie MIDI → Processor → Renderer
-- Vizualizácia viacerých stôp (multi‑track)
-- Farebné zobrazenie harmónie
+- Reálne‑časové spracovanie MIDI dát cez pipeline Processor → Renderer
+- Vizualizácia viacerých stôp (multi‑track) s možnosťou rozšírenia
+- Farebné zobrazenie harmónie a akordových štruktúr
 - Automatická rytmická analýza podľa BPM a timestampov
 - Zobrazenie doprovodných stôp (bas, bicie, pady, akordy)
-- Moderný layout engine pre čistý zápis
-- Dlhodobý cieľ: plnohodnotný notation engine pre arranger keyboards
+- Moderný layout engine pre čistý, čitateľný zápis
+- Dlhodobý cieľ: plnohodnotný notation engine pre arranger keyboards a živé hranie
 
 ## Funkcie
-- Pipeline MIDI → Processor → Renderer
-- Color harmony mapping
-- Multi‑track architecture
-- Hotový layout engine
-- DAW‑style playhead line
-- Measure lines v rendereri
-- Funkčný Rhythm Analyzer
+- Pipeline MIDI → Processor → Renderer s nízkou latenciou
+- Color harmony mapping pre akordy a harmóniu
+- Multi‑track architektúra pripravená na rozšírenie
+- Hotový layout engine pre presné rozmiestnenie prvkov
+- DAW‑style playhead line pre vizuálne sledovanie prehrávania
+- Measure lines v rendereri pre orientáciu v takte
+- Funkčný Rhythm Analyzer pracujúci s timestampmi a BPM
 - UI komponenty: PianoRollUI, StaffUI, NoteVisualizerUI, ui_manager
 
 ## Inštalácia
@@ -37,7 +37,7 @@ python test_chords.py
 python test_no_midi.py
 
 ## Štruktúra projektu
-- core/ – základná logika
+- core/ – základná logika systému
 - midi_input/ – spracovanie MIDI vstupu
 - notation_engine/ – interpretácia MIDI pre notáciu
 - renderer/ – reálny‑časový renderer
@@ -53,6 +53,7 @@ python test_no_midi.py
 - Pokročilá rytmická analýza
 - Interaktívne UI prvky
 - Inteligentné rozpoznávanie akordov
+- Optimalizácia výkonu pre živé hranie
 
 ## Autor
 Richard Pizem
