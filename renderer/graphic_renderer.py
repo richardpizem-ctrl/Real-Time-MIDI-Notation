@@ -149,12 +149,38 @@ class GraphicNotationRenderer:
         for item in self.items:
             if item["type"] == "barline":
                 x = (item["x"] - self.scroll_x) * self.zoom
+
+                # ---------------------------------------------------------
+                # TAKTOVÉ ČIARY (PROFESIONÁLNE)
+                # ---------------------------------------------------------
+                color = (230, 230, 230)
+                thickness = int(2 * self.zoom)
+
+                # Horná osnova
                 pygame.draw.line(
                     self.screen,
-                    (180, 180, 180),
-                    (x, 50),
-                    (x, self.height - 50),
-                    int(2 * self.zoom)
+                    color,
+                    (x, self.staff_top * self.zoom),
+                    (x, (self.staff_top + 4 * self.staff_spacing) * self.zoom),
+                    thickness
+                )
+
+                # Basová osnova
+                pygame.draw.line(
+                    self.screen,
+                    color,
+                    (x, self.bass_staff_top * self.zoom),
+                    (x, (self.bass_staff_top + 4 * self.staff_spacing) * self.zoom),
+                    thickness
+                )
+
+                # Drums (voliteľné – zatiaľ jemná čiara)
+                pygame.draw.line(
+                    self.screen,
+                    color,
+                    (x, self.drums_y * self.zoom - 10),
+                    (x, self.drums_y * self.zoom + 10),
+                    thickness
                 )
 
             elif item["type"] == "chord":
@@ -175,7 +201,7 @@ class GraphicNotationRenderer:
         if 0 <= playhead_x <= self.width:
             pygame.draw.line(
                 self.screen,
-                (230, 230, 230),  # profesionálna DAW farba (Logic Pro štýl)
+                (230, 230, 230),
                 (playhead_x, 0),
                 (playhead_x, self.height),
                 int(3 * self.zoom)
