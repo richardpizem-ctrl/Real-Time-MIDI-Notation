@@ -1,55 +1,40 @@
-# 🎼 Real‑Time MIDI Notation
-A real‑time MIDI notation and visualization engine for Yamaha arranger keyboards (PSR‑SX, Genos, Tyros).
+# 🎼 Real‑Time MIDI Notation (Reálny‑čas MIDI notácia)
+
+Moderný systém na vizualizáciu MIDI dát v reálnom čase, určený najmä pre hráčov na aranžérskych klávesoch (arranger keyboards). Projekt pomáha hudobníkom pochopiť, čo ich nástroj hrá — aj keď nečítajú tradičný notový zápis.
 
 ---
 
-## 🎯 Project Vision
+## 🎯 Vízia projektu (Project Vision)
 
-The purpose of this project is to build a **real‑time MIDI notation system** for musicians who do not read traditional sheet music.  
-It is specifically designed for **arranger keyboards** (Yamaha PSR‑SX, Genos, Tyros, etc.) and aims to visualize accompaniment tracks such as bass, drums, pads, and chord layers in a clear and intuitive way.
+Cieľom je vytvoriť inteligentný, rýchly a prehľadný systém, ktorý dokáže:
 
-### Long‑term goals:
-- Real‑time multi‑track score rendering  
-- Color‑coded harmony visualization  
-- Automatic rhythm interpretation and quantization  
-- Export to MusicXML / PDF  
-- Tools for beginners to understand what their keyboard is playing  
-- A complete real‑time notation engine for modern arranger keyboards  
+- Reálne‑časovo vykresľovať viacero stôp (multi‑track rendering)
+- Zobrazovať harmóniu farbami (color‑coded harmony)
+- Interpretovať rytmus podľa timestampov a BPM (automatic rhythm interpretation)
+- Vizualizovať doprovodné stopy ako bas, bicie, pady, akordy (accompaniment tracks)
+- Exportovať dáta do MusicXML / PDF
+- Pomôcť začiatočníkom pochopiť, čo ich keyboard hrá
 
-This project is intended to grow into a full‑featured, intelligent MIDI visualization system.
+Dlhodobým cieľom je kompletný notation engine pre moderné aranžérske klávesy.
 
 ---
 
-## 🚀 Features
+## 🚀 Funkcie (Features)
 
-### 🎹 Real‑Time MIDI Processing
-- Low‑latency event handling  
-- Timestamp‑based scheduling  
-- Stable performance under heavy MIDI load  
-- Yamaha arranger compatibility (PSR‑SX, Genos, Tyros)
-
-### 🎼 Notation Engine
-- Dynamic layout engine  
-- Multi‑track support  
-- Color‑coded tracks  
-- Automatic spacing, barlines, stems, beams, ties, ledger lines  
-- Chord symbols and harmonic analysis  
-- Rhythm Analyzer (BPM, quantization, timing)
-
-### 🖼️ Graphic Renderer
-- Custom rendering engine (no external notation libraries)  
-- Optimized for real‑time redraw  
-- Playhead tracking  
-- Zoom & scroll  
-- Layered drawing pipeline
-
-### 🖥️ UI System
-- Modular UI components  
-- Piano Roll, Staff View, Note Visualizer  
-- UI Manager for window and component orchestration  
-- Text rendering and overlay system
+- Reálny čas MIDI → Processor → Renderer pipeline
+- Farebné akordy a harmónia (color harmony mapping)
+- Podpora viacerých stôp (multi‑track architecture)
+- Hotový layout engine (layout engine)
+- Playhead line s DAW farbou (DAW‑style playhead)
+- Taktové čiary v rendereri (measure lines)
+- Základný funkčný Rhythm Analyzer (rhythm analyzer)
+- UI komponenty: PianoRollUI, StaffUI, NoteVisualizerUI, ui_manager
 
 ---
 
-## 🧱 Project Structure
+## 🛠️ Inštalácia (Installation)
 
+### 1. Klonovanie repozitára (Clone the repository)
+```bash
+git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation.git
+cd Real-Time-MIDI-Notation
