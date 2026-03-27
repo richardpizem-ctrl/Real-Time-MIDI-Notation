@@ -27,10 +27,11 @@ class EventRouter:
 
         Logger.info("EventRouter initialized.")
 
+
     # ---------------------------------------------------------
     # ROUTING MIDI EVENTOV
     # ---------------------------------------------------------
-    def route(self, midi_event):
+    def route(self, midi_event: dict):
         """
         midi_event je dict:
         {
@@ -55,7 +56,7 @@ class EventRouter:
             if self.track_system and event_type in ("note_on", "note_off"):
 
                 # 1) automatické prepnutie tracku podľa MIDI kanála
-                self.track_system.set_active_track_by_channel(channel)
+                active_track = self.track_system.set_active_track_by_channel(channel)
 
                 # 2) vytvorenie note eventu pre aktívny track
                 event = self.track_system.build_note_event_for_active_track(
@@ -64,10 +65,13 @@ class EventRouter:
                     event_type=event_type
                 )
 
-                # ak track_system vráti None, event UI sa preskočí
                 if event:
                     midi_event["track_id"] = event.get("track_id")
                     midi_event["track_color"] = event.get("track_color")
+
+                Logger.debug(
+                    f"Track routing: channel={channel}, active_track={active_track}, event={event}"
+                )
 
             # ---------------------------------------------------------
             # NOTE ON / NOTE OFF
@@ -98,7 +102,7 @@ class EventRouter:
                         self.staff_ui.remove_note(event)
 
                 # ---------------------------------------------------------
-                # 🔥 NOTE VISUALIZER (FÁZA 3 – KROK 3)
+                # 🔥 NOTE VISUALIZER
                 # ---------------------------------------------------------
                 if self.note_visualizer and event:
                     if event_type == "note_on" and velocity > 0:
