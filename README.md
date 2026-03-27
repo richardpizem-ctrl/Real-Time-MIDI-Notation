@@ -53,33 +53,3 @@ This project is intended to grow into a full‑featured, intelligent MIDI visual
 
 ## 🧱 Project Structure
 
----
-
-## 🛠️ Installation
-
-To install and run the Real‑Time MIDI Notation project locally:
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation.git
-cd Real-Time-MIDI-Notation
-pip install -r requirements.txt
-python run.py
-python test_chords.py
-python test_no_midi.py
-MIDI Input → Real-Time Processor → Rhythm Analyzer → Notation Engine → Renderer → UI
-
----
-
-# 🔥 HOTOVÉ  
-Toto je finálna, profesionálna verzia.  
-Môžeš ju **okamžite vložiť** do editora README.md, ktorý máš práve otvorený.
-
-Ak chceš:
-
-- doplniť badges  
-- doplniť obrázky  
-- doplniť GIF ukážku  
-- spraviť README ešte viac „premium“  
-
-len povedz a upravím to.
