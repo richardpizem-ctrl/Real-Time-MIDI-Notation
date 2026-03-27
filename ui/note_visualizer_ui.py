@@ -162,14 +162,12 @@ class NoteVisualizerUI:
     def compute_depth(self, pitch):
         if pitch is None:
             return 1.0
-        # normalizácia približne pre rozsah 36–84
         norm = max(0.0, min(1.0, (pitch - 36) / 48.0))
-        # nízke tóny bližšie (väčšie), vysoké ďalej (menšie)
-        depth = 1.3 - norm * 0.6  # 1.3 → 0.7
+        depth = 1.3 - norm * 0.6
         return depth
 
     # ---------------------------------------------------------
-    # COLOR LERP (KROK 11)
+    # COLOR LERP
     # ---------------------------------------------------------
     def lerp_color(self, a, b, t):
         return (
@@ -248,18 +246,17 @@ class NoteVisualizerUI:
             depth = self.compute_depth(n.get("pitch"))
             notes_with_depth.append((depth, n))
 
-        # Zoradenie podľa hĺbky (vzdialenejšie najprv, bližšie nakoniec)
+        # Zoradenie podľa hĺbky
         notes_with_depth.sort(key=lambda x: x[0])
 
         count = len(notes_with_depth)
         y_base = self.height // 2
 
-        # Intervaly a offsety pre aktuálny akord
+        # Intervaly a offsety
         intervals = self.compute_intervals(notes_with_depth)
         offsets = self.compute_interval_offsets(intervals) if intervals else []
 
         for index, (depth, n) in enumerate(notes_with_depth):
-            # základná farba z color morphingu
             color = self.current_chord_color
 
             # Fade-out
@@ -312,7 +309,7 @@ class NoteVisualizerUI:
             scaled_font = pygame.font.SysFont("Arial", int(self.font_size * scale), bold=True)
             text_surface = scaled_font.render(n["note"], True, color)
 
-            # Intervalové rozostupy (KROK 12)
+            # Intervalové rozostupy
             base_x = self.width // 2
             x_pos = base_x
 
@@ -322,12 +319,12 @@ class NoteVisualizerUI:
                     x_pos += sum(offsets[:index]) * 0.8
                 x_pos += int(left * 20)
 
-            # Vertikálny posun podľa hĺbky (parallax)
+            # Vertikálny posun podľa hĺbky
             y_pos = int(y_base - (depth - 1.0) * 25)
 
             text_rect = text_surface.get_rect(center=(x_pos, y_pos))
 
-            # HALO so zohľadnením hĺbky, farba z current_chord_color
+            # HALO
             halo_strength = n["halo_strength"] * depth
             self.draw_halo(surface, text_surface, text_rect, self.current_chord_color, halo_strength)
 
