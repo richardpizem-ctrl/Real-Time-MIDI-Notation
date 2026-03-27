@@ -168,14 +168,14 @@ class GraphicNotationRenderer:
                 self.screen.blit(text, (x + 5, 20))
 
         # ---------------------------------------------------------
-        # PLAYHEAD LINE (NOVÉ)
+        # PLAYHEAD LINE (PROFESIONÁLNA DAW FARBA)
         # ---------------------------------------------------------
         playhead_x = (self.playhead_time * self.pixels_per_second - self.scroll_x) * self.zoom
 
         if 0 <= playhead_x <= self.width:
             pygame.draw.line(
                 self.screen,
-                (80, 200, 255),  # jemná tyrkysová
+                (230, 230, 230),  # profesionálna DAW farba (Logic Pro štýl)
                 (playhead_x, 0),
                 (playhead_x, self.height),
                 int(3 * self.zoom)
