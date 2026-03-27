@@ -107,13 +107,18 @@ class UIManager:
         ]
 
     # ---------------------------------------------------------
-    # UPDATE LOOP – Performance Tracker + UI
+    # UPDATE LOOP – Performance Tracker + BPM pulz + UI
     # ---------------------------------------------------------
     def update(self):
-        # Získanie metrík z Performance Trackeru
+        # 1) Získanie metrík z Performance Trackeru
         self.performance_stats = self.perf.get_metrics()
 
-        # Odovzdanie metrík UI komponentom
+        # 2) BPM pulz → NoteVisualizerUI
+        bpm = self.performance_stats.get("bpm")
+        now = time.time()
+        self.note_visualizer.update_bpm_pulse(bpm, now)
+
+        # 3) Odovzdanie metrík UI komponentom
         self.piano_ui.update(self.performance_stats)
         self.note_visualizer.update(self.performance_stats)
         self.renderer.update_performance(self.performance_stats)
