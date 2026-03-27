@@ -58,6 +58,15 @@ class GraphicNotationRenderer:
         pygame.font.init()
         self.font_chord = pygame.font.SysFont("Arial", 18)
         self.font_key = pygame.font.SysFont("Arial", 16)
+        self.font_dynamic = pygame.font.SysFont("Arial", 14)
+
+        # Track visibility – základ pre Track Manager
+        self.track_visible = {
+            "melody": True,
+            "bass": True,
+            "drums": True,
+            "chords": True,
+        }
 
     # ---------------------------------------------------------
     # API pre NotationProcessor
@@ -110,11 +119,16 @@ class GraphicNotationRenderer:
     def set_scroll_x(self, value):
         self.scroll_x = max(0.0, float(value))
 
+        # ---------------------------------------------------------
     def set_zoom(self, value):
         self.zoom = max(0.2, min(3.0, float(value)))
 
     def set_playhead(self, timestamp):
         self.playhead_time = timestamp
+
+    def set_track_visible(self, track_type, visible: bool):
+        if track_type in self.track_visible:
+            self.track_visible[track_type] = bool(visible)
 
     def tick(self, dt):
         self.update(dt)
@@ -124,31 +138,30 @@ class GraphicNotationRenderer:
             self.scroll_x += dt * self.scroll_speed
 
     # ---------------------------------------------------------
-    # Pitch → Y konverzia
+    # Pitch → Y konverzia (lepšie podľa kľúča)
     # ---------------------------------------------------------
     def _pitch_to_y(self, pitch, track_type):
         """
         MIDI pitch → Y pozícia na osnove.
-        60 = C4 = stredná osnova
-        Každý poltón = 6 px (upravené zoomom)
+        Melody: treble clef, referenčný tón G4 (67)
+        Bass: bass clef, referenčný tón E3 (52)
         """
         if track_type == "melody":
-            base_y = self.staff_top * self.zoom + 40
+            base_pitch = 67  # G4
+            base_y = self.staff_top * self.zoom + 2 * self.staff_spacing * self.zoom
         elif track_type == "bass":
-            base_y = self.bass_staff_top * self.zoom + 40
+            base_pitch = 52  # E3
+            base_y = self.bass_staff_top * self.zoom + 2 * self.staff_spacing * self.zoom
         else:
             return self.drums_y * self.zoom
 
-        offset = (60 - pitch) * 6 * self.zoom
+        offset = (base_pitch - pitch) * (self.staff_spacing / 2) * self.zoom
         return base_y + offset
 
     # ---------------------------------------------------------
     # Velocity → farba
     # ---------------------------------------------------------
     def _velocity_color(self, base_color, velocity):
-        """
-        Velocity 0–127 → zosvetlenie farby.
-        """
         factor = 0.4 + (velocity / 127) * 0.6
         r = min(255, int(base_color[0] * factor))
         g = min(255, int(base_color[1] * factor))
@@ -177,6 +190,87 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
+    # Ledger lines
+    # ---------------------------------------------------------
+    def _draw_ledger_lines(self, x_center, pitch, track_type):
+        if track_type == "melody":
+            staff_top = self.staff_top * self.zoom
+        elif track_type == "bass":
+            staff_top = self.bass_staff_top * self.zoom
+        else:
+            return
+
+        spacing = self.staff_spacing * self.zoom
+        top_line_y = staff_top
+        bottom_line_y = staff_top + 4 * spacing
+
+        y = self._pitch_to_y(pitch, track_type)
+        line_length = 18 * self.zoom
+        half_len = line_length / 2
+        color = (180, 180, 180)
+
+        # nad osnovou
+        if y < top_line_y:
+            step = spacing / 2
+            current_y = top_line_y - step
+            while current_y + 1 > y:
+                pygame.draw.line(
+                    self.screen,
+                    color,
+                    (x_center - half_len, current_y),
+                    (x_center + half_len, current_y),
+                    int(2 * self.zoom)
+                )
+                current_y -= step
+
+        # pod osnovou
+        if y > bottom_line_y:
+            step = spacing / 2
+            current_y = bottom_line_y + step
+            while current_y - 1 < y:
+                pygame.draw.line(
+                    self.screen,
+                    color,
+                    (x_center - half_len, current_y),
+                    (x_center + half_len, current_y),
+                    int(2 * self.zoom)
+                )
+                current_y += step
+
+    # ---------------------------------------------------------
+    # Dynamika
+    # ---------------------------------------------------------
+    def _draw_dynamic_marking(self, item, x, y, h):
+        dyn = item.get("dynamic")
+        if not dyn:
+            return
+
+        dyn = str(dyn).lower()
+        if dyn not in ("pp", "p", "mp", "mf", "f", "ff"):
+            return
+
+        intensity = {
+            "pp": 0.3,
+            "p": 0.45,
+            "mp": 0.6,
+            "mf": 0.75,
+            "f": 0.9,
+            "ff": 1.0
+        }[dyn]
+
+        base_color = (230, 230, 230)
+        color = (
+            int(base_color[0] * intensity),
+            int(base_color[1] * intensity),
+            int(base_color[2] * intensity),
+        )
+
+        text = self.font_dynamic.render(dyn, True, color)
+        text_rect = text.get_rect()
+        text_rect.midtop = (x + (14 * self.zoom) / 2, y + h + 6 * self.zoom)
+        self.screen.blit(text, text_rect)
+
+    # ---------------------------------------------------------
     # Kreslenie hlavičky
     # ---------------------------------------------------------
     def _draw_note_head(self, item):
@@ -197,6 +291,11 @@ class GraphicNotationRenderer:
             (x, y, w, h)
         )
 
+        # ledger lines + dynamika
+        x_center = x + w / 2
+        self._draw_ledger_lines(x_center, item["pitch"], item["track_type"])
+        self._draw_dynamic_marking(item, x, y, h)
+
         return x, y, w, h
 
     # ---------------------------------------------------------
@@ -205,9 +304,15 @@ class GraphicNotationRenderer:
     def _draw_stem(self, item):
         x, y, w, h = self._draw_note_head(item)
 
-        stem_x = x + w
-        stem_y_top = y - 30 * self.zoom
-        stem_y_bottom = y + h / 2
+        # jednoduché pravidlo: vyššie tóny stem dole, nižšie hore
+        if item["pitch"] >= 64:
+            stem_x = x
+            stem_y_top = y + h
+            stem_y_bottom = y + h + 30 * self.zoom
+        else:
+            stem_x = x + w
+            stem_y_top = y - 30 * self.zoom
+            stem_y_bottom = y + h / 2
 
         pygame.draw.line(
             self.screen,
@@ -217,8 +322,83 @@ class GraphicNotationRenderer:
             int(2 * self.zoom)
         )
 
+        return stem_x, stem_y_top, stem_y_bottom
+
     # ---------------------------------------------------------
-    # Ligatúry
+    # Beamovanie osminových nôt
+    # ---------------------------------------------------------
+    def _group_beams(self, notes, beat_duration=0.5):
+        """
+        Jednoduché beamovanie:
+        - berieme noty s duration <= beat_duration (napr. osminy)
+        - spájame susedné, ak sú časovo blízko
+        """
+        groups = []
+        current = []
+
+        notes_sorted = sorted(notes, key=lambda n: n["start"])
+
+        for n in notes_sorted:
+            if n.get("duration", 0) > beat_duration:
+                if len(current) >= 2:
+                    groups.append(current)
+                current = []
+                continue
+
+            if not current:
+                current = [n]
+            else:
+                prev = current[-1]
+                gap = n["start"] - (prev["start"] + prev.get("duration", 0))
+                if gap <= beat_duration * 0.3:
+                    current.append(n)
+                else:
+                    if len(current) >= 2:
+                        groups.append(current)
+                    current = [n]
+
+        if len(current) >= 2:
+            groups.append(current)
+
+        return groups
+
+    def _draw_beam_group(self, group, track_type):
+        """
+        Jednoduchý beam: jedna hrubá čiara medzi stems.
+        """
+        stem_points = []
+        for note in group:
+            note["track_type"] = track_type
+            x, y, w, h = self._draw_note_head(note)
+            if note["pitch"] >= 64:
+                stem_x = x
+                stem_y = y + h + 30 * self.zoom
+            else:
+                stem_x = x + w
+                stem_y = y - 30 * self.zoom
+            stem_points.append((stem_x, stem_y))
+
+        if len(stem_points) < 2:
+            return
+
+        stem_points.sort(key=lambda p: p[0])
+        y_avg = sum(p[1] for p in stem_points) / len(stem_points)
+
+        x_start = stem_points[0][0]
+        x_end = stem_points[-1][0]
+
+        thickness = int(4 * self.zoom)
+
+        pygame.draw.line(
+            self.screen,
+            (255, 255, 255),
+            (x_start, y_avg),
+            (x_end, y_avg),
+            thickness
+        )
+
+    # ---------------------------------------------------------
+    # Ligatúry – tvar podľa pitch
     # ---------------------------------------------------------
     def _draw_tie(self, tie):
         x1 = (tie["start_x"] - self.scroll_x) * self.zoom
@@ -228,21 +408,62 @@ class GraphicNotationRenderer:
             return
 
         width = x2 - x1
-        arc_height = 18 * self.zoom
+        pitch = tie["pitch"]
+        track_type = tie.get("track_type", "melody")
+        y = self._pitch_to_y(pitch, track_type)
+
+        arc_height = 12 * self.zoom
 
         rect = pygame.Rect(
             x1,
-            self.staff_top * self.zoom + 40,
+            y - arc_height,
             width,
-            arc_height
+            arc_height * 2
         )
+
+        # ak je tón vyššie, oblúk ide „nadol“, ak nižšie, „nahor“
+        if pitch >= 64:
+            start_angle = 0
+            end_angle = math.pi
+        else:
+            start_angle = math.pi
+            end_angle = 2 * math.pi
 
         pygame.draw.arc(
             self.screen,
             (230, 230, 230),
             rect,
-            math.pi,
-            2 * math.pi,
+            start_angle,
+            end_angle,
+            int(2 * self.zoom)
+        )
+
+    # ---------------------------------------------------------
+    # Osnovy
+    # ---------------------------------------------------------
+    def _draw_staff(self, y_top):
+        spacing = self.staff_spacing * self.zoom
+        y_top *= self.zoom
+
+        for i in range(5):
+            y = y_top + i * spacing
+            pygame.draw.line(
+                self.screen,
+                self.staff_color,
+                (40, y),
+                (self.width - 40, y),
+                int(2 * self.zoom)
+            )
+
+    def _draw_all_staffs(self):
+        self._draw_staff(self.staff_top)
+        self._draw_staff(self.bass_staff_top)
+
+        pygame.draw.line(
+            self.screen,
+            self.staff_color,
+            (40, self.drums_y * self.zoom),
+            (self.width - 40, self.drums_y * self.zoom),
             int(2 * self.zoom)
         )
 
@@ -290,7 +511,18 @@ class GraphicNotationRenderer:
         track_draw_order = ["melody", "chords", "bass", "drums"]
 
         for track_type in track_draw_order:
-            for note in self.items_by_track.get(track_type, []):
+            if not self.track_visible.get(track_type, True):
+                continue
+
+            notes = self.items_by_track.get(track_type, [])
+
+            # Beamovanie – len melody a bass
+            if track_type in ("melody", "bass"):
+                beam_groups = self._group_beams(notes)
+                for group in beam_groups:
+                    self._draw_beam_group(group, track_type)
+
+            for note in notes:
                 if note.get("type") != "note":
                     continue
 
