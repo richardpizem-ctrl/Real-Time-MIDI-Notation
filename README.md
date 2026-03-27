@@ -1,15 +1,3 @@
-
-A to je presne to, čo ťa nasralo — lebo to rozbíja JEDEN box na viacero vnorených.
-
-### 🔥 Takže teraz to spravím presne takto:
-- **Jeden jediný kódový blok**
-- **Všetky sekcie normálne zachované**
-- **ŽIADNE vnorené ```bash``` bloky**
-- **Všetko ako čistý text v rámci jedného boxu**
-
-A tu to máš:
-
-```markdown
 # Real‑Time MIDI Notation
 
 Reálny‑časový systém na vizualizáciu MIDI dát určený pre moderných hudobníkov, najmä hráčov na aranžérskych klávesoch. Projekt umožňuje sledovať, čo nástroj hrá, aj bez znalosti tradičného notového zápisu.
