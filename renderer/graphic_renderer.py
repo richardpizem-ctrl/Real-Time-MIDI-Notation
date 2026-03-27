@@ -180,6 +180,27 @@ class GraphicNotationRenderer:
             (x, base_y, w, h)
         )
 
+        return x, base_y, w, h
+
+    # ---------------------------------------------------------
+    # 🔥 STEMS (nožičky)
+    # ---------------------------------------------------------
+    def _draw_stem(self, item):
+        x, y, w, h = self._draw_note_head(item)
+
+        # Nožička ide hore (klasický zápis)
+        stem_x = x + w
+        stem_y_top = y - 30 * self.zoom
+        stem_y_bottom = y + h / 2
+
+        pygame.draw.line(
+            self.screen,
+            (255, 255, 255),
+            (stem_x, stem_y_bottom),
+            (stem_x, stem_y_top),
+            int(2 * self.zoom)
+        )
+
     # ---------------------------------------------------------
     # 🔥 Kreslenie ligatúry (oblúk)
     # ---------------------------------------------------------
@@ -265,6 +286,7 @@ class GraphicNotationRenderer:
 
             elif item["type"] == "note":
                 self._draw_note_head(item)
+                self._draw_stem(item)
 
         # ---------------------------------------------------------
         # 🔥 LIGATÚRY
