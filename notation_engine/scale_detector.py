@@ -1,5 +1,3 @@
-# notation_engine/scale_detector.py
-
 from typing import Iterable, Optional
 
 # ---------------------------------------------------------
@@ -91,4 +89,23 @@ def detect_scale(
 
     for root in range(12):
         for scale_name, intervals in ALL_SCALES.items():
-            scale
+            scale_pcs = {(root + i) % 12 for i in intervals}
+
+            # skóre = koľko hraných tónov patrí do stupnice
+            score = len([pc for pc in pcs if pc in scale_pcs])
+
+            # bonus za zhodu s akordom
+            if chord_root is not None and chord_root == root:
+                score += 2
+
+            # bonus za zhodu s key detection
+            if key_root is not None and key_root == root:
+                score += 1
+
+            candidates.append((score, scale_name, root))
+
+    # vyber najlepšiu stupnicu
+    best = max(candidates, key=lambda x: x[0])
+    _, scale_name, root = best
+
+    return scale_name, root
