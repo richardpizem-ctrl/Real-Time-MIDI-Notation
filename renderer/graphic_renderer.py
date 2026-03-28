@@ -231,7 +231,7 @@ class GraphicNotationRenderer:
                     int(2 * self.zoom)
                 )
                 current_y += step
-        # pod osnovou
+        # pod osnovou (duplicitná ochrana)
         if y > bottom_line_y:
             step = spacing / 2
             current_y = bottom_line_y + step
@@ -405,6 +405,51 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
+    # Playhead – DAW + glow + pulz
+    # ---------------------------------------------------------
+    def _draw_playhead(self):
+        x = (self.playhead_time * self.pixels_per_second - self.scroll_x) * self.zoom
+
+        # základné Y podľa osnov
+        top_y = 30
+        bottom_y = self.height - 30
+
+        # pulz (0–1) podľa času
+        t = time.time()
+        pulse = 0.5 + 0.5 * math.sin(t * 2.5)
+
+        # glow vrstva (polopriehľadný obdĺžnik)
+        glow_width = 18 * self.zoom
+        glow_alpha = int(40 + 80 * pulse)
+        glow_surface = pygame.Surface((int(glow_width), int(bottom_y - top_y)), pygame.SRCALPHA)
+        pygame.draw.rect(
+            glow_surface,
+            (255, 80, 80, glow_alpha),
+            (0, 0, glow_width, bottom_y - top_y)
+        )
+        self.screen.blit(glow_surface, (x - glow_width / 2, top_y))
+
+        # hlavná červená čiara
+        thickness_main = max(2, int(2 * self.zoom))
+        pygame.draw.line(
+            self.screen,
+            (255, 80, 80),
+            (x, top_y),
+            (x, bottom_y),
+            thickness_main
+        )
+
+        # vnútorná biela čiara (DAW štýl)
+        thickness_inner = 1
+        pygame.draw.line(
+            self.screen,
+            (255, 255, 255),
+            (x, top_y),
+            (x, bottom_y),
+            thickness_inner
+        )
+
+    # ---------------------------------------------------------
     # Render
     # ---------------------------------------------------------
     def render(self):
@@ -412,7 +457,7 @@ class GraphicNotationRenderer:
 
         self._draw_all_staffs()
 
-        # Globálne položky
+        # Globálne položky (taktové čiary, akordy, zmeny tóniny)
         for item in self.items:
             if item["type"] == "barline":
                 x = (item["x"] - self.scroll_x) * self.zoom
@@ -445,4 +490,33 @@ class GraphicNotationRenderer:
                 text = self.font_chord.render(item["name"], True, (255, 255, 120))
                 self.screen.blit(text, (x + 5, 40))
 
-            elif item["type"] ==
+            elif item["type"] == "key_change":
+                x = (item["x"] - self.scroll_x) * self.zoom
+                text = self.font_key.render(item["key"], True, (200, 200, 255))
+                self.screen.blit(text, (x + 5, 60))
+
+        # 1) Duration bary – podľa stôp a viditeľnosti
+        for track_type, notes in self.items_by_track.items():
+            if not self.track_visible.get(track_type, True):
+                continue
+            for note in notes:
+                self._draw_duration_bar(note)
+
+        # 2) Note heads + stems (vrátane artikulácií, dynamiky, ledger lines)
+        for track_type, notes in self.items_by_track.items():
+            if not self.track_visible.get(track_type, True):
+                continue
+            for note in notes:
+                self._draw_stem(note)
+
+        # 3) Ligatúry (ties) – len pre viditeľné stopy
+        for tie in self.tie_items:
+            track_type = tie.get("track_type", "melody")
+            if not self.track_visible.get(track_type, True):
+                continue
+            self._draw_tie(tie)
+
+        # 4) Playhead – úplne navrchu
+        self._draw_playhead()
+
+        return self.screen
