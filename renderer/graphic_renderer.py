@@ -26,6 +26,15 @@ class GraphicNotationRenderer:
             "chords": (255, 255, 120),
         }
 
+        # Harmonické farby podľa role
+        self.harmony_colors = {
+            "root": (255, 255, 255),
+            "chord_tone": (120, 220, 255),
+            "tension": (255, 140, 200),
+            "scale_tone": (180, 220, 180),
+            "outside": (255, 90, 90),
+        }
+
         self.items = []
         self.items_by_track = {
             "melody": [],
@@ -88,9 +97,14 @@ class GraphicNotationRenderer:
         n = note.copy()
         n["track_type"] = track_type
 
-        base_color = self.track_colors.get(track_type, (255, 255, 255))
-        velocity = n.get("velocity", 100)
-        n["_color"] = self._velocity_color(base_color, velocity)
+        # Harmonická farba, ak je k dispozícii
+        harmony_role = n.get("harmony_role")
+        if harmony_role in self.harmony_colors:
+            n["_color"] = self.harmony_colors[harmony_role]
+        else:
+            base_color = self.track_colors.get(track_type, (255, 255, 255))
+            velocity = n.get("velocity", 100)
+            n["_color"] = self._velocity_color(base_color, velocity)
 
         self.items_by_track[track_type].append(n)
 
