@@ -4,6 +4,7 @@ from .symbol_manager import SymbolManager
 from .notation_renderer import NotationRenderer
 from .key_detector import detect_key
 from .harmony_engine import HarmonyEngine
+from .chord_detector import detect_chord
 
 
 class NotationProcessor:
@@ -162,6 +163,27 @@ class NotationProcessor:
         return "melody"
 
     # ---------------------------------------------------------
+    # EXTRAKCIA ROOTU Z NÁZVU AKORDU
+    # ---------------------------------------------------------
+    def _extract_root_from_chord_name(self, chord_name: str):
+        if not chord_name:
+            return None
+
+        root = chord_name[0]
+        if len(chord_name) > 1 and chord_name[1] in ("#", "b"):
+            root = chord_name[:2]
+
+        pitch_map = {
+            "C": 0, "C#": 1, "Db": 1,
+            "D": 2, "D#": 3, "Eb": 3,
+            "E": 4, "F": 5, "F#": 6, "Gb": 6,
+            "G": 7, "G#": 8, "Ab": 8,
+            "A": 9, "A#": 10, "Bb": 10,
+            "B": 11,
+        }
+        return pitch_map.get(root, None)
+
+    # ---------------------------------------------------------
     # HLAVNÁ FUNKCIA – spracovanie MIDI udalosti
     # ---------------------------------------------------------
     def process_midi_event(self, midi_event: dict):
@@ -184,6 +206,11 @@ class NotationProcessor:
         # NOTE ON
         if event_type == "note_on" and velocity > 0:
             self.active_pitches.add(pitch)
+
+            # REAL‑TIME CHORD DETECTION
+            detected = detect_chord(self.active_pitches)
+            self.current_chord = detected
+
             self._update_key(timestamp)
 
             if self.staff_ui and hasattr(self.staff_ui, "highlight_note"):
@@ -207,13 +234,17 @@ class NotationProcessor:
         if event_type in ("note_off", "note_on") and velocity == 0:
             if pitch in self.active_pitches:
                 self.active_pitches.remove(pitch)
+
+                # REAL‑TIME CHORD DETECTION
+                detected = detect_chord(self.active_pitches)
+                self.current_chord = detected
+
                 self._update_key(timestamp)
 
             if self.piano_ui and hasattr(self.piano_ui, "unhighlight_key"):
                 self.piano_ui.unhighlight_key(pitch)
 
             if self.staff_ui:
-                # podpora rôznych API názvov
                 if hasattr(self.staff_ui, "clear_highlight"):
                     self.staff_ui.clear_highlight(pitch)
                 elif hasattr(self.staff_ui, "unhighlight_note"):
@@ -304,14 +335,25 @@ class NotationProcessor:
                     }
                     key_root = pitch_map.get(note_name, None)
 
+            chord_root = self._extract_root_from_chord_name(self.current_chord)
+
             roles = self.harmony.analyze(
                 pitches=[created_note.pitch],
                 key_root=key_root,
                 is_major=is_major,
-                chord_root=None,
+                chord_root=chord_root,
             )
 
             timeline_item["harmony_role"] = roles.get(created_note.pitch, "outside")
+
+            # -----------------------------------------
+            # REAL‑TIME ZOBRAZENIE AKORDU V RENDERERI
+            # -----------------------------------------
+            if self.current_chord:
+                self.renderer.add_chord({
+                    "name": self.current_chord,
+                    "start": created_note.start_time
+                })
 
             self.timeline.append(timeline_item)
 
