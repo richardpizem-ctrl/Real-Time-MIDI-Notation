@@ -69,6 +69,10 @@ class GraphicNotationRenderer:
             "chords": True,
         }
 
+        # Caching osnov – kreslia sa len pri zmene zoomu
+        self.staff_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.needs_staff_redraw = True
+
     # ---------------------------------------------------------
     # API pre NotationProcessor
     # ---------------------------------------------------------
@@ -78,11 +82,17 @@ class GraphicNotationRenderer:
             return
 
         track_type = note.get("track_type", "melody")
-
         if track_type not in self.items_by_track:
             track_type = "melody"
 
-        self.items_by_track[track_type].append(note.copy())
+        n = note.copy()
+        n["track_type"] = track_type
+
+        base_color = self.track_colors.get(track_type, (255, 255, 255))
+        velocity = n.get("velocity", 100)
+        n["_color"] = self._velocity_color(base_color, velocity)
+
+        self.items_by_track[track_type].append(n)
 
     def add_barline(self, start_time):
         x = start_time * self.pixels_per_second
@@ -122,6 +132,7 @@ class GraphicNotationRenderer:
 
     def set_zoom(self, value):
         self.zoom = max(0.2, min(3.0, float(value)))
+        self.needs_staff_redraw = True
 
     def set_playhead(self, timestamp):
         self.playhead_time = timestamp
@@ -173,10 +184,10 @@ class GraphicNotationRenderer:
 
         y = self._pitch_to_y(item["pitch"], item["track_type"])
 
-        color = self._velocity_color(
-            self.track_colors.get(item["track_type"], (255, 255, 255)),
-            item.get("velocity", 100)
-        )
+        color = item.get("_color")
+        if color is None:
+            base_color = self.track_colors.get(item["track_type"], (255, 255, 255))
+            color = self._velocity_color(base_color, item.get("velocity", 100))
 
         pygame.draw.rect(
             self.screen,
@@ -204,7 +215,6 @@ class GraphicNotationRenderer:
         half_len = line_length / 2
         color = (180, 180, 180)
 
-        # nad osnovou
         if y < top_line_y:
             step = spacing / 2
             current_y = top_line_y - step
@@ -218,20 +228,6 @@ class GraphicNotationRenderer:
                 )
                 current_y -= step
 
-        # pod osnovou
-        if y > bottom_line_y:
-            step = spacing / 2
-            current_y = bottom_line_y + step
-            while current_y - 1 < y:
-                pygame.draw.line(
-                    self.screen,
-                    color,
-                    (x_center - half_len, current_y),
-                    (x_center + half_len, current_y),
-                    int(2 * self.zoom)
-                )
-                current_y += step
-        # pod osnovou (duplicitná ochrana)
         if y > bottom_line_y:
             step = spacing / 2
             current_y = bottom_line_y + step
@@ -268,12 +264,9 @@ class GraphicNotationRenderer:
         symbol = symbols[articulation]
         text = self.font_articulation.render(symbol, True, (255, 255, 255))
 
-        # Stem direction → umiestnenie artikulácie
         if item["pitch"] >= 64:
-            # stem dole → artikulácia hore
             pos_y = y - 18 * self.zoom
         else:
-            # stem hore → artikulácia dole
             pos_y = y + h + 12 * self.zoom
 
         pos_x = x + w / 2
@@ -290,19 +283,16 @@ class GraphicNotationRenderer:
         w = 14 * self.zoom
         h = 10 * self.zoom
 
-        color = self._velocity_color(
-            self.track_colors.get(item["track_type"], (255, 255, 255)),
-            item.get("velocity", 100)
-        )
+        color = item.get("_color")
+        if color is None:
+            base_color = self.track_colors.get(item["track_type"], (255, 255, 255))
+            color = self._velocity_color(base_color, item.get("velocity", 100))
 
         pygame.draw.ellipse(self.screen, color, (x, y, w, h))
 
-        # ledger lines + dynamika
         x_center = x + w / 2
         self._draw_ledger_lines(x_center, item["pitch"], item["track_type"])
         self._draw_dynamic_marking(item, x, y, h)
-
-        # artikulácie
         self._draw_articulations(item, x, y, w, h)
 
         return x, y, w, h
@@ -404,21 +394,49 @@ class GraphicNotationRenderer:
             int(2 * self.zoom)
         )
 
+    def _draw_all_staffs_to_surface(self, surf):
+        spacing = self.staff_spacing * self.zoom
+
+        for i in range(5):
+            y = self.staff_top * self.zoom + i * spacing
+            pygame.draw.line(
+                surf,
+                self.staff_color,
+                (40, y),
+                (self.width - 40, y),
+                int(2 * self.zoom)
+            )
+
+        for i in range(5):
+            y = self.bass_staff_top * self.zoom + i * spacing
+            pygame.draw.line(
+                surf,
+                self.staff_color,
+                (40, y),
+                (self.width - 40, y),
+                int(2 * self.zoom)
+            )
+
+        pygame.draw.line(
+            surf,
+            self.staff_color,
+            (40, self.drums_y * self.zoom),
+            (self.width - 40, self.drums_y * self.zoom),
+            int(2 * self.zoom)
+        )
+
     # ---------------------------------------------------------
     # Playhead – DAW + glow + pulz
     # ---------------------------------------------------------
     def _draw_playhead(self):
         x = (self.playhead_time * self.pixels_per_second - self.scroll_x) * self.zoom
 
-        # základné Y podľa osnov
         top_y = 30
         bottom_y = self.height - 30
 
-        # pulz (0–1) podľa času
         t = time.time()
         pulse = 0.5 + 0.5 * math.sin(t * 2.5)
 
-        # glow vrstva (polopriehľadný obdĺžnik)
         glow_width = 18 * self.zoom
         glow_alpha = int(40 + 80 * pulse)
         glow_surface = pygame.Surface((int(glow_width), int(bottom_y - top_y)), pygame.SRCALPHA)
@@ -429,7 +447,6 @@ class GraphicNotationRenderer:
         )
         self.screen.blit(glow_surface, (x - glow_width / 2, top_y))
 
-        # hlavná červená čiara
         thickness_main = max(2, int(2 * self.zoom))
         pygame.draw.line(
             self.screen,
@@ -439,7 +456,6 @@ class GraphicNotationRenderer:
             thickness_main
         )
 
-        # vnútorná biela čiara (DAW štýl)
         thickness_inner = 1
         pygame.draw.line(
             self.screen,
@@ -455,9 +471,13 @@ class GraphicNotationRenderer:
     def render(self):
         self.screen.fill(self.background_color)
 
-        self._draw_all_staffs()
+        if self.needs_staff_redraw:
+            self.staff_surface.fill((0, 0, 0, 0))
+            self._draw_all_staffs_to_surface(self.staff_surface)
+            self.needs_staff_redraw = False
 
-        # Globálne položky (taktové čiary, akordy, zmeny tóniny)
+        self.screen.blit(self.staff_surface, (0, 0))
+
         for item in self.items:
             if item["type"] == "barline":
                 x = (item["x"] - self.scroll_x) * self.zoom
@@ -495,28 +515,24 @@ class GraphicNotationRenderer:
                 text = self.font_key.render(item["key"], True, (200, 200, 255))
                 self.screen.blit(text, (x + 5, 60))
 
-        # 1) Duration bary – podľa stôp a viditeľnosti
         for track_type, notes in self.items_by_track.items():
             if not self.track_visible.get(track_type, True):
                 continue
             for note in notes:
                 self._draw_duration_bar(note)
 
-        # 2) Note heads + stems (vrátane artikulácií, dynamiky, ledger lines)
         for track_type, notes in self.items_by_track.items():
             if not self.track_visible.get(track_type, True):
                 continue
             for note in notes:
                 self._draw_stem(note)
 
-        # 3) Ligatúry (ties) – len pre viditeľné stopy
         for tie in self.tie_items:
             track_type = tie.get("track_type", "melody")
             if not self.track_visible.get(track_type, True):
                 continue
             self._draw_tie(tie)
 
-        # 4) Playhead – úplne navrchu
         self._draw_playhead()
 
         return self.screen
