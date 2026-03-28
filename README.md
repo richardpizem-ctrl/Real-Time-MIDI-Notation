@@ -1,49 +1,49 @@
 # 🎵 Real‑Time MIDI Notation
-Moderný systém na vizualizáciu MIDI v reálnom čase pre klávesy Yamaha a akékoľvek MIDI zariadenia.  
-Poskytuje interaktívny renderer, farebné akordy, multi‑track spracovanie a profesionálny layout engine.
+A modern real‑time MIDI visualization system for Yamaha keyboards and any MIDI‑compatible device.  
+Provides an interactive notation renderer, colored chords, multi‑track processing, and a professional layout engine.
 
-Tento projekt je navrhnutý ako **rýchly, presný a rozšíriteľný nástroj** na real‑time MIDI notáciu v Pythone.
+This project is designed as a **fast, accurate, and extensible tool** for real‑time MIDI notation in Python.
 
 ---
 
-## 🚀 Funkcie
+## 🚀 Features
 
 - **Real‑Time MIDI Input Engine**  
-  Spracovanie MIDI udalostí v reálnom čase s presným timestampingom.
+  Processes incoming MIDI events with precise timestamping.
 
 - **MIDI Channel Splitter**  
-  Automatické rozdelenie MIDI podľa kanálov (tracks) – ideálne pre Yamaha arranger štýly.
+  Automatically separates MIDI data by channels (tracks) – ideal for Yamaha arranger styles.
 
 - **Notation Rendering Engine**  
-  Zobrazenie nôt, taktových čiar, playheadu, rytmických prvkov a vizuálnych vrstiev.
+  Renders notes, barlines, playhead, rhythmic elements, and visual layers.
 
-- **Farebné akordy a harmónia**  
-  Každý akord má vlastnú farbu (DAW‑style).  
-  Podpora real‑time detekcie harmónie.
+- **Colored Chords & Harmony**  
+  Each chord has its own DAW‑style color.  
+  Supports real‑time harmony detection.
 
-- **Multi‑track vizualizácia**  
-  Každá stopa má vlastnú farbu, vrstvu a správanie.  
-  Podpora až 16 MIDI kanálov (Yamaha štandard).
+- **Multi‑Track Visualization**  
+  Each track has its own color, layer, and behavior.  
+  Supports up to 16 MIDI channels (Yamaha standard).
 
-- **UI komponenty**  
+- **UI Components**  
   - PianoRollUI  
   - StaffUI  
   - NoteVisualizerUI  
-  - UIManager (centralizované riadenie UI)
+  - UIManager (centralized UI control)
 
-- **Stabilná verzia v1.0.0**  
-  Prvá funkčná verzia projektu je dostupná ako release.
-
----
-
-## 🖼️ Screenshoty / Demo (pridáš neskôr)
-
-> Sem vložíš GIF alebo screenshot, keď budeš mať prvé vizuálne výstupy.  
-> Google miluje obrázky – výrazne to zlepší SEO a viditeľnosť projektu.
+- **Stable Release v1.0.0**  
+  The first functional version of the project is available as a release.
 
 ---
 
-## 🧩 Architektúra projektu
+## 🖼️ Screenshots / Demo (to be added)
+
+> Add a GIF or screenshot once the first visual output is ready.  
+> Google loves images – this significantly improves SEO and project visibility.
+
+---
+
+## 🧩 Project Architecture
 
 ### **1. MIDI Pipeline**
 - MIDI Input  
@@ -53,28 +53,28 @@ Tento projekt je navrhnutý ako **rýchly, presný a rozšíriteľný nástroj**
 - Renderer  
 
 ### **2. Rendering Pipeline**
-- Layout Engine (hotový)  
+- Layout Engine (completed)  
 - GraphicNotationRenderer  
-- Playhead Line (hotový)  
-- Taktové čiary (hotové)  
-- Farebné akordy  
-- Multi‑track vrstvy  
+- Playhead Line (completed)  
+- Barlines (completed)  
+- Colored Chords  
+- Multi‑Track Layers  
 
 ### **3. UI Layer**
 - PianoRollUI  
 - StaffUI  
 - NoteVisualizerUI  
-- UIManager (centralizované riadenie)
+- UIManager (centralized control)
 
 ### **4. Core Modules**
-- MidiNoteMapper (hotový)  
-- Rhythm Analyzer (základná verzia hotová)  
+- MidiNoteMapper (completed)  
+- Rhythm Analyzer (basic version completed)  
 - StreamHandler  
 - EventRouter  
 
 ---
 
-## 📦 Inštalácia
+## 📦 Installation
 
 ```bash
 git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation
@@ -84,33 +84,32 @@ python run.py
 
 ---
 
-## 📚 Prečo tento projekt existuje?
+## 📚 Why This Project Exists
 
-Real‑time MIDI notácia je v open‑source svete **takmer neexistujúca**.  
-Tento projekt vznikol ako odpoveď na potrebu:
+Real‑time MIDI notation is **almost nonexistent** in the open‑source world.  
+This project was created to address the need for:
 
-- rýchlej vizualizácie MIDI v reálnom čase  
-- podpory pre Yamaha arranger štýly  
-- farebnej harmónie a akordov  
-- multi‑track spracovania  
-- profesionálneho layoutu podobného DAW softvéru  
+- fast real‑time MIDI visualization  
+- Yamaha arranger style support  
+- colored harmony and chord detection  
+- multi‑track processing  
+- a professional DAW‑like layout  
 
-Cieľom je vytvoriť **moderný, rozšíriteľný a praktický nástroj**, ktorý môže používať každý hudobník alebo vývojár.
-
----
-
-## 🔧 Plánované funkcie (ROADMAP)
-
-- Export PDF / PNG  
-- Pokročilá detekcia akordov  
-- Viacvrstvová harmónia  
-- Pokročilé UI panely  
-- Integrácia s externými MIDI zariadeniami  
-- Real‑time vizualizácia rytmických patternov  
+The goal is to build a **modern, extensible, and practical tool** for musicians and developers.
 
 ---
 
-## 📝 Licencia
+## 🔧 Planned Features (ROADMAP)
 
-MIT License – voľné použitie pre komerčné aj nekomerčné projekty.
+- PDF / PNG export  
+- Advanced chord detection  
+- Multi‑layer harmony  
+- Advanced UI panels  
+- External MIDI device integration  
+- Real‑time rhythmic pattern visualization  
 
+---
+
+## 📝 License
+
+MIT License – free for commercial and non‑commercial use.
