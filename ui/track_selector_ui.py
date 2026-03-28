@@ -1,11 +1,11 @@
 import pygame
 
 class TrackSelectorUI:
-    def __init__(self, track_system, width=1400, height=60):
+    def __init__(self, track_manager, width=1400, height=60):
         """
-        track_system = inštancia TrackSystemu
+        track_manager = inštancia TrackManagera
         """
-        self.track_system = track_system
+        self.track_manager = track_manager
         self.width = width
         self.height = height
 
@@ -19,17 +19,13 @@ class TrackSelectorUI:
         self._generate_buttons()
 
     # ---------------------------------------------------------
-    # VYTVORENIE TLAČIDIEL PRE TRACKY
+    # VYTVORENIE 16 TLAČIDIEL PRE TRACKY (Yamaha štandard)
     # ---------------------------------------------------------
     def _generate_buttons(self):
         self.track_buttons = []
 
-        track_count = len(self.track_system.tracks)
-
-        for i in range(track_count):
-            track_id = i  # TrackSystem používa indexy 0–15
-
-            x = self.margin + i * (self.button_width + self.margin)
+        for track_id in range(1, 17):  # 1–16
+            x = self.margin + (track_id - 1) * (self.button_width + self.margin)
             y = 10
 
             rect = pygame.Rect(x, y, self.button_width, self.button_height)
@@ -40,28 +36,40 @@ class TrackSelectorUI:
             })
 
     # ---------------------------------------------------------
-    # KLIKANIE MYŠOU
+    # KLIKANIE MYŠOU – toggle visibility
     # ---------------------------------------------------------
     def handle_click(self, pos):
         """Spracuje kliknutie na track button."""
         for btn in self.track_buttons:
             if btn["rect"].collidepoint(pos):
-                self.track_system.set_active_track(btn["id"])
-                return btn["id"]
+                track_id = btn["id"]
+
+                # Toggle visibility
+                current = self.track_manager.is_visible(track_id)
+                self.track_manager.set_visible(track_id, not current)
+
+                # Nastavenie aktívnej stopy
+                self.track_manager.track_system.set_active_track(track_id)
+
+                return track_id
         return None
 
     # ---------------------------------------------------------
     # KRESLENIE
     # ---------------------------------------------------------
     def draw(self, surface):
-        active_id = self.track_system.active_track_id
+        active_id = self.track_manager.get_active_track()
 
         for btn in self.track_buttons:
             track_id = btn["id"]
             rect = btn["rect"]
 
-            # Farba tracku (vždy aktuálna)
-            color = self.track_system.get_track_color(track_id)
+            # Farba tracku z TrackManagera
+            color = self.track_manager.get_color(track_id)
+
+            # Viditeľnosť – ak je vypnutá, stmavíme farbu
+            if not self.track_manager.is_visible(track_id):
+                color = (color[0] // 3, color[1] // 3, color[2] // 3)
 
             # Aktívny track má hrubý rámik
             border_color = (255, 255, 255) if track_id == active_id else (80, 80, 80)
@@ -72,6 +80,6 @@ class TrackSelectorUI:
             pygame.draw.rect(surface, border_color, rect, border_width)
 
             # Text (číslo tracku)
-            text_surface = self.font.render(str(track_id + 1), True, (0, 0, 0))
+            text_surface = self.font.render(str(track_id), True, (0, 0, 0))
             text_rect = text_surface.get_rect(center=rect.center)
             surface.blit(text_surface, text_rect)
