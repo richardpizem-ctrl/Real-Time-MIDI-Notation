@@ -3,6 +3,7 @@ from .rhythm_analyzer import RhythmAnalyzer
 from .symbol_manager import SymbolManager
 from .notation_renderer import NotationRenderer
 from .key_detector import detect_key
+from .harmony_engine import HarmonyEngine
 
 
 class NotationProcessor:
@@ -42,6 +43,9 @@ class NotationProcessor:
         self.staff_ui = None
         self.piano_ui = None
         self.visualizer_ui = None
+
+        # Harmony engine
+        self.harmony = HarmonyEngine()
 
     # ---------------------------------------------------------
     # PREPOJENIE UI KOMPONENTOV
@@ -277,6 +281,37 @@ class NotationProcessor:
                 "color": symbol.get("color", "#FFFFFF"),
                 "track_type": self._detect_track(channel),
             }
+
+            # -----------------------------------------
+            # HARMONICKÁ ANALÝZA
+            # -----------------------------------------
+            key_root = None
+            is_major = True
+
+            if self.current_key:
+                parts = self.current_key.split()
+                if len(parts) == 2:
+                    note_name, mode = parts
+                    is_major = (mode.lower() == "major")
+
+                    pitch_map = {
+                        "C": 0, "C#": 1, "Db": 1,
+                        "D": 2, "D#": 3, "Eb": 3,
+                        "E": 4, "F": 5, "F#": 6, "Gb": 6,
+                        "G": 7, "G#": 8, "Ab": 8,
+                        "A": 9, "A#": 10, "Bb": 10,
+                        "B": 11,
+                    }
+                    key_root = pitch_map.get(note_name, None)
+
+            roles = self.harmony.analyze(
+                pitches=[created_note.pitch],
+                key_root=key_root,
+                is_major=is_major,
+                chord_root=None,
+            )
+
+            timeline_item["harmony_role"] = roles.get(created_note.pitch, "outside")
 
             self.timeline.append(timeline_item)
 
