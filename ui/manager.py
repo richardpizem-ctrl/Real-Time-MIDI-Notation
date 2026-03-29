@@ -1,68 +1,79 @@
 import pygame
+from .piano_ui import PianoUI
+from .piano_roll_ui import PianoRollUI
+from .staff_ui import StaffUI
+from .note_visualizer_ui import NoteVisualizerUI
+from .track_selector_ui import TrackSelectorUI
 
-class TrackManagerUI:
+class UIManager:
     def __init__(self, width, height, track_system):
         self.width = width
         self.height = height
         self.track_system = track_system
 
         pygame.font.init()
-        self.font = pygame.font.SysFont("Arial", 20, bold=True)
 
-        self.button_width = 70
-        self.button_height = 40
-        self.margin = 10
+        # --- UI MODULY ---
+        self.piano = PianoUI(width, 180)
+        self.piano_roll = PianoRollUI(width, 180)
+        self.staff = StaffUI(width, 200)
+        self.visualizer = NoteVisualizerUI(width, 200)
+        self.track_selector = TrackSelectorUI(track_system, width=width, height=60)
 
-        self._generate_buttons()
+        # Rozloženie UI
+        self.layout = {
+            "track_selector": (0, 0),
+            "piano": (0, 70),
+            "piano_roll": (0, 260),
+            "staff": (0, 450),
+            "visualizer": (0, 650),
+        }
 
-    def _generate_buttons(self):
-        self.buttons = []
-        track_count = len(self.track_system.tracks)
-
-        for track_id in range(track_count):
-            x = 20 + track_id * (self.button_width + self.margin)
-            y = 10
-
-            self.buttons.append({
-                "track_id": track_id,
-                "x": x,
-                "y": y,
-                "w": self.button_width,
-                "h": self.button_height
-            })
-
+    # ---------------------------------------------------------
+    # EVENT ROUTING
+    # ---------------------------------------------------------
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
-            mx, my = event.pos
+            self.track_selector.handle_click(event.pos)
 
-            for btn in self.buttons:
-                x, y, w, h = btn["x"], btn["y"], btn["w"], btn["h"]
+    # ---------------------------------------------------------
+    # NOTE ON / OFF
+    # ---------------------------------------------------------
+    def on_note_on(self, event):
+        track_color = self.track_system.get_color(event["track_id"])
+        event["track_color"] = track_color
 
-                if x <= mx <= x + w and y <= my <= y + h:
-                    track_id = btn["track_id"]
+        self.piano.highlight_key(event["note"], track_color)
+        self.piano_roll.highlight_key(event["note"], track_color)
+        self.visualizer.on_note(event)
+        self.staff.add_note(event)
 
-                    current = self.track_system.is_visible(track_id)
-                    self.track_system.set_visible(track_id, not current)
+    def on_note_off(self, event):
+        self.piano.unhighlight_key(event["note"])
+        self.piano_roll.unhighlight_key(event["note"])
+        self.visualizer.on_note_off(event)
+        self.staff.remove_note(event)
 
-                    self.track_system.set_active_track(track_id)
-
+    # ---------------------------------------------------------
+    # DRAW
+    # ---------------------------------------------------------
     def draw(self, surface):
-        active_id = self.track_system.get_active_track()
+        # Track selector
+        x, y = self.layout["track_selector"]
+        self.track_selector.draw(surface.subsurface((x, y, self.width, 60)))
 
-        for btn in self.buttons:
-            track_id = btn["track_id"]
-            x, y, w, h = btn["x"], btn["y"], btn["w"], btn["h"]
+        # Piano
+        x, y = self.layout["piano"]
+        self.piano.draw(surface.subsurface((x, y, self.width, 180)))
 
-            color = self.track_system.get_color(track_id)
+        # Piano roll
+        x, y = self.layout["piano_roll"]
+        self.piano_roll.draw(surface.subsurface((x, y, self.width, 180)))
 
-            if not self.track_system.is_visible(track_id):
-                color = (color[0] // 3, color[1] // 3, color[2] // 3)
+        # Staff
+        x, y = self.layout["staff"]
+        self.staff.draw(surface.subsurface((x, y, self.width, 200)))
 
-            border_color = (255, 255, 255) if track_id == active_id else (80, 80, 80)
-            border_width = 4 if track_id == active_id else 2
-
-            pygame.draw.rect(surface, color, (x, y, w, h), border_radius=6)
-            pygame.draw.rect(surface, border_color, (x, y, w, h), border_width, border_radius=6)
-
-            text = self.font.render(str(track_id + 1), True, (0, 0, 0))
-            surface.blit(text, (x + w // 2 - text.get_width() // 2, y + h // 2 - text.get_height() // 2))
+        # Visualizer
+        x, y = self.layout["visualizer"]
+        self.visualizer.draw(surface.subsurface((x, y, self.width, 200)))
