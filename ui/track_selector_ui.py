@@ -14,7 +14,10 @@ class TrackSelectorUI:
         self.margin = 10
 
         pygame.font.init()
-        self.font = pygame.font.SysFont("Arial", 20, bold=True)
+        try:
+            self.font = pygame.font.SysFont("Arial", 20, bold=True)
+        except Exception:
+            self.font = None
 
         self._generate_buttons()
 
@@ -23,7 +26,11 @@ class TrackSelectorUI:
     # ---------------------------------------------------------
     def _generate_buttons(self):
         self.track_buttons = []
-        track_count = len(self.track_system.tracks)
+
+        try:
+            track_count = len(getattr(self.track_system, "tracks", {}))
+        except Exception:
+            track_count = 0
 
         for i in range(track_count):
             track_id = i  # TrackSystem používa indexy 0–15
@@ -31,7 +38,10 @@ class TrackSelectorUI:
             x = self.margin + i * (self.button_width + self.margin)
             y = 10
 
-            rect = pygame.Rect(x, y, self.button_width, self.button_height)
+            try:
+                rect = pygame.Rect(x, y, self.button_width, self.button_height)
+            except Exception:
+                continue
 
             self.track_buttons.append({
                 "id": track_id,
@@ -42,39 +52,96 @@ class TrackSelectorUI:
     # KLIKANIE MYŠOU – toggle visibility + nastavenie aktívnej stopy
     # ---------------------------------------------------------
     def handle_click(self, pos):
+        if not isinstance(pos, (tuple, list)) or len(pos) != 2:
+            return None
+
         for btn in self.track_buttons:
-            if btn["rect"].collidepoint(pos):
-                track_id = btn["id"]
+            rect = btn.get("rect")
+            track_id = btn.get("id")
 
-                current = self.track_system.is_visible(track_id)
-                self.track_system.set_visible(track_id, not current)
+            if rect is None or track_id is None:
+                continue
 
-                self.track_system.set_active_track(track_id)
+            try:
+                if rect.collidepoint(pos):
+                    # Toggle visibility
+                    try:
+                        current = self.track_system.is_visible(track_id)
+                        self.track_system.set_visible(track_id, not current)
+                    except Exception:
+                        pass
 
-                return track_id
+                    # Set active track
+                    try:
+                        self.track_system.set_active_track(track_id)
+                    except Exception:
+                        pass
+
+                    return track_id
+            except Exception:
+                continue
+
         return None
 
     # ---------------------------------------------------------
     # KRESLENIE
     # ---------------------------------------------------------
     def draw(self, surface):
-        active_id = self.track_system.get_active_track()
+        if surface is None:
+            return
+
+        try:
+            active_id = self.track_system.get_active_track()
+        except Exception:
+            active_id = None
 
         for btn in self.track_buttons:
-            track_id = btn["id"]
-            rect = btn["rect"]
+            track_id = btn.get("id")
+            rect = btn.get("rect")
 
-            color = self.track_system.get_color(track_id)
+            if rect is None or track_id is None:
+                continue
 
-            if not self.track_system.is_visible(track_id):
-                color = (color[0] // 3, color[1] // 3, color[2] // 3)
+            # Farba stopy
+            try:
+                color = self.track_system.get_color(track_id)
+                if not (
+                    isinstance(color, (tuple, list)) and
+                    len(color) == 3 and
+                    all(isinstance(c, int) for c in color)
+                ):
+                    color = (255, 255, 255)
+            except Exception:
+                color = (255, 255, 255)
 
-            border_color = (255, 255, 255) if track_id == active_id else (80, 80, 80)
-            border_width = 4 if track_id == active_id else 2
+            # Viditeľnosť
+            try:
+                if not self.track_system.is_visible(track_id):
+                    color = (color[0] // 3, color[1] // 3, color[2] // 3)
+            except Exception:
+                pass
 
-            pygame.draw.rect(surface, color, rect)
-            pygame.draw.rect(surface, border_color, rect, border_width)
+            # Border
+            try:
+                is_active = (track_id == active_id)
+            except Exception:
+                is_active = False
 
-            text_surface = self.font.render(str(track_id + 1), True, (0, 0, 0))
-            text_rect = text_surface.get_rect(center=rect.center)
-            surface.blit(text_surface, text_rect)
+            border_color = (255, 255, 255) if is_active else (80, 80, 80)
+            border_width = 4 if is_active else 2
+
+            # Draw button
+            try:
+                pygame.draw.rect(surface, color, rect)
+                pygame.draw.rect(surface, border_color, rect, border_width)
+            except Exception:
+                continue
+
+            # Draw text
+            try:
+                if self.font:
+                    text_surface = self.font.render(str(track_id + 1), True, (0, 0, 0))
+                    text_rect = text_surface.get_rect(center=rect.center)
+                    surface.blit(text_surface, text_rect)
+            except Exception:
+                pass
