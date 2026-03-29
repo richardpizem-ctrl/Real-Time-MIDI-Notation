@@ -7,22 +7,19 @@ class EventRouter:
     def __init__(
         self,
         event_bus,
-        piano_roll_ui=None,
-        staff_ui=None,
-        note_visualizer=None,
+        ui_manager=None,
+        notation_processor=None,
         track_system=None
     ):
         """
-        event_bus        = centrálny EventBus
-        piano_roll_ui    = inštancia PianoRollUI
-        staff_ui         = inštancia StaffUI
-        note_visualizer  = inštancia NoteVisualizerUI
-        track_system     = TrackSystem (16 MIDI stôp)
+        event_bus          = centrálny EventBus
+        ui_manager         = UIManager (obsahuje piano, staff, vizualizér, renderer)
+        notation_processor = NotationProcessor (timeline, harmónia, rytmus)
+        track_system       = TrackSystem (16 MIDI stôp)
         """
         self.event_bus = event_bus
-        self.piano_roll = piano_roll_ui
-        self.staff_ui = staff_ui
-        self.note_visualizer = note_visualizer
+        self.ui = ui_manager
+        self.notation = notation_processor
         self.track_system = track_system
 
         Logger.info("EventRouter initialized.")
@@ -48,11 +45,10 @@ class EventRouter:
             velocity = midi_event.get("velocity", 0)
             channel = midi_event.get("channel", 0)
 
-            event = None
-
             # ---------------------------------------------------------
             # 🔥 PREPOJENIE TRACK SYSTEMU
             # ---------------------------------------------------------
+            event = None
             if self.track_system and event_type in ("note_on", "note_off"):
 
                 # 1) automatické prepnutie tracku podľa MIDI kanála
@@ -83,32 +79,25 @@ class EventRouter:
                     self.event_bus.publish("note_event", midi_event)
 
                 # ---------------------------------------------------------
-                # 🔥 Piano Roll UI
+                # 🔥 UIManager (hlavné UI reakcie)
                 # ---------------------------------------------------------
-                if self.piano_roll:
+                if self.ui and event:
                     if event_type == "note_on" and velocity > 0:
-                        color = midi_event.get("track_color", (255, 80, 80))
-                        self.piano_roll.highlight_key(note, color=color)
+                        self.ui.on_note_on(event)
                     else:
-                        self.piano_roll.unhighlight_key(note)
+                        self.ui.on_note_off(event)
 
                 # ---------------------------------------------------------
-                # 🔥 Staff UI
+                # 🔥 NotationProcessor (timeline, harmónia, rytmus)
                 # ---------------------------------------------------------
-                if self.staff_ui and event:
-                    if event_type == "note_on" and velocity > 0:
-                        self.staff_ui.add_note(event)
-                    else:
-                        self.staff_ui.remove_note(event)
-
-                # ---------------------------------------------------------
-                # 🔥 NOTE VISUALIZER
-                # ---------------------------------------------------------
-                if self.note_visualizer and event:
-                    if event_type == "note_on" and velocity > 0:
-                        self.note_visualizer.on_note(event)
-                    else:
-                        self.note_visualizer.on_note_off(event)
+                if self.notation:
+                    self.notation.process_midi_event({
+                        "type": event_type,
+                        "note": note,
+                        "velocity": velocity,
+                        "time": midi_event.get("timestamp", 0.0),
+                        "channel": channel,
+                    })
 
             # ---------------------------------------------------------
             # CONTROL CHANGE
