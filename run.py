@@ -40,6 +40,8 @@ def main():
     print("=== REAL-TIME MIDI NOTATION START ===")
 
     pygame.init()
+    screen = pygame.display.set_mode((1400, 1100))
+    clock = pygame.time.Clock()
 
     # 1. EventBus
     event_bus = EventBus()
@@ -55,7 +57,7 @@ def main():
     notation_processor = NotationProcessor(track_system, event_bus)
 
     # 4. UI Manager (prepojený s TrackSystemom)
-    ui = UIManager(width=1400, height=900, track_system=track_system)
+    ui = UIManager(width=1400, height=1100, track_system=track_system)
 
     # 5. EventRouter pre MIDI → EventBus → UI
     event_router = EventRouter(
@@ -70,10 +72,23 @@ def main():
     )
 
     # -----------------------------------------------------
-    # 7. Spustenie UI slučky
+    # 7. HLAVNÁ RENDER SLUČKA
     # -----------------------------------------------------
-    ui.run()
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
+            ui.handle_event(event)
+
+        # Kreslenie UI + renderer
+        ui.draw(screen)
+
+        pygame.display.update()
+        clock.tick(60)
+
+    pygame.quit()
     print("=== END ===")
 
 
