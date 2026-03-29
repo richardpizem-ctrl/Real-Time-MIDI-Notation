@@ -9,22 +9,35 @@ from notation_processor.notation_processor import NotationProcessor
 from real_time_processing.stream_handler import StreamHandler
 from midi_input.event_router import EventRouter
 
+from core.logger import Logger
+
 
 def main():
-    print("=== TEST: NO MIDI DEVICES ===")
+    Logger.info("=== TEST: NO MIDI DEVICES ===")
 
     # 1. EventBus
-    event_bus = EventBus()
+    try:
+        event_bus = EventBus()
+    except Exception as e:
+        Logger.error(f"Failed to initialize EventBus: {e}")
+        return
 
     # 2. TrackSystem + NotationProcessor
-    track_system = TrackSystem(event_bus)
-    notation_processor = NotationProcessor(track_system, event_bus)
+    try:
+        track_system = TrackSystem(event_bus)
+        notation_processor = NotationProcessor(track_system, event_bus)
+    except Exception as e:
+        Logger.error(f"Failed to initialize TrackSystem or NotationProcessor: {e}")
+        return
 
     # 3. UI nie je potrebné – testujeme len MIDI pipeline
-    #    Preto PianoRollUI = None
-    event_router = EventRouter(event_bus, piano_roll_ui=None)
-    stream_handler = StreamHandler(piano_roll_ui=None)
-    stream_handler.event_router = event_router
+    try:
+        event_router = EventRouter(event_bus, piano_roll_ui=None)
+        stream_handler = StreamHandler(piano_roll_ui=None)
+        stream_handler.event_router = event_router
+    except Exception as e:
+        Logger.error(f"Failed to initialize EventRouter or StreamHandler: {e}")
+        return
 
     # 4. Simulovaný MIDI event
     fake_event = {
@@ -34,8 +47,11 @@ def main():
         "timestamp": 0.0
     }
 
-    print("[TEST] Spracovávam simulovaný MIDI event...")
-    stream_handler.process_midi_message(fake_event)
+    Logger.info("[TEST] Spracovávam simulovaný MIDI event...")
+    try:
+        stream_handler.process_midi_message(fake_event)
+    except Exception as e:
+        Logger.error(f"Error processing fake note_on event: {e}")
 
     # 5. Simulovaný NOTE_OFF
     fake_event_off = {
@@ -45,9 +61,12 @@ def main():
         "timestamp": 0.1
     }
 
-    stream_handler.process_midi_message(fake_event_off)
+    try:
+        stream_handler.process_midi_message(fake_event_off)
+    except Exception as e:
+        Logger.error(f"Error processing fake note_off event: {e}")
 
-    print("[TEST] Test úspešne dokončený.")
+    Logger.info("[TEST] Test úspešne dokončený.")
 
 
 if __name__ == "__main__":
