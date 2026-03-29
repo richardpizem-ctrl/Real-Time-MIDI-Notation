@@ -12,9 +12,11 @@ class PianoUI:
     def __init__(self, width=1500, height=180):
         self.width = width
         self.height = height
+
         self.active_keys = {}
         self.white_keys = []
         self.black_keys = []
+
         self._calculate_positions()
 
     def _calculate_positions(self):
@@ -26,6 +28,9 @@ class PianoUI:
             8: 4.65,
             10: 5.65
         }
+
+        self.white_keys.clear()
+        self.black_keys.clear()
 
         white_index = 0
 
