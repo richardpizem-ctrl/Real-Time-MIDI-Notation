@@ -3,8 +3,11 @@
 class SymbolManager:
     """
     SymbolManager vytvára vizuálne a logické symboly pre noty.
-    Zatiaľ jednoduché farby a rytmické názvy, ale pripravené
-    na budúce rozšírenie (grafické symboly, SVG, fonty).
+    Stabilizované:
+    - ochrana pred None
+    - ochrana pred nevalidnými Note objektmi
+    - bezpečné čítanie pitch/duration/position
+    - fallback farby a hodnoty
     """
 
     def __init__(self):
@@ -30,24 +33,55 @@ class SymbolManager:
     def get_symbol(self, note, rhythm: str):
         """
         Vráti symbol pre danú notu.
-        - note: objekt Note z MidiNoteMapperu
-        - rhythm: názov rytmickej hodnoty (quarter, eighth, ...)
+        Stabilizované:
+        - ochrana pred None
+        - ochrana pred nevalidnými typmi
+        - bezpečné čítanie pitch/duration/position
         """
 
         if note is None or rhythm is None:
             return None
 
-        pitch_class = note.pitch % 12
+        # Bezpečné čítanie pitch
+        try:
+            pitch = int(note.pitch)
+        except Exception:
+            pitch = 60  # fallback C4
+
+        # Pitch class
+        try:
+            pitch_class = pitch % 12
+        except Exception:
+            pitch_class = 0
+
+        # Farba
         color = self.pitch_colors.get(pitch_class, "#FFFFFF")
 
+        # Duration ticks
+        try:
+            duration_ticks = int(note.duration.ticks)
+        except Exception:
+            duration_ticks = 0
+
+        # Measure & beat
+        try:
+            measure = int(note.position.measure)
+        except Exception:
+            measure = 0
+
+        try:
+            beat = float(note.position.beat)
+        except Exception:
+            beat = 1.0
+
         symbol = {
-            "pitch": note.pitch,
-            "duration_ticks": note.duration.ticks,
+            "pitch": pitch,
+            "duration_ticks": duration_ticks,
             "rhythm": rhythm,
-            "measure": note.position.measure,
-            "beat": note.position.beat,
+            "measure": measure,
+            "beat": beat,
             "color": color,
-            "label": f"{note.pitch}-{rhythm}"
+            "label": f"{pitch}-{rhythm}",
         }
 
         return symbol
