@@ -12,9 +12,11 @@ class PianoRollUI:
     def __init__(self, width=1400, height=200):
         self.width = width
         self.height = height
+
         self.active_keys = {}
         self.white_keys = []
         self.black_keys = []
+
         self._calculate_key_positions()
 
     def _calculate_key_positions(self):
@@ -30,23 +32,23 @@ class PianoRollUI:
         white_index = 0
 
         for midi_note in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
-            note_in_octave = midi_note % 12
-            if note_in_octave in white_key_order:
+            note = midi_note % 12
+            if note in white_key_order:
                 x = white_index * self.WHITE_KEY_WIDTH
                 rect = pygame.Rect(x, 0, self.WHITE_KEY_WIDTH, self.WHITE_KEY_HEIGHT)
                 self.white_keys.append((midi_note, rect))
                 white_index += 1
 
         for midi_note in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
-            note_in_octave = midi_note % 12
-            if note_in_octave in black_key_offsets:
+            note = midi_note % 12
+            if note in black_key_offsets:
                 octave = (midi_note - self.FIRST_MIDI_NOTE) // 12
                 base_white_index = octave * 7
-                x = int((base_white_index + black_key_offsets[note_in_octave]) * self.WHITE_KEY_WIDTH)
+                x = int((base_white_index + black_key_offsets[note]) * self.WHITE_KEY_WIDTH)
                 rect = pygame.Rect(x, 0, self.BLACK_KEY_WIDTH, self.BLACK_KEY_HEIGHT)
                 self.black_keys.append((midi_note, rect))
 
-    def highlight_key(self, midi_note, color=(255, 0, 0)):
+    def highlight_key(self, midi_note, color=(255, 80, 80)):
         self.active_keys[midi_note] = color
 
     def unhighlight_key(self, midi_note):
