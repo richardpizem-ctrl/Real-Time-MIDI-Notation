@@ -1,10 +1,13 @@
 # Analýza rytmu pre real-time MIDI notáciu
+
 import time
 from collections import deque
+from core.logger import Logger
+
 
 class RhythmAnalyzer:
     """
-    Vylepšený analyzátor rytmu:
+    Stabilizovaný analyzátor rytmu:
     - sleduje čas medzi note_on udalosťami
     - odhaduje tempo (BPM)
     - sleduje stabilitu rytmu
@@ -19,16 +22,27 @@ class RhythmAnalyzer:
         self.current_bpm = None
         self.silence_timeout = silence_timeout
 
+    # ---------------------------------------------------------
+    # SPRACOVANIE MIDI EVENTU
+    # ---------------------------------------------------------
     def process_midi_event(self, event):
         """Spracuje MIDI event a aktualizuje rytmickú analýzu."""
+        if not isinstance(event, dict):
+            Logger.warning(f"RhythmAnalyzer: invalid event {event}")
+            return
+
         if event.get("type") != "note_on":
             return
 
-        event_time = event.get("time") or time.time()
+        try:
+            event_time = event.get("time") or time.time()
+        except Exception:
+            event_time = time.time()
 
         # Reset BPM pri dlhom tichu
         if self.last_event_time is not None:
-            if event_time - self.last_event_time > self.silence_timeout:
+            silence = event_time - self.last_event_time
+            if silence > self.silence_timeout:
                 self.intervals.clear()
                 self.current_bpm = None
                 self.last_event_time = event_time
@@ -45,13 +59,21 @@ class RhythmAnalyzer:
 
         self.last_event_time = event_time
 
+    # ---------------------------------------------------------
+    # PREPOČET BPM
+    # ---------------------------------------------------------
     def _update_bpm(self):
         """Prepočíta BPM na základe priemerného intervalu."""
         if not self.intervals:
             self.current_bpm = None
             return
 
-        avg_interval = sum(self.intervals) / len(self.intervals)
+        try:
+            avg_interval = sum(self.intervals) / len(self.intervals)
+        except Exception as e:
+            Logger.error(f"RhythmAnalyzer: interval average error: {e}")
+            self.current_bpm = None
+            return
 
         if avg_interval > 0:
             bpm = 60.0 / avg_interval
@@ -63,10 +85,16 @@ class RhythmAnalyzer:
         else:
             self.current_bpm = None
 
+    # ---------------------------------------------------------
+    # GET BPM
+    # ---------------------------------------------------------
     def get_bpm(self):
         """Vráti aktuálne odhadované BPM (alebo None)."""
         return self.current_bpm
 
+    # ---------------------------------------------------------
+    # STABILITA RYTMU
+    # ---------------------------------------------------------
     def get_stability(self):
         """
         Jednoduchý ukazovateľ stability rytmu (0–1).
@@ -75,8 +103,11 @@ class RhythmAnalyzer:
         if len(self.intervals) < 3:
             return None
 
-        avg = sum(self.intervals) / len(self.intervals)
-        variance = sum((x - avg) ** 2 for x in self.intervals) / len(self.intervals)
-
-        stability = 1.0 / (1.0 + variance * 50.0)
-        return max(0.0, min(1.0, stability))
+        try:
+            avg = sum(self.intervals) / len(self.intervals)
+            variance = sum((x - avg) ** 2 for x in self.intervals) / len(self.intervals)
+            stability = 1.0 / (1.0 + variance * 50.0)
+            return max(0.0, min(1.0, stability))
+        except Exception as e:
+            Logger.error(f"RhythmAnalyzer: stability calc error: {e}")
+            return None
