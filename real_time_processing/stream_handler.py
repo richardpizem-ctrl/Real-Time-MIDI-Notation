@@ -8,15 +8,14 @@ class StreamHandler:
     --------------------------------
     - Číta MIDI eventy z default input zariadenia
     - Posiela ich do EventRoutera
-    - Posiela ich do PianoRollUI
+    - Prepojené s UIManagerom
+    - Prepojené s NotationProcessorom
     - Meria pipeline latency
-    - Meria event processing time
-    - Meria UI processing time
     - Prepojené s PerformanceTracker
     """
 
-    def __init__(self, piano_roll_ui=None, event_router=None, perf=None):
-        self.piano_roll_ui = piano_roll_ui
+    def __init__(self, ui_manager=None, event_router=None, perf=None):
+        self.ui = ui_manager
         self.event_router = event_router
         self.perf = perf  # PerformanceTracker
 
@@ -36,7 +35,7 @@ class StreamHandler:
     def poll(self):
         """
         Spracuje všetky dostupné MIDI eventy.
-        Volá sa v hlavnej slučke UIManagera.
+        Volá sa v hlavnej slučke run.py.
         """
 
         if self.midi_input is None:
@@ -79,7 +78,7 @@ class StreamHandler:
             }
 
             # -----------------------------
-            # 1) ROUTING
+            # 1) ROUTING DO EventRoutera
             # -----------------------------
             event_start = time.perf_counter()
 
@@ -93,27 +92,13 @@ class StreamHandler:
             event_processing_ms = (event_end - event_start) * 1000.0
 
             # -----------------------------
-            # 2) UI UPDATE
-            # -----------------------------
-            ui_start = time.perf_counter()
-
-            if self.piano_roll_ui:
-                try:
-                    self.piano_roll_ui.handle_midi_event(midi_event)
-                except Exception as e:
-                    print(f"❌ PianoRollUI error: {e}")
-
-            ui_end = time.perf_counter()
-            ui_processing_ms = (ui_end - ui_start) * 1000.0
-
-            # -----------------------------
-            # 3) PIPELINE LATENCY
+            # 2) PIPELINE LATENCY
             # -----------------------------
             pipeline_end = time.perf_counter()
             pipeline_latency_ms = (pipeline_end - pipeline_start) * 1000.0
 
             # -----------------------------
-            # 4) PERFORMANCE TRACKER
+            # 3) PERFORMANCE TRACKER
             # -----------------------------
             if self.perf:
 
@@ -123,4 +108,5 @@ class StreamHandler:
                 if hasattr(self.perf, "record_pipeline_step"):
                     self.perf.record_pipeline_step(
                         event_processing_ms,
-                        ui_processing_ms,
+                        0.0  # UI čas už nesledujeme tu
+                    )
