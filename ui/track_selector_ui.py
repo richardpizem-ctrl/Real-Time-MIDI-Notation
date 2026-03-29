@@ -2,9 +2,6 @@ import pygame
 
 class TrackSelectorUI:
     def __init__(self, track_system, width=1400, height=60):
-        """
-        track_system = inštancia TrackSystemu
-        """
         self.track_system = track_system
         self.width = width
         self.height = height
@@ -21,9 +18,6 @@ class TrackSelectorUI:
 
         self._generate_buttons()
 
-    # ---------------------------------------------------------
-    # VYTVORENIE TLAČIDIEL PRE TRACKY
-    # ---------------------------------------------------------
     def _generate_buttons(self):
         self.track_buttons = []
 
@@ -33,8 +27,7 @@ class TrackSelectorUI:
             track_count = 0
 
         for i in range(track_count):
-            track_id = i  # TrackSystem používa indexy 0–15
-
+            track_id = i
             x = self.margin + i * (self.button_width + self.margin)
             y = 10
 
@@ -48,9 +41,6 @@ class TrackSelectorUI:
                 "rect": rect
             })
 
-    # ---------------------------------------------------------
-    # KLIKANIE MYŠOU – toggle visibility + nastavenie aktívnej stopy
-    # ---------------------------------------------------------
     def handle_click(self, pos):
         if not isinstance(pos, (tuple, list)) or len(pos) != 2:
             return None
@@ -64,14 +54,12 @@ class TrackSelectorUI:
 
             try:
                 if rect.collidepoint(pos):
-                    # Toggle visibility
                     try:
                         current = self.track_system.is_visible(track_id)
                         self.track_system.set_visible(track_id, not current)
                     except Exception:
                         pass
 
-                    # Set active track
                     try:
                         self.track_system.set_active_track(track_id)
                     except Exception:
@@ -83,9 +71,6 @@ class TrackSelectorUI:
 
         return None
 
-    # ---------------------------------------------------------
-    # KRESLENIE
-    # ---------------------------------------------------------
     def draw(self, surface):
         if surface is None:
             return
@@ -102,7 +87,6 @@ class TrackSelectorUI:
             if rect is None or track_id is None:
                 continue
 
-            # Farba stopy
             try:
                 color = self.track_system.get_color(track_id)
                 if not (
@@ -114,14 +98,12 @@ class TrackSelectorUI:
             except Exception:
                 color = (255, 255, 255)
 
-            # Viditeľnosť
             try:
                 if not self.track_system.is_visible(track_id):
                     color = (color[0] // 3, color[1] // 3, color[2] // 3)
             except Exception:
                 pass
 
-            # Border
             try:
                 is_active = (track_id == active_id)
             except Exception:
@@ -130,14 +112,12 @@ class TrackSelectorUI:
             border_color = (255, 255, 255) if is_active else (80, 80, 80)
             border_width = 4 if is_active else 2
 
-            # Draw button
             try:
                 pygame.draw.rect(surface, color, rect)
                 pygame.draw.rect(surface, border_color, rect, border_width)
             except Exception:
                 continue
 
-            # Draw text
             try:
                 if self.font:
                     text_surface = self.font.render(str(track_id + 1), True, (0, 0, 0))
