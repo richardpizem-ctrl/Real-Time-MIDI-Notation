@@ -16,14 +16,12 @@ class UIManager:
 
         pygame.font.init()
 
-        # --- UI MODULY ---
         self.piano = PianoUI(width, 180)
         self.piano_roll = PianoRollUI(width, 180)
         self.staff = StaffUI(width, 200)
         self.visualizer = NoteVisualizerUI(width, 200)
         self.track_selector = TrackSelectorUI(track_system, width=width, height=60)
 
-        # --- GRAPHIC NOTATION RENDERER ---
         self.renderer = GraphicNotationRenderer(width, 200, track_system)
         if self.notation_processor is not None:
             try:
@@ -31,7 +29,6 @@ class UIManager:
             except Exception as e:
                 print(f"❌ NotationProcessor bind_renderer error: {e}")
 
-        # Rozloženie UI
         self.layout = {
             "track_selector": (0, 0),
             "piano": (0, 70),
@@ -41,9 +38,6 @@ class UIManager:
             "renderer": (0, 860),
         }
 
-    # ---------------------------------------------------------
-    # EVENT ROUTING
-    # ---------------------------------------------------------
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and self.track_selector:
             try:
@@ -51,9 +45,6 @@ class UIManager:
             except Exception as e:
                 print(f"❌ TrackSelector handle_click error: {e}")
 
-    # ---------------------------------------------------------
-    # NOTE ON / OFF
-    # ---------------------------------------------------------
     def on_note_on(self, event):
         if not isinstance(event, dict):
             return
@@ -73,7 +64,6 @@ class UIManager:
         if track_color is not None:
             event["track_color"] = track_color
 
-        # UI reakcie
         try:
             if self.piano:
                 self.piano.highlight_key(note, track_color)
@@ -98,7 +88,6 @@ class UIManager:
         except Exception as e:
             print(f"❌ StaffUI add_note error: {e}")
 
-        # Posielame do NotationProcessoru
         if self.notation_processor is not None:
             try:
                 self.notation_processor.process_midi_event({
@@ -157,11 +146,7 @@ class UIManager:
             except Exception as e:
                 print(f"❌ NotationProcessor process_midi_event (note_off) error: {e}")
 
-    # ---------------------------------------------------------
-    # DRAW
-    # ---------------------------------------------------------
     def draw(self, surface):
-        # Track selector
         try:
             x, y = self.layout["track_selector"]
             if self.track_selector:
@@ -169,7 +154,6 @@ class UIManager:
         except Exception as e:
             print(f"❌ TrackSelector draw error: {e}")
 
-        # Piano
         try:
             x, y = self.layout["piano"]
             if self.piano:
@@ -177,7 +161,6 @@ class UIManager:
         except Exception as e:
             print(f"❌ PianoUI draw error: {e}")
 
-        # Piano roll
         try:
             x, y = self.layout["piano_roll"]
             if self.piano_roll:
@@ -185,7 +168,6 @@ class UIManager:
         except Exception as e:
             print(f"❌ PianoRollUI draw error: {e}")
 
-        # Staff
         try:
             x, y = self.layout["staff"]
             if self.staff:
@@ -193,7 +175,6 @@ class UIManager:
         except Exception as e:
             print(f"❌ StaffUI draw error: {e}")
 
-        # Visualizer
         try:
             x, y = self.layout["visualizer"]
             if self.visualizer:
@@ -201,7 +182,6 @@ class UIManager:
         except Exception as e:
             print(f"❌ NoteVisualizerUI draw error: {e}")
 
-        # Renderer – kreslíme timeline z NotationProcessoru
         try:
             x, y = self.layout["renderer"]
             timeline = getattr(self.notation_processor, "timeline", []) if self.notation_processor else []
