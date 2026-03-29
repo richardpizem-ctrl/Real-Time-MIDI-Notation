@@ -4,6 +4,8 @@ from .piano_roll_ui import PianoRollUI
 from .staff_ui import StaffUI
 from .note_visualizer_ui import NoteVisualizerUI
 from .track_selector_ui import TrackSelectorUI
+from renderer.graphic_renderer import GraphicNotationRenderer
+
 
 class UIManager:
     def __init__(self, width, height, track_system):
@@ -20,6 +22,9 @@ class UIManager:
         self.visualizer = NoteVisualizerUI(width, 200)
         self.track_selector = TrackSelectorUI(track_system, width=width, height=60)
 
+        # --- GRAPHIC NOTATION RENDERER ---
+        self.renderer = GraphicNotationRenderer(width, 200, track_system)
+
         # Rozloženie UI
         self.layout = {
             "track_selector": (0, 0),
@@ -27,7 +32,12 @@ class UIManager:
             "piano_roll": (0, 260),
             "staff": (0, 450),
             "visualizer": (0, 650),
+            "renderer": (0, 860),
         }
+
+        # Zoznam aktívnych nôt pre renderer
+        self.active_notes = []
+
 
     # ---------------------------------------------------------
     # EVENT ROUTING
@@ -43,16 +53,26 @@ class UIManager:
         track_color = self.track_system.get_color(event["track_id"])
         event["track_color"] = track_color
 
+        # UI reakcie
         self.piano.highlight_key(event["note"], track_color)
         self.piano_roll.highlight_key(event["note"], track_color)
         self.visualizer.on_note(event)
         self.staff.add_note(event)
+
+        # Renderer notes
+        self.active_notes.append(event)
 
     def on_note_off(self, event):
         self.piano.unhighlight_key(event["note"])
         self.piano_roll.unhighlight_key(event["note"])
         self.visualizer.on_note_off(event)
         self.staff.remove_note(event)
+
+        # Odstránenie z rendereru
+        self.active_notes = [
+            n for n in self.active_notes
+            if not (n["note"] == event["note"] and n["track_id"] == event["track_id"])
+        ]
 
     # ---------------------------------------------------------
     # DRAW
@@ -77,3 +97,8 @@ class UIManager:
         # Visualizer
         x, y = self.layout["visualizer"]
         self.visualizer.draw(surface.subsurface((x, y, self.width, 200)))
+
+        # Renderer – kreslíme noty
+        x, y = self.layout["renderer"]
+        rendered = self.renderer.draw(self.active_notes)
+        surface.subsurface((x, y, self.width, 200)).blit(rendered, (0, 0))
