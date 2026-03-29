@@ -1,34 +1,68 @@
 import pygame
 
 class TrackManagerUI:
-    def __init__(self, width, height, renderer):
+    def __init__(self, width, height, track_system):
         self.width = width
         self.height = height
-        self.renderer = renderer
+        self.track_system = track_system
 
-        self.font = pygame.font.SysFont("Arial", 20)
+        pygame.font.init()
+        self.font = pygame.font.SysFont("Arial", 20, bold=True)
 
-        self.buttons = [
-            {"track": "melody", "label": "Melody", "x": 20, "y": 10, "w": 120, "h": 40},
-            {"track": "bass", "label": "Bass", "x": 160, "y": 10, "w": 120, "h": 40},
-            {"track": "drums", "label": "Drums", "x": 300, "y": 10, "w": 120, "h": 40},
-            {"track": "chords", "label": "Chords", "x": 440, "y": 10, "w": 120, "h": 40},
-        ]
+        self.button_width = 70
+        self.button_height = 40
+        self.margin = 10
+
+        self._generate_buttons()
+
+    def _generate_buttons(self):
+        self.buttons = []
+        track_count = len(self.track_system.tracks)
+
+        for track_id in range(track_count):
+            x = 20 + track_id * (self.button_width + self.margin)
+            y = 10
+
+            self.buttons.append({
+                "track_id": track_id,
+                "x": x,
+                "y": y,
+                "w": self.button_width,
+                "h": self.button_height
+            })
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = event.pos
+
             for btn in self.buttons:
-                if btn["x"] <= mx <= btn["x"] + btn["w"] and btn["y"] <= my <= btn["y"] + btn["h"]:
-                    current = self.renderer.track_visible.get(btn["track"], True)
-                    self.renderer.set_track_visible(btn["track"], not current)
+                x, y, w, h = btn["x"], btn["y"], btn["w"], btn["h"]
+
+                if x <= mx <= x + w and y <= my <= y + h:
+                    track_id = btn["track_id"]
+
+                    current = self.track_system.is_visible(track_id)
+                    self.track_system.set_visible(track_id, not current)
+
+                    self.track_system.set_active_track(track_id)
 
     def draw(self, surface):
+        active_id = self.track_system.get_active_track()
+
         for btn in self.buttons:
-            active = self.renderer.track_visible.get(btn["track"], True)
-            color = (80, 200, 120) if active else (120, 120, 120)
+            track_id = btn["track_id"]
+            x, y, w, h = btn["x"], btn["y"], btn["w"], btn["h"]
 
-            pygame.draw.rect(surface, color, (btn["x"], btn["y"], btn["w"], btn["h"]), border_radius=6)
+            color = self.track_system.get_color(track_id)
 
-            text = self.font.render(btn["label"], True, (0, 0, 0))
-            surface.blit(text, (btn["x"] + 12, btn["y"] + 8))
+            if not self.track_system.is_visible(track_id):
+                color = (color[0] // 3, color[1] // 3, color[2] // 3)
+
+            border_color = (255, 255, 255) if track_id == active_id else (80, 80, 80)
+            border_width = 4 if track_id == active_id else 2
+
+            pygame.draw.rect(surface, color, (x, y, w, h), border_radius=6)
+            pygame.draw.rect(surface, border_color, (x, y, w, h), border_width, border_radius=6)
+
+            text = self.font.render(str(track_id + 1), True, (0, 0, 0))
+            surface.blit(text, (x + w // 2 - text.get_width() // 2, y + h // 2 - text.get_height() // 2))
