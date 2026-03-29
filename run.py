@@ -10,7 +10,7 @@ from event_bus.event_types import (
 )
 
 from track_system.track_system import TrackSystem
-from notation_processor.notation_processor import NotationProcessor
+    notation_processor = NotationProcessor(track_system, event_bus)
 
 from ui.ui_manager import UIManager
 from real_time_processing.stream_handler import StreamHandler
@@ -91,6 +91,9 @@ def main():
                 running = False
 
             ui.handle_event(event)
+
+        # 🔥 MIDI vstup – TOTO JE NOVÉ
+        stream_handler.poll()
 
         ui.draw(screen)
 
