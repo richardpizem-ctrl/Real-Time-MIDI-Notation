@@ -1,85 +1,76 @@
-# run.py – hlavný spúšťací súbor pre Real-Time MIDI Notation
-
 import pygame
-from event_bus.event_bus import EventBus
-from event_bus.event_types import (
-    NOTE_RECORDED,
-    TRACK_SELECTED,
-    MIDI_EXPORTED,
-    ERROR_OCCURRED
-)
 
-from track_system.track_system import TrackSystem
-from notation_processor.notation_processor import NotationProcessor
+class GraphicNotationRenderer:
+    def __init__(self, width, height, track_system):
+        self.width = width
+        self.height = height
+        self.track_system = track_system
 
-from ui.ui_manager import UIManager
-from real_time_processing.stream_handler import StreamHandler
-from midi_input.event_router import EventRouter
+        self.surface = pygame.Surface((width, height))
+        self.font = pygame.font.SysFont("Arial", 18)
 
+        # Cache staff lines
+        self.staff_cache = None
+        self.staff_cache_width = width
+        self.staff_cache_height = 120
 
-# ---------------------------------------------------------
-# TEST HANDLERY (ponechané podľa tvojej architektúry)
-# ---------------------------------------------------------
-def on_note_recorded(data):
-    print(f"[TEST] NOTE_RECORDED event received: {data}")
+        # Layout
+        self.margin_left = 40
+        self.margin_top = 20
+        self.note_spacing = 22
+        self.staff_line_spacing = 12
 
-def on_track_selected(data):
-    print(f"[TEST] TRACK_SELECTED event received: {data}")
+    # ---------------------------------------------------------
+    # STAFF LINES (CACHED)
+    # ---------------------------------------------------------
+    def _render_staff_lines(self):
+        if self.staff_cache is not None:
+            return self.staff_cache
 
-def on_midi_exported(data):
-    print(f"[TEST] MIDI_EXPORTED event received: {data}")
+        surf = pygame.Surface((self.staff_cache_width, self.staff_cache_height), pygame.SRCALPHA)
+        surf.fill((0, 0, 0, 0))
 
-def on_error(data):
-    print(f"[TEST] ERROR_OCCURRED: {data}")
+        y_start = self.margin_top
+        for i in range(5):
+            y = y_start + i * self.staff_line_spacing
+            pygame.draw.line(surf, (200, 200, 200), (self.margin_left, y), (self.width - 20, y), 2)
 
+        self.staff_cache = surf
+        return surf
 
-# ---------------------------------------------------------
-# HLAVNÁ FUNKCIA
-# ---------------------------------------------------------
-def main():
-    print("=== REAL-TIME MIDI NOTATION START ===")
+    # ---------------------------------------------------------
+    # DRAW NOTE HEAD
+    # ---------------------------------------------------------
+    def _draw_note(self, surface, x, y, color):
+        pygame.draw.ellipse(surface, color, (x, y, 14, 10))
+        pygame.draw.ellipse(surface, (0, 0, 0), (x, y, 14, 10), 2)
 
-    pygame.init()
+    # ---------------------------------------------------------
+    # MAIN DRAW
+    # ---------------------------------------------------------
+    def draw(self, notes):
+        self.surface.fill((25, 25, 25))
 
-    # 1. EventBus
-    event_bus = EventBus()
+        # Staff lines
+        staff = self._render_staff_lines()
+        self.surface.blit(staff, (0, 0))
 
-    # 2. Registrácia handlerov
-    event_bus.subscribe(NOTE_RECORDED, on_note_recorded)
-    event_bus.subscribe(TRACK_SELECTED, on_track_selected)
-    event_bus.subscribe(MIDI_EXPORTED, on_midi_exported)
-    event_bus.subscribe(ERROR_OCCURRED, on_error)
+        # Draw notes
+        x = self.margin_left + 10
 
-    # 3. TrackSystem + NotationProcessor
-    track_system = TrackSystem(event_bus)
-    notation_processor = NotationProcessor(track_system, event_bus)
+        for note in notes:
+            midi = note["note"]
+            track_id = note["track_id"]
 
-    # 4. UI Manager (prepojený s TrackSystemom)
-    ui = UIManager(
-        width=1400,
-        height=900,
-        track_system=track_system
-    )
+            if not self.track_system.is_visible(track_id):
+                continue
 
-    # 5. EventRouter pre MIDI → EventBus → UI
-    event_router = EventRouter(
-        event_bus=event_bus,
-        ui_manager=ui
-    )
+            color = self.track_system.get_color(track_id)
 
-    # 6. MIDI Stream Handler prepojený s UI + EventRouter
-    stream_handler = StreamHandler(
-        ui_manager=ui,
-        event_router=event_router
-    )
+            # Vertical position
+            y = self.margin_top + (60 - midi) * 0.9
 
-    # -----------------------------------------------------
-    # 7. Spustenie UI slučky
-    # -----------------------------------------------------
-    ui.run()
+            self._draw_note(self.surface, x, y, color)
+            x += self.note_spacing
 
-    print("=== END ===")
-
-
-if __name__ == "__main__":
-    main()
+        return self.surface
