@@ -1,16 +1,10 @@
-# Debug Panel – shows raw MIDI events and internal pipeline data
-
+import pygame
 from ..core.logger import Logger
 
 class DebugPanel:
     def __init__(self, enabled=True, print_enabled=True):
-        """
-        enabled = či sa debug panel používa
-        print_enabled = či sa majú vypisovať print() do konzoly
-        """
         self.enabled = enabled
         self.print_enabled = print_enabled
-
         Logger.info("DebugPanel initialized.")
 
     # ---------------------------------------------------------
@@ -24,7 +18,6 @@ class DebugPanel:
     # MIDI EVENT LOGGING
     # ---------------------------------------------------------
     def log_midi_event(self, event):
-        """Display raw MIDI event."""
         if not self.enabled:
             return
 
@@ -43,7 +36,6 @@ class DebugPanel:
     # PIPELINE LOGGING
     # ---------------------------------------------------------
     def log_pipeline(self, stage, data):
-        """Display pipeline stage output."""
         if not self.enabled:
             return
 
@@ -62,7 +54,6 @@ class DebugPanel:
     # ERROR LOGGING
     # ---------------------------------------------------------
     def log_error(self, message):
-        """Display error messages."""
         try:
             if self.print_enabled:
                 print(f"[ERROR] {message}")
@@ -76,10 +67,6 @@ class DebugPanel:
     # SAFE FORMATTER
     # ---------------------------------------------------------
     def _safe_format(self, obj):
-        """
-        Bezpečne prevedie objekt na string,
-        aby Logger nespadol pri ne-serializovateľných dátach.
-        """
         try:
             return str(obj)
         except Exception:
