@@ -24,7 +24,6 @@ class EventRouter:
 
         Logger.info("EventRouter initialized.")
 
-
     # ---------------------------------------------------------
     # ROUTING MIDI EVENTOV
     # ---------------------------------------------------------
@@ -39,29 +38,43 @@ class EventRouter:
             "timestamp": float
         }
         """
+        if not isinstance(midi_event, dict):
+            Logger.warning(f"Invalid midi_event (not dict): {midi_event}")
+            return
+
         try:
             event_type = midi_event.get("type")
             note = midi_event.get("note")
             velocity = midi_event.get("velocity", 0)
             channel = midi_event.get("channel", 0)
 
-            # ---------------------------------------------------------
-            # 🔥 PREPOJENIE TRACK SYSTEMU
-            # ---------------------------------------------------------
+            if event_type is None:
+                Logger.warning(f"Missing event_type in midi_event: {midi_event}")
+                return
+
             event = None
+
+            # ---------------------------------------------------------
+            # PREPOJENIE TRACK SYSTEMU
+            # ---------------------------------------------------------
             if self.track_system and event_type in ("note_on", "note_off"):
+                try:
+                    active_track = self.track_system.set_active_track_by_channel(channel)
+                except Exception as e:
+                    Logger.error(f"TrackSystem set_active_track_by_channel error: {e}")
+                    active_track = None
 
-                # 1) automatické prepnutie tracku podľa MIDI kanála
-                active_track = self.track_system.set_active_track_by_channel(channel)
+                try:
+                    event = self.track_system.build_note_event_for_active_track(
+                        note=note,
+                        velocity=velocity,
+                        event_type=event_type
+                    )
+                except Exception as e:
+                    Logger.error(f"TrackSystem build_note_event_for_active_track error: {e}")
+                    event = None
 
-                # 2) vytvorenie note eventu pre aktívny track
-                event = self.track_system.build_note_event_for_active_track(
-                    note=note,
-                    velocity=velocity,
-                    event_type=event_type
-                )
-
-                if event:
+                if isinstance(event, dict):
                     midi_event["track_id"] = event.get("track_id")
                     midi_event["track_color"] = event.get("track_color")
 
@@ -73,38 +86,44 @@ class EventRouter:
             # NOTE ON / NOTE OFF
             # ---------------------------------------------------------
             if event_type in ("note_on", "note_off"):
-
-                # Posielame do EventBus (aj s track_id)
                 if self.event_bus:
-                    self.event_bus.publish("note_event", midi_event)
+                    try:
+                        self.event_bus.publish("note_event", midi_event)
+                    except Exception as e:
+                        Logger.error(f"EventBus publish note_event error: {e}")
 
-                # ---------------------------------------------------------
-                # 🔥 UIManager (hlavné UI reakcie)
-                # ---------------------------------------------------------
+                # UIManager
                 if self.ui and event:
-                    if event_type == "note_on" and velocity > 0:
-                        self.ui.on_note_on(event)
-                    else:
-                        self.ui.on_note_off(event)
+                    try:
+                        if event_type == "note_on" and velocity > 0:
+                            self.ui.on_note_on(event)
+                        else:
+                            self.ui.on_note_off(event)
+                    except Exception as e:
+                        Logger.error(f"UIManager note handler error: {e}")
 
-                # ---------------------------------------------------------
-                # 🔥 NotationProcessor (timeline, harmónia, rytmus)
-                # ---------------------------------------------------------
+                # NotationProcessor
                 if self.notation:
-                    self.notation.process_midi_event({
-                        "type": event_type,
-                        "note": note,
-                        "velocity": velocity,
-                        "time": midi_event.get("timestamp", 0.0),
-                        "channel": channel,
-                    })
+                    try:
+                        self.notation.process_midi_event({
+                            "type": event_type,
+                            "note": note,
+                            "velocity": velocity,
+                            "time": midi_event.get("timestamp", 0.0),
+                            "channel": channel,
+                        })
+                    except Exception as e:
+                        Logger.error(f"NotationProcessor process_midi_event error: {e}")
 
             # ---------------------------------------------------------
             # CONTROL CHANGE
             # ---------------------------------------------------------
             elif event_type == "control_change":
                 if self.event_bus:
-                    self.event_bus.publish("control_event", midi_event)
+                    try:
+                        self.event_bus.publish("control_event", midi_event)
+                    except Exception as e:
+                        Logger.error(f"EventBus publish control_event error: {e}")
 
             # ---------------------------------------------------------
             # UNKNOWN
