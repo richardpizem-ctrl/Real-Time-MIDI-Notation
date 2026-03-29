@@ -5,6 +5,7 @@ import mido
 from .message_parser import MessageParser
 from ..core.logger import Logger
 
+
 class MIDIListener:
     def __init__(self, event_bus, device_name=None):
         self.event_bus = event_bus
@@ -12,6 +13,9 @@ class MIDIListener:
         self.running = False
         self.thread = None
 
+    # ---------------------------------------------------------
+    # START LISTENING
+    # ---------------------------------------------------------
     def start(self):
         """Start listening to MIDI input."""
         if self.running:
@@ -20,28 +24,54 @@ class MIDIListener:
 
         self.running = True
         self.thread = threading.Thread(target=self._listen_loop, daemon=True)
-        self.thread.start()
-        Logger.info("MIDIListener started.")
 
+        try:
+            self.thread.start()
+            Logger.info("MIDIListener started.")
+        except Exception as e:
+            Logger.error(f"MIDIListener thread start error: {e}")
+            self.running = False
+
+    # ---------------------------------------------------------
+    # STOP LISTENING
+    # ---------------------------------------------------------
     def stop(self):
         """Stop listening."""
         self.running = False
         Logger.info("MIDIListener stopped.")
 
+    # ---------------------------------------------------------
+    # INTERNAL LISTEN LOOP
+    # ---------------------------------------------------------
     def _listen_loop(self):
         """Internal loop for receiving MIDI messages."""
         try:
-            with mido.open_input(self.device_name) as port:
+            # Bezpečné otvorenie MIDI portu
+            try:
+                port = mido.open_input(self.device_name)
+            except Exception as e:
+                Logger.error(f"Failed to open MIDI device '{self.device_name}': {e}")
+                self.running = False
+                return
+
+            with port:
                 Logger.info(f"Listening on MIDI device: {port.name}")
 
                 for msg in port:
                     if not self.running:
                         break
 
-                    parsed = MessageParser.parse(msg)
+                    try:
+                        parsed = MessageParser.parse(msg)
+                    except Exception as e:
+                        Logger.error(f"MessageParser exception: {e}")
+                        parsed = None
+
                     if parsed:
-                        self.event_bus.publish("midi_event", parsed)
+                        try:
+                            self.event_bus.publish("midi_event", parsed)
+                        except Exception as e:
+                            Logger.error(f"EventBus publish error: {e}")
 
         except Exception as e:
             Logger.error(f"MIDIListener error: {e}")
-
