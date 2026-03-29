@@ -30,6 +30,8 @@ class PianoRollUI:
         }
 
         white_index = 0
+        self.white_keys.clear()
+        self.black_keys.clear()
 
         for midi_note in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
             note = midi_note % 12
