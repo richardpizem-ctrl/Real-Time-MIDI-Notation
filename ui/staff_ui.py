@@ -14,6 +14,7 @@ class StaffUI:
         self.height = height
 
         self.notes = {}
+        self.note_order = []  # stabilné poradie nôt
 
         self.scroll_x = 0
         self.note_spacing = 22
@@ -22,7 +23,12 @@ class StaffUI:
     def add_note(self, event):
         note_id = f"{event['track_id']}_{event['note']}_{event['time']}"
 
-        x = len(self.notes) * self.note_spacing + 100
+        if note_id in self.notes:
+            return  # nikdy neprepisujeme existujúcu notu
+
+        self.note_order.append(note_id)
+
+        x = len(self.note_order) * self.note_spacing + 100
 
         midi_note = event["note"]
         y = self._midi_to_staff_y(midi_note)
@@ -35,12 +41,14 @@ class StaffUI:
             "color": color
         }
 
-        self.scroll_x += self.scroll_speed
+        self.scroll_x = max(0, self.scroll_x + self.scroll_speed)
 
     def remove_note(self, event):
         note_id = f"{event['track_id']}_{event['note']}_{event['time']}"
         if note_id in self.notes:
             del self.notes[note_id]
+        if note_id in self.note_order:
+            self.note_order.remove(note_id)
 
     def highlight_note(self, note_id, color=None):
         if note_id in self.notes:
@@ -60,7 +68,11 @@ class StaffUI:
             pygame.draw.line(surface, self.STAFF_LINE_COLOR, (20, y), (self.width - 20, y), 2)
 
     def draw_notes(self, surface):
-        for note in self.notes.values():
+        for note_id in self.note_order:
+            note = self.notes.get(note_id)
+            if not note:
+                continue
+
             shifted_x = note["x"] - self.scroll_x
             pygame.draw.circle(surface, note["color"], (shifted_x, note["y"]), 7)
 
