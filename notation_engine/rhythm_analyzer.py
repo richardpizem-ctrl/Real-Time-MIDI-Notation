@@ -11,8 +11,8 @@ class RhythmAnalyzerConfig:
         self,
         bpm=120.0,
         ppq=480,
-        quant_grid=0.25,          # základná kvantizačná mriežka (štvrťová = 0.25, osminová = 0.125)
-        swing_threshold=0.08,     # minimálna odchýlka (v beat fraction) pre swing detekciu
+        quant_grid=0.25,
+        swing_threshold=0.08,
         timing_loose_threshold=0.02,
         timing_laidback_threshold=0.03,
         velocity_accent_threshold=0.75,
@@ -20,16 +20,16 @@ class RhythmAnalyzerConfig:
         min_pattern_bars=2,
         max_pattern_length_beats=4.0,
     ):
-        self.bpm = bpm
-        self.ppq = ppq
-        self.quant_grid = quant_grid
-        self.swing_threshold = swing_threshold
-        self.timing_loose_threshold = timing_loose_threshold
-        self.timing_laidback_threshold = timing_laidback_threshold
-        self.velocity_accent_threshold = velocity_accent_threshold
-        self.velocity_ghost_threshold = velocity_ghost_threshold
-        self.min_pattern_bars = min_pattern_bars
-        self.max_pattern_length_beats = max_pattern_length_beats
+        self.bpm = float(bpm)
+        self.ppq = int(ppq)
+        self.quant_grid = float(quant_grid)
+        self.swing_threshold = float(swing_threshold)
+        self.timing_loose_threshold = float(timing_loose_threshold)
+        self.timing_laidback_threshold = float(timing_laidback_threshold)
+        self.velocity_accent_threshold = float(velocity_accent_threshold)
+        self.velocity_ghost_threshold = float(velocity_ghost_threshold)
+        self.min_pattern_bars = int(min_pattern_bars)
+        self.max_pattern_length_beats = float(max_pattern_length_beats)
 
 
 class RhythmAnalyzer:
@@ -47,27 +47,21 @@ class RhythmAnalyzer:
     # -------------------------------------------------
 
     def analyze(self, timeline):
-        """
-        Hlavný vstupný bod.
-        timeline: list[dict] – každý prvok má aspoň:
-            - 'start' (v beatoch alebo sekundách – predpokladáme beats)
-            - 'duration'
-            - 'velocity' (0–127)
-            - 'bar_index' (int) – ak je k dispozícii
-            - 'beat_in_bar' (float) – ak je k dispozícii
-        """
-        if not timeline:
-            Logger.warning("RhythmAnalyzer.analyze called with empty timeline.")
+        if not isinstance(timeline, list) or not timeline:
+            Logger.warning("RhythmAnalyzer.analyze called with empty or invalid timeline.")
             return {}
 
-        # 1) Kvantizácia a základné metriky
-        quantized = self._quantize_timeline(timeline)
-        timing_stats = self._analyze_timing_deviation(timeline, quantized)
-        velocity_stats = self._analyze_velocity_patterns(timeline)
-        swing_info = self._detect_swing(timeline, quantized)
-        patterns = self._detect_rhythm_patterns(quantized)
-        downbeats = self._detect_downbeats(timeline, velocity_stats, timing_stats)
-        groove = self._classify_groove(swing_info, patterns, velocity_stats, timing_stats)
+        try:
+            quantized = self._quantize_timeline(timeline)
+            timing_stats = self._analyze_timing_deviation(timeline, quantized)
+            velocity_stats = self._analyze_velocity_patterns(timeline)
+            swing_info = self._detect_swing(timeline, quantized)
+            patterns = self._detect_rhythm_patterns(quantized)
+            downbeats = self._detect_downbeats(timeline, velocity_stats, timing_stats)
+            groove = self._classify_groove(swing_info, patterns, velocity_stats, timing_stats)
+        except Exception as e:
+            Logger.error(f"RhythmAnalyzer.analyze error: {e}")
+            return {}
 
         result = {
             "quantized": quantized,
@@ -96,9 +90,22 @@ class RhythmAnalyzer:
         quantized = []
 
         for note in timeline:
+            if not isinstance(note, dict):
+                continue
+
             start = note.get("start", 0.0)
             duration = note.get("duration", grid)
             velocity = note.get("velocity", 80)
+
+            try:
+                start = float(start)
+            except Exception:
+                start = 0.0
+
+            try:
+                duration = float(duration)
+            except Exception:
+                duration = grid
 
             q_start = round(start / grid) * grid
             q_duration = round(duration / grid) * grid
@@ -107,6 +114,7 @@ class RhythmAnalyzer:
                 **note,
                 "q_start": q_start,
                 "q_duration": q_duration,
+                "velocity": velocity,
             })
 
         return quantized
@@ -118,8 +126,22 @@ class RhythmAnalyzer:
     def _analyze_timing_deviation(self, timeline, quantized):
         deviations = []
         for orig, q in zip(timeline, quantized):
+            if not isinstance(orig, dict) or not isinstance(q, dict):
+                continue
+
             start = orig.get("start", 0.0)
             q_start = q.get("q_start", start)
+
+            try:
+                start = float(start)
+            except Exception:
+                start = 0.0
+
+            try:
+                q_start = float(q_start)
+            except Exception:
+                q_start = start
+
             dev = start - q_start
             deviations.append(dev)
 
@@ -162,7 +184,26 @@ class RhythmAnalyzer:
                 "velocity_profile": [],
             }
 
-        velocities = [n.get("velocity", 80) for n in timeline]
+        velocities = []
+        for n in timeline:
+            if not isinstance(n, dict):
+                continue
+            v = n.get("velocity", 80)
+            try:
+                v = int(v)
+            except Exception:
+                v = 80
+            velocities.append(v)
+
+        if not velocities:
+            return {
+                "avg_velocity": 0.0,
+                "accents": [],
+                "ghost_notes": [],
+                "dynamic_range": 0.0,
+                "velocity_profile": [],
+            }
+
         max_v = max(velocities)
         min_v = min(velocities)
         avg_v = sum(velocities) / len(velocities)
@@ -173,7 +214,15 @@ class RhythmAnalyzer:
         profile = []
 
         for idx, n in enumerate(timeline):
+            if not isinstance(n, dict):
+                continue
+
             v = n.get("velocity", 80)
+            try:
+                v = int(v)
+            except Exception:
+                v = 80
+
             norm = v / 127.0
             is_accent = norm >= self.config.velocity_accent_threshold
             is_ghost = norm <= self.config.velocity_ghost_threshold
@@ -206,31 +255,35 @@ class RhythmAnalyzer:
     # -------------------------------------------------
 
     def _detect_swing(self, timeline, quantized):
-        """
-        Hľadá páry osmin (alebo menších jednotiek) a porovnáva ich pomer.
-        Predpoklad: 'start' je v beatoch, grid = 1/8 alebo 1/16.
-        """
         if not timeline:
             return {"type": "unknown", "ratio": 0.0}
 
         grid = self.config.quant_grid
-        # berieme páry not v rámci 1 beat-u (napr. dve osminy)
         pairs = []
         by_bar = defaultdict(list)
 
         for n in timeline:
+            if not isinstance(n, dict):
+                continue
             bar = n.get("bar_index", 0)
             by_bar[bar].append(n)
 
         for bar, notes in by_bar.items():
-            notes_sorted = sorted(notes, key=lambda x: x.get("start", 0.0))
-            # prejdeme po dvojiciach v rámci beatu
+            notes_sorted = sorted(
+                [x for x in notes if isinstance(x, dict)],
+                key=lambda x: x.get("start", 0.0),
+            )
             for i in range(len(notes_sorted) - 1):
                 a = notes_sorted[i]
                 b = notes_sorted[i + 1]
                 sa = a.get("start", 0.0)
                 sb = b.get("start", 0.0)
-                # ak sú v tom istom beate (rozdiel < 1.0) a sú to "osminy"
+                try:
+                    sa = float(sa)
+                    sb = float(sb)
+                except Exception:
+                    continue
+
                 if 0 < (sb - sa) <= 0.5 + 1e-6:
                     pairs.append((sa, sb))
 
@@ -240,18 +293,17 @@ class RhythmAnalyzer:
         ratios = []
         for sa, sb in pairs:
             diff = sb - sa
-            # očakávané rovné osminy = 0.5 beat
-            # swing = prvá dlhšia, druhá kratšia
-            # ratio = first_part / (first_part + second_part)
             total = 0.5
             first = diff
             second = max(total - first, 1e-6)
             ratio = first / (first + second)
             ratios.append(ratio)
 
+        if not ratios:
+            return {"type": "straight", "ratio": 0.0}
+
         avg_ratio = sum(ratios) / len(ratios)
 
-        # 0.5 = straight, 0.66 = typický swing, 0.75 = silný shuffle
         swing_type = "straight"
         if fabs(avg_ratio - 0.5) < self.config.swing_threshold:
             swing_type = "straight"
@@ -271,15 +323,13 @@ class RhythmAnalyzer:
     # -------------------------------------------------
 
     def _detect_rhythm_patterns(self, quantized):
-        """
-        Hľadá opakujúce sa rytmické patterny v rámci taktov.
-        Predpoklad: 'bar_index' a 'q_start' sú k dispozícii.
-        """
         if not quantized:
             return {"patterns": [], "bar_patterns": {}}
 
         bars = defaultdict(list)
         for n in quantized:
+            if not isinstance(n, dict):
+                continue
             bar = n.get("bar_index", 0)
             bars[bar].append(n)
 
@@ -287,9 +337,19 @@ class RhythmAnalyzer:
         pattern_counter = Counter()
 
         for bar_idx, notes in bars.items():
-            notes_sorted = sorted(notes, key=lambda x: x.get("q_start", 0.0))
-            # pattern = rozdiely medzi po sebe idúcimi q_start
-            starts = [n.get("q_start", 0.0) for n in notes_sorted]
+            notes_sorted = sorted(
+                [x for x in notes if isinstance(x, dict)],
+                key=lambda x: x.get("q_start", 0.0),
+            )
+            starts = []
+            for n in notes_sorted:
+                qs = n.get("q_start", 0.0)
+                try:
+                    qs = float(qs)
+                except Exception:
+                    qs = 0.0
+                starts.append(qs)
+
             if len(starts) < 2:
                 bar_patterns[bar_idx] = ()
                 continue
@@ -303,7 +363,6 @@ class RhythmAnalyzer:
             bar_patterns[bar_idx] = pattern
             pattern_counter[pattern] += 1
 
-        # vyberieme patterny, ktoré sa opakujú aspoň 2x
         patterns = []
         for pat, count in pattern_counter.items():
             if count >= self.config.min_pattern_bars and len(pat) > 0:
@@ -324,14 +383,10 @@ class RhythmAnalyzer:
     # -------------------------------------------------
 
     def _detect_downbeats(self, timeline, velocity_stats, timing_stats):
-        """
-        Heuristika: downbeat = silný akcent + malá timing odchýlka + začiatok taktu.
-        Ak nemáme bar_index, vrátime prázdny zoznam.
-        """
         if not timeline:
             return {"downbeats": []}
 
-        has_bar = any("bar_index" in n for n in timeline)
+        has_bar = any(isinstance(n, dict) and "bar_index" in n for n in timeline)
         if not has_bar:
             return {"downbeats": []}
 
@@ -340,12 +395,24 @@ class RhythmAnalyzer:
 
         downbeats = []
         for idx, n in enumerate(timeline):
+            if not isinstance(n, dict):
+                continue
+
             bar = n.get("bar_index", 0)
             beat_in_bar = n.get("beat_in_bar", 0.0)
             v = n.get("velocity", 80)
 
-            # downbeat kandidát: prvá nota v takte alebo beat_in_bar blízko 0
-            if beat_in_bar is not None and fabs(beat_in_bar) < 0.05:
+            try:
+                beat_val = float(beat_in_bar) if beat_in_bar is not None else 0.0
+            except Exception:
+                beat_val = 0.0
+
+            try:
+                v = int(v)
+            except Exception:
+                v = 80
+
+            if fabs(beat_val) < 0.05:
                 is_accent = idx in accents or v >= avg_v + 10
                 if is_accent:
                     downbeats.append({
@@ -361,9 +428,6 @@ class RhythmAnalyzer:
     # -------------------------------------------------
 
     def _classify_groove(self, swing_info, patterns, velocity_stats, timing_stats):
-        """
-        Jednoduchý heuristický klasifikátor groove-u.
-        """
         swing_type = swing_info.get("type", "straight")
         ratio = swing_info.get("ratio", 0.5)
         timing_feel = timing_stats.get("timing_feel", "tight")
@@ -373,7 +437,6 @@ class RhythmAnalyzer:
         label = "unknown"
         tags = []
 
-        # základ: straight vs swing/shuffle
         if swing_type == "straight":
             tags.append("straight")
         elif swing_type == "swing":
@@ -381,22 +444,18 @@ class RhythmAnalyzer:
         elif swing_type == "shuffle":
             tags.append("shuffle")
 
-        # timing feel
         tags.append(timing_feel)
 
-        # dynamika
         if dyn_range > 40:
             tags.append("dynamic")
         elif dyn_range < 15:
             tags.append("flat")
 
-        # pattern-based hints
         if patterns_list:
             most_common = patterns_list[0]
-            pat = most_common["pattern"]
-            occ = most_common["occurrences"]
+            pat = most_common.get("pattern", ())
+            occ = most_common.get("occurrences", 0)
 
-            # jednoduché heuristiky
             if len(pat) == 3 and occ >= 3:
                 tags.append("3_grouping")
             if any(abs(d - 0.5) < 0.01 for d in pat):
@@ -404,7 +463,6 @@ class RhythmAnalyzer:
             if any(abs(d - 0.25) < 0.01 for d in pat):
                 tags.append("sixteenth_based")
 
-        # finálny label
         if "swing" in tags or "shuffle" in tags:
             if "sixteenth_based" in tags:
                 label = "16th_swing"
