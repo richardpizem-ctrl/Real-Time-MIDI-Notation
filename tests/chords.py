@@ -4,19 +4,29 @@ from notation_engine.chord_detector import detect_chord
 
 
 def test_chord(notes):
-    chord = detect_chord(notes)
-    if chord:
-        print(f"Notes {notes} → Detected chord: {chord.name}")
-    else:
-        print(f"Notes {notes} → No chord detected")
+    """Safely tests chord detection for a given list of MIDI notes."""
+    try:
+        if not isinstance(notes, (list, tuple)):
+            print(f"Invalid input: {notes}")
+            return
+
+        chord = detect_chord(notes)
+
+        if chord:
+            print(f"Notes {notes} → Detected chord: {chord.name}")
+        else:
+            print(f"Notes {notes} → No chord detected")
+
+    except Exception as e:
+        print(f"Error while testing notes {notes}: {e}")
 
 
 def main():
     print("=== TEST: BASIC CHORD DETECTION ===")
 
-    test_chord([60, 64, 67])  # C major
-    test_chord([57, 60, 64])  # A minor
-    test_chord([62, 65, 69])  # D major
+    test_chord([60, 64, 67])   # C major
+    test_chord([57, 60, 64])   # A minor
+    test_chord([62, 65, 69])   # D major
 
     print("=== END ===")
 
