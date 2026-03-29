@@ -13,7 +13,10 @@ class NotationProcessor:
     MIDI → MidiNoteMapper → RhythmAnalyzer → SymbolManager → Renderer
     """
 
-    def __init__(self):
+    def __init__(self, track_system, event_bus):
+        self.track_system = track_system
+        self.event_bus = event_bus
+
         self.note_mapper = MidiNoteMapper()
         self.rhythm_analyzer = RhythmAnalyzer()
         self.symbol_manager = SymbolManager()
