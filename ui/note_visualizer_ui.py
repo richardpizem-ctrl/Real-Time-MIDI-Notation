@@ -2,10 +2,6 @@ import pygame
 import time
 import math
 
-# ---------------------------------------------------------
-# Pomocné tabuľky pre harmóniu
-# ---------------------------------------------------------
-
 NOTE_TO_SEMITONE = {
     "C": 0,  "C#": 1, "Db": 1,
     "D": 2,  "D#": 3, "Eb": 3,
@@ -17,14 +13,14 @@ NOTE_TO_SEMITONE = {
 }
 
 CHORD_PATTERNS = {
-    (0, 4, 7): ("Dur", (255, 220, 50)),        # žltá
-    (0, 3, 7): ("Mol", (80, 140, 255)),        # modrá
-    (0, 3, 6): ("Dim", (180, 80, 255)),        # fialová
-    (0, 4, 8): ("Aug", (255, 140, 60)),        # oranžová
-    (0, 2, 7): ("Sus2", (80, 255, 220)),       # tyrkysová
-    (0, 5, 7): ("Sus4", (80, 255, 220)),       # tyrkysová
-    (0, 7):    ("Power", (230, 230, 230)),     # biela
-    (0, 4, 7, 10): ("7", (255, 80, 80)),       # červená
+    (0, 4, 7): ("Dur", (255, 220, 50)),
+    (0, 3, 7): ("Mol", (80, 140, 255)),
+    (0, 3, 6): ("Dim", (180, 80, 255)),
+    (0, 4, 8): ("Aug", (255, 140, 60)),
+    (0, 2, 7): ("Sus2", (80, 255, 220)),
+    (0, 5, 7): ("Sus4", (80, 255, 220)),
+    (0, 7):    ("Power", (230, 230, 230)),
+    (0, 4, 7, 10): ("7", (255, 80, 80)),
 }
 
 def normalize_intervals(semitones):
@@ -37,20 +33,15 @@ class NoteVisualizerUI:
         self.width = width
         self.height = height
 
-        # Multi-note systém
         self.active_notes = []
 
-        # Fade parametre
         self.fade_duration = 0.25
         self.fade_in_duration = 0.12
 
-        # BPM pulz
         self.pulse_strength = 1.0
 
-        # Trail buffer (jemné doznievanie)
         self.trail_surface = pygame.Surface((width, height), pygame.SRCALPHA)
 
-        # Color morphing (KROK 11)
         self.current_chord_color = (255, 255, 255)
         self.target_chord_color = (255, 255, 255)
         self.color_morph_speed = 0.12
@@ -59,9 +50,6 @@ class NoteVisualizerUI:
         self.font_size = 64
         self.font = pygame.font.SysFont("Arial", self.font_size, bold=True)
 
-    # ---------------------------------------------------------
-    # BPM PULSE
-    # ---------------------------------------------------------
     def update_bpm_pulse(self, bpm, timestamp):
         if bpm is None:
             self.pulse_strength = 1.0
@@ -71,35 +59,26 @@ class NoteVisualizerUI:
         phase = (timestamp % beat_interval) / beat_interval
         self.pulse_strength = 1.0 + 0.15 * math.sin(phase * math.pi * 2)
 
-    # ---------------------------------------------------------
-    # NOTE ON
-    # ---------------------------------------------------------
     def on_note(self, event):
         note_name = event.get("note_name") or str(event.get("note", "?"))
         color = event.get("track_color", (255, 255, 255))
         velocity = event.get("velocity", 100)
         velocity_factor = min(1.0, velocity / 127)
-        pitch = event.get("note")  # MIDI pitch, ak je k dispozícii
+        pitch = event.get("note")
 
         note_data = {
             "note": note_name,
             "color": color,
-
             "fade_in_start": time.time(),
             "fade_start": None,
-
             "bounce": 1.0 * velocity_factor,
             "glow": 1.0 * velocity_factor,
             "halo_strength": 1.0 * velocity_factor,
-
             "pitch": pitch,
         }
 
         self.active_notes.append(note_data)
 
-    # ---------------------------------------------------------
-    # NOTE OFF
-    # ---------------------------------------------------------
     def on_note_off(self, event):
         note_name = event.get("note_name") or str(event.get("note", "?"))
 
@@ -108,9 +87,6 @@ class NoteVisualizerUI:
                 n["fade_start"] = time.time()
                 break
 
-    # ---------------------------------------------------------
-    # HARMONICKÁ ANALÝZA
-    # ---------------------------------------------------------
     def detect_chord_color(self):
         if len(self.active_notes) < 2:
             return None
@@ -132,9 +108,6 @@ class NoteVisualizerUI:
 
         return None
 
-    # ---------------------------------------------------------
-    # HALO EFEKT
-    # ---------------------------------------------------------
     def draw_halo(self, surface, text_surface, rect, color, strength):
         halo_surface = pygame.Surface((rect.width + 40, rect.height + 40), pygame.SRCALPHA)
 
@@ -156,9 +129,6 @@ class NoteVisualizerUI:
         halo_surface.fill(halo_color, special_flags=pygame.BLEND_RGBA_MULT)
         surface.blit(halo_surface, (rect.x - 20, rect.y - 20))
 
-    # ---------------------------------------------------------
-    # VÝPOČET HĹBKY PODĽA PITCH
-    # ---------------------------------------------------------
     def compute_depth(self, pitch):
         if pitch is None:
             return 1.0
@@ -166,9 +136,6 @@ class NoteVisualizerUI:
         depth = 1.3 - norm * 0.6
         return depth
 
-    # ---------------------------------------------------------
-    # COLOR LERP
-    # ---------------------------------------------------------
     def lerp_color(self, a, b, t):
         return (
             int(a[0] + (b[0] - a[0]) * t),
@@ -176,9 +143,6 @@ class NoteVisualizerUI:
             int(a[2] + (b[2] - a[2]) * t),
         )
 
-    # ---------------------------------------------------------
-    # INTERVALY – výpočet intervalov medzi pitch hodnotami
-    # ---------------------------------------------------------
     def compute_intervals(self, notes_with_depth):
         pitches = [n["pitch"] for _, n in notes_with_depth if n.get("pitch") is not None]
         if len(pitches) < 2:
@@ -193,31 +157,25 @@ class NoteVisualizerUI:
 
         return intervals
 
-    # ---------------------------------------------------------
-    # INTERVALY – prepočet vizuálnych rozostupov
-    # ---------------------------------------------------------
     def compute_interval_offsets(self, intervals):
         offsets = []
 
         for interval in intervals:
-            if interval in (3,):          # malá tercia
+            if interval in (3,):
                 offsets.append(40)
-            elif interval in (4,):        # veľká tercia
+            elif interval in (4,):
                 offsets.append(55)
-            elif interval in (5,):        # kvarta
+            elif interval in (5,):
                 offsets.append(70)
-            elif interval in (7,):        # kvinta
+            elif interval in (7,):
                 offsets.append(90)
-            elif interval >= 12:          # oktáva
+            elif interval >= 12:
                 offsets.append(120)
             else:
-                offsets.append(50)        # default
+                offsets.append(50)
 
         return offsets
 
-    # ---------------------------------------------------------
-    # KRESLENIE
-    # ---------------------------------------------------------
     def draw(self, surface):
         if not self.active_notes:
             return
