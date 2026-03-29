@@ -1,9 +1,8 @@
 # drum_notation.py
 # Profesionálna notácia bicích – mapping, tvary hlavičiek, stonky, layering
 
-from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 @dataclass
@@ -55,20 +54,61 @@ DRUM_PITCH_MAP: Dict[int, DrumSymbolSpec] = {
 
 
 def get_drum_spec(pitch: int) -> DrumSymbolSpec:
-    return DRUM_PITCH_MAP.get(pitch, DrumSymbolSpec(f"Drum {pitch}", "normal", "up"))
+    try:
+        p = int(pitch)
+    except Exception:
+        p = 38
+    return DRUM_PITCH_MAP.get(p, DrumSymbolSpec(f"Drum {p}", "normal", "up"))
+
+
+def _safe_velocity(velocity: Any, default: int = 80) -> int:
+    try:
+        v = int(velocity)
+        if v < 0:
+            v = 0
+        if v > 127:
+            v = 127
+        return v
+    except Exception:
+        return default
 
 
 def is_ghost_velocity(velocity: int, ghost_threshold: float = 0.3) -> bool:
-    return (velocity / 127.0) <= ghost_threshold
+    v = _safe_velocity(velocity)
+    return (v / 127.0) <= ghost_threshold
 
 
 def is_accent_velocity(velocity: int, accent_threshold: float = 0.8) -> bool:
-    return (velocity / 127.0) >= accent_threshold
+    v = _safe_velocity(velocity)
+    return (v / 127.0) >= accent_threshold
 
 
 def annotate_drum_note(note: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(note, dict):
+        return {
+            "pitch": 38,
+            "velocity": 80,
+            "drum": {
+                "name": "Snare",
+                "notehead_type": "normal",
+                "stem_direction": "up",
+                "is_cymbal": False,
+                "is_hat": False,
+                "is_open_hat": False,
+                "is_closed_hat": False,
+                "is_kick": False,
+                "is_snare": True,
+                "is_tom": False,
+                "is_percussion": False,
+                "is_ghost": False,
+                "is_accent": False,
+            },
+        }
+
     pitch = note.get("pitch", 38)
     velocity = note.get("velocity", 80)
+    velocity = _safe_velocity(velocity)
+
     spec = get_drum_spec(pitch)
 
     is_ghost = is_ghost_velocity(velocity)
@@ -80,6 +120,8 @@ def annotate_drum_note(note: Dict[str, Any]) -> Dict[str, Any]:
 
     annotated = {
         **note,
+        "pitch": pitch,
+        "velocity": velocity,
         "drum": {
             "name": spec.name,
             "notehead_type": spec.notehead,
@@ -100,16 +142,29 @@ def annotate_drum_note(note: Dict[str, Any]) -> Dict[str, Any]:
     return annotated
 
 
-def group_drum_notes_by_time(timeline: List[Dict[str, Any]], time_epsilon: float = 1e-3):
-    groups = []
-    current_group = []
-    last_start = None
+def group_drum_notes_by_time(
+    timeline: List[Dict[str, Any]],
+    time_epsilon: float = 1e-3
+) -> List[List[Dict[str, Any]]]:
+    groups: List[List[Dict[str, Any]]] = []
+    current_group: List[Dict[str, Any]] = []
+    last_start: Optional[float] = None
+
+    if not isinstance(timeline, list):
+        return groups
 
     for note in timeline:
+        if not isinstance(note, dict):
+            continue
+
         if note.get("track_type") != "drums":
             continue
 
-        start = note.get("start", 0.0)
+        try:
+            start = float(note.get("start", 0.0))
+        except Exception:
+            start = 0.0
+
         if last_start is None or abs(start - last_start) <= time_epsilon:
             current_group.append(note)
             last_start = start
@@ -125,27 +180,45 @@ def group_drum_notes_by_time(timeline: List[Dict[str, Any]], time_epsilon: float
     return groups
 
 
-def assign_layer_offsets_to_group(group: List[Dict[str, Any]], base_offset: float = 4.0):
-    if len(group) <= 1:
-        for n in group:
-            n["drum_layer_offset"] = 0.0
+def assign_layer_offsets_to_group(
+    group: List[Dict[str, Any]],
+    base_offset: float = 4.0
+) -> None:
+    if not isinstance(group, list) or not group:
         return
 
-    if all("y" in n for n in group):
-        sorted_group = sorted(group, key=lambda n: n["y"])
-    else:
-        sorted_group = sorted(group, key=lambda n: n.get("pitch", 0))
+    if len(group) <= 1:
+        for n in group:
+            if isinstance(n, dict):
+                n["drum_layer_offset"] = 0.0
+        return
+
+    try:
+        if all(isinstance(n, dict) and "y" in n for n in group):
+            sorted_group = sorted(group, key=lambda n: n["y"])
+        else:
+            sorted_group = sorted(group, key=lambda n: n.get("pitch", 0))
+    except Exception:
+        sorted_group = group
 
     center_index = (len(sorted_group) - 1) / 2.0
 
     for idx, n in enumerate(sorted_group):
+        if not isinstance(n, dict):
+            continue
         offset_index = idx - center_index
         n["drum_layer_offset"] = offset_index * base_offset
 
 
 def annotate_drum_timeline(timeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    annotated = []
+    if not isinstance(timeline, list):
+        return []
+
+    annotated: List[Dict[str, Any]] = []
     for note in timeline:
+        if not isinstance(note, dict):
+            continue
+
         if note.get("track_type") == "drums":
             annotated.append(annotate_drum_note(note))
         else:
