@@ -1,5 +1,6 @@
 # run.py – hlavný spúšťací súbor pre Real-Time MIDI Notation
 
+import pygame
 from event_bus.event_bus import EventBus
 from event_bus.event_types import (
     NOTE_RECORDED,
@@ -38,6 +39,8 @@ def on_error(data):
 def main():
     print("=== REAL-TIME MIDI NOTATION START ===")
 
+    pygame.init()
+
     # 1. EventBus
     event_bus = EventBus()
 
@@ -51,18 +54,18 @@ def main():
     track_system = TrackSystem(event_bus)
     notation_processor = NotationProcessor(track_system, event_bus)
 
-    # 4. UI Manager
-    ui = UIManager()
+    # 4. UI Manager (prepojený s TrackSystemom)
+    ui = UIManager(width=1400, height=900, track_system=track_system)
 
     # 5. EventRouter pre MIDI → EventBus → UI
     event_router = EventRouter(
         event_bus=event_bus,
-        piano_roll_ui=ui.piano_ui
+        ui_manager=ui
     )
 
-    # 6. MIDI Stream Handler prepojený s Piano Roll UI + EventRouter
+    # 6. MIDI Stream Handler prepojený s UI + EventRouter
     stream_handler = StreamHandler(
-        piano_roll_ui=ui.piano_ui,
+        ui_manager=ui,
         event_router=event_router
     )
 
