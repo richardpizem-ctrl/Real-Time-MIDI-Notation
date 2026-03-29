@@ -56,8 +56,18 @@ def main():
     track_system = TrackSystem(event_bus)
     notation_processor = NotationProcessor(track_system, event_bus)
 
-    # 4. UI Manager (prepojený s TrackSystemom)
-    ui = UIManager(width=1400, height=1100, track_system=track_system)
+    # 4. UI Manager (prepojený s TrackSystemom + NotationProcessorom)
+    ui = UIManager(
+        width=1400,
+        height=1100,
+        track_system=track_system,
+        notation_processor=notation_processor,
+    )
+
+    # prepojenie UI komponentov do NotationProcessoru
+    notation_processor.bind_staff(ui.staff)
+    notation_processor.bind_piano(ui.piano)
+    notation_processor.bind_visualizer(ui.visualizer)
 
     # 5. EventRouter pre MIDI → EventBus → UI
     event_router = EventRouter(
@@ -82,7 +92,6 @@ def main():
 
             ui.handle_event(event)
 
-        # Kreslenie UI + renderer
         ui.draw(screen)
 
         pygame.display.update()
