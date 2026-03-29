@@ -16,32 +16,24 @@ class NotationProcessor:
         self.rhythm_analyzer = RhythmAnalyzer()
         self.symbol_manager = SymbolManager()
 
-        # defaultný renderer (textový)
         self.renderer = NotationRenderer()
 
-        # Timeline pre renderer (zoznam dictov)
-        self.timeline = []
+        self.timeline: list[dict] = []
         self.current_chord = None
 
-        # posledný takt pre barline generáciu
-        self.last_measure = None
+        self.last_measure: int | None = None
 
-        # KEY DETECTION
-        self.active_pitches = set()
-        self.current_key = None
+        self.active_pitches: set[int] = set()
+        self.current_key: str | None = None
 
-        # 🔥 FÁZA 1 – ligatúry (buffer posledných nôt podľa pitchu)
-        self.last_note_by_pitch = {}
+        self.last_note_by_pitch: dict[int, dict] = {}
 
-        # 🔥 FÁZA 2 – aktuálna pozícia prehrávania
-        self.current_play_position = 0.0
+        self.current_play_position: float = 0.0
 
-        # 🔥 FÁZA 3 – animácia prehrávania
-        self.bpm = 120
-        self.is_running = False
-        self.last_timestamp = 0.0
+        self.bpm: int = 120
+        self.is_running: bool = False
+        self.last_timestamp: float = 0.0
 
-        # Multi‑track schéma – zarovnaná s GraphicNotationRenderer
         self.track_colors = {
             "melody": (80, 160, 255),
             "bass": (120, 220, 120),
@@ -50,30 +42,30 @@ class NotationProcessor:
         }
 
     # ---------------------------------------------------------
-    # PREPOJENIE EXTERNÉHO RENDERERA (napr. grafického)
+    # PREPOJENIE EXTERNÉHO RENDERERA
     # ---------------------------------------------------------
     def bind_renderer(self, renderer):
-        """Pripojí externý renderer (grafický alebo iný)."""
         self.renderer = renderer
 
     # ---------------------------------------------------------
     # FÁZA 3 – prepočet delta času
     # ---------------------------------------------------------
     def _compute_time_delta(self, timestamp: float) -> float:
-        dt = timestamp - self.last_timestamp
+        try:
+            dt = float(timestamp) - float(self.last_timestamp)
+        except Exception:
+            dt = 0.0
         if dt < 0:
             dt = 0.0
-        self.last_timestamp = timestamp
+        self.last_timestamp = float(timestamp)
         return dt
 
     # ---------------------------------------------------------
     # FÁZA 3 – animačná slučka (60 FPS)
     # ---------------------------------------------------------
     def start_animation_loop(self):
-        """Spustí plynulú animáciu playheadu (60 FPS)."""
         if not hasattr(self.renderer, "tick"):
             return
-
         if self.is_running:
             return
 
@@ -84,20 +76,28 @@ class NotationProcessor:
 
         def loop():
             while self.is_running:
-                time.sleep(0.016)  # ~60 FPS
-                self.renderer.tick(0.016)
+                time.sleep(0.016)
+                try:
+                    self.renderer.tick(0.016)
+                except Exception:
+                    pass
 
         threading.Thread(target=loop, daemon=True).start()
 
     # ---------------------------------------------------------
-    # UPDATE PLAY POSITION  🔥 FÁZA 2
+    # UPDATE PLAY POSITION
     # ---------------------------------------------------------
     def update_play_position(self, timestamp: float):
-        """Aktualizuje aktuálnu pozíciu prehrávania a odošle ju rendereru."""
-        self.current_play_position = timestamp
+        try:
+            self.current_play_position = float(timestamp)
+        except Exception:
+            self.current_play_position = 0.0
 
         if hasattr(self.renderer, "set_playhead"):
-            self.renderer.set_playhead(timestamp)
+            try:
+                self.renderer.set_playhead(self.current_play_position)
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # KEY DETECTION UPDATE
@@ -106,7 +106,11 @@ class NotationProcessor:
         if not self.active_pitches:
             return
 
-        new_key = detect_key(self.active_pitches)
+        try:
+            new_key = detect_key(self.active_pitches)
+        except Exception:
+            new_key = None
+
         if new_key and new_key != self.current_key:
             self.current_key = new_key
 
@@ -119,7 +123,10 @@ class NotationProcessor:
             self.timeline.append(key_item)
 
             if hasattr(self.renderer, "add_key_change"):
-                self.renderer.add_key_change(key_item)
+                try:
+                    self.renderer.add_key_change(key_item)
+                except Exception:
+                    pass
 
     # ---------------------------------------------------------
     # PRIDANIE AKORDU DO TIMELINE
@@ -135,7 +142,10 @@ class NotationProcessor:
         self.timeline.append(chord_item)
 
         if hasattr(self.renderer, "add_chord"):
-            self.renderer.add_chord(chord_item)
+            try:
+                self.renderer.add_chord(chord_item)
+            except Exception:
+                pass
 
         return chord_item
 
@@ -143,11 +153,16 @@ class NotationProcessor:
     # MAPOVANIE MIDI KANÁLOV NA STOPY
     # ---------------------------------------------------------
     def _detect_track(self, channel: int) -> str:
-        if channel == 0:
+        try:
+            ch = int(channel)
+        except Exception:
+            ch = 0
+
+        if ch == 0:
             return "melody"
-        if channel == 1:
+        if ch == 1:
             return "bass"
-        if channel == 9:
+        if ch == 9:
             return "drums"
         return "melody"
 
@@ -158,40 +173,56 @@ class NotationProcessor:
     # HLAVNÁ FUNKCIA – spracovanie MIDI udalosti
     # ---------------------------------------------------------
     def process_midi_event(self, midi_event: dict):
+        if not isinstance(midi_event, dict):
+            return None
+
         event_type = midi_event.get("type")
         pitch = midi_event.get("note")
         velocity = midi_event.get("velocity", 0)
         timestamp = midi_event.get("time", 0.0)
         channel = midi_event.get("channel", 0)
 
-        # 🔥 FÁZA 3 – spustenie animácie pri prvom evente
+        if pitch is None:
+            return None
+
+        try:
+            velocity = int(velocity)
+        except Exception:
+            velocity = 0
+
         if not self.is_running:
             self.start_animation_loop()
 
-        # 🔥 FÁZA 2 – aktualizácia pozície prehrávania
         self.update_play_position(timestamp)
 
-        # -----------------------------
         # NOTE ON
-        # -----------------------------
         if event_type == "note_on" and velocity > 0:
-            self.active_pitches.add(pitch)
+            try:
+                self.active_pitches.add(int(pitch))
+            except Exception:
+                pass
+
             self._update_key(timestamp)
 
-            self.note_mapper.handle_note_on(
-                pitch=pitch,
-                velocity=velocity,
-                channel=channel,
-                timestamp=timestamp
-            )
+            try:
+                self.note_mapper.handle_note_on(
+                    pitch=pitch,
+                    velocity=velocity,
+                    channel=channel,
+                    timestamp=timestamp
+                )
+            except Exception:
+                pass
+
             return None
 
-        # -----------------------------
         # NOTE OFF
-        # -----------------------------
         if event_type in ("note_off", "note_on") and velocity == 0:
             if pitch in self.active_pitches:
-                self.active_pitches.remove(pitch)
+                try:
+                    self.active_pitches.remove(pitch)
+                except Exception:
+                    pass
                 self._update_key(timestamp)
 
             created_note: Note | None = None
@@ -201,19 +232,28 @@ class NotationProcessor:
                 created_note = note
 
             self.note_mapper.on_note_created = on_note_created
-            self.note_mapper.handle_note_off(
-                pitch=pitch,
-                channel=channel,
-                timestamp=timestamp
-            )
+            try:
+                self.note_mapper.handle_note_off(
+                    pitch=pitch,
+                    channel=channel,
+                    timestamp=timestamp
+                )
+            except Exception:
+                return None
 
             if created_note is None:
                 return None
 
-            # Rhythm info
-            ppq = self.note_mapper.ppq
-            beats = created_note.duration.ticks / ppq if ppq > 0 else 0.0
-            rhythmic_name = self.rhythm_analyzer._quantize(beats)
+            ppq = getattr(self.note_mapper, "ppq", 0)
+            try:
+                beats = created_note.duration.ticks / ppq if ppq > 0 else 0.0
+            except Exception:
+                beats = 0.0
+
+            try:
+                rhythmic_name = self.rhythm_analyzer._quantize(beats)
+            except Exception:
+                rhythmic_name = "unknown"
 
             rhythm_info = {
                 "beats": beats,
@@ -222,7 +262,6 @@ class NotationProcessor:
                 "beat_position": created_note.position.beat,
             }
 
-            # BARLINE
             current_measure = created_note.position.measure
 
             if self.last_measure is None:
@@ -237,18 +276,26 @@ class NotationProcessor:
                 self.timeline.append(bar_item)
 
                 if hasattr(self.renderer, "add_barline"):
-                    self.renderer.add_barline(bar_item["start"])
+                    try:
+                        self.renderer.add_barline(bar_item["start"])
+                    except Exception:
+                        pass
 
                 self.last_measure = current_measure
 
-            # SymbolManager
-            symbol = self.symbol_manager.get_symbol(
-                note=created_note,
-                rhythm=rhythmic_name
-            )
+            try:
+                symbol = self.symbol_manager.get_symbol(
+                    note=created_note,
+                    rhythm=rhythmic_name
+                )
+            except Exception:
+                symbol = {}
 
-            # Timeline
-            visual_duration = created_note.duration.ticks / 120.0
+            try:
+                visual_duration = created_note.duration.ticks / 120.0
+            except Exception:
+                visual_duration = 0.0
+
             track_type = self._detect_track(channel)
             track_color = self._get_track_color(track_type)
 
@@ -264,7 +311,6 @@ class NotationProcessor:
 
             self.timeline.append(timeline_item)
 
-            # 🔥 FÁZA 1 – SLUR DETEKCIA
             prev_note = self.last_note_by_pitch.get(created_note.pitch)
 
             if prev_note:
@@ -281,7 +327,6 @@ class NotationProcessor:
                 }
                 self.timeline.append(slur_item)
 
-            # uložíme aktuálnu notu ako poslednú
             self.last_note_by_pitch[created_note.pitch] = {
                 "pitch": created_note.pitch,
                 "start": created_note.start_time,
@@ -290,12 +335,18 @@ class NotationProcessor:
                 "track_color": track_color,
             }
 
-            # Renderer
             if self.renderer:
                 if hasattr(self.renderer, "add_note"):
-                    self.renderer.add_note(timeline_item)
+                    try:
+                        self.renderer.add_note(timeline_item)
+                    except Exception:
+                        pass
                 else:
-                    self.renderer.render(self.timeline)
+                    if hasattr(self.renderer, "render"):
+                        try:
+                            self.renderer.render(self.timeline)
+                        except Exception:
+                            pass
 
             return {
                 "note": created_note,
