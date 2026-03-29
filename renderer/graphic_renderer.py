@@ -6,17 +6,19 @@ class GraphicNotationRenderer:
         self.height = height
         self.track_system = track_system
 
+        # Main surface
         try:
             self.surface = pygame.Surface((width, height))
         except Exception:
             self.surface = None
 
+        # Font
         try:
             self.font = pygame.font.SysFont("Arial", 18)
         except Exception:
             self.font = None
 
-        # Cache staff lines
+        # Staff line cache
         self.staff_cache = None
         self.staff_cache_width = width
         self.staff_cache_height = 120
@@ -72,12 +74,14 @@ class GraphicNotationRenderer:
     # MAIN DRAW
     # ---------------------------------------------------------
     def draw(self, notes):
+        # Ensure surface exists
         if self.surface is None:
             try:
                 self.surface = pygame.Surface((self.width, self.height))
             except Exception:
                 return None
 
+        # Background
         try:
             self.surface.fill((25, 25, 25))
         except Exception:
@@ -90,7 +94,7 @@ class GraphicNotationRenderer:
         except Exception:
             pass
 
-        # Draw notes
+        # Notes
         x = self.margin_left + 10
 
         if not isinstance(notes, (list, tuple)):
