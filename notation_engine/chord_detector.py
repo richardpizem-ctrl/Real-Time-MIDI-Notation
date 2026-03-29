@@ -26,18 +26,45 @@ TRIAD_PATTERNS = {
 
 
 def detect_chord(pitches: Iterable[int]) -> Optional[str]:
-    pcs = sorted({p % 12 for p in pitches})
+    """
+    Stabilizovaná detekcia akordov.
+    - Bezpečné spracovanie vstupu
+    - Ochrana pred None
+    - Ochrana pred nevalidnými hodnotami
+    - Podpora základných triád
+    """
+
+    # Validate input
+    if pitches is None:
+        return None
+
+    try:
+        pcs = sorted({int(p) % 12 for p in pitches if isinstance(p, (int, float))})
+    except Exception:
+        return None
+
     if len(pcs) < 3:
         return None
 
+    # Try each pitch as root
     for root in pcs:
-        intervals = sorted(((pc - root) % 12 for pc in pcs))
+        try:
+            intervals = sorted(((pc - root) % 12 for pc in pcs))
+        except Exception:
+            continue
+
+        # Filter only triad-relevant intervals
         triad = tuple(i for i in intervals if i in (0, 3, 4, 6, 7, 8))
+
         if len(triad) < 3:
             continue
 
         key = (triad[0], triad[1], triad[2])
+
         if key in TRIAD_PATTERNS:
-            return NOTE_NAMES[root] + TRIAD_PATTERNS[key]
+            try:
+                return NOTE_NAMES[root] + TRIAD_PATTERNS[key]
+            except Exception:
+                return None
 
     return None
