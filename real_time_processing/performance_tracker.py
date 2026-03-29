@@ -32,7 +32,10 @@ class PerformanceTracker:
 
         # CPU
         if psutil is not None:
-            self.process = psutil.Process()
+            try:
+                self.process = psutil.Process()
+            except Exception:
+                self.process = None
         else:
             self.process = None
 
@@ -141,19 +144,35 @@ class PerformanceTracker:
     def get_cpu_usage_percent(self):
         if self.process is None:
             return None
-        return self.process.cpu_percent(interval=0.0)
+        try:
+            return self.process.cpu_percent(interval=0.0)
+        except Exception:
+            return None
 
     # ---------------- SUMMARY ----------------
 
     def get_summary(self):
-        return {
-            "fps": self.get_fps(),
-            "avg_frame_ms": self.get_avg_frame_time_ms(),
-            "avg_render_ms": self.get_avg_render_time_ms(),
-            "avg_midi_latency_ms": self.get_avg_midi_latency_ms(),
-            "avg_pipeline_latency_ms": self.get_avg_pipeline_latency_ms(),
-            "avg_event_processing_ms": self.get_avg_event_processing_ms(),
-            "avg_ui_processing_ms": self.get_avg_ui_processing_ms(),
-            "events_per_second": self.get_events_per_second(),
-            "cpu_percent": self.get_cpu_usage_percent(),
-        }
+        try:
+            return {
+                "fps": self.get_fps(),
+                "avg_frame_ms": self.get_avg_frame_time_ms(),
+                "avg_render_ms": self.get_avg_render_time_ms(),
+                "avg_midi_latency_ms": self.get_avg_midi_latency_ms(),
+                "avg_pipeline_latency_ms": self.get_avg_pipeline_latency_ms(),
+                "avg_event_processing_ms": self.get_avg_event_processing_ms(),
+                "avg_ui_processing_ms": self.get_avg_ui_processing_ms(),
+                "events_per_second": self.get_events_per_second(),
+                "cpu_percent": self.get_cpu_usage_percent(),
+            }
+        except Exception:
+            return {
+                "fps": 0.0,
+                "avg_frame_ms": 0.0,
+                "avg_render_ms": 0.0,
+                "avg_midi_latency_ms": 0.0,
+                "avg_pipeline_latency_ms": 0.0,
+                "avg_event_processing_ms": 0.0,
+                "avg_ui_processing_ms": 0.0,
+                "events_per_second": 0.0,
+                "cpu_percent": None,
+            }
