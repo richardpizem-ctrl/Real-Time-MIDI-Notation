@@ -1,13 +1,7 @@
-# Status Bar – displays real-time system status
-
 from ..core.logger import Logger
 
 class StatusBar:
     def __init__(self, enabled=True, print_enabled=True):
-        """
-        enabled = či sa status bar používa
-        print_enabled = či sa majú vypisovať print() do konzoly
-        """
         self.enabled = enabled
         self.print_enabled = print_enabled
 
@@ -30,7 +24,6 @@ class StatusBar:
     # UPDATE VALUES
     # ---------------------------------------------------------
     def update(self, tempo=None, latency=None, fps=None, last_note=None, midi_status=None):
-        """Updates status bar values."""
         if not self.enabled:
             return
 
@@ -56,10 +49,9 @@ class StatusBar:
             Logger.error(f"StatusBar update error: {e}")
 
     # ---------------------------------------------------------
-    # DISPLAY (TEMPORARY CONSOLE OUTPUT)
+    # DISPLAY
     # ---------------------------------------------------------
     def display(self):
-        """Temporary console output for debugging."""
         if not self.enabled:
             return
 
@@ -84,7 +76,6 @@ class StatusBar:
     # SAFE FORMATTER
     # ---------------------------------------------------------
     def _safe(self, value):
-        """Bezpečne prevedie hodnotu na string."""
         try:
             return str(value)
         except Exception:
