@@ -1,13 +1,7 @@
-# Text Renderer – displays rendered notation in UI or console
-
 from ..core.logger import Logger
 
 class TextRenderer:
     def __init__(self, enabled=True, print_enabled=True):
-        """
-        enabled = či sa renderer používa
-        print_enabled = či sa majú vypisovať print() do konzoly
-        """
         self.enabled = enabled
         self.print_enabled = print_enabled
 
@@ -24,10 +18,6 @@ class TextRenderer:
     # DISPLAY TEXT
     # ---------------------------------------------------------
     def display(self, text):
-        """
-        Displays rendered notation text.
-        Can be replaced later with GUI output.
-        """
         if not self.enabled:
             return
 
@@ -49,7 +39,6 @@ class TextRenderer:
     # SAFE FORMATTER
     # ---------------------------------------------------------
     def _safe_format(self, obj):
-        """Bezpečne prevedie objekt na string."""
         try:
             return str(obj)
         except Exception:
