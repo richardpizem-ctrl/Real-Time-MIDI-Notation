@@ -8,10 +8,11 @@ from renderer.graphic_renderer import GraphicNotationRenderer
 
 
 class UIManager:
-    def __init__(self, width, height, track_system):
+    def __init__(self, width, height, track_system, notation_processor):
         self.width = width
         self.height = height
         self.track_system = track_system
+        self.notation_processor = notation_processor
 
         pygame.font.init()
 
@@ -24,6 +25,7 @@ class UIManager:
 
         # --- GRAPHIC NOTATION RENDERER ---
         self.renderer = GraphicNotationRenderer(width, 200, track_system)
+        self.notation_processor.bind_renderer(self.renderer)
 
         # Rozloženie UI
         self.layout = {
@@ -34,10 +36,6 @@ class UIManager:
             "visualizer": (0, 650),
             "renderer": (0, 860),
         }
-
-        # Zoznam aktívnych nôt pre renderer
-        self.active_notes = []
-
 
     # ---------------------------------------------------------
     # EVENT ROUTING
@@ -59,8 +57,14 @@ class UIManager:
         self.visualizer.on_note(event)
         self.staff.add_note(event)
 
-        # Renderer notes
-        self.active_notes.append(event)
+        # Posielame do NotationProcessoru
+        self.notation_processor.process_midi_event({
+            "type": "note_on",
+            "note": event["note"],
+            "velocity": event.get("velocity", 100),
+            "time": event.get("time", 0.0),
+            "channel": event.get("track_id", 0),
+        })
 
     def on_note_off(self, event):
         self.piano.unhighlight_key(event["note"])
@@ -68,11 +72,14 @@ class UIManager:
         self.visualizer.on_note_off(event)
         self.staff.remove_note(event)
 
-        # Odstránenie z rendereru
-        self.active_notes = [
-            n for n in self.active_notes
-            if not (n["note"] == event["note"] and n["track_id"] == event["track_id"])
-        ]
+        # Posielame do NotationProcessoru
+        self.notation_processor.process_midi_event({
+            "type": "note_off",
+            "note": event["note"],
+            "velocity": 0,
+            "time": event.get("time", 0.0),
+            "channel": event.get("track_id", 0),
+        })
 
     # ---------------------------------------------------------
     # DRAW
@@ -98,7 +105,8 @@ class UIManager:
         x, y = self.layout["visualizer"]
         self.visualizer.draw(surface.subsurface((x, y, self.width, 200)))
 
-        # Renderer – kreslíme noty
+        # Renderer – kreslíme timeline z NotationProcessoru
         x, y = self.layout["renderer"]
-        rendered = self.renderer.draw(self.active_notes)
+        timeline = self.notation_processor.timeline
+        rendered = self.renderer.draw(timeline)
         surface.subsurface((x, y, self.width, 200)).blit(rendered, (0, 0))
