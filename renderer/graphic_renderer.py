@@ -110,3 +110,139 @@ class GraphicNotationRenderer:
 
         if active_track_id is None or track_id != active_track_id:
             return base_color
+
+        r, g, b = base_color
+        r = min(255, int(r * 1.25) + 15)
+        g = min(255, int(g * 1.25) + 15)
+        b = min(255, int(b * 1.25) + 15)
+        return (r, g, b)
+
+    # ---------------------------------------------------------
+    # DRAW NOTE HEAD
+    # ---------------------------------------------------------
+    def _draw_note(self, surface, x: float, y: float, color: Tuple[int, int, int]):
+        rect = pygame.Rect(int(x), int(y), 16, 12)
+        pygame.draw.ellipse(surface, color, rect)
+        pygame.draw.ellipse(surface, (0, 0, 0), rect, 2)
+
+    # ---------------------------------------------------------
+    # GROUP NOTES INTO CHORDS
+    # ---------------------------------------------------------
+    def _group_notes(self, notes: List[Dict[str, Any]]):
+        groups = {}
+        for note in notes:
+            if not isinstance(note, dict):
+                continue
+
+            midi = note.get("pitch") or note.get("note")
+            track_id = note.get("track_id")
+            timestamp = note.get("timestamp", 0.0)
+
+            if midi is None or track_id is None:
+                continue
+
+            key = (float(timestamp), int(track_id))
+            groups.setdefault(key, []).append(note)
+
+        return groups
+
+    # ---------------------------------------------------------
+    # BARLINES (Taktové čiary) + DOWNBEAT HIGHLIGHT
+    # ---------------------------------------------------------
+    def _draw_barlines(self):
+        if self.bpm <= 0:
+            return
+
+        seconds_per_beat = 60.0 / self.bpm
+        seconds_per_bar = seconds_per_beat * self.beats_per_bar
+
+        current_bar_index = int(self.playback_time // seconds_per_bar)
+        bars_to_draw = range(current_bar_index - 4, current_bar_index + 12)
+
+        for bar_index in bars_to_draw:
+            if bar_index < 0:
+                continue
+
+            bar_time = bar_index * seconds_per_bar
+            x = self._time_to_x(bar_time)
+
+            if x < 0 or x > self.width:
+                continue
+
+            # DOWNBEAT = prvá doba v takte
+            if bar_index % 1 == 0:
+                pygame.draw.line(
+                    self.surface,
+                    (255, 255, 180),  # jemná zlatá
+                    (int(x), 0),
+                    (int(x), self.height),
+                    3
+                )
+            else:
+                pygame.draw.line(
+                    self.surface,
+                    (90, 90, 90),
+                    (int(x), 0),
+                    (int(x), self.height),
+                    1
+                )
+
+    # ---------------------------------------------------------
+    # DRAW PLAYHEAD
+    # ---------------------------------------------------------
+    def _draw_playhead(self):
+        pygame.draw.line(
+            self.surface,
+            (255, 80, 80),
+            (self.playhead_x, 0),
+            (self.playhead_x, self.height),
+            3
+        )
+
+    # ---------------------------------------------------------
+    # MAIN DRAW
+    # ---------------------------------------------------------
+    def draw(self, notes):
+        if self.surface is None:
+            self.surface = pygame.Surface((self.width, self.height))
+
+        self._update_time()
+        self.surface.fill((25, 25, 25))
+
+        staff = self._render_staff_lines()
+        self.surface.blit(staff, (0, 0))
+
+        self._draw_barlines()
+
+        if not isinstance(notes, (list, tuple)):
+            self._draw_playhead()
+            return self.surface
+
+        try:
+            active_track_id = self.track_manager.get_active_track()
+        except Exception:
+            active_track_id = None
+
+        grouped = self._group_notes(list(notes))
+
+        for (timestamp, track_id), chord_notes in grouped.items():
+            try:
+                if not self.track_manager.is_visible(track_id):
+                    continue
+            except Exception:
+                pass
+
+            color = self._get_track_color(track_id, active_track_id)
+            base_x = self._time_to_x(timestamp)
+
+            for idx, note in enumerate(chord_notes):
+                midi = note.get("pitch") or note.get("note")
+                if midi is None:
+                    continue
+
+                y = self._pitch_to_y(int(midi))
+                x = base_x + idx * 6
+                self._draw_note(self.surface, x, y, color)
+
+        self._draw_playhead()
+        return self.surface
