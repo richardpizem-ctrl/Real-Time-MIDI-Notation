@@ -97,5 +97,3 @@ class TrackManager:
             Logger.error(f"TrackManager.get_active_track error: {e}")
 
         return None
-
-    # ------------------------------------------------
