@@ -1,5 +1,5 @@
 import pygame
-import math
+import time
 from typing import List, Dict, Any, Tuple, Optional
 
 
@@ -25,11 +25,15 @@ class GraphicNotationRenderer:
 
         self.margin_left = 40
         self.margin_top = 20
-        self.note_spacing = 28
         self.staff_line_spacing = 12
 
-        self.scroll_x = 0.0
-        self.scroll_speed = 2.2
+        # Real‑time engine
+        self.playback_time = 0.0
+        self.last_frame_time = time.time()
+        self.pixels_per_second = 120.0  # base scroll speed
+
+        # Playhead
+        self.playhead_x = width // 2
 
     # ---------------------------------------------------------
     # STAFF LINES (CACHED)
@@ -63,19 +67,26 @@ class GraphicNotationRenderer:
             return pygame.Surface((self.width, 1))
 
     # ---------------------------------------------------------
-    # NOTE POSITIONING
+    # REAL‑TIME ENGINE
+    # ---------------------------------------------------------
+    def set_playback_time(self, t: float):
+        self.playback_time = float(t)
+
+    def _update_time(self):
+        now = time.time()
+        dt = now - self.last_frame_time
+        self.last_frame_time = now
+        self.playback_time += dt
+        return dt
+
+    # ---------------------------------------------------------
+    # POSITIONING
     # ---------------------------------------------------------
     def _pitch_to_y(self, midi: int) -> float:
-        try:
-            return self.margin_top + (60 - midi) * 1.1
-        except Exception:
-            return float(self.margin_top)
+        return self.margin_top + (60 - midi) * 1.1
 
     def _time_to_x(self, timestamp: float) -> float:
-        try:
-            return self.margin_left + timestamp * self.note_spacing - self.scroll_x
-        except Exception:
-            return float(self.margin_left)
+        return self.playhead_x + (timestamp - self.playback_time) * self.pixels_per_second
 
     # ---------------------------------------------------------
     # COLOR HELPERS
@@ -89,29 +100,25 @@ class GraphicNotationRenderer:
         if active_track_id is None or track_id != active_track_id:
             return base_color
 
-        # Jemné zvýraznenie aktívneho tracku
         r, g, b = base_color
-        r = min(255, int(r * 1.2) + 10)
-        g = min(255, int(g * 1.2) + 10)
-        b = min(255, int(b * 1.2) + 10)
+        r = min(255, int(r * 1.25) + 15)
+        g = min(255, int(g * 1.25) + 15)
+        b = min(255, int(b * 1.25) + 15)
         return (r, g, b)
 
     # ---------------------------------------------------------
     # DRAW NOTE HEAD
     # ---------------------------------------------------------
     def _draw_note(self, surface, x: float, y: float, color: Tuple[int, int, int]):
-        try:
-            rect = pygame.Rect(int(x), int(y), 16, 12)
-            pygame.draw.ellipse(surface, color, rect)
-            pygame.draw.ellipse(surface, (0, 0, 0), rect, 2)
-        except Exception:
-            pass
+        rect = pygame.Rect(int(x), int(y), 16, 12)
+        pygame.draw.ellipse(surface, color, rect)
+        pygame.draw.ellipse(surface, (0, 0, 0), rect, 2)
 
     # ---------------------------------------------------------
     # GROUP NOTES INTO CHORDS
     # ---------------------------------------------------------
-    def _group_notes(self, notes: List[Dict[str, Any]]) -> Dict[Tuple[float, int], List[Dict[str, Any]]]:
-        groups: Dict[Tuple[float, int], List[Dict[str, Any]]] = {}
+    def _group_notes(self, notes: List[Dict[str, Any]]):
+        groups = {}
         for note in notes:
             if not isinstance(note, dict):
                 continue
@@ -124,68 +131,73 @@ class GraphicNotationRenderer:
                 continue
 
             key = (float(timestamp), int(track_id))
-            if key not in groups:
-                groups[key] = []
-            groups[key].append(note)
+            groups.setdefault(key, []).append(note)
 
         return groups
+
+    # ---------------------------------------------------------
+    # DRAW PLAYHEAD
+    # ---------------------------------------------------------
+    def _draw_playhead(self):
+        pygame.draw.line(
+            self.surface,
+            (255, 80, 80),
+            (self.playhead_x, 0),
+            (self.playhead_x, self.height),
+            3
+        )
 
     # ---------------------------------------------------------
     # MAIN DRAW
     # ---------------------------------------------------------
     def draw(self, notes):
         if self.surface is None:
-            try:
-                self.surface = pygame.Surface((self.width, self.height))
-            except Exception:
-                return None
+            self.surface = pygame.Surface((self.width, self.height))
 
-        try:
-            self.surface.fill((25, 25, 25))
-        except Exception:
-            pass
+        # Update time
+        self._update_time()
 
-        try:
-            staff = self._render_staff_lines()
-            self.surface.blit(staff, (0, 0))
-        except Exception:
-            pass
+        # Background
+        self.surface.fill((25, 25, 25))
+
+        # Staff
+        staff = self._render_staff_lines()
+        self.surface.blit(staff, (0, 0))
 
         if not isinstance(notes, (list, tuple)):
+            self._draw_playhead()
             return self.surface
 
-        # Auto-scroll
-        self.scroll_x += self.scroll_speed
-
-        # Aktívny track
+        # Active track
         try:
             active_track_id = self.track_manager.get_active_track()
         except Exception:
             active_track_id = None
 
-        # Zoskupenie nôt do akordov podľa (timestamp, track_id)
+        # Group notes into chords
         grouped = self._group_notes(list(notes))
 
-        # Kreslenie akordov
+        # Draw notes
         for (timestamp, track_id), chord_notes in grouped.items():
-            # Viditeľnosť tracku
             try:
                 if not self.track_manager.is_visible(track_id):
                     continue
             except Exception:
                 pass
 
-            base_x = self._time_to_x(timestamp)
             color = self._get_track_color(track_id, active_track_id)
+            base_x = self._time_to_x(timestamp)
 
-            # Akord – mierne horizontálne posuny, aby sa noty neprekrývali
             for idx, note in enumerate(chord_notes):
                 midi = note.get("pitch") or note.get("note")
                 if midi is None:
                     continue
 
                 y = self._pitch_to_y(int(midi))
-                x = base_x + idx * 6  # jemné rozostupy v akorde
+                x = base_x + idx * 6
                 self._draw_note(self.surface, x, y, color)
+
+        # Playhead
+        self._draw_playhead()
 
         return self.surface
