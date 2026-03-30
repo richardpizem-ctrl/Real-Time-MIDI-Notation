@@ -32,8 +32,26 @@ class GraphicNotationRenderer:
         self.last_frame_time = time.time()
         self.pixels_per_second = 120.0  # base scroll speed
 
+        # Tempo (BPM) – default
+        self.bpm = 120.0  # beats per minute
+        self.beats_per_bar = 4  # 4/4 takt
+
         # Playhead
         self.playhead_x = width // 2
+
+    # ---------------------------------------------------------
+    # CONFIG
+    # ---------------------------------------------------------
+    def set_playback_time(self, t: float):
+        self.playback_time = float(t)
+
+    def set_bpm(self, bpm: float):
+        try:
+            bpm = float(bpm)
+            if bpm > 0:
+                self.bpm = bpm
+        except Exception:
+            pass
 
     # ---------------------------------------------------------
     # STAFF LINES (CACHED)
@@ -42,36 +60,29 @@ class GraphicNotationRenderer:
         if self.staff_cache is not None:
             return self.staff_cache
 
-        try:
-            surf = pygame.Surface(
-                (self.staff_cache_width, self.staff_cache_height),
-                pygame.SRCALPHA
+        surf = pygame.Surface(
+            (self.staff_cache_width, self.staff_cache_height),
+            pygame.SRCALPHA
+        )
+        surf.fill((0, 0, 0, 0))
+
+        y_start = self.margin_top
+        for i in range(5):
+            y = y_start + i * self.staff_line_spacing
+            pygame.draw.line(
+                surf,
+                (200, 200, 200),
+                (self.margin_left, y),
+                (self.width - 20, y),
+                2
             )
-            surf.fill((0, 0, 0, 0))
 
-            y_start = self.margin_top
-            for i in range(5):
-                y = y_start + i * self.staff_line_spacing
-                pygame.draw.line(
-                    surf,
-                    (200, 200, 200),
-                    (self.margin_left, y),
-                    (self.width - 20, y),
-                    2
-                )
-
-            self.staff_cache = surf
-            return surf
-
-        except Exception:
-            return pygame.Surface((self.width, 1))
+        self.staff_cache = surf
+        return surf
 
     # ---------------------------------------------------------
     # REAL‑TIME ENGINE
     # ---------------------------------------------------------
-    def set_playback_time(self, t: float):
-        self.playback_time = float(t)
-
     def _update_time(self):
         now = time.time()
         dt = now - self.last_frame_time
@@ -136,6 +147,41 @@ class GraphicNotationRenderer:
         return groups
 
     # ---------------------------------------------------------
+    # BARLINES (Taktové čiary)
+    # ---------------------------------------------------------
+    def _draw_barlines(self):
+        if self.bpm <= 0:
+            return
+
+        seconds_per_beat = 60.0 / self.bpm
+        seconds_per_bar = seconds_per_beat * self.beats_per_bar
+
+        # nájdeme najbližší takt pred playback_time
+        current_bar_index = int(self.playback_time // seconds_per_bar)
+        start_bar_time = current_bar_index * seconds_per_bar
+
+        # kreslíme niekoľko taktov dopredu aj dozadu
+        bars_to_draw = range(current_bar_index - 4, current_bar_index + 12)
+
+        for bar_index in bars_to_draw:
+            if bar_index < 0:
+                continue
+
+            bar_time = bar_index * seconds_per_bar
+            x = self._time_to_x(bar_time)
+
+            if x < 0 or x > self.width:
+                continue
+
+            pygame.draw.line(
+                self.surface,
+                (90, 90, 90),
+                (int(x), 0),
+                (int(x), self.height),
+                1
+            )
+
+    # ---------------------------------------------------------
     # DRAW PLAYHEAD
     # ---------------------------------------------------------
     def _draw_playhead(self):
@@ -163,6 +209,9 @@ class GraphicNotationRenderer:
         # Staff
         staff = self._render_staff_lines()
         self.surface.blit(staff, (0, 0))
+
+        # Barlines (taktové čiary podľa BPM)
+        self._draw_barlines()
 
         if not isinstance(notes, (list, tuple)):
             self._draw_playhead()
