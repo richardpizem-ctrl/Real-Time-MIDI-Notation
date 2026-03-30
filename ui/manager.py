@@ -4,6 +4,7 @@ from .piano_roll_ui import PianoRollUI
 from .staff_ui import StaffUI
 from .note_visualizer_ui import NoteVisualizerUI
 from .track_selector_ui import TrackSelectorUI
+from .canvas_ui import CanvasUI
 from renderer.graphic_renderer import GraphicNotationRenderer
 
 
@@ -29,6 +30,9 @@ class UIManager:
             except Exception as e:
                 print(f"❌ NotationProcessor bind_renderer error: {e}")
 
+        self.canvas_ui = None
+        self.canvas = None
+
         self.layout = {
             "track_selector": (0, 0),
             "piano": (0, 70),
@@ -37,6 +41,10 @@ class UIManager:
             "visualizer": (0, 650),
             "renderer": (0, 860),
         }
+
+    def build_layout(self, parent):
+        self.canvas_ui = CanvasUI(parent)
+        self.canvas = self.canvas_ui.get_canvas()
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and self.track_selector:
@@ -150,43 +158,4 @@ class UIManager:
         try:
             x, y = self.layout["track_selector"]
             if self.track_selector:
-                self.track_selector.draw(surface.subsurface((x, y, self.width, 60)))
-        except Exception as e:
-            print(f"❌ TrackSelector draw error: {e}")
-
-        try:
-            x, y = self.layout["piano"]
-            if self.piano:
-                self.piano.draw(surface.subsurface((x, y, self.width, 180)))
-        except Exception as e:
-            print(f"❌ PianoUI draw error: {e}")
-
-        try:
-            x, y = self.layout["piano_roll"]
-            if self.piano_roll:
-                self.piano_roll.draw(surface.subsurface((x, y, self.width, 180)))
-        except Exception as e:
-            print(f"❌ PianoRollUI draw error: {e}")
-
-        try:
-            x, y = self.layout["staff"]
-            if self.staff:
-                self.staff.draw(surface.subsurface((x, y, self.width, 200)))
-        except Exception as e:
-            print(f"❌ StaffUI draw error: {e}")
-
-        try:
-            x, y = self.layout["visualizer"]
-            if self.visualizer:
-                self.visualizer.draw(surface.subsurface((x, y, self.width, 200)))
-        except Exception as e:
-            print(f"❌ NoteVisualizerUI draw error: {e}")
-
-        try:
-            x, y = self.layout["renderer"]
-            timeline = getattr(self.notation_processor, "timeline", []) if self.notation_processor else []
-            rendered = self.renderer.draw(timeline) if self.renderer else None
-            if rendered is not None:
-                surface.subsurface((x, y, self.width, 200)).blit(rendered, (0, 0))
-        except Exception as e:
-            print(f"❌ Renderer draw error: {e}")
+                self.track_selector.draw(surface.subsurface((x, y, self.width
