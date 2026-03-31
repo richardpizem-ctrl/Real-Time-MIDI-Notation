@@ -1,3 +1,11 @@
+---
+name: "🐞 Bug Report"
+about: Report a problem with Real-Time MIDI Notation
+title: "[BUG] "
+labels: bug
+assignees: ""
+---
+
 # 🐞 Issue Report — Real-Time MIDI Notation
 
 Thank you for helping improve **Real‑Time MIDI Notation**!  
