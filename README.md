@@ -6,6 +6,38 @@ This project is designed as a **fast, accurate, and extensible tool** for real�
 
 ---
 
+## 🌍 Global Prototype Testing & Community Contribution Appeal
+
+**This project is an original, world‑first prototype.**  
+Real‑time multi‑track Yamaha‑style notation has never been implemented in open‑source form before.
+
+To transform this prototype into a **stable, professional‑grade tool**, we need **global testing across all countries, devices, and MIDI setups**.
+
+### 🔥 If you study this project, please also test it.  
+Every tester helps improve accuracy, stability, and cross‑platform compatibility.
+
+### 🔧 How You Can Help
+- Test the project on your system (Windows / Linux / macOS)  
+- Report issues (latency, rendering, MIDI routing, UI behavior)  
+- Suggest improvements or optimizations  
+- Submit pull requests  
+- Propose new features  
+- Share your MIDI device configuration and results  
+
+### 🌐 Why Global Testing Matters
+Real‑time MIDI systems behave differently on:
+- different CPUs  
+- different audio drivers  
+- different MIDI devices  
+- different OS environments  
+- different latency conditions  
+
+Only **worldwide testing** can guarantee that this tool becomes reliable for everyone.
+
+Your contribution — even a single test — helps shape the future of this project.
+
+---
+
 ## 🚀 Features
 
 - **Real‑Time MIDI Input Engine**  
