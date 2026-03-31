@@ -21,7 +21,7 @@ This project is still in its **prototype phase**, and real‑time MIDI behavior 
 
 To achieve professional‑grade stability, we need **worldwide testing**.
 
-### ✔️ If you study this project, please also test it.  
+### ✔️ If you study this project, please also test it  
 Every test helps improve accuracy, stability, and cross‑platform compatibility.
 
 ### What to test
