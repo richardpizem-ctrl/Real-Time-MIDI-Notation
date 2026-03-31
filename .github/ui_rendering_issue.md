@@ -8,77 +8,77 @@ assignees: ""
 
 # 🖥️ UI / Rendering Issue — Real-Time MIDI Notation
 
-Thank you for helping improve the visual and rendering engine of this project!  
-Please fill out the details below so we can reproduce and fix the issue effectively.
+Ďakujeme, že pomáhate zlepšiť vizuálny a renderovací engine tohto projektu!  
+Prosím, vyplňte nižšie uvedené údaje, aby sme mohli problém efektívne reprodukovať a opraviť.
 
 ---
 
-## 🎨 Description of the UI or rendering problem
-Describe what looks wrong or behaves incorrectly.
+## 🎨 Popis problému používateľského rozhrania alebo vykresľovania
+Opíšte, čo vyzerá nesprávne alebo sa správa nesprávne.
 
-**What happened?**  
-**What did you expect to happen?**
+**Čo sa stalo?**  
+**Čo ste očakávali, že sa stane?**
 
-Examples:  
-- wrong note positions  
-- overlapping symbols  
-- missing barlines  
-- incorrect spacing  
-- flickering  
-- misaligned playhead  
-- wrong colors  
-- scaling issues  
+Príklady:  
+- nesprávne pozície nôt  
+- prekrývajúce sa symboly  
+- chýbajúce taktové čiary  
+- nesprávne rozostupy  
+- blikanie  
+- nesprávne zarovnaná prehrávacia hlava  
+- nesprávne farby  
+- problémy so škálovaním  
 
 ---
 
-## 🧪 Steps to reproduce
-List the exact steps that lead to the visual issue:
+## 🧪 Kroky na reprodukciu
+Uveďte presné kroky, ktoré viedli k vizuálnemu problému:
 
 1.  
 2.  
 3.  
 
-If possible, include screenshots or a short video.
+Ak je to možné, priložte snímky obrazovky alebo krátke video.
 
 ---
 
-## 🖼️ Visual Symptoms
-Select all that apply:
+## 🖼️ Vizuálne príznaky
+Vyberte všetko, čo platí:
 
-- [ ] Notes drawn in wrong position  
-- [ ] Notes overlapping  
-- [ ] Missing notes  
-- [ ] Wrong colors  
-- [ ] Incorrect spacing  
-- [ ] Barlines missing or misaligned  
-- [ ] Playhead misaligned  
-- [ ] Flickering or jitter  
-- [ ] Scaling / zoom issues  
-- [ ] Other (describe below)
+- [ ] Poznámky nakreslené na nesprávnej pozícii  
+- [ ] Poznámky sa prekrývajú  
+- [ ] Chýbajúce poznámky  
+- [ ] Nesprávne farby  
+- [ ] Nesprávne rozostupy  
+- [ ] Taktové čiary chýbajú alebo sú nesprávne zarovnané  
+- [ ] Prehrávacia hlava je nesprávne zarovnaná  
+- [ ] Blikanie alebo chvenie  
+- [ ] Problémy so škálovaním / zoomom  
+- [ ] Iné (opíšte nižšie)
 
 ---
 
-## 🎼 MIDI Context (important for rendering)
-- Number of active MIDI channels:  
-- Using Yamaha arranger keyboard: Yes / No  
-- Style mode enabled: Yes / No  
-- External routing: Yes / No  
+## 🎼 MIDI Context (dôležité pre renderovanie)
+- Počet aktívnych MIDI kanálov:  
+- Používate Yamaha arranger keyboard: Áno / Nie  
+- Je zapnutý Style mode: Áno / Nie  
+- Externé routovanie: Áno / Nie  
 
 ---
 
 ## 💻 System Information
-- **Operating System:**  
-- **Python Version:**  
-- **CPU Model:**  
-- **GPU (if any):**  
-- **Screen resolution:**  
-- **Refresh rate (Hz):**  
+- **Operačný systém:**  
+- **Verzia Pythonu:**  
+- **CPU model:**  
+- **GPU (ak existuje):**  
+- **Rozlíšenie obrazovky:**  
+- **Obnovovacia frekvencia (Hz):**  
 
 ---
 
 ## 📝 Additional notes
-Anything else that might help us understand the issue.
+Čokoľvek ďalšie, čo môže pomôcť pochopiť problém.
 
 ---
 
-Thank you for helping improve the UI and rendering engine of Real‑Time MIDI Notation!
+Ďakujeme, že pomáhate zlep
