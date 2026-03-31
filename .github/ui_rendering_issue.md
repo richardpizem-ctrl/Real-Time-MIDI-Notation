@@ -81,4 +81,4 @@ Vyberte všetko, čo platí:
 
 ---
 
-Ďakujeme, že pomáhate zlep
+Ďakujeme, že pomáhate zlepšiť UI a renderovací engine Real‑Time MIDI Notation!
