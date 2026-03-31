@@ -1,4 +1,5 @@
 # 🎵 Real‑Time MIDI Notation
+
 A modern real‑time MIDI visualization system for Yamaha keyboards and any MIDI‑compatible device.  
 Provides an interactive notation renderer, colored chords, multi‑track processing, and a professional layout engine.
 
@@ -71,77 +72,17 @@ Your contribution — even a single test — helps shape the future of this proj
 ## 🖼️ Screenshots / Demo (to be added)
 
 > Add a GIF or screenshot once the first visual output is ready.  
-> Google loves images – this significantly improves SEO and project visibility.
+> Images significantly improve SEO and project visibility.
 
 ---
 
-## 🧩 Project Architecture
+## 🧪 2. How to Test the Project
 
-### **1. MIDI Pipeline**
-- MIDI Input  
-- Processor  
-- Channel Splitter  
-- Event Router  
-- Renderer  
+Testing is essential for improving real‑time performance.
 
-### **2. Rendering Pipeline**
-- Layout Engine (completed)  
-- GraphicNotationRenderer  
-- Playhead Line (completed)  
-- Barlines (completed)  
-- Colored Chords  
-- Multi‑Track Layers  
-
-### **3. UI Layer**
-- PianoRollUI  
-- StaffUI  
-- NoteVisualizerUI  
-- UIManager (centralized control)
-
-### **4. Core Modules**
-- MidiNoteMapper (completed)  
-- Rhythm Analyzer (basic version completed)  
-- StreamHandler  
-- EventRouter  
-
----
-
-## 📦 Installation
+### Run the project
 
 ```bash
 git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation
 cd Real-Time-MIDI-Notation
 python run.py
-```
-
----
-
-## 📚 Why This Project Exists
-
-Real‑time MIDI notation is **almost nonexistent** in the open‑source world.  
-This project was created to address the need for:
-
-- fast real‑time MIDI visualization  
-- Yamaha arranger style support  
-- colored harmony and chord detection  
-- multi‑track processing  
-- a professional DAW‑like layout  
-
-The goal is to build a **modern, extensible, and practical tool** for musicians and developers.
-
----
-
-## 🔧 Planned Features (ROADMAP)
-
-- PDF / PNG export  
-- Advanced chord detection  
-- Multi‑layer harmony  
-- Advanced UI panels  
-- External MIDI device integration  
-- Real‑time rhythmic pattern visualization  
-
----
-
-## 📝 License
-
-MIT License – free for commercial and non‑commercial use.
