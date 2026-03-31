@@ -86,3 +86,6 @@ Testing is essential for improving real‑time performance.
 git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation
 cd Real-Time-MIDI-Notation
 python run.py
+## 📝 License
+
+MIT License – free for commercial and non‑commercial use.
