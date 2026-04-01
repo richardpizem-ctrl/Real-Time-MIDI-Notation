@@ -222,7 +222,7 @@ class GraphicNotationRenderer:
                 self.surface.blit(label, (int(x) + 4, 0))
 
     # ---------------------------------------------------------
-    # GRID (NEW)
+    # GRID
     # ---------------------------------------------------------
     def _draw_grid_lines(self):
         if self.bpm <= 0:
@@ -262,6 +262,31 @@ class GraphicNotationRenderer:
                         pygame.draw.line(self.surface, (40, 40, 40), (int(x16), 0), (int(x16), self.height), 1)
 
     # ---------------------------------------------------------
+    # MEASURE NUMBERS (NEW)
+    # ---------------------------------------------------------
+    def _draw_measure_numbers(self):
+        if self.bpm <= 0 or self.font is None:
+            return
+
+        seconds_per_beat = 60.0 / self.bpm
+        seconds_per_bar = seconds_per_beat * self.beats_per_bar
+
+        current_bar_index = int(self.playback_time // seconds_per_bar)
+        bars_to_draw = range(current_bar_index - 4, current_bar_index + 12)
+
+        for bar_index in bars_to_draw:
+            if bar_index < 0:
+                continue
+
+            bar_time = bar_index * seconds_per_bar
+            x = self._time_to_x(bar_time)
+
+            if 0 <= x <= self.width:
+                label = self.font.render(str(bar_index + 1), True, (220, 220, 220))
+                # nad staff, ale bližšie k taktovej čiare
+                self.surface.blit(label, (int(x) + 4, self.margin_top - 18))
+
+    # ---------------------------------------------------------
     # PLAYHEAD
     # ---------------------------------------------------------
     def _draw_playhead(self):
@@ -283,11 +308,9 @@ class GraphicNotationRenderer:
         self._update_time()
         self.surface.fill((25, 25, 25))
 
-        # TIMELINE RULER
         self._draw_timeline_ruler()
-
-        # GRID (NEW)
         self._draw_grid_lines()
+        self._draw_measure_numbers()
 
         staff = self._render_staff_lines()
         self.surface.blit(staff, (0, 0))
