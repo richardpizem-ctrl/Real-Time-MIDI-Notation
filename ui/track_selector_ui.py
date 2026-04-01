@@ -71,7 +71,7 @@ class TrackSelectorUI:
 
         return None
 
-    def draw(self, surface, active_track=None):
+    def draw(self, surface, active_track=None, track_activity=None):
         if surface is None:
             return
 
@@ -82,6 +82,9 @@ class TrackSelectorUI:
 
         if active_track is None:
             active_track = system_active
+
+        if track_activity is None:
+            track_activity = {}
 
         for btn in self.track_buttons:
             track_id = btn.get("id")
@@ -117,6 +120,20 @@ class TrackSelectorUI:
                 pygame.draw.rect(surface, border_color, rect, border_width)
             except Exception:
                 continue
+
+            try:
+                activity = track_activity.get(track_id, 0.0)
+                if activity > 0:
+                    meter_height = int(self.button_height * activity)
+                    meter_rect = pygame.Rect(
+                        rect.left + 3,
+                        rect.bottom - meter_height - 3,
+                        6,
+                        meter_height
+                    )
+                    pygame.draw.rect(surface, color, meter_rect)
+            except Exception:
+                pass
 
             try:
                 if self.font:
