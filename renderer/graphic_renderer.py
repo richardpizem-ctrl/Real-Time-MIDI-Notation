@@ -32,7 +32,11 @@ class GraphicNotationRenderer:
         # Real‑time engine
         self.playback_time = 0.0
         self.last_frame_time = time.time()
-        self.pixels_per_second = 120.0
+
+        # AUTO‑SCROLL ENGINE
+        self.zoom = 1.0
+        self.scroll_speed = 120.0
+        self.scroll_offset = 0.0
 
         # Tempo
         self.bpm = 120.0
@@ -52,6 +56,14 @@ class GraphicNotationRenderer:
             bpm = float(bpm)
             if bpm > 0:
                 self.bpm = bpm
+        except Exception:
+            pass
+
+    def set_zoom(self, zoom: float):
+        try:
+            zoom = float(zoom)
+            if zoom > 0.1:
+                self.zoom = zoom
         except Exception:
             pass
 
@@ -83,13 +95,16 @@ class GraphicNotationRenderer:
         return surf
 
     # ---------------------------------------------------------
-    # REAL‑TIME ENGINE
+    # REAL‑TIME ENGINE + AUTO‑SCROLL
     # ---------------------------------------------------------
     def _update_time(self):
         now = time.time()
         dt = now - self.last_frame_time
         self.last_frame_time = now
+
         self.playback_time += dt
+        self.scroll_offset += dt * self.scroll_speed * self.zoom
+
         return dt
 
     # ---------------------------------------------------------
@@ -99,7 +114,11 @@ class GraphicNotationRenderer:
         return self.margin_top + (60 - midi) * 1.1
 
     def _time_to_x(self, timestamp: float) -> float:
-        return self.playhead_x + (timestamp - self.playback_time) * self.pixels_per_second
+        # AUTO‑SCROLL: svet sa posúva, playhead stojí
+        return (
+            self.playhead_x
+            + (timestamp - self.playback_time) * self.scroll_speed * self.zoom
+        )
 
     # ---------------------------------------------------------
     # COLOR HELPERS
