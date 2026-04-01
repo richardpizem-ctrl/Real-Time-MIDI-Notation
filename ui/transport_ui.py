@@ -1,162 +1,80 @@
 import pygame
 
-class TrackSelectorUI:
-    def __init__(self, track_system, width=1400, height=60):
-        self.track_system = track_system
+class TransportUI:
+    def __init__(self, width=1400, height=50):
         self.width = width
         self.height = height
 
-        self.button_width = 60
-        self.button_height = 40
-        self.margin = 10
-
         pygame.font.init()
         try:
-            self.font = pygame.font.SysFont("Arial", 18, bold=True)
-            self.font_small = pygame.font.SysFont("Arial", 14)
+            self.font = pygame.font.SysFont("Arial", 20, bold=True)
         except Exception:
             self.font = None
-            self.font_small = None
 
-        self._generate_buttons()
+        self.buttons = {
+            "play": pygame.Rect(10, 10, 40, 30),
+            "stop": pygame.Rect(60, 10, 40, 30),
+            "loop": pygame.Rect(110, 10, 60, 30),
+        }
 
-    def _generate_buttons(self):
-        self.track_buttons = []
+        self.bpm = 120
+        self.time_text = "00:00.0"
+        self.loop_enabled = False
 
-        try:
-            track_count = len(getattr(self.track_system, "tracks", {}))
-        except Exception:
-            track_count = 0
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pos = event.pos
 
-        for i in range(track_count):
-            track_id = i
-            x = self.margin + i * (self.button_width + self.margin)
-            y = 10
+            if self.buttons["play"].collidepoint(pos):
+                return {"action": "play"}
 
-            try:
-                rect = pygame.Rect(x, y, self.button_width, self.button_height)
-            except Exception:
-                continue
+            if self.buttons["stop"].collidepoint(pos):
+                return {"action": "stop"}
 
-            self.track_buttons.append({
-                "id": track_id,
-                "rect": rect
-            })
-
-    def handle_click(self, pos):
-        if not isinstance(pos, (tuple, list)) or len(pos) != 2:
-            return None
-
-        for btn in self.track_buttons:
-            rect = btn.get("rect")
-            track_id = btn.get("id")
-
-            if rect is None or track_id is None:
-                continue
-
-            try:
-                if rect.collidepoint(pos):
-                    try:
-                        current = self.track_system.is_visible(track_id)
-                        self.track_system.set_visible(track_id, not current)
-                    except Exception:
-                        pass
-
-                    try:
-                        self.track_system.set_active_track(track_id)
-                    except Exception:
-                        pass
-
-                    return track_id
-            except Exception:
-                continue
+            if self.buttons["loop"].collidepoint(pos):
+                self.loop_enabled = not self.loop_enabled
+                return {"action": "loop", "enabled": self.loop_enabled}
 
         return None
 
-    def draw(self, surface, active_track=None, track_activity=None):
+    def set_bpm(self, bpm):
+        self.bpm = bpm
+
+    def set_time(self, text):
+        self.time_text = text
+
+    def draw(self, surface):
         if surface is None:
             return
 
         try:
-            system_active = self.track_system.get_active_track()
+            pygame.draw.rect(surface, (230, 230, 230), (0, 0, self.width, self.height))
         except Exception:
-            system_active = None
+            pass
 
-        if active_track is None:
-            active_track = system_active
+        try:
+            pygame.draw.rect(surface, (0, 200, 0), self.buttons["play"])
+            pygame.draw.rect(surface, (200, 0, 0), self.buttons["stop"])
 
-        if track_activity is None:
-            track_activity = {}
+            loop_color = (0, 120, 255) if self.loop_enabled else (120, 120, 120)
+            pygame.draw.rect(surface, loop_color, self.buttons["loop"])
+        except Exception:
+            pass
 
-        for btn in self.track_buttons:
-            track_id = btn.get("id")
-            rect = btn.get("rect")
+        try:
+            if self.font:
+                play_t = self.font.render("▶", True, (0, 0, 0))
+                stop_t = self.font.render("■", True, (0, 0, 0))
+                loop_t = self.font.render("LOOP", True, (255, 255, 255))
 
-            if rect is None or track_id is None:
-                continue
+                surface.blit(play_t, play_t.get_rect(center=self.buttons["play"].center))
+                surface.blit(stop_t, stop_t.get_rect(center=self.buttons["stop"].center))
+                surface.blit(loop_t, loop_t.get_rect(center=self.buttons["loop"].center))
 
-            try:
-                color = self.track_system.get_color(track_id)
-                if not (
-                    isinstance(color, (tuple, list)) and
-                    len(color) == 3 and
-                    all(isinstance(c, int) for c in color)
-                ):
-                    color = (255, 255, 255)
-            except Exception:
-                color = (255, 255, 255)
+                bpm_t = self.font.render(f"BPM: {self.bpm}", True, (0, 0, 0))
+                time_t = self.font.render(f"TIME: {self.time_text}", True, (0, 0, 0))
 
-            try:
-                if not self.track_system.is_visible(track_id):
-                    color = (color[0] // 3, color[1] // 3, color[2] // 3)
-            except Exception:
-                pass
-
-            is_active = (track_id == active_track)
-
-            border_color = (0, 150, 255) if is_active else (80, 80, 80)
-            border_width = 4 if is_active else 2
-
-            try:
-                pygame.draw.rect(surface, color, rect)
-                pygame.draw.rect(surface, border_color, rect, border_width)
-            except Exception:
-                continue
-
-            try:
-                activity = track_activity.get(track_id, 0.0)
-                if activity > 0:
-                    meter_height = int(self.button_height * activity)
-                    meter_rect = pygame.Rect(
-                        rect.left + 3,
-                        rect.bottom - meter_height - 3,
-                        6,
-                        meter_height
-                    )
-                    pygame.draw.rect(surface, color, meter_rect)
-            except Exception:
-                pass
-
-            try:
-                if hasattr(self.track_system, "get_name"):
-                    name = self.track_system.get_name(track_id)
-                else:
-                    name = None
-            except Exception:
-                name = None
-
-            if not name:
-                name = f"Track {track_id + 1}"
-
-            try:
-                if self.font:
-                    number_surface = self.font.render(str(track_id + 1), True, (0, 0, 0))
-                    number_rect = number_surface.get_rect(center=(rect.centerx, rect.centery - 8))
-                    surface.blit(number_surface, number_rect)
-
-                if self.font_small:
-                    name_surface = self.font_small.render(name, True, (0, 0, 0))
-                    name_rect = name_surface.get_rect(center=(rect.centerx, rect.centery + 10))
-                    surface.blit(name_surface, name_rect)
-            except Exception:
-                pass
+                surface.blit(bpm_t, (200, 12))
+                surface.blit(time_t, (350, 12))
+        except Exception:
+            pass
