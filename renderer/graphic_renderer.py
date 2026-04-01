@@ -143,6 +143,15 @@ class GraphicNotationRenderer:
         pygame.draw.ellipse(surface, (0, 0, 0), rect, 2)
 
     # ---------------------------------------------------------
+    # LIGATURE / BEAM DRAWING
+    # ---------------------------------------------------------
+    def _draw_ligature(self, x1: float, x2: float, y: float, color: Tuple[int, int, int]):
+        x1i = int(x1)
+        x2i = int(x2)
+        yi = int(y)
+        pygame.draw.line(self.surface, color, (x1i, yi), (x2i, yi), 4)
+
+    # ---------------------------------------------------------
     # CHORD GROUPING (MULTI-HEAD CHORDS)
     # ---------------------------------------------------------
     def _group_notes(self, notes: List[Dict[str, Any]]):
@@ -331,6 +340,12 @@ class GraphicNotationRenderer:
         # Group notes into chords (multi-head)
         grouped = self._group_notes(list(notes))
 
+        # Precompute beat length for ligature logic
+        seconds_per_beat = 60.0 / self.bpm if self.bpm > 0 else None
+
+        # For ligatures: store chord positions per track
+        chord_positions: Dict[int, List[Tuple[float, float, float, float, Tuple[int, int, int]]]] = {}
+
         for (timestamp, track_id), chord_notes in grouped.items():
             # -------------------------------
             # MUTE / SOLO / VISIBILITY FILTER
@@ -361,6 +376,9 @@ class GraphicNotationRenderer:
             except Exception:
                 chord_notes_sorted = chord_notes
 
+            min_y = float("inf")
+            max_y = float("-inf")
+
             # Draw multi-head chord: same time, different pitches, slight horizontal spread
             for idx, note in enumerate(chord_notes_sorted):
                 midi = note.get("pitch") or note.get("note")
@@ -375,6 +393,34 @@ class GraphicNotationRenderer:
                 y = self._pitch_to_y(midi_int)
                 x = base_x + idx * 6
                 self._draw_note(self.surface, x, y, color)
+
+                if y < min_y:
+                    min_y = y
+                if y > max_y:
+                    max_y = y
+
+            if min_y != float("inf") and max_y != float("-inf"):
+                chord_positions.setdefault(track_id, []).append(
+                    (timestamp, base_x, min_y, max_y, color)
+                )
+
+        # Draw ligatures (simple beams) between close chords on same track
+        if seconds_per_beat is not None:
+            max_dt = seconds_per_beat / 2.0  # connect notes closer than an 8th note
+
+            for track_id, chords in chord_positions.items():
+                if len(chords) < 2:
+                    continue
+
+                chords_sorted = sorted(chords, key=lambda c: c[0])
+
+                for i in range(len(chords_sorted) - 1):
+                    t1, x1, min_y1, max_y1, color1 = chords_sorted[i]
+                    t2, x2, min_y2, max_y2, color2 = chords_sorted[i + 1]
+
+                    if (t2 - t1) <= max_dt:
+                        y_beam = min(min_y1, min_y2) - 8
+                        self._draw_ligature(x1, x2, y_beam, color1)
 
         self._draw_playhead()
         return self.surface
