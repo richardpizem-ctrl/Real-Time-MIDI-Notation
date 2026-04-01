@@ -69,6 +69,36 @@ Your contribution — even a single test — helps shape the future of this proj
 
 ---
 
+## 🎛️ Podporované MIDI pripojenia
+
+Tento projekt podporuje **všetky bežné MIDI štandardy** od roku 1983 až po moderné USB zariadenia.
+
+### ✔️ USB‑MIDI (USB‑B / USB‑C)
+Moderné Yamaha, Roland, Korg, Casio a ďalšie nástroje.  
+Windows, Linux aj macOS ich rozpoznajú ako **class‑compliant MIDI zariadenia**.
+
+### ✔️ 5‑kolíkové MIDI (DIN)
+Staršie syntetizátory a workstationy.  
+Stačí použiť lacný prevodník:
+
+**MIDI DIN → USB**
+
+Windows ho zobrazí ako štandardné USB‑MIDI zariadenie, takže projekt funguje bez akýchkoľvek úprav.
+
+### ✔️ Hybridné zariadenia
+Nástroje, ktoré majú:
+- USB len pre storage  
+- MIDI len cez DIN  
+- alebo oboje  
+
+Všetky sú kompatibilné cez USB‑MIDI alebo DIN‑USB prevodník.
+
+### 🎯 Zhrnutie
+Projekt je kompatibilný so všetkými MIDI zariadeniami od roku 1983 až po dnešok.  
+Nikto nie je ukrivdený.
+
+---
+
 ## 🖼️ Screenshots / Demo (to be added)
 
 > Add a GIF or screenshot once the first visual output is ready.  
@@ -86,6 +116,10 @@ Testing is essential for improving real‑time performance.
 git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation
 cd Real-Time-MIDI-Notation
 python run.py
+```
+
+---
+
 ## 📝 License
 
 MIT License – free for commercial and non‑commercial use.
