@@ -24,6 +24,18 @@ class TrackManager:
             i: True for i in range(1, 17)
         }
 
+        # -------------------------------
+        # MUTE / SOLO (NEW)
+        # -------------------------------
+        self.mute: Dict[int, bool] = {i: False for i in range(1, 17)}
+        self.solo: Dict[int, bool] = {i: False for i in range(1, 17)}
+
+        # -------------------------------
+        # VOLUME / PAN (NEW)
+        # -------------------------------
+        self.volume: Dict[int, float] = {i: 1.0 for i in range(1, 17)}
+        self.pan: Dict[int, float] = {i: 0.0 for i in range(1, 17)}
+
     # ---------------------------------------------------------
     # VIDITEĽNOSŤ PRE RENDERER
     # ---------------------------------------------------------
@@ -97,3 +109,42 @@ class TrackManager:
             Logger.error(f"TrackManager.get_active_track error: {e}")
 
         return None
+
+    # ---------------------------------------------------------
+    # MUTE / SOLO (NEW)
+    # ---------------------------------------------------------
+    def set_mute(self, track_id: int, state: bool):
+        if track_id in self.mute:
+            self.mute[track_id] = bool(state)
+
+    def is_muted(self, track_id: int) -> bool:
+        return self.mute.get(track_id, False)
+
+    def set_solo(self, track_id: int, state: bool):
+        if track_id in self.solo:
+            self.solo[track_id] = bool(state)
+
+    def is_solo(self, track_id: int) -> bool:
+        return self.solo.get(track_id, False)
+
+    def solo_mode_active(self) -> bool:
+        return any(self.solo.values())
+
+    # ---------------------------------------------------------
+    # VOLUME / PAN (NEW)
+    # ---------------------------------------------------------
+    def set_volume(self, track_id: int, volume: float):
+        if track_id in self.volume:
+            volume = max(0.0, min(1.0, float(volume)))
+            self.volume[track_id] = volume
+
+    def get_volume(self, track_id: int) -> float:
+        return self.volume.get(track_id, 1.0)
+
+    def set_pan(self, track_id: int, pan: float):
+        if track_id in self.pan:
+            pan = max(-1.0, min(1.0, float(pan)))
+            self.pan[track_id] = pan
+
+    def get_pan(self, track_id: int) -> float:
+        return self.pan.get(track_id, 0.0)
