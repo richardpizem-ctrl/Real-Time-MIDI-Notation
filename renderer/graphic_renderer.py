@@ -114,7 +114,6 @@ class GraphicNotationRenderer:
         return self.margin_top + (60 - midi) * 1.1
 
     def _time_to_x(self, timestamp: float) -> float:
-        # AUTO‑SCROLL: svet sa posúva, playhead stojí
         return (
             self.playhead_x
             + (timestamp - self.playback_time) * self.scroll_speed * self.zoom
@@ -199,7 +198,7 @@ class GraphicNotationRenderer:
             )
 
     # ---------------------------------------------------------
-    # TIMELINE RULER (NEW)
+    # TIMELINE RULER
     # ---------------------------------------------------------
     def _draw_timeline_ruler(self):
         if self.bpm <= 0 or self.font is None:
@@ -223,6 +222,46 @@ class GraphicNotationRenderer:
                 self.surface.blit(label, (int(x) + 4, 0))
 
     # ---------------------------------------------------------
+    # GRID (NEW)
+    # ---------------------------------------------------------
+    def _draw_grid_lines(self):
+        if self.bpm <= 0:
+            return
+
+        seconds_per_beat = 60.0 / self.bpm
+        seconds_per_bar = seconds_per_beat * self.beats_per_bar
+
+        current_bar_index = int(self.playback_time // seconds_per_bar)
+        bars_to_draw = range(current_bar_index - 4, current_bar_index + 12)
+
+        for bar_index in bars_to_draw:
+            if bar_index < 0:
+                continue
+
+            bar_start = bar_index * seconds_per_bar
+
+            # 1/4 beats
+            for beat in range(self.beats_per_bar):
+                t = bar_start + beat * seconds_per_beat
+                x = self._time_to_x(t)
+                if 0 <= x <= self.width:
+                    pygame.draw.line(self.surface, (70, 70, 70), (int(x), 0), (int(x), self.height), 1)
+
+                # 1/8 subdivisions
+                t8 = t + seconds_per_beat / 2
+                x8 = self._time_to_x(t8)
+                if 0 <= x8 <= self.width:
+                    pygame.draw.line(self.surface, (50, 50, 50), (int(x8), 0), (int(x8), self.height), 1)
+
+                # 1/16 subdivisions
+                t16a = t + seconds_per_beat / 4
+                t16b = t + 3 * seconds_per_beat / 4
+                for t16 in (t16a, t16b):
+                    x16 = self._time_to_x(t16)
+                    if 0 <= x16 <= self.width:
+                        pygame.draw.line(self.surface, (40, 40, 40), (int(x16), 0), (int(x16), self.height), 1)
+
+    # ---------------------------------------------------------
     # PLAYHEAD
     # ---------------------------------------------------------
     def _draw_playhead(self):
@@ -244,8 +283,11 @@ class GraphicNotationRenderer:
         self._update_time()
         self.surface.fill((25, 25, 25))
 
-        # TIMELINE RULER (NEW)
+        # TIMELINE RULER
         self._draw_timeline_ruler()
+
+        # GRID (NEW)
+        self._draw_grid_lines()
 
         staff = self._render_staff_lines()
         self.surface.blit(staff, (0, 0))
