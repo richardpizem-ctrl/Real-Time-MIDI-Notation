@@ -419,6 +419,70 @@ class GraphicNotationRenderer:
                     (timestamp, base_x, min_y, max_y, color)
                 )
 
+        # -----------------------------------------------------
+        # PREMIUM STEMS: direction, dynamic length, beam-aware
+        # -----------------------------------------------------
+        if seconds_per_beat is not None:
+            # First detect which chords are likely beamed (close in time)
+            beam_candidates: Dict[int, set] = {}
+            for track_id, chords in chord_positions.items():
+                if len(chords) < 2:
+                    continue
+                chords_sorted = sorted(chords, key=lambda c: c[0])
+                for i in range(len(chords_sorted) - 1):
+                    t1, _, _, _, _ = chords_sorted[i]
+                    t2, _, _, _, _ = chords_sorted[i + 1]
+                    dt = t2 - t1
+                    if dt <= 0:
+                        continue
+                    if dt <= seconds_per_beat:  # within one beat → likely grouped
+                        beam_candidates.setdefault(track_id, set()).add(t1)
+                        beam_candidates.setdefault(track_id, set()).add(t2)
+
+            for track_id, chords in chord_positions.items():
+                for (timestamp, base_x, min_y, max_y, color) in chords:
+                    staff_middle = self.margin_top + 2 * self.staff_line_spacing
+                    chord_center = (min_y + max_y) / 2.0
+
+                    stem_up = chord_center > staff_middle
+
+                    # Base anchor on chord extremity
+                    if stem_up:
+                        anchor_y = min_y
+                    else:
+                        anchor_y = max_y
+
+                    # Base stem length
+                    base_length = 28.0
+
+                    # Extend if part of a beamed group
+                    if track_id in beam_candidates and timestamp in beam_candidates[track_id]:
+                        base_length = 35.0
+
+                    # Slightly adjust length based on distance from staff middle
+                    distance_factor = min(1.5, max(0.7, abs(chord_center - staff_middle) / 40.0))
+                    stem_length = base_length * distance_factor
+
+                    # Compute end Y
+                    start_y = anchor_y + 6  # attach slightly inside note head
+                    if stem_up:
+                        end_y = start_y - stem_length
+                    else:
+                        end_y = start_y + stem_length
+
+                    # Clamp stems so they don't go too far off-screen
+                    min_limit = self.margin_top - 30
+                    max_limit = self.height - 20
+                    end_y = max(min_limit, min(max_limit, end_y))
+
+                    pygame.draw.line(
+                        self.surface,
+                        color,
+                        (int(base_x), int(start_y)),
+                        (int(base_x), int(end_y)),
+                        3
+                    )
+
         # GROUPING: draw sloped, multi-level beams between close chords on same track
         if seconds_per_beat is not None:
             for track_id, chords in chord_positions.items():
