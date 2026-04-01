@@ -23,6 +23,7 @@ class UIManager:
         self.play_start_time = 0
         self.current_time_ms = 0
 
+        # --- Track Switcher ---
         self.track_switcher = TrackSwitcherUI(
             x=0,
             y=55,
@@ -31,6 +32,12 @@ class UIManager:
             track_colors=track_system.track_colors,
             event_bus=track_system.event_bus
         )
+
+        # Track visibility states
+        self.track_visibility = {i: True for i in range(16)}
+
+        # Listen for toggle events
+        track_system.event_bus.subscribe("track_toggle", self._on_track_toggle)
 
         self.piano = PianoUI(width, 180)
         self.piano_roll = PianoRollUI(width, 180)
@@ -49,6 +56,8 @@ class UIManager:
             self.track_activity[i] = 0.0
 
         self.renderer = GraphicNotationRenderer(width, 200, track_system)
+        self.renderer.set_track_visibility(self.track_visibility)
+
         if self.notation_processor is not None:
             try:
                 self.notation_processor.bind_renderer(self.renderer)
@@ -68,10 +77,26 @@ class UIManager:
             "renderer": (0, 920),
         }
 
+    # ---------------------------------------------------------
+    # TRACK SWITCHER EVENT
+    # ---------------------------------------------------------
+    def _on_track_toggle(self, track_id, state):
+        self.track_visibility[track_id] = state
+        try:
+            self.renderer.set_track_visibility(self.track_visibility)
+        except Exception as e:
+            print(f"❌ Renderer visibility update error: {e}")
+
+    # ---------------------------------------------------------
+    # CANVAS
+    # ---------------------------------------------------------
     def build_layout(self, parent):
         self.canvas_ui = CanvasUI(parent)
         self.canvas = self.canvas_ui.get_canvas()
 
+    # ---------------------------------------------------------
+    # EVENT HANDLING
+    # ---------------------------------------------------------
     def handle_event(self, event):
         t = self.transport.handle_event(event)
         if t:
@@ -92,6 +117,9 @@ class UIManager:
             except Exception as e:
                 print(f"❌ TrackSwitcherUI error: {e}")
 
+    # ---------------------------------------------------------
+    # MIDI EVENTS
+    # ---------------------------------------------------------
     def on_note_on(self, event):
         if not isinstance(event, dict):
             return
@@ -99,6 +127,9 @@ class UIManager:
         track_id = event.get("track_id", 0)
         note = event.get("note")
         if note is None:
+            return
+
+        if not self.track_visibility.get(track_id, True):
             return
 
         velocity = event.get("velocity", 100)
@@ -159,6 +190,9 @@ class UIManager:
 
         track_id = event.get("track_id", 0)
 
+        if not self.track_visibility.get(track_id, True):
+            return
+
         try:
             self.track_activity[track_id] = 0.0
         except Exception:
@@ -196,6 +230,9 @@ class UIManager:
             except Exception:
                 pass
 
+    # ---------------------------------------------------------
+    # INTERNAL
+    # ---------------------------------------------------------
     def _fade_activity(self):
         try:
             for track_id in self.track_activity:
@@ -215,6 +252,9 @@ class UIManager:
             time_str = f"{minutes:02}:{seconds:02}.{tenths}"
             self.transport.set_time(time_str)
 
+    # ---------------------------------------------------------
+    # DRAW
+    # ---------------------------------------------------------
     def draw(self, surface):
         self._fade_activity()
         self._update_time()
