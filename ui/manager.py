@@ -3,7 +3,7 @@ from .piano_ui import PianoUI
 from .piano_roll_ui import PianoRollUI
 from .staff_ui import StaffUI
 from .note_visualizer_ui import NoteVisualizerUI
-from .track_selector_ui import TrackSelectorUI
+from .track_switcher_ui import TrackSwitcherUI
 from .canvas_ui import CanvasUI
 from .transport_ui import TransportUI
 from renderer.graphic_renderer import GraphicNotationRenderer
@@ -18,14 +18,20 @@ class UIManager:
 
         pygame.font.init()
 
-        # --- NEW: Transport bar ---
         self.transport = TransportUI(width, 50)
         self.is_playing = False
         self.play_start_time = 0
         self.current_time_ms = 0
 
-        # --- UI modules ---
-        self.track_selector = TrackSelectorUI(track_system, width=width, height=60)
+        self.track_switcher = TrackSwitcherUI(
+            x=0,
+            y=55,
+            width=width,
+            height=60,
+            track_colors=track_system.track_colors,
+            event_bus=track_system.event_bus
+        )
+
         self.piano = PianoUI(width, 180)
         self.piano_roll = PianoRollUI(width, 180)
         self.staff = StaffUI(width, 200)
@@ -33,7 +39,6 @@ class UIManager:
 
         self.active_track_id = 0
 
-        # --- Track activity (meter bars) ---
         self.track_activity = {}
         try:
             track_count = len(getattr(self.track_system, "tracks", {}))
@@ -43,7 +48,6 @@ class UIManager:
         for i in range(track_count):
             self.track_activity[i] = 0.0
 
-        # --- Renderer ---
         self.renderer = GraphicNotationRenderer(width, 200, track_system)
         if self.notation_processor is not None:
             try:
@@ -54,10 +58,9 @@ class UIManager:
         self.canvas_ui = None
         self.canvas = None
 
-        # --- NEW LAYOUT (transport bar on top) ---
         self.layout = {
             "transport": (0, 0),
-            "track_selector": (0, 55),
+            "track_switcher": (0, 55),
             "piano": (0, 130),
             "piano_roll": (0, 320),
             "staff": (0, 510),
@@ -65,18 +68,11 @@ class UIManager:
             "renderer": (0, 920),
         }
 
-    # ---------------------------------------------------------
-    # CANVAS
-    # ---------------------------------------------------------
     def build_layout(self, parent):
         self.canvas_ui = CanvasUI(parent)
         self.canvas = self.canvas_ui.get_canvas()
 
-    # ---------------------------------------------------------
-    # EVENT HANDLING
-    # ---------------------------------------------------------
     def handle_event(self, event):
-        # --- Transport bar events ---
         t = self.transport.handle_event(event)
         if t:
             action = t.get("action")
@@ -90,21 +86,12 @@ class UIManager:
                 self.current_time_ms = 0
                 self.transport.set_time("00:00.0")
 
-            elif action == "loop":
-                pass  # loop toggle already handled inside TransportUI
-
-        # --- Track selector events ---
-        if event.type == pygame.MOUSEBUTTONDOWN and self.track_selector:
+        if event.type == pygame.MOUSEBUTTONDOWN:
             try:
-                clicked_track = self.track_selector.handle_click(event.pos)
-                if clicked_track is not None:
-                    self.active_track_id = clicked_track
+                self.track_switcher.handle_event(event)
             except Exception as e:
-                print(f"❌ TrackSelector handle_click error: {e}")
+                print(f"❌ TrackSwitcherUI error: {e}")
 
-    # ---------------------------------------------------------
-    # MIDI EVENTS
-    # ---------------------------------------------------------
     def on_note_on(self, event):
         if not isinstance(event, dict):
             return
@@ -209,9 +196,6 @@ class UIManager:
             except Exception:
                 pass
 
-    # ---------------------------------------------------------
-    # INTERNAL
-    # ---------------------------------------------------------
     def _fade_activity(self):
         try:
             for track_id in self.track_activity:
@@ -231,60 +215,46 @@ class UIManager:
             time_str = f"{minutes:02}:{seconds:02}.{tenths}"
             self.transport.set_time(time_str)
 
-    # ---------------------------------------------------------
-    # DRAW
-    # ---------------------------------------------------------
     def draw(self, surface):
         self._fade_activity()
         self._update_time()
 
-        # --- Transport bar ---
         try:
             x, y = self.layout["transport"]
             self.transport.draw(surface.subsurface((x, y, self.width, 50)))
         except Exception:
             pass
 
-        # --- Track selector ---
         try:
-            x, y = self.layout["track_selector"]
-            self.track_selector.draw(
-                surface.subsurface((x, y, self.width, 60)),
-                active_track=self.active_track_id,
-                track_activity=self.track_activity
-            )
+            x, y = self.layout["track_switcher"]
+            self.track_switcher.draw(surface.subsurface((x, y, self.width, 60)))
         except Exception:
             pass
 
-        # --- Piano ---
         try:
             x, y = self.layout["piano"]
             self.piano.draw(surface.subsurface((x, y, self.width, 180)))
         except Exception:
             pass
 
-        # --- Piano roll ---
         try:
             x, y = self.layout["piano_roll"]
             self.piano_roll.draw(surface.subsurface((x, y, self.width, 180)))
         except Exception:
             pass
 
-        # --- Staff ---
         try:
             x, y = self.layout["staff"]
             self.staff.draw(surface.subsurface((x, y, self.width, 200)))
         except Exception:
             pass
 
-        # --- Visualizer ---
         try:
             x, y = self.layout["visualizer"]
             self.visualizer.draw(surface.subsurface((x, y, self.width, 200)))
         except Exception:
             pass
 
-        # --- Renderer ---
         try:
             x, y = self.layout["renderer"]
             self.renderer.draw(surface.subsurface((x, y, self.width, 200)))
