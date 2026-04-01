@@ -19,35 +19,26 @@ class GraphicNotationRenderer:
         except Exception:
             self.font = None
 
-        # Staff cache
         self.staff_cache = None
         self.staff_cache_width = width
         self.staff_cache_height = 140
 
-        # Layout
         self.margin_left = 40
         self.margin_top = 20
         self.staff_line_spacing = 12
 
-        # Real‑time engine
         self.playback_time = 0.0
         self.last_frame_time = time.time()
 
-        # AUTO‑SCROLL ENGINE
         self.zoom = 1.0
         self.scroll_speed = 120.0
         self.scroll_offset = 0.0
 
-        # Tempo
         self.bpm = 120.0
         self.beats_per_bar = 4
 
-        # Playhead (center of screen)
         self.playhead_x = width // 2
 
-    # ---------------------------------------------------------
-    # CONFIG
-    # ---------------------------------------------------------
     def set_playback_time(self, t: float):
         self.playback_time = float(t)
 
@@ -67,9 +58,6 @@ class GraphicNotationRenderer:
         except Exception:
             pass
 
-    # ---------------------------------------------------------
-    # STAFF LINES (CACHED)
-    # ---------------------------------------------------------
     def _render_staff_lines(self):
         if self.staff_cache is not None:
             return self.staff_cache
@@ -94,9 +82,6 @@ class GraphicNotationRenderer:
         self.staff_cache = surf
         return surf
 
-    # ---------------------------------------------------------
-    # REAL‑TIME ENGINE + AUTO‑SCROLL
-    # ---------------------------------------------------------
     def _update_time(self):
         now = time.time()
         dt = now - self.last_frame_time
@@ -107,9 +92,6 @@ class GraphicNotationRenderer:
 
         return dt
 
-    # ---------------------------------------------------------
-    # POSITIONING
-    # ---------------------------------------------------------
     def _pitch_to_y(self, midi: int) -> float:
         return self.margin_top + (60 - midi) * 1.1
 
@@ -119,9 +101,6 @@ class GraphicNotationRenderer:
             + (timestamp - self.playback_time) * self.scroll_speed * self.zoom
         )
 
-    # ---------------------------------------------------------
-    # COLOR HELPERS
-    # ---------------------------------------------------------
     def _get_track_color(self, track_id: int, active_track_id: Optional[int]) -> Tuple[int, int, int]:
         try:
             base_color = self.track_manager.get_color(track_id)
@@ -137,17 +116,11 @@ class GraphicNotationRenderer:
         b = min(255, int(b * 1.25) + 15)
         return (r, g, b)
 
-    # ---------------------------------------------------------
-    # DRAW NOTE HEAD
-    # ---------------------------------------------------------
     def _draw_note(self, surface, x: float, y: float, color: Tuple[int, int, int]):
         rect = pygame.Rect(int(x), int(y), 16, 12)
         pygame.draw.ellipse(surface, color, rect)
         pygame.draw.ellipse(surface, (0, 0, 0), rect, 2)
 
-    # ---------------------------------------------------------
-    # GROUP NOTES INTO CHORDS
-    # ---------------------------------------------------------
     def _group_notes(self, notes: List[Dict[str, Any]]):
         groups = {}
         for note in notes:
@@ -166,9 +139,6 @@ class GraphicNotationRenderer:
 
         return groups
 
-    # ---------------------------------------------------------
-    # BARLINES
-    # ---------------------------------------------------------
     def _draw_barlines(self):
         if self.bpm <= 0:
             return
@@ -191,15 +161,12 @@ class GraphicNotationRenderer:
 
             pygame.draw.line(
                 self.surface,
-                (255, 255, 180) if bar_index % 1 == 0 else (90, 90, 90),
+                (255, 255, 180),
                 (int(x), 0),
                 (int(x), self.height),
-                3 if bar_index % 1 == 0 else 1
+                3
             )
 
-    # ---------------------------------------------------------
-    # TIMELINE RULER
-    # ---------------------------------------------------------
     def _draw_timeline_ruler(self):
         if self.bpm <= 0 or self.font is None:
             return
@@ -221,9 +188,6 @@ class GraphicNotationRenderer:
                 label = self.font.render(str(bar_index + 1), True, (230, 230, 230))
                 self.surface.blit(label, (int(x) + 4, 0))
 
-    # ---------------------------------------------------------
-    # GRID
-    # ---------------------------------------------------------
     def _draw_grid_lines(self):
         if self.bpm <= 0:
             return
@@ -240,20 +204,17 @@ class GraphicNotationRenderer:
 
             bar_start = bar_index * seconds_per_bar
 
-            # 1/4 beats
             for beat in range(self.beats_per_bar):
                 t = bar_start + beat * seconds_per_beat
                 x = self._time_to_x(t)
                 if 0 <= x <= self.width:
                     pygame.draw.line(self.surface, (70, 70, 70), (int(x), 0), (int(x), self.height), 1)
 
-                # 1/8 subdivisions
                 t8 = t + seconds_per_beat / 2
                 x8 = self._time_to_x(t8)
                 if 0 <= x8 <= self.width:
                     pygame.draw.line(self.surface, (50, 50, 50), (int(x8), 0), (int(x8), self.height), 1)
 
-                # 1/16 subdivisions
                 t16a = t + seconds_per_beat / 4
                 t16b = t + 3 * seconds_per_beat / 4
                 for t16 in (t16a, t16b):
@@ -261,9 +222,6 @@ class GraphicNotationRenderer:
                     if 0 <= x16 <= self.width:
                         pygame.draw.line(self.surface, (40, 40, 40), (int(x16), 0), (int(x16), self.height), 1)
 
-    # ---------------------------------------------------------
-    # MEASURE NUMBERS (NEW)
-    # ---------------------------------------------------------
     def _draw_measure_numbers(self):
         if self.bpm <= 0 or self.font is None:
             return
@@ -283,12 +241,8 @@ class GraphicNotationRenderer:
 
             if 0 <= x <= self.width:
                 label = self.font.render(str(bar_index + 1), True, (220, 220, 220))
-                # nad staff, ale bližšie k taktovej čiare
                 self.surface.blit(label, (int(x) + 4, self.margin_top - 18))
 
-    # ---------------------------------------------------------
-    # PLAYHEAD
-    # ---------------------------------------------------------
     def _draw_playhead(self):
         pygame.draw.line(
             self.surface,
@@ -298,9 +252,6 @@ class GraphicNotationRenderer:
             3
         )
 
-    # ---------------------------------------------------------
-    # MAIN DRAW
-    # ---------------------------------------------------------
     def draw(self, notes):
         if self.surface is None:
             self.surface = pygame.Surface((self.width, self.height))
@@ -329,6 +280,18 @@ class GraphicNotationRenderer:
         grouped = self._group_notes(list(notes))
 
         for (timestamp, track_id), chord_notes in grouped.items():
+
+            # -------------------------------
+            # MUTE / SOLO FILTER (NEW)
+            # -------------------------------
+            try:
+                if self.track_manager.solo_mode_active() and not self.track_manager.is_solo(track_id):
+                    continue
+                if self.track_manager.is_muted(track_id):
+                    continue
+            except Exception:
+                pass
+
             try:
                 if not self.track_manager.is_visible(track_id):
                     continue
