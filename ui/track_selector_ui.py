@@ -71,14 +71,17 @@ class TrackSelectorUI:
 
         return None
 
-    def draw(self, surface):
+    def draw(self, surface, active_track=None):
         if surface is None:
             return
 
         try:
-            active_id = self.track_system.get_active_track()
+            system_active = self.track_system.get_active_track()
         except Exception:
-            active_id = None
+            system_active = None
+
+        if active_track is None:
+            active_track = system_active
 
         for btn in self.track_buttons:
             track_id = btn.get("id")
@@ -104,12 +107,9 @@ class TrackSelectorUI:
             except Exception:
                 pass
 
-            try:
-                is_active = (track_id == active_id)
-            except Exception:
-                is_active = False
+            is_active = (track_id == active_track)
 
-            border_color = (255, 255, 255) if is_active else (80, 80, 80)
+            border_color = (0, 150, 255) if is_active else (80, 80, 80)
             border_width = 4 if is_active else 2
 
             try:
