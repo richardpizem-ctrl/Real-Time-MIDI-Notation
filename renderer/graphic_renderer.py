@@ -19,10 +19,12 @@ class GraphicNotationRenderer:
         except Exception:
             self.font = None
 
+        # Staff cache
         self.staff_cache = None
         self.staff_cache_width = width
         self.staff_cache_height = 140
 
+        # Layout
         self.margin_left = 40
         self.margin_top = 20
         self.staff_line_spacing = 12
@@ -30,13 +32,13 @@ class GraphicNotationRenderer:
         # Real‑time engine
         self.playback_time = 0.0
         self.last_frame_time = time.time()
-        self.pixels_per_second = 120.0  # base scroll speed
+        self.pixels_per_second = 120.0
 
-        # Tempo (BPM)
+        # Tempo
         self.bpm = 120.0
-        self.beats_per_bar = 4  # 4/4 takt
+        self.beats_per_bar = 4
 
-        # Playhead
+        # Playhead (center of screen)
         self.playhead_x = width // 2
 
     # ---------------------------------------------------------
@@ -147,7 +149,7 @@ class GraphicNotationRenderer:
         return groups
 
     # ---------------------------------------------------------
-    # BARLINES (Taktové čiary) + DOWNBEAT HIGHLIGHT
+    # BARLINES
     # ---------------------------------------------------------
     def _draw_barlines(self):
         if self.bpm <= 0:
@@ -169,26 +171,16 @@ class GraphicNotationRenderer:
             if x < 0 or x > self.width:
                 continue
 
-            # DOWNBEAT = prvá doba v takte
-            if bar_index % 1 == 0:
-                pygame.draw.line(
-                    self.surface,
-                    (255, 255, 180),  # jemná zlatá
-                    (int(x), 0),
-                    (int(x), self.height),
-                    3
-                )
-            else:
-                pygame.draw.line(
-                    self.surface,
-                    (90, 90, 90),
-                    (int(x), 0),
-                    (int(x), self.height),
-                    1
-                )
+            pygame.draw.line(
+                self.surface,
+                (255, 255, 180) if bar_index % 1 == 0 else (90, 90, 90),
+                (int(x), 0),
+                (int(x), self.height),
+                3 if bar_index % 1 == 0 else 1
+            )
 
     # ---------------------------------------------------------
-    # DRAW PLAYHEAD
+    # PLAYHEAD
     # ---------------------------------------------------------
     def _draw_playhead(self):
         pygame.draw.line(
