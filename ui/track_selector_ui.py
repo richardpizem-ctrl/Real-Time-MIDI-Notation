@@ -12,9 +12,11 @@ class TrackSelectorUI:
 
         pygame.font.init()
         try:
-            self.font = pygame.font.SysFont("Arial", 20, bold=True)
+            self.font = pygame.font.SysFont("Arial", 18, bold=True)
+            self.font_small = pygame.font.SysFont("Arial", 14)
         except Exception:
             self.font = None
+            self.font_small = None
 
         self._generate_buttons()
 
@@ -136,9 +138,25 @@ class TrackSelectorUI:
                 pass
 
             try:
+                if hasattr(self.track_system, "get_name"):
+                    name = self.track_system.get_name(track_id)
+                else:
+                    name = None
+            except Exception:
+                name = None
+
+            if not name:
+                name = f"Track {track_id + 1}"
+
+            try:
                 if self.font:
-                    text_surface = self.font.render(str(track_id + 1), True, (0, 0, 0))
-                    text_rect = text_surface.get_rect(center=rect.center)
-                    surface.blit(text_surface, text_rect)
+                    number_surface = self.font.render(str(track_id + 1), True, (0, 0, 0))
+                    number_rect = number_surface.get_rect(center=(rect.centerx, rect.centery - 8))
+                    surface.blit(number_surface, number_rect)
+
+                if self.font_small:
+                    name_surface = self.font_small.render(name, True, (0, 0, 0))
+                    name_rect = name_surface.get_rect(center=(rect.centerx, rect.centery + 10))
+                    surface.blit(name_surface, name_rect)
             except Exception:
                 pass
