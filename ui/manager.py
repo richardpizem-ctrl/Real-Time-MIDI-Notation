@@ -39,13 +39,18 @@ class UIManager:
         # Listen for toggle events
         track_system.event_bus.subscribe("track_toggle", self._on_track_toggle)
 
+        # Listen for track selection (NEW)
+        track_system.event_bus.subscribe("track_selected", self._on_track_selected)
+
         self.piano = PianoUI(width, 180)
         self.piano_roll = PianoRollUI(width, 180)
         self.staff = StaffUI(width, 200)
         self.visualizer = NoteVisualizerUI(width, 200)
 
+        # Active track highlight
         self.active_track_id = 0
 
+        # Track activity (meter bars)
         self.track_activity = {}
         try:
             track_count = len(getattr(self.track_system, "tracks", {}))
@@ -78,7 +83,7 @@ class UIManager:
         }
 
     # ---------------------------------------------------------
-    # TRACK SWITCHER EVENT
+    # TRACK SWITCHER EVENTS
     # ---------------------------------------------------------
     def _on_track_toggle(self, track_id, state):
         self.track_visibility[track_id] = state
@@ -86,6 +91,9 @@ class UIManager:
             self.renderer.set_track_visibility(self.track_visibility)
         except Exception as e:
             print(f"❌ Renderer visibility update error: {e}")
+
+    def _on_track_selected(self, track_id):
+        self.active_track_id = track_id
 
     # ---------------------------------------------------------
     # CANVAS
@@ -113,7 +121,9 @@ class UIManager:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             try:
-                self.track_switcher.handle_event(event)
+                result = self.track_switcher.handle_event(event)
+                if isinstance(result, dict) and "selected_track" in result:
+                    self.active_track_id = result["selected_track"]
             except Exception as e:
                 print(f"❌ TrackSwitcherUI error: {e}")
 
