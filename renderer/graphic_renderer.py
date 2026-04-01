@@ -19,24 +19,30 @@ class GraphicNotationRenderer:
         except Exception:
             self.font = None
 
+        # Staff cache
         self.staff_cache = None
         self.staff_cache_width = width
         self.staff_cache_height = 140
 
+        # Layout
         self.margin_left = 40
         self.margin_top = 20
         self.staff_line_spacing = 12
 
+        # Time / playback
         self.playback_time = 0.0
         self.last_frame_time = time.time()
 
+        # View
         self.zoom = 1.0
         self.scroll_speed = 120.0
         self.scroll_offset = 0.0
 
+        # Tempo / meter
         self.bpm = 120.0
         self.beats_per_bar = 4
 
+        # Playhead
         self.playhead_x = width // 2
 
     def set_playback_time(self, t: float):
@@ -58,6 +64,9 @@ class GraphicNotationRenderer:
         except Exception:
             pass
 
+    # ---------------------------------------------------------
+    # STAFF LINES (CACHED)
+    # ---------------------------------------------------------
     def _render_staff_lines(self):
         if self.staff_cache is not None:
             return self.staff_cache
@@ -82,6 +91,9 @@ class GraphicNotationRenderer:
         self.staff_cache = surf
         return surf
 
+    # ---------------------------------------------------------
+    # TIME / SCROLL
+    # ---------------------------------------------------------
     def _update_time(self):
         now = time.time()
         dt = now - self.last_frame_time
@@ -92,6 +104,9 @@ class GraphicNotationRenderer:
 
         return dt
 
+    # ---------------------------------------------------------
+    # COORDINATE MAPPING
+    # ---------------------------------------------------------
     def _pitch_to_y(self, midi: int) -> float:
         return self.margin_top + (60 - midi) * 1.1
 
@@ -101,6 +116,9 @@ class GraphicNotationRenderer:
             + (timestamp - self.playback_time) * self.scroll_speed * self.zoom
         )
 
+    # ---------------------------------------------------------
+    # TRACK COLOR / ACTIVE TRACK BOOST
+    # ---------------------------------------------------------
     def _get_track_color(self, track_id: int, active_track_id: Optional[int]) -> Tuple[int, int, int]:
         try:
             base_color = self.track_manager.get_color(track_id)
@@ -116,13 +134,27 @@ class GraphicNotationRenderer:
         b = min(255, int(b * 1.25) + 15)
         return (r, g, b)
 
+    # ---------------------------------------------------------
+    # NOTE DRAWING
+    # ---------------------------------------------------------
     def _draw_note(self, surface, x: float, y: float, color: Tuple[int, int, int]):
         rect = pygame.Rect(int(x), int(y), 16, 12)
         pygame.draw.ellipse(surface, color, rect)
         pygame.draw.ellipse(surface, (0, 0, 0), rect, 2)
 
+    # ---------------------------------------------------------
+    # CHORD GROUPING (MULTI-HEAD CHORDS)
+    # ---------------------------------------------------------
     def _group_notes(self, notes: List[Dict[str, Any]]):
-        groups = {}
+        """
+        Group notes by (quantized_time, track_id) to form chords.
+        This enables multi-head chords: multiple notes at (almost) the same time on the same track.
+        """
+        groups: Dict[Tuple[float, int], List[Dict[str, Any]]] = {}
+
+        # Time quantization for chord grouping (e.g. ~20 ms buckets)
+        time_quantum = 0.02
+
         for note in notes:
             if not isinstance(note, dict):
                 continue
@@ -134,11 +166,20 @@ class GraphicNotationRenderer:
             if midi is None or track_id is None:
                 continue
 
-            key = (float(timestamp), int(track_id))
+            try:
+                t = float(timestamp)
+            except Exception:
+                t = 0.0
+
+            quantized_time = round(t / time_quantum) * time_quantum
+            key = (quantized_time, int(track_id))
             groups.setdefault(key, []).append(note)
 
         return groups
 
+    # ---------------------------------------------------------
+    # BARLINES / GRID / RULER / MEASURE NUMBERS
+    # ---------------------------------------------------------
     def _draw_barlines(self):
         if self.bpm <= 0:
             return
@@ -243,6 +284,9 @@ class GraphicNotationRenderer:
                 label = self.font.render(str(bar_index + 1), True, (220, 220, 220))
                 self.surface.blit(label, (int(x) + 4, self.margin_top - 18))
 
+    # ---------------------------------------------------------
+    # PLAYHEAD
+    # ---------------------------------------------------------
     def _draw_playhead(self):
         pygame.draw.line(
             self.surface,
@@ -252,6 +296,9 @@ class GraphicNotationRenderer:
             3
         )
 
+    # ---------------------------------------------------------
+    # MAIN DRAW
+    # ---------------------------------------------------------
     def draw(self, notes):
         if self.surface is None:
             self.surface = pygame.Surface((self.width, self.height))
@@ -259,30 +306,34 @@ class GraphicNotationRenderer:
         self._update_time()
         self.surface.fill((25, 25, 25))
 
+        # Background / grid / rulers
         self._draw_timeline_ruler()
         self._draw_grid_lines()
         self._draw_measure_numbers()
 
+        # Staff
         staff = self._render_staff_lines()
         self.surface.blit(staff, (0, 0))
 
+        # Barlines
         self._draw_barlines()
 
         if not isinstance(notes, (list, tuple)):
             self._draw_playhead()
             return self.surface
 
+        # Active track for color boost
         try:
             active_track_id = self.track_manager.get_active_track()
         except Exception:
             active_track_id = None
 
+        # Group notes into chords (multi-head)
         grouped = self._group_notes(list(notes))
 
         for (timestamp, track_id), chord_notes in grouped.items():
-
             # -------------------------------
-            # MUTE / SOLO FILTER (NEW)
+            # MUTE / SOLO / VISIBILITY FILTER
             # -------------------------------
             try:
                 if self.track_manager.solo_mode_active() and not self.track_manager.is_solo(track_id):
@@ -301,12 +352,27 @@ class GraphicNotationRenderer:
             color = self._get_track_color(track_id, active_track_id)
             base_x = self._time_to_x(timestamp)
 
-            for idx, note in enumerate(chord_notes):
+            # Sort chord notes by pitch for consistent layout
+            try:
+                chord_notes_sorted = sorted(
+                    chord_notes,
+                    key=lambda n: int(n.get("pitch") or n.get("note") or 0)
+                )
+            except Exception:
+                chord_notes_sorted = chord_notes
+
+            # Draw multi-head chord: same time, different pitches, slight horizontal spread
+            for idx, note in enumerate(chord_notes_sorted):
                 midi = note.get("pitch") or note.get("note")
                 if midi is None:
                     continue
 
-                y = self._pitch_to_y(int(midi))
+                try:
+                    midi_int = int(midi)
+                except Exception:
+                    continue
+
+                y = self._pitch_to_y(midi_int)
                 x = base_x + idx * 6
                 self._draw_note(self.surface, x, y, color)
 
