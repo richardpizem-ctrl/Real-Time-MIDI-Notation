@@ -23,6 +23,8 @@ class UIManager:
         self.visualizer = NoteVisualizerUI(width, 200)
         self.track_selector = TrackSelectorUI(track_system, width=width, height=60)
 
+        self.active_track_id = 0
+
         self.renderer = GraphicNotationRenderer(width, 200, track_system)
         if self.notation_processor is not None:
             try:
@@ -49,7 +51,9 @@ class UIManager:
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and self.track_selector:
             try:
-                self.track_selector.handle_click(event.pos)
+                clicked_track = self.track_selector.handle_click(event.pos)
+                if clicked_track is not None:
+                    self.active_track_id = clicked_track
             except Exception as e:
                 print(f"❌ TrackSelector handle_click error: {e}")
 
@@ -158,4 +162,44 @@ class UIManager:
         try:
             x, y = self.layout["track_selector"]
             if self.track_selector:
-                self.track_selector.draw(surface.subsurface((x, y, self.width
+                self.track_selector.draw(
+                    surface.subsurface((x, y, self.width, 60)),
+                    active_track=self.active_track_id
+                )
+        except Exception as e:
+            print(f"❌ TrackSelector draw error: {e}")
+
+        try:
+            x, y = self.layout["piano"]
+            if self.piano:
+                self.piano.draw(surface.subsurface((x, y, self.width, 180)))
+        except Exception as e:
+            print(f"❌ PianoUI draw error: {e}")
+
+        try:
+            x, y = self.layout["piano_roll"]
+            if self.piano_roll:
+                self.piano_roll.draw(surface.subsurface((x, y, self.width, 180)))
+        except Exception as e:
+            print(f"❌ PianoRollUI draw error: {e}")
+
+        try:
+            x, y = self.layout["staff"]
+            if self.staff:
+                self.staff.draw(surface.subsurface((x, y, self.width, 200)))
+        except Exception as e:
+            print(f"❌ StaffUI draw error: {e}")
+
+        try:
+            x, y = self.layout["visualizer"]
+            if self.visualizer:
+                self.visualizer.draw(surface.subsurface((x, y, self.width, 200)))
+        except Exception as e:
+            print(f"❌ NoteVisualizerUI draw error: {e}")
+
+        try:
+            x, y = self.layout["renderer"]
+            if self.renderer:
+                self.renderer.draw(surface.subsurface((x, y, self.width, 200)))
+        except Exception as e:
+            print(f"❌ GraphicNotationRenderer draw error: {e}")
