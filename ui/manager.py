@@ -25,6 +25,15 @@ class UIManager:
 
         self.active_track_id = 0
 
+        self.track_activity = {}
+        try:
+            track_count = len(getattr(self.track_system, "tracks", {}))
+        except Exception:
+            track_count = 0
+
+        for i in range(track_count):
+            self.track_activity[i] = 0.0
+
         self.renderer = GraphicNotationRenderer(width, 200, track_system)
         if self.notation_processor is not None:
             try:
@@ -66,6 +75,12 @@ class UIManager:
         if note is None:
             return
 
+        velocity = event.get("velocity", 100)
+        try:
+            self.track_activity[track_id] = min(1.0, velocity / 127.0)
+        except Exception:
+            pass
+
         track_color = None
         if self.track_system is not None:
             try:
@@ -105,7 +120,7 @@ class UIManager:
                 self.notation_processor.process_midi_event({
                     "type": "note_on",
                     "note": note,
-                    "velocity": event.get("velocity", 100),
+                    "velocity": velocity,
                     "time": event.get("time", 0.0),
                     "channel": track_id,
                 })
@@ -121,6 +136,11 @@ class UIManager:
             return
 
         track_id = event.get("track_id", 0)
+
+        try:
+            self.track_activity[track_id] = 0.0
+        except Exception:
+            pass
 
         try:
             if self.piano:
@@ -158,13 +178,23 @@ class UIManager:
             except Exception as e:
                 print(f"❌ NotationProcessor process_midi_event (note_off) error: {e}")
 
+    def _fade_activity(self):
+        try:
+            for track_id in self.track_activity:
+                self.track_activity[track_id] = max(0.0, self.track_activity[track_id] - 0.02)
+        except Exception:
+            pass
+
     def draw(self, surface):
+        self._fade_activity()
+
         try:
             x, y = self.layout["track_selector"]
             if self.track_selector:
                 self.track_selector.draw(
                     surface.subsurface((x, y, self.width, 60)),
-                    active_track=self.active_track_id
+                    active_track=self.active_track_id,
+                    track_activity=self.track_activity
                 )
         except Exception as e:
             print(f"❌ TrackSelector draw error: {e}")
