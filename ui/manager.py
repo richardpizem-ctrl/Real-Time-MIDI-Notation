@@ -267,6 +267,7 @@ class UIManager:
 
         try:
             x, y = self.layout["track_switcher"]
+            self.track_switcher.update_activity(self.track_activity)
             self.track_switcher.draw(surface.subsurface((x, y, self.width, 60)))
         except Exception:
             pass
