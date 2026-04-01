@@ -143,13 +143,28 @@ class GraphicNotationRenderer:
         pygame.draw.ellipse(surface, (0, 0, 0), rect, 2)
 
     # ---------------------------------------------------------
-    # LIGATURE / BEAM DRAWING
+    # LIGATURE / SIMPLE BEAM DRAWING (LEGACY)
     # ---------------------------------------------------------
     def _draw_ligature(self, x1: float, x2: float, y: float, color: Tuple[int, int, int]):
         x1i = int(x1)
         x2i = int(x2)
         yi = int(y)
         pygame.draw.line(self.surface, color, (x1i, yi), (x2i, yi), 4)
+
+    # ---------------------------------------------------------
+    # GROUPING BEAM DRAWING (SLOPED, MULTI-LEVEL)
+    # ---------------------------------------------------------
+    def _draw_beam(self, x1: float, y1: float, x2: float, y2: float, color: Tuple[int, int, int], levels: int = 1):
+        x1i = int(x1)
+        x2i = int(x2)
+        y1f = float(y1)
+        y2f = float(y2)
+
+        for level in range(levels):
+            offset = level * 4
+            y1i = int(y1f - offset)
+            y2i = int(y2f - offset)
+            pygame.draw.line(self.surface, color, (x1i, y1i), (x2i, y2i), 3)
 
     # ---------------------------------------------------------
     # CHORD GROUPING (MULTI-HEAD CHORDS)
@@ -340,10 +355,10 @@ class GraphicNotationRenderer:
         # Group notes into chords (multi-head)
         grouped = self._group_notes(list(notes))
 
-        # Precompute beat length for ligature logic
+        # Precompute beat length for grouping logic
         seconds_per_beat = 60.0 / self.bpm if self.bpm > 0 else None
 
-        # For ligatures: store chord positions per track
+        # For grouping: store chord positions per track
         chord_positions: Dict[int, List[Tuple[float, float, float, float, Tuple[int, int, int]]]] = {}
 
         for (timestamp, track_id), chord_notes in grouped.items():
@@ -404,10 +419,8 @@ class GraphicNotationRenderer:
                     (timestamp, base_x, min_y, max_y, color)
                 )
 
-        # Draw ligatures (simple beams) between close chords on same track
+        # GROUPING: draw sloped, multi-level beams between close chords on same track
         if seconds_per_beat is not None:
-            max_dt = seconds_per_beat / 2.0  # connect notes closer than an 8th note
-
             for track_id, chords in chord_positions.items():
                 if len(chords) < 2:
                     continue
@@ -418,9 +431,30 @@ class GraphicNotationRenderer:
                     t1, x1, min_y1, max_y1, color1 = chords_sorted[i]
                     t2, x2, min_y2, max_y2, color2 = chords_sorted[i + 1]
 
-                    if (t2 - t1) <= max_dt:
-                        y_beam = min(min_y1, min_y2) - 8
-                        self._draw_ligature(x1, x2, y_beam, color1)
+                    dt = t2 - t1
+                    if dt <= 0:
+                        continue
+
+                    # Decide grouping level based on time distance
+                    # <= 1/4 beat -> triple beam (32nd-like)
+                    # <= 1/2 beat -> double beam (16th-like)
+                    # <= 1 beat   -> single beam (8th-like)
+                    levels = 0
+                    if dt <= seconds_per_beat / 4.0:
+                        levels = 3
+                    elif dt <= seconds_per_beat / 2.0:
+                        levels = 2
+                    elif dt <= seconds_per_beat:
+                        levels = 1
+
+                    if levels <= 0:
+                        continue
+
+                    # Beam above the chord: use top of chord (min_y) minus offset
+                    y1_beam = min_y1 - 8
+                    y2_beam = min_y2 - 8
+
+                    self._draw_beam(x1, y1_beam, x2, y2_beam, color1, levels)
 
         self._draw_playhead()
         return self.surface
