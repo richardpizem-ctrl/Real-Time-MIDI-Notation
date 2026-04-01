@@ -199,6 +199,30 @@ class GraphicNotationRenderer:
             )
 
     # ---------------------------------------------------------
+    # TIMELINE RULER (NEW)
+    # ---------------------------------------------------------
+    def _draw_timeline_ruler(self):
+        if self.bpm <= 0 or self.font is None:
+            return
+
+        seconds_per_beat = 60.0 / self.bpm
+        seconds_per_bar = seconds_per_beat * self.beats_per_bar
+
+        current_bar_index = int(self.playback_time // seconds_per_bar)
+        bars_to_draw = range(current_bar_index - 4, current_bar_index + 12)
+
+        for bar_index in bars_to_draw:
+            if bar_index < 0:
+                continue
+
+            bar_time = bar_index * seconds_per_bar
+            x = self._time_to_x(bar_time)
+
+            if 0 <= x <= self.width:
+                label = self.font.render(str(bar_index + 1), True, (230, 230, 230))
+                self.surface.blit(label, (int(x) + 4, 0))
+
+    # ---------------------------------------------------------
     # PLAYHEAD
     # ---------------------------------------------------------
     def _draw_playhead(self):
@@ -219,6 +243,9 @@ class GraphicNotationRenderer:
 
         self._update_time()
         self.surface.fill((25, 25, 25))
+
+        # TIMELINE RULER (NEW)
+        self._draw_timeline_ruler()
 
         staff = self._render_staff_lines()
         self.surface.blit(staff, (0, 0))
