@@ -1,3 +1,5 @@
+Real-Time MIDI Notation je nástroj na vizualizáciu MIDI dát v reálnom čase, ktorý prevádza živé MIDI udalosti na prehľadnú grafickú notáciu. Projekt je navrhnutý ako modulárny, rozšíriteľný a pripravený na profesionálne použitie aj ďalší vývoj.
+
 ## Architecture Overview (Architektúra)
 
 Projekt Real-Time MIDI Notation spracúva MIDI dáta v reálnom čase cez štyri hlavné vrstvy:
@@ -20,4 +22,4 @@ Projekt Real-Time MIDI Notation spracúva MIDI dáta v reálnom čase cez štyri
 - 1.2 – menšie UI vylepšenia
 - 1.3 – export do PNG/SVG
 - 2.0 – advanced layout engine (pokročilý layout)
-docs: rewrite README structure (v1.1)
+
