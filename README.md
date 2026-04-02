@@ -1,129 +1,23 @@
-# 🎵 Real‑Time MIDI Notation
+## Architecture Overview (Architektúra)
 
-A modern real‑time MIDI visualization system for Yamaha keyboards and any MIDI‑compatible device.  
-Provides an interactive notation renderer, colored chords, multi‑track processing, and a professional layout engine.
+Projekt Real-Time MIDI Notation spracúva MIDI dáta v reálnom čase cez štyri hlavné vrstvy:
+1. MIDI Input (MIDI vstup) – prijíma MIDI eventy zo zariadenia alebo virtuálneho portu.
+2. Processor (Procesor) – analyzuje rytmus, timestampy, velocity a mapuje noty.
+3. GraphicNotationRenderer (Grafický renderer) – prevádza MIDI eventy na grafické objekty.
+4. UI Layer (UI vrstva) – zobrazuje noty, taktové čiary a playhead v reálnom čase.
 
-This project is designed as a **fast, accurate, and extensible tool** for real‑time MIDI notation in Python.
+## How It Works (Ako to funguje)
 
----
+- MIDI eventy sa načítavajú v reálnom čase.
+- Processor analyzuje rytmus, BPM a dĺžky tónov.
+- Renderer generuje grafické prvky pre každú notu.
+- UI vrstva vykresľuje noty, taktové čiary a playhead.
+- TrackManager spracúva až 16 stôp podľa Yamaha štandardu.
 
-## 🌍 Global Prototype Testing & Community Contribution Appeal
+## Roadmap (Plán vývoja)
 
-**This project is an original, world‑first prototype.**  
-Real‑time multi‑track Yamaha‑style notation has never been implemented in open‑source form before.
-
-To transform this prototype into a **stable, professional‑grade tool**, we need **global testing across all countries, devices, and MIDI setups**.
-
-### 🔥 If you study this project, please also test it.  
-Every tester helps improve accuracy, stability, and cross‑platform compatibility.
-
-### 🔧 How You Can Help
-- Test the project on your system (Windows / Linux / macOS)  
-- Report issues (latency, rendering, MIDI routing, UI behavior)  
-- Suggest improvements or optimizations  
-- Submit pull requests  
-- Propose new features  
-- Share your MIDI device configuration and results  
-
-### 🌐 Why Global Testing Matters
-Real‑time MIDI systems behave differently on:
-- different CPUs  
-- different audio drivers  
-- different MIDI devices  
-- different OS environments  
-- different latency conditions  
-
-Only **worldwide testing** can guarantee that this tool becomes reliable for everyone.
-
-Your contribution — even a single test — helps shape the future of this project.
-
----
-
-## 🚀 Features
-
-- **Real‑Time MIDI Input Engine**  
-  Processes incoming MIDI events with precise timestamping.
-
-- **MIDI Channel Splitter**  
-  Automatically separates MIDI data by channels (tracks) – ideal for Yamaha arranger styles.
-
-- **Notation Rendering Engine**  
-  Renders notes, barlines, playhead, rhythmic elements, and visual layers.
-
-- **Colored Chords & Harmony**  
-  Each chord has its own DAW‑style color.  
-  Supports real‑time harmony detection.
-
-- **Multi‑Track Visualization**  
-  Each track has its own color, layer, and behavior.  
-  Supports up to 16 MIDI channels (Yamaha standard).
-
-- **UI Components**  
-  - PianoRollUI  
-  - StaffUI  
-  - NoteVisualizerUI  
-  - UIManager (centralized UI control)
-
-- **Stable Release v1.0.0**  
-  The first functional version of the project is available as a release.
-
----
-
-## 🎛️ Podporované MIDI pripojenia
-
-Tento projekt podporuje **všetky bežné MIDI štandardy** od roku 1983 až po moderné USB zariadenia.
-
-### ✔️ USB‑MIDI (USB‑B / USB‑C)
-Moderné Yamaha, Roland, Korg, Casio a ďalšie nástroje.  
-Windows, Linux aj macOS ich rozpoznajú ako **class‑compliant MIDI zariadenia**.
-
-### ✔️ 5‑kolíkové MIDI (DIN)
-Staršie syntetizátory a workstationy.  
-Stačí použiť lacný prevodník:
-
-**MIDI DIN → USB**
-
-Windows ho zobrazí ako štandardné USB‑MIDI zariadenie, takže projekt funguje bez akýchkoľvek úprav.
-
-### ✔️ Hybridné zariadenia
-Nástroje, ktoré majú:
-- USB len pre storage  
-- MIDI len cez DIN  
-- alebo oboje  
-
-Všetky sú kompatibilné cez USB‑MIDI alebo DIN‑USB prevodník.
-
-### 🎯 Zhrnutie
-Projekt je kompatibilný so všetkými MIDI zariadeniami od roku 1983 až po dnešok.  
-Nikto nie je ukrivdený.
-
----
-
-## 🖼️ Screenshots / Demo (to be added)
-
-> Add a GIF or screenshot once the first visual output is ready.  
-> Images significantly improve SEO and project visibility.
-
----
-
-## 🧪 2. How to Test the Project
-
-Testing is essential for improving real‑time performance.
-
-### Run the project
-
-```bash
-git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation
-cd Real-Time-MIDI-Notation
-python run.py
-```
-
----
-
-## 📝 License
-
-MIT License – free for commercial and non‑commercial use.
-
----
-
-Minor maintenance update (milestone 500)
+- 1.1 – doplnená dokumentácia + stabilizácia
+- 1.2 – menšie UI vylepšenia
+- 1.3 – export do PNG/SVG
+- 2.0 – advanced layout engine (pokročilý layout)
+docs: rewrite README structure (v1.1)
