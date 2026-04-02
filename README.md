@@ -123,3 +123,7 @@ python run.py
 ## 📝 License
 
 MIT License – free for commercial and non‑commercial use.
+
+---
+
+Minor maintenance update (milestone 500)
