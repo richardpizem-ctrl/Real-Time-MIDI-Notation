@@ -125,18 +125,25 @@ class TrackManager:
         return any(self.solo.values())
 
     # ---------------------------------------------------------
-    # EFFECTIVE MUTE (MUTE + SOLO LOGIKA)
+    # EFFECTIVE ACTIVE STATE (DAW-úroveň logiky)
     # ---------------------------------------------------------
-    def get_effective_mute_state(self, track_id: int) -> bool:
+    def is_effectively_active(self, track_id: int) -> bool:
+        """
+        Toto je reálne správanie DAW:
+        - ak je MUTE → nehrá
+        - ak je SOLO mód → hrajú len SOLO stopy
+        - ak nie je SOLO mód → všetko okrem MUTE hrá
+        """
         if track_id not in self.mute:
+            return True
+
+        if self.is_muted(track_id):
             return False
 
         if self.solo_mode_active():
-            if self.is_solo(track_id):
-                return False
-            return True
+            return self.is_solo(track_id)
 
-        return self.is_muted(track_id)
+        return True
 
     # ---------------------------------------------------------
     # VOLUME / PAN
@@ -156,3 +163,24 @@ class TrackManager:
 
     def get_pan(self, track_id: int) -> float:
         return self.pan.get(track_id, 0.0)
+
+    # ---------------------------------------------------------
+    # APPLY TO MIDI ENGINE
+    # ---------------------------------------------------------
+    def apply_midi_transform(self, track_id: int, note: int, velocity: int) -> Optional[Tuple[int, int]]:
+        """
+        Vracia (note, velocity) alebo None ak stopa nemá hrať.
+        Volume sa aplikuje na velocity.
+        Pan sa bude riešiť cez CC10 mimo tejto funkcie.
+        """
+
+        if not self.is_effectively_active(track_id):
+            return None
+
+        vol = self.get_volume(track_id)
+        velocity = int(velocity * vol)
+
+        if velocity < 1:
+            return None
+
+        return note, velocity
