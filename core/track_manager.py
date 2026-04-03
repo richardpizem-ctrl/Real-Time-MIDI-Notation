@@ -24,6 +24,8 @@ class TrackManager:
         self.volume: Dict[int, float] = {i: 1.0 for i in range(1, 17)}
         self.pan: Dict[int, float] = {i: 0.0 for i in range(1, 17)}
 
+        self.record_arm: Dict[int, bool] = {i: False for i in range(1, 17)}
+
     # ---------------------------------------------------------
     # ACTIVE TRACK
     # ---------------------------------------------------------
@@ -128,12 +130,6 @@ class TrackManager:
     # EFFECTIVE ACTIVE STATE (DAW-úroveň logiky)
     # ---------------------------------------------------------
     def is_effectively_active(self, track_id: int) -> bool:
-        """
-        Toto je reálne správanie DAW:
-        - ak je MUTE → nehrá
-        - ak je SOLO mód → hrajú len SOLO stopy
-        - ak nie je SOLO mód → všetko okrem MUTE hrá
-        """
         if track_id not in self.mute:
             return True
 
@@ -144,6 +140,20 @@ class TrackManager:
             return self.is_solo(track_id)
 
         return True
+
+    # ---------------------------------------------------------
+    # RECORD ARM
+    # ---------------------------------------------------------
+    def toggle_record_arm(self, track_id: int):
+        if track_id in self.record_arm:
+            self.record_arm[track_id] = not self.record_arm[track_id]
+
+    def set_record_arm(self, track_id: int, state: bool):
+        if track_id in self.record_arm:
+            self.record_arm[track_id] = bool(state)
+
+    def is_record_armed(self, track_id: int) -> bool:
+        return self.record_arm.get(track_id, False)
 
     # ---------------------------------------------------------
     # VOLUME / PAN
@@ -168,12 +178,6 @@ class TrackManager:
     # APPLY TO MIDI ENGINE
     # ---------------------------------------------------------
     def apply_midi_transform(self, track_id: int, note: int, velocity: int) -> Optional[Tuple[int, int]]:
-        """
-        Vracia (note, velocity) alebo None ak stopa nemá hrať.
-        Volume sa aplikuje na velocity.
-        Pan sa bude riešiť cez CC10 mimo tejto funkcie.
-        """
-
         if not self.is_effectively_active(track_id):
             return None
 
