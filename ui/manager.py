@@ -7,6 +7,7 @@ from .track_switcher_ui import TrackSwitcherUI
 from .canvas_ui import CanvasUI
 from .transport_ui import TransportUI
 from renderer.graphic_renderer import GraphicNotationRenderer
+from renderer.exporter import export_to_png
 
 
 class UIManager:
@@ -77,6 +78,9 @@ class UIManager:
             "renderer": (0, 920),
         }
 
+        self.export_button_rect = pygame.Rect(self.width - 120, 10, 110, 35)
+        self.export_font = pygame.font.SysFont("Arial", 20)
+
     def _apply_solo_priority(self):
         solo_states = self.track_switcher.solo
         if any(solo_states):
@@ -135,6 +139,10 @@ class UIManager:
                 self.transport.set_time("00:00.0")
 
         if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.export_button_rect.collidepoint(event.pos):
+                export_to_png(self.canvas, "export.png")
+                print("[EXPORT] export.png uložený")
+
             try:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
@@ -320,3 +328,7 @@ class UIManager:
             self.renderer.draw(surface.subsurface((x, y, self.width, 200)))
         except Exception:
             pass
+
+        pygame.draw.rect(surface, (40, 40, 40), self.export_button_rect)
+        text = self.export_font.render("EXPORT", True, (255, 255, 255))
+        surface.blit(text, (self.width - 110, 17))
