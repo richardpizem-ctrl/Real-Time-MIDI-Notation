@@ -41,7 +41,27 @@ class TrackSwitcherUI:
             except Exception:
                 self.track_activity[i] = 0.0
 
+    def _any_solo(self):
+        return any(self.solo)
+
+    def _is_audible(self, index):
+        if not self.active_tracks[index]:
+            return False
+        if self.mute[index]:
+            return False
+        if self._any_solo() and not self.solo[index]:
+            return False
+        return True
+
+    def _emit_audible_state(self):
+        any_solo = self._any_solo()
+        for i in range(self.track_count):
+            audible = self._is_audible(i)
+            self.event_bus.emit("track_audible_state", i, audible, any_solo)
+
     def draw(self, surface, active_track=None):
+        any_solo = self._any_solo()
+
         for i in range(self.track_count):
             base_color = self.track_colors[i]
             rect = pygame.Rect(
@@ -51,12 +71,18 @@ class TrackSwitcherUI:
                 self.button_height
             )
 
-            if self.solo[i]:
-                color = (255, 255, 120)
-            elif self.mute[i]:
+            if self.mute[i]:
                 color = (120, 120, 120)
+            elif any_solo:
+                if self.solo[i]:
+                    color = (255, 255, 120)
+                else:
+                    color = (80, 80, 80)
             else:
-                color = base_color
+                if self.solo[i]:
+                    color = (255, 255, 120)
+                else:
+                    color = base_color
 
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
@@ -179,16 +205,19 @@ class TrackSwitcherUI:
                     if local_y >= self.button_height - 22 and local_y < self.button_height - 12:
                         self.mute[index] = not self.mute[index]
                         self.event_bus.emit("track_mute", index, self.mute[index])
+                        self._emit_audible_state()
                         return {"mute": index}
 
                     if local_y >= self.button_height - 12:
                         self.solo[index] = not self.solo[index]
                         self.event_bus.emit("track_solo", index, self.solo[index])
+                        self._emit_audible_state()
                         return {"solo": index}
 
                     self.active_tracks[index] = not self.active_tracks[index]
                     self.event_bus.emit("track_toggle", index, self.active_tracks[index])
                     self.event_bus.emit("track_selected", index)
+                    self._emit_audible_state()
                     return {"selected_track": index}
 
         return None
