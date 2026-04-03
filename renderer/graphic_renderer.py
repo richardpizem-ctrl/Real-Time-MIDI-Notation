@@ -117,17 +117,24 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
-    # TRACK COLOR / ACTIVE TRACK BOOST
+    # TRACK COLOR / ACTIVE TRACK BOOST (B/)
     # ---------------------------------------------------------
     def _get_track_color(self, track_id: int, active_track_id: Optional[int]) -> Tuple[int, int, int]:
+        """
+        Vracia farbu stopy s podporou zvýraznenia aktívnej stopy.
+        """
         try:
             base_color = self.track_manager.get_color(track_id)
         except Exception:
             base_color = (255, 255, 255)
 
+        # Ak nie je aktívna stopa alebo táto stopa nie je aktívna → normálna farba
         if active_track_id is None or track_id != active_track_id:
-            return base_color
+            # Jemné stlmenie neaktívnych stôp
+            r, g, b = base_color
+            return (int(r * 0.55), int(g * 0.55), int(b * 0.55))
 
+        # Zvýraznenie aktívnej stopy
         r, g, b = base_color
         r = min(255, int(r * 1.25) + 15)
         g = min(255, int(g * 1.25) + 15)
@@ -170,13 +177,7 @@ class GraphicNotationRenderer:
     # CHORD GROUPING (MULTI-HEAD CHORDS)
     # ---------------------------------------------------------
     def _group_notes(self, notes: List[Dict[str, Any]]):
-        """
-        Group notes by (quantized_time, track_id) to form chords.
-        This enables multi-head chords: multiple notes at (almost) the same time on the same track.
-        """
         groups: Dict[Tuple[float, int], List[Dict[str, Any]]] = {}
-
-        # Time quantization for chord grouping (e.g. ~20 ms buckets)
         time_quantum = 0.02
 
         for note in notes:
@@ -379,6 +380,7 @@ class GraphicNotationRenderer:
             except Exception:
                 pass
 
+            # B/ – farba s podporou aktívnej stopy
             color = self._get_track_color(track_id, active_track_id)
             base_x = self._time_to_x(timestamp)
 
@@ -394,7 +396,7 @@ class GraphicNotationRenderer:
             min_y = float("inf")
             max_y = float("-inf")
 
-            # Draw multi-head chord: same time, different pitches, slight horizontal spread
+            # Draw multi-head chord
             for idx, note in enumerate(chord_notes_sorted):
                 midi = note.get("pitch") or note.get("note")
                 if midi is None:
@@ -420,10 +422,9 @@ class GraphicNotationRenderer:
                 )
 
         # -----------------------------------------------------
-        # PREMIUM STEMS: direction, dynamic length, beam-aware
+        # PREMIUM STEMS
         # -----------------------------------------------------
         if seconds_per_beat is not None:
-            # First detect which chords are likely beamed (close in time)
             beam_candidates: Dict[int, set] = {}
             for track_id, chords in chord_positions.items():
                 if len(chords) < 2:
@@ -435,7 +436,7 @@ class GraphicNotationRenderer:
                     dt = t2 - t1
                     if dt <= 0:
                         continue
-                    if dt <= seconds_per_beat:  # within one beat → likely grouped
+                    if dt <= seconds_per_beat:
                         beam_candidates.setdefault(track_id, set()).add(t1)
                         beam_candidates.setdefault(track_id, set()).add(t2)
 
@@ -446,31 +447,25 @@ class GraphicNotationRenderer:
 
                     stem_up = chord_center > staff_middle
 
-                    # Base anchor on chord extremity
                     if stem_up:
                         anchor_y = min_y
                     else:
                         anchor_y = max_y
 
-                    # Base stem length
                     base_length = 28.0
 
-                    # Extend if part of a beamed group
                     if track_id in beam_candidates and timestamp in beam_candidates[track_id]:
                         base_length = 35.0
 
-                    # Slightly adjust length based on distance from staff middle
                     distance_factor = min(1.5, max(0.7, abs(chord_center - staff_middle) / 40.0))
                     stem_length = base_length * distance_factor
 
-                    # Compute end Y
-                    start_y = anchor_y + 6  # attach slightly inside note head
+                    start_y = anchor_y + 6
                     if stem_up:
                         end_y = start_y - stem_length
                     else:
                         end_y = start_y + stem_length
 
-                    # Clamp stems so they don't go too far off-screen
                     min_limit = self.margin_top - 30
                     max_limit = self.height - 20
                     end_y = max(min_limit, min(max_limit, end_y))
@@ -483,7 +478,7 @@ class GraphicNotationRenderer:
                         3
                     )
 
-        # GROUPING: draw sloped, multi-level beams between close chords on same track
+        # GROUPING: BEAMS
         if seconds_per_beat is not None:
             for track_id, chords in chord_positions.items():
                 if len(chords) < 2:
@@ -495,30 +490,4 @@ class GraphicNotationRenderer:
                     t1, x1, min_y1, max_y1, color1 = chords_sorted[i]
                     t2, x2, min_y2, max_y2, color2 = chords_sorted[i + 1]
 
-                    dt = t2 - t1
-                    if dt <= 0:
-                        continue
-
-                    # Decide grouping level based on time distance
-                    # <= 1/4 beat -> triple beam (32nd-like)
-                    # <= 1/2 beat -> double beam (16th-like)
-                    # <= 1 beat   -> single beam (8th-like)
-                    levels = 0
-                    if dt <= seconds_per_beat / 4.0:
-                        levels = 3
-                    elif dt <= seconds_per_beat / 2.0:
-                        levels = 2
-                    elif dt <= seconds_per_beat:
-                        levels = 1
-
-                    if levels <= 0:
-                        continue
-
-                    # Beam above the chord: use top of chord (min_y) minus offset
-                    y1_beam = min_y1 - 8
-                    y2_beam = min_y2 - 8
-
-                    self._draw_beam(x1, y1_beam, x2, y2_beam, color1, levels)
-
-        self._draw_playhead()
-        return self.surface
+                  
