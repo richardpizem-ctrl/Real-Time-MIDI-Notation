@@ -1,141 +1,97 @@
-## 📌 Roadmap – Real-Time MIDI Notation  
-### (stav projektu po implementácii TrackSystemu, UI, scrollingu)
+# 🎼 Real-Time MIDI Notation — Roadmap to 100%
+
+This document provides a clear overview of the current state of the project, what has already been completed, and what users and contributors can expect before the final **v1.0.0** release.
+
+The project is already highly advanced and approaching professional quality.  
+This roadmap outlines the remaining steps to reach full completion.
 
 ---
 
-# 🟩 FÁZA 1 — Real‑Time MIDI Engine  
-**STAV: HOTOVÉ (100 %)**
+# ✅ Current Project Status (in %)
 
-### 🎛 1.1 MIDI Input Pipeline  
-- realtime MIDI capture **(hotové)**  
-- stabilná latencia **(hotové)**  
-- EventRouter → TrackSystem → UI pipeline **(hotové)**  
-
-### 🎚 1.2 Stream Handler  
-- spracovanie NOTE ON/OFF **(hotové)**  
-- preposielanie do UI **(hotové)**  
-
-### 🎼 1.3 Track System (16 stôp)  
-- farby stôp **(hotové)**  
-- aktívna stopa **(hotové)**  
-- routing udalostí podľa tracku **(hotové)**  
+| Area | Progress | Description |
+|------|----------|-------------|
+| **Core Engine (MIDI → Processor → Renderer)** | **90%** | Stable pipeline, completed Rhythm Analyzer, MidiNoteMapper, TrackSystem, TrackManager, EventBus. |
+| **Graphic Renderer** | **85%** | Completed: staff lines, barlines, grid, playhead, multi-head chords, beams, stems, velocity-based visuals, active track boost, realtime activity feedback. |
+| **UI (TrackSwitcherUI)** | **80%** | Completed: MUTE/SOLO/REC ARM, volume, pan, peak meter, peak hold, realtime activity, active track highlight. |
+| **Realtime Pipeline (UI ↔ TM ↔ Renderer)** | **100%** | Fully functional bidirectional data flow at DAW level. |
+| **Tests & Stability** | **70%** | Basic tests stable; missing stress tests and extreme BPM/velocity scenarios. |
+| **Repository & Documentation** | **95%** | Complete templates, README, Contributing, Code of Conduct, Security Policy. |
 
 ---
 
-# 🟩 FÁZA 2 — UI Engine  
-**STAV: HOTOVÉ (100 %)**
+# 🚀 Overall Project Progress  
+# **≈ 88% COMPLETE**
 
-### 🎹 2.1 PianoRollUI  
-- highlight kláves podľa tracku **(hotové)**  
-- automatický scrolling **(hotové)**  
-- synchronizácia s StaffUI **(hotové)**  
-
-### 🎼 2.2 StaffUI  
-- vykreslenie osnovy **(hotové)**  
-- vykreslenie nôt podľa MIDI **(hotové)**  
-- automatický scrolling **(hotové)**  
-- synchronizácia s PianoRollUI **(hotové)**  
-
-### 🎨 2.3 NoteVisualizerUI  
-- realtime vizualizácia **(hotové)**  
-
-### 🎛 2.4 Track Selector UI  
-- 16 tlačidiel pre stopy **(hotové)**  
-- farby stôp **(hotové)**  
-- prepojenie s TrackSystem **(hotové)**  
-
-### 🧩 2.5 UIManager  
-- centrálne riadenie scrollingu **(hotové)**  
-- integrácia všetkých UI vrstiev **(hotové)**  
-- BPM vizualizácia **(hotové)**  
+The system is already fully functional and ready for real-time testing.
 
 ---
 
-# 🟧 FÁZA 3 — Renderer  
-**STAV: PREBIEHA (30 %) – základný renderer už existuje**
+# 🛣 Roadmap to 100%
 
-### 🎨 3.1 Notový Renderer  
-- vykresľovanie skutočných notových hlavičiek **(čiastočne hotové)**  
-- rytmické hodnoty (štvrťová, osminová…) **(čiastočne)**  
-- ligatúry / slurs **(nie)**  
-- taktové čiary **(nie)**  
-
-### 🔍 3.2 Highlight aktuálnej pozície  
-- kurzor prehrávania **(čiastočne)**  
+Below are the four phases that will bring the project to the final **v1.0.0** release.
 
 ---
 
-# 🟦 FÁZA 4 — Export  
-**STAV: 0 %**
+## 🎯 PHASE 1 — Visual Polish (90% → 95%)
 
-- export PNG **(nie)**  
-- export PDF **(nie)**  
-- export MusicXML **(nie)**  
-- export MIDI **(nie)**  
+Focus: improving visual clarity and aesthetics.
 
----
-
-# 🟪 FÁZA 5 — Inteligentné funkcie  
-**STAV: 20 %**
-
-- základná rytmická analýza **(hotové – základ)**  
-- predikcia akordov **(nie)**  
-- harmonická analýza **(nie)**  
-- Yamaha arranger mode **(nie)**  
+- [ ] Glow effect for the active track  
+- [ ] Anti-aliasing for notes, lines, and UI elements  
+- [ ] Subtle UI animations (mute/solo/rec)  
+- [ ] Unified line thickness and color consistency  
+- [ ] Improved text contrast and readability  
 
 ---
 
-# 🟫 FÁZA 6 — Preview & Vizualizácia  
-**STAV: 0 %**
+## 🎯 PHASE 2 — Stability & Performance (95% → 97%)
 
-- auto-screenshot **(nie)**  
-- preview.png generátor **(nie)**  
+Focus: optimization and robustness.
 
----
-
-# 🟦 FÁZA 7 — KONTROLNÁ & TESTOVACIA ROADMAPA (NOVÁ)  
-### 🔍 Cieľ: stabilizácia, testovanie, optimalizácia, príprava na finálny release
-
-## ✔ 7.1 Kódová stabilizácia  
-- prejsť všetky moduly (Processor, Renderer, Layout Engine, Rhythm Analyzer)  
-- odstrániť duplicity a starý kód  
-- zjednotiť dátové štruktúry  
-- optimalizovať pipeline MIDI → Processor → Renderer  
-
-## ✔ 7.2 Testovanie  
-- testy rytmického analyzátora  
-- testy real‑time pipeline  
-- testy multi‑track spracovania  
-- testy extrémnych BPM  
-- testy dlhých skladieb  
-- testy rýchlych sekvencií  
-
-## ✔ 7.3 Polishing & UX  
-- vylepšenie UI  
-- optimalizácia FPS  
-- čitateľnosť notácie  
-- farebné ladenie akordov  
-
-## ✔ 7.4 Dokumentácia  
-- README final  
-- architektúra pipeline  
-- príklady použitia  
-- doplnenie technickej špecifikácie  
-
-## ✔ 7.5 Príprava na Release  
-- Issues pre komunitu  
-- Discussions  
-- licencovanie  
-- verzia 1.0.0  
-- demo video  
+- [ ] Renderer optimization (beam caching, chord group caching)  
+- [ ] Stress tests with large MIDI files  
+- [ ] Extreme BPM tests (20–600 BPM)  
+- [ ] Extreme velocity variation tests  
+- [ ] Scroll/zoom optimization for dense note clusters  
 
 ---
 
-# 🟩 FÁZA 8 — Finálny Release  
-**STAV: BUDE PO TESTOCH**
+## 🎯 PHASE 3 — Functional Enhancements (97% → 99%)
 
-- release 1.0.0  
-- changelog  
-- preview obrázky  
-- stabilná verzia projektu  
+Focus: expanding capabilities.
 
+- [ ] Export current frame to PNG  
+- [ ] Export playback to GIF/MP4 (optional)  
+- [ ] UI zoom controls (+/– or slider)  
+- [ ] Toggle visibility of layers (grid, barlines, stems, beams)  
+
+---
+
+## 🎯 PHASE 4 — Release Polish (99% → 100%)
+
+Focus: preparing for the official release.
+
+- [ ] Screenshots and GIFs for README  
+- [ ] Release notes for v1.0.0  
+- [ ] Final sanity test (10 minutes of playback without crash)  
+- [ ] 16-track stress test  
+- [ ] Extreme MIDI file tests (fast arpeggios, large chords)  
+
+---
+
+# 🏁 Final Goal  
+## **Real-Time MIDI Notation v1.0.0 — a professional open-source tool for Yamaha arranger MIDI visualization**
+
+After completing this roadmap, the project will be:
+
+- stable  
+- visually polished  
+- fully real-time  
+- community-ready  
+- suitable for professional use and presentation  
+
+---
+
+For contributions, see **Contributing.md**.  
+To report issues, use the **Bug Report Template**.
