@@ -45,135 +45,61 @@ class GraphicNotationRenderer:
         # Playhead
         self.playhead_x = width // 2
 
-    def set_playback_time(self, t: float):
-        self.playback_time = float(t)
-
-    def set_bpm(self, bpm: float):
+    # ---------------------------------------------------------
+    # VELOCITY → vizuálny faktor
+    # ---------------------------------------------------------
+    def _velocity_factor(self, velocity: int) -> float:
         try:
-            bpm = float(bpm)
-            if bpm > 0:
-                self.bpm = bpm
+            v = int(velocity)
         except Exception:
-            pass
-
-    def set_zoom(self, zoom: float):
-        try:
-            zoom = float(zoom)
-            if zoom > 0.1:
-                self.zoom = zoom
-        except Exception:
-            pass
+            return 1.0
+        return max(0.3, min(1.0, v / 127.0))
 
     # ---------------------------------------------------------
-    # STAFF LINES (CACHED)
+    # NOTE DRAWING (upravené pre velocity)
     # ---------------------------------------------------------
-    def _render_staff_lines(self):
-        if self.staff_cache is not None:
-            return self.staff_cache
+    def _draw_note(self, surface, x: float, y: float, color: Tuple[int, int, int], velocity: int):
+        factor = self._velocity_factor(velocity)
 
-        surf = pygame.Surface(
-            (self.staff_cache_width, self.staff_cache_height),
-            pygame.SRCALPHA
-        )
-        surf.fill((0, 0, 0, 0))
-
-        y_start = self.margin_top
-        for i in range(5):
-            y = y_start + i * self.staff_line_spacing
-            pygame.draw.line(
-                surf,
-                (200, 200, 200),
-                (self.margin_left, y),
-                (self.width - 20, y),
-                2
-            )
-
-        self.staff_cache = surf
-        return surf
-
-    # ---------------------------------------------------------
-    # TIME / SCROLL
-    # ---------------------------------------------------------
-    def _update_time(self):
-        now = time.time()
-        dt = now - self.last_frame_time
-        self.last_frame_time = now
-
-        self.playback_time += dt
-        self.scroll_offset += dt * self.scroll_speed * self.zoom
-
-        return dt
-
-    # ---------------------------------------------------------
-    # COORDINATE MAPPING
-    # ---------------------------------------------------------
-    def _pitch_to_y(self, midi: int) -> float:
-        return self.margin_top + (60 - midi) * 1.1
-
-    def _time_to_x(self, timestamp: float) -> float:
-        return (
-            self.playhead_x
-            + (timestamp - self.playback_time) * self.scroll_speed * self.zoom
+        # farba podľa velocity
+        color = (
+            int(color[0] * factor),
+            int(color[1] * factor),
+            int(color[2] * factor)
         )
 
-    # ---------------------------------------------------------
-    # TRACK COLOR / ACTIVE TRACK BOOST (B/)
-    # ---------------------------------------------------------
-    def _get_track_color(self, track_id: int, active_track_id: Optional[int]) -> Tuple[int, int, int]:
-        """
-        Vracia farbu stopy s podporou zvýraznenia aktívnej stopy.
-        """
-        try:
-            base_color = self.track_manager.get_color(track_id)
-        except Exception:
-            base_color = (255, 255, 255)
+        # veľkosť podľa velocity
+        w = int(16 * (0.8 + 0.4 * factor))
+        h = int(12 * (0.8 + 0.4 * factor))
 
-        # Ak nie je aktívna stopa alebo táto stopa nie je aktívna → jemné stlmenie
-        if active_track_id is None or track_id != active_track_id:
-            r, g, b = base_color
-            return (int(r * 0.55), int(g * 0.55), int(b * 0.55))
-
-        # Zvýraznenie aktívnej stopy
-        r, g, b = base_color
-        r = min(255, int(r * 1.25) + 15)
-        g = min(255, int(g * 1.25) + 15)
-        b = min(255, int(b * 1.25) + 15)
-        return (r, g, b)
-
-    # ---------------------------------------------------------
-    # NOTE DRAWING
-    # ---------------------------------------------------------
-    def _draw_note(self, surface, x: float, y: float, color: Tuple[int, int, int]):
-        rect = pygame.Rect(int(x), int(y), 16, 12)
+        rect = pygame.Rect(int(x), int(y), w, h)
         pygame.draw.ellipse(surface, color, rect)
-        pygame.draw.ellipse(surface, (0, 0, 0), rect, 2)
 
+        # obrys podľa velocity
+        outline = int(1 + factor * 2)
+        pygame.draw.ellipse(surface, (0, 0, 0), rect, outline)
     # ---------------------------------------------------------
-    # LIGATURE / SIMPLE BEAM DRAWING (LEGACY)
+    # LIGATURE / SIMPLE BEAM DRAWING
     # ---------------------------------------------------------
     def _draw_ligature(self, x1: float, x2: float, y: float, color: Tuple[int, int, int]):
-        x1i = int(x1)
-        x2i = int(x2)
-        yi = int(y)
-        pygame.draw.line(self.surface, color, (x1i, yi), (x2i, yi), 4)
+        pygame.draw.line(self.surface, color, (int(x1), int(y)), (int(x2), int(y)), 4)
 
     # ---------------------------------------------------------
-    # GROUPING BEAM DRAWING (SLOPED, MULTI-LEVEL)
+    # GROUPING BEAM DRAWING
     # ---------------------------------------------------------
     def _draw_beam(self, x1: float, y1: float, x2: float, y2: float, color: Tuple[int, int, int], levels: int = 1):
-        x1i = int(x1)
-        x2i = int(x2)
-        y1f = float(y1)
-        y2f = float(y2)
-
         for level in range(levels):
             offset = level * 4
-            y1i = int(y1f - offset)
-            y2i = int(y2f - offset)
-            pygame.draw.line(self.surface, color, (x1i, y1i), (x2i, y2i), 3)
+            pygame.draw.line(
+                self.surface,
+                color,
+                (int(x1), int(y1 - offset)),
+                (int(x2), int(y2 - offset)),
+                3
+            )
 
     # ---------------------------------------------------------
-    # CHORD GROUPING (MULTI-HEAD CHORDS)
+    # CHORD GROUPING
     # ---------------------------------------------------------
     def _group_notes(self, notes: List[Dict[str, Any]]):
         groups: Dict[Tuple[float, int], List[Dict[str, Any]]] = {}
@@ -221,16 +147,14 @@ class GraphicNotationRenderer:
             bar_time = bar_index * seconds_per_bar
             x = self._time_to_x(bar_time)
 
-            if x < 0 or x > self.width:
-                continue
-
-            pygame.draw.line(
-                self.surface,
-                (255, 255, 180),
-                (int(x), 0),
-                (int(x), self.height),
-                3
-            )
+            if 0 <= x <= self.width:
+                pygame.draw.line(
+                    self.surface,
+                    (255, 255, 180),
+                    (int(x), 0),
+                    (int(x), self.height),
+                    3
+                )
 
     def _draw_timeline_ruler(self):
         if self.bpm <= 0 or self.font is None:
@@ -321,7 +245,7 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
-    # MAIN DRAW
+    # MAIN DRAW (začiatok)
     # ---------------------------------------------------------
     def draw(self, notes):
         if self.surface is None:
@@ -330,41 +254,35 @@ class GraphicNotationRenderer:
         self._update_time()
         self.surface.fill((25, 25, 25))
 
-        # Background / grid / rulers
         self._draw_timeline_ruler()
         self._draw_grid_lines()
         self._draw_measure_numbers()
 
-        # Staff
         staff = self._render_staff_lines()
         self.surface.blit(staff, (0, 0))
 
-        # Barlines
         self._draw_barlines()
 
         if not isinstance(notes, (list, tuple)):
             self._draw_playhead()
             return self.surface
 
-        # Active track for color boost
         try:
             active_track_id = self.track_manager.get_active_track()
         except Exception:
             active_track_id = None
 
-        # Group notes into chords (multi-head)
         grouped = self._group_notes(list(notes))
 
-        # Precompute beat length for grouping logic
         seconds_per_beat = 60.0 / self.bpm if self.bpm > 0 else None
 
-        # For grouping: store chord positions per track
         chord_positions: Dict[int, List[Tuple[float, float, float, float, Tuple[int, int, int]]]] = {}
 
+        # REALTIME ACTIVITY ACCUMULATOR
+        activity_accumulator = {i: 0.0 for i in range(1, 17)}
+
         for (timestamp, track_id), chord_notes in grouped.items():
-            # -------------------------------
-            # MUTE / SOLO / EFFECTIVE STATE / VISIBILITY FILTER
-            # -------------------------------
+
             try:
                 if not self.track_manager.is_effectively_active(track_id):
                     continue
@@ -377,10 +295,8 @@ class GraphicNotationRenderer:
             except Exception:
                 pass
 
-            # Farba s podporou aktívnej stopy
             color = self._get_track_color(track_id, active_track_id)
 
-            # Volume ovplyvní jas farby
             try:
                 vol = self.track_manager.get_volume(track_id)
                 vol = max(0.0, min(1.0, float(vol)))
@@ -390,13 +306,10 @@ class GraphicNotationRenderer:
             vr = int(color[0] * (0.4 + 0.6 * vol))
             vg = int(color[1] * (0.4 + 0.6 * vol))
             vb = int(color[2] * (0.4 + 0.6 * vol))
-            color = (max(0, min(255, vr)),
-                     max(0, min(255, vg)),
-                     max(0, min(255, vb)))
+            color = (vr, vg, vb)
 
             base_x = self._time_to_x(timestamp)
 
-            # Sort chord notes by pitch for consistent layout
             try:
                 chord_notes_sorted = sorted(
                     chord_notes,
@@ -408,9 +321,10 @@ class GraphicNotationRenderer:
             min_y = float("inf")
             max_y = float("-inf")
 
-            # Draw multi-head chord
             for idx, note in enumerate(chord_notes_sorted):
                 midi = note.get("pitch") or note.get("note")
+                velocity = note.get("velocity", 100)
+
                 if midi is None:
                     continue
 
@@ -421,7 +335,10 @@ class GraphicNotationRenderer:
 
                 y = self._pitch_to_y(midi_int)
                 x = base_x + idx * 6
-                self._draw_note(self.surface, x, y, color)
+
+                self._draw_note(self.surface, x, y, color, velocity)
+
+                activity_accumulator[track_id] += velocity / 127.0
 
                 if y < min_y:
                     min_y = y
@@ -432,40 +349,47 @@ class GraphicNotationRenderer:
                 chord_positions.setdefault(track_id, []).append(
                     (timestamp, base_x, min_y, max_y, color)
                 )
+        # -----------------------------------------------------
+        # SEND REALTIME ACTIVITY TO TRACKMANAGER
+        # -----------------------------------------------------
+        for tid, val in activity_accumulator.items():
+            level = min(1.0, val)
+            try:
+                self.track_manager.update_activity(tid, level)
+            except Exception:
+                pass
 
         # -----------------------------------------------------
         # PREMIUM STEMS
         # -----------------------------------------------------
         if seconds_per_beat is not None:
             beam_candidates: Dict[int, set] = {}
+
             for track_id, chords in chord_positions.items():
                 if len(chords) < 2:
                     continue
+
                 chords_sorted = sorted(chords, key=lambda c: c[0])
+
                 for i in range(len(chords_sorted) - 1):
                     t1, _, _, _, _ = chords_sorted[i]
                     t2, _, _, _, _ = chords_sorted[i + 1]
                     dt = t2 - t1
-                    if dt <= 0:
-                        continue
-                    if dt <= seconds_per_beat:
+
+                    if 0 < dt <= seconds_per_beat:
                         beam_candidates.setdefault(track_id, set()).add(t1)
                         beam_candidates.setdefault(track_id, set()).add(t2)
 
             for track_id, chords in chord_positions.items():
                 for (timestamp, base_x, min_y, max_y, color) in chords:
+
                     staff_middle = self.margin_top + 2 * self.staff_line_spacing
                     chord_center = (min_y + max_y) / 2.0
 
                     stem_up = chord_center > staff_middle
-
-                    if stem_up:
-                        anchor_y = min_y
-                    else:
-                        anchor_y = max_y
+                    anchor_y = min_y if stem_up else max_y
 
                     base_length = 28.0
-
                     if track_id in beam_candidates and timestamp in beam_candidates[track_id]:
                         base_length = 35.0
 
@@ -473,14 +397,9 @@ class GraphicNotationRenderer:
                     stem_length = base_length * distance_factor
 
                     start_y = anchor_y + 6
-                    if stem_up:
-                        end_y = start_y - stem_length
-                    else:
-                        end_y = start_y + stem_length
+                    end_y = start_y - stem_length if stem_up else start_y + stem_length
 
-                    min_limit = self.margin_top - 30
-                    max_limit = self.height - 20
-                    end_y = max(min_limit, min(max_limit, end_y))
+                    end_y = max(self.margin_top - 30, min(self.height - 20, end_y))
 
                     pygame.draw.line(
                         self.surface,
@@ -490,7 +409,9 @@ class GraphicNotationRenderer:
                         3
                     )
 
+        # -----------------------------------------------------
         # GROUPING: BEAMS
+        # -----------------------------------------------------
         if seconds_per_beat is not None:
             for track_id, chords in chord_positions.items():
                 if len(chords) < 2:
@@ -508,8 +429,15 @@ class GraphicNotationRenderer:
 
                     y1 = (min_y1 + max_y1) / 2.0
                     y2 = (min_y2 + max_y2) / 2.0
+
                     self._draw_beam(x1, y1, x2, y2, color1, levels=1)
 
+        # -----------------------------------------------------
         # PLAYHEAD
+        # -----------------------------------------------------
         self._draw_playhead()
+
+        # -----------------------------------------------------
+        # RETURN SURFACE
+        # -----------------------------------------------------
         return self.surface
