@@ -4,48 +4,30 @@ Prepája sa priamo s TrackSystem (16 MIDI kanálov).
 """
 
 from typing import Dict, Tuple, Optional, List
-from core.track_manager import TrackSystem  # existujúci TrackSystem
+from core.track_manager import TrackSystem
 from core.logger import Logger
 
 
 class TrackManager:
-    """
-    TrackManager je vizuálna nadstavba nad TrackSystem.
-    - Renderer zisťuje farby stôp
-    - Renderer zisťuje viditeľnosť stôp
-    - UI zisťuje názvy a aktívnu stopu
-    """
-
     def __init__(self, track_system: TrackSystem):
         self.track_system = track_system
 
-        # Viditeľnosť stôp pre renderer (nezávislá od MIDI enabled)
         self.track_visibility: Dict[int, bool] = {
             i: True for i in range(1, 17)
         }
 
-        # -------------------------------
-        # ACTIVE TRACK (NEW)
-        # -------------------------------
-        self.active_track: int = 1  # default 1–16
+        self.active_track: int = 1
 
-        # -------------------------------
-        # MUTE / SOLO (NEW)
-        # -------------------------------
         self.mute: Dict[int, bool] = {i: False for i in range(1, 17)}
         self.solo: Dict[int, bool] = {i: False for i in range(1, 17)}
 
-        # -------------------------------
-        # VOLUME / PAN (NEW)
-        # -------------------------------
         self.volume: Dict[int, float] = {i: 1.0 for i in range(1, 17)}
         self.pan: Dict[int, float] = {i: 0.0 for i in range(1, 17)}
 
     # ---------------------------------------------------------
-    # ACTIVE TRACK (NEW)
+    # ACTIVE TRACK
     # ---------------------------------------------------------
     def set_active_track(self, track_id: int):
-        """Nastaví aktívnu stopu (1–16)."""
         if not isinstance(track_id, int):
             Logger.warning(f"TrackManager.set_active_track: invalid track_id {track_id}")
             return
@@ -56,11 +38,13 @@ class TrackManager:
             Logger.warning(f"TrackManager.set_active_track: out of range {track_id}")
 
     def get_active_track(self) -> int:
-        """Vráti aktuálne aktívnu stopu."""
         return self.active_track
 
+    def handle_track_selected(self, track_id: int):
+        self.set_active_track(track_id)
+
     # ---------------------------------------------------------
-    # VIDITEĽNOSŤ PRE RENDERER
+    # VISIBILITY
     # ---------------------------------------------------------
     def set_visible(self, track_id: int, visible: bool):
         if not isinstance(track_id, int):
@@ -91,7 +75,7 @@ class TrackManager:
             return []
 
     # ---------------------------------------------------------
-    # FARBY (BERIEME Z TrackSystem)
+    # COLORS
     # ---------------------------------------------------------
     def get_color(self, track_id: int) -> Tuple[int, int, int]:
         try:
@@ -108,7 +92,7 @@ class TrackManager:
         return (255, 255, 255)
 
     # ---------------------------------------------------------
-    # NÁZVY (BERIEME Z TrackSystem)
+    # NAMES
     # ---------------------------------------------------------
     def get_name(self, track_id: int) -> str:
         try:
@@ -121,7 +105,7 @@ class TrackManager:
         return f"Track {track_id}"
 
     # ---------------------------------------------------------
-    # MUTE / SOLO (NEW)
+    # MUTE / SOLO
     # ---------------------------------------------------------
     def set_mute(self, track_id: int, state: bool):
         if track_id in self.mute:
@@ -141,7 +125,7 @@ class TrackManager:
         return any(self.solo.values())
 
     # ---------------------------------------------------------
-    # VOLUME / PAN (NEW)
+    # VOLUME / PAN
     # ---------------------------------------------------------
     def set_volume(self, track_id: int, volume: float):
         if track_id in self.volume:
