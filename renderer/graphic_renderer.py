@@ -128,9 +128,8 @@ class GraphicNotationRenderer:
         except Exception:
             base_color = (255, 255, 255)
 
-        # Ak nie je aktívna stopa alebo táto stopa nie je aktívna → normálna farba
+        # Ak nie je aktívna stopa alebo táto stopa nie je aktívna → jemné stlmenie
         if active_track_id is None or track_id != active_track_id:
-            # Jemné stlmenie neaktívnych stôp
             r, g, b = base_color
             return (int(r * 0.55), int(g * 0.55), int(b * 0.55))
 
@@ -364,12 +363,10 @@ class GraphicNotationRenderer:
 
         for (timestamp, track_id), chord_notes in grouped.items():
             # -------------------------------
-            # MUTE / SOLO / VISIBILITY FILTER
+            # MUTE / SOLO / EFFECTIVE STATE / VISIBILITY FILTER
             # -------------------------------
             try:
-                if self.track_manager.solo_mode_active() and not self.track_manager.is_solo(track_id):
-                    continue
-                if self.track_manager.is_muted(track_id):
+                if not self.track_manager.is_effectively_active(track_id):
                     continue
             except Exception:
                 pass
@@ -380,8 +377,23 @@ class GraphicNotationRenderer:
             except Exception:
                 pass
 
-            # B/ – farba s podporou aktívnej stopy
+            # Farba s podporou aktívnej stopy
             color = self._get_track_color(track_id, active_track_id)
+
+            # Volume ovplyvní jas farby
+            try:
+                vol = self.track_manager.get_volume(track_id)
+                vol = max(0.0, min(1.0, float(vol)))
+            except Exception:
+                vol = 1.0
+
+            vr = int(color[0] * (0.4 + 0.6 * vol))
+            vg = int(color[1] * (0.4 + 0.6 * vol))
+            vb = int(color[2] * (0.4 + 0.6 * vol))
+            color = (max(0, min(255, vr)),
+                     max(0, min(255, vg)),
+                     max(0, min(255, vb)))
+
             base_x = self._time_to_x(timestamp)
 
             # Sort chord notes by pitch for consistent layout
@@ -490,4 +502,14 @@ class GraphicNotationRenderer:
                     t1, x1, min_y1, max_y1, color1 = chords_sorted[i]
                     t2, x2, min_y2, max_y2, color2 = chords_sorted[i + 1]
 
-                  
+                    dt = t2 - t1
+                    if dt <= 0 or dt > seconds_per_beat:
+                        continue
+
+                    y1 = (min_y1 + max_y1) / 2.0
+                    y2 = (min_y2 + max_y2) / 2.0
+                    self._draw_beam(x1, y1, x2, y2, color1, levels=1)
+
+        # PLAYHEAD
+        self._draw_playhead()
+        return self.surface
