@@ -14,6 +14,8 @@ class TrackSwitcherUI:
         self.button_height = height
 
         self.active_tracks = [True] * self.track_count
+        self.mute = [False] * self.track_count
+        self.solo = [False] * self.track_count
 
     def draw(self, surface, active_track=None):
         for i in range(self.track_count):
@@ -35,6 +37,29 @@ class TrackSwitcherUI:
             if active_track == i:
                 pygame.draw.rect(surface, (255, 255, 255), rect, 4)
 
+            mute_rect = pygame.Rect(
+                i * self.button_width + 4,
+                self.button_height - 22,
+                self.button_width - 8,
+                10
+            )
+            solo_rect = pygame.Rect(
+                i * self.button_width + 4,
+                self.button_height - 12,
+                self.button_width - 8,
+                10
+            )
+
+            if self.mute[i]:
+                pygame.draw.rect(surface, (255, 80, 80), mute_rect)
+            else:
+                pygame.draw.rect(surface, (100, 40, 40), mute_rect)
+
+            if self.solo[i]:
+                pygame.draw.rect(surface, (255, 255, 80), solo_rect)
+            else:
+                pygame.draw.rect(surface, (100, 100, 40), solo_rect)
+
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
@@ -43,6 +68,18 @@ class TrackSwitcherUI:
                 index = (mx - self.x) // self.button_width
 
                 if 0 <= index < self.track_count:
+                    local_y = my - self.y
+
+                    if local_y >= self.button_height - 22 and local_y < self.button_height - 12:
+                        self.mute[index] = not self.mute[index]
+                        self.event_bus.emit("track_mute", index, self.mute[index])
+                        return {"mute": index}
+
+                    if local_y >= self.button_height - 12:
+                        self.solo[index] = not self.solo[index]
+                        self.event_bus.emit("track_solo", index, self.solo[index])
+                        return {"solo": index}
+
                     self.active_tracks[index] = not self.active_tracks[index]
                     self.event_bus.emit("track_toggle", index, self.active_tracks[index])
                     self.event_bus.emit("track_selected", index)
