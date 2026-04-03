@@ -26,6 +26,9 @@ class TrackManager:
 
         self.record_arm: Dict[int, bool] = {i: False for i in range(1, 17)}
 
+        # Real-time activity (renderer → TrackManager → UI)
+        self.activity: Dict[int, float] = {i: 0.0 for i in range(1, 17)}
+
     # ---------------------------------------------------------
     # ACTIVE TRACK
     # ---------------------------------------------------------
@@ -173,6 +176,30 @@ class TrackManager:
 
     def get_pan(self, track_id: int) -> float:
         return self.pan.get(track_id, 0.0)
+
+    # ---------------------------------------------------------
+    # REAL-TIME ACTIVITY (RENDERER → TRACKMANAGER → UI)
+    # ---------------------------------------------------------
+    def update_activity(self, track_id: int, level: float):
+        """
+        Nastaví aktuálnu aktivitu stopy v rozsahu 0.0–1.0.
+        Volá renderer podľa realtime energie/velocity.
+        """
+        if track_id not in self.activity:
+            return
+        try:
+            level = float(level)
+        except Exception:
+            return
+        level = max(0.0, min(1.0, level))
+        self.activity[track_id] = level
+
+    def get_activity(self, track_id: int) -> float:
+        """
+        Vráti aktuálnu aktivitu stopy (0.0–1.0).
+        Číta ju UI pre peak meter.
+        """
+        return self.activity.get(track_id, 0.0)
 
     # ---------------------------------------------------------
     # APPLY TO MIDI ENGINE
