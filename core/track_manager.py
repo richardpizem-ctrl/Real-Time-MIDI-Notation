@@ -125,6 +125,20 @@ class TrackManager:
         return any(self.solo.values())
 
     # ---------------------------------------------------------
+    # EFFECTIVE MUTE (MUTE + SOLO LOGIKA)
+    # ---------------------------------------------------------
+    def get_effective_mute_state(self, track_id: int) -> bool:
+        if track_id not in self.mute:
+            return False
+
+        if self.solo_mode_active():
+            if self.is_solo(track_id):
+                return False
+            return True
+
+        return self.is_muted(track_id)
+
+    # ---------------------------------------------------------
     # VOLUME / PAN
     # ---------------------------------------------------------
     def set_volume(self, track_id: int, volume: float):
