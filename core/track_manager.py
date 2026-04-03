@@ -25,6 +25,11 @@ class TrackManager:
         }
 
         # -------------------------------
+        # ACTIVE TRACK (NEW)
+        # -------------------------------
+        self.active_track: int = 1  # default 1–16
+
+        # -------------------------------
         # MUTE / SOLO (NEW)
         # -------------------------------
         self.mute: Dict[int, bool] = {i: False for i in range(1, 17)}
@@ -35,6 +40,24 @@ class TrackManager:
         # -------------------------------
         self.volume: Dict[int, float] = {i: 1.0 for i in range(1, 17)}
         self.pan: Dict[int, float] = {i: 0.0 for i in range(1, 17)}
+
+    # ---------------------------------------------------------
+    # ACTIVE TRACK (NEW)
+    # ---------------------------------------------------------
+    def set_active_track(self, track_id: int):
+        """Nastaví aktívnu stopu (1–16)."""
+        if not isinstance(track_id, int):
+            Logger.warning(f"TrackManager.set_active_track: invalid track_id {track_id}")
+            return
+
+        if 1 <= track_id <= 16:
+            self.active_track = track_id
+        else:
+            Logger.warning(f"TrackManager.set_active_track: out of range {track_id}")
+
+    def get_active_track(self) -> int:
+        """Vráti aktuálne aktívnu stopu."""
+        return self.active_track
 
     # ---------------------------------------------------------
     # VIDITEĽNOSŤ PRE RENDERER
@@ -96,19 +119,6 @@ class TrackManager:
             Logger.error(f"TrackManager.get_name error: {e}")
 
         return f"Track {track_id}"
-
-    # ---------------------------------------------------------
-    # AKTÍVNY TRACK (BERIEME Z TrackSystem)
-    # ---------------------------------------------------------
-    def get_active_track(self) -> Optional[int]:
-        try:
-            active = self.track_system.get_active_track()
-            if active and hasattr(active, "id"):
-                return active.id
-        except Exception as e:
-            Logger.error(f"TrackManager.get_active_track error: {e}")
-
-        return None
 
     # ---------------------------------------------------------
     # MUTE / SOLO (NEW)
