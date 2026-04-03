@@ -18,13 +18,21 @@ class TrackSwitcherUI:
         self.solo = [False] * self.track_count
 
         self.track_activity = [0.0] * self.track_count
+        self.peak_hold = [0.0] * self.track_count
 
         self.font = pygame.font.Font(None, 14)
 
     def update_activity(self, activity_dict):
         for i in range(self.track_count):
             try:
-                self.track_activity[i] = activity_dict.get(i, 0.0)
+                level = activity_dict.get(i, 0.0)
+                self.track_activity[i] = level
+
+                if level > self.peak_hold[i]:
+                    self.peak_hold[i] = level
+                else:
+                    self.peak_hold[i] = max(0.0, self.peak_hold[i] - 0.01)
+
             except Exception:
                 self.track_activity[i] = 0.0
 
@@ -51,7 +59,6 @@ class TrackSwitcherUI:
             if active_track == i:
                 pygame.draw.rect(surface, (255, 255, 255), rect, 4)
 
-            # MINI PEAK METER
             level = self.track_activity[i]
             if level > 0:
                 meter_height = int(level * 20)
@@ -62,6 +69,17 @@ class TrackSwitcherUI:
                     meter_height
                 )
                 pygame.draw.rect(surface, (0, 255, 0), meter_rect)
+
+            peak = self.peak_hold[i]
+            if peak > 0:
+                peak_y = 2 + int(peak * 20)
+                peak_rect = pygame.Rect(
+                    i * self.button_width + 4,
+                    peak_y,
+                    self.button_width - 8,
+                    2
+                )
+                pygame.draw.rect(surface, (255, 255, 255), peak_rect)
 
             mute_rect = pygame.Rect(
                 i * self.button_width + 4,
