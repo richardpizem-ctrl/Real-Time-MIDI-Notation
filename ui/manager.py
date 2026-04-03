@@ -77,12 +77,23 @@ class UIManager:
             "renderer": (0, 920),
         }
 
-    def _on_track_toggle(self, track_id, state):
-        self.track_visibility[track_id] = state
+    def _apply_solo_priority(self):
+        solo_states = self.track_switcher.solo
+        if any(solo_states):
+            for i in range(16):
+                self.track_visibility[i] = solo_states[i]
+        else:
+            for i in range(16):
+                self.track_visibility[i] = self.track_switcher.active_tracks[i]
+
         try:
             self.renderer.set_track_visibility(self.track_visibility)
-        except Exception as e:
-            print(f"❌ Renderer visibility update error: {e}")
+        except Exception:
+            pass
+
+    def _on_track_toggle(self, track_id, state):
+        self.track_visibility[track_id] = state
+        self._apply_solo_priority()
 
     def _on_track_selected(self, track_id):
         self.active_track_id = track_id
@@ -102,6 +113,8 @@ class UIManager:
             self.track_system.track_manager.set_solo(track_id + 1, state)
         except Exception as e:
             print(f"❌ TrackManager solo update error: {e}")
+
+        self._apply_solo_priority()
 
     def build_layout(self, parent):
         self.canvas_ui = CanvasUI(parent)
