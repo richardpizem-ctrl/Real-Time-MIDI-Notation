@@ -14,6 +14,11 @@ from ui.ui_manager import UIManager
 from real_time_processing.stream_handler import StreamHandler
 from midi_input.event_router import EventRouter
 
+# EXPORT
+from renderer.exporter import export_to_png, export_to_svg
+
+import pygame
+
 
 # ---------------------------------------------------------
 # TEST HANDLERY (ponechané podľa tvojej architektúry)
@@ -59,7 +64,19 @@ def main():
     # -----------------------------------------------------
     # 7. Spustenie UI slučky
     # -----------------------------------------------------
-    ui.run()
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            # EXPORT – klávesa E
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_e:
+                    export_to_png(ui.screen, "export.png")
+                    print("[EXPORT] export.png uložený")
+
+        ui.run_frame()
 
     print("=== END ===")
 
