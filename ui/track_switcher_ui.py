@@ -1,4 +1,5 @@
 import pygame
+import math
 
 class TrackSwitcherUI:
     def __init__(self, x, y, width, height, track_colors, event_bus):
@@ -16,6 +17,10 @@ class TrackSwitcherUI:
         self.active_tracks = [True] * self.track_count
         self.mute = [False] * self.track_count
         self.solo = [False] * self.track_count
+        self.record_arm = [False] * self.track_count
+
+        self.volume = [1.0] * self.track_count
+        self.pan = [0.0] * self.track_count
 
         self.track_activity = [0.0] * self.track_count
         self.peak_hold = [0.0] * self.track_count
@@ -81,6 +86,34 @@ class TrackSwitcherUI:
                 )
                 pygame.draw.rect(surface, (255, 255, 255), peak_rect)
 
+            vol_h = int(self.volume[i] * 30)
+            vol_rect = pygame.Rect(
+                i * self.button_width + 6,
+                self.button_height - 60,
+                self.button_width - 12,
+                vol_h
+            )
+            pygame.draw.rect(surface, (180, 180, 255), vol_rect)
+
+            pan_x = i * self.button_width + self.button_width // 2
+            pan_y = self.button_height - 75
+            pygame.draw.circle(surface, (50, 50, 50), (pan_x, pan_y), 6)
+            angle = self.pan[i] * math.pi
+            line_x = pan_x + int(6 * math.sin(angle))
+            line_y = pan_y - int(6 * math.cos(angle))
+            pygame.draw.line(surface, (255, 255, 255), (pan_x, pan_y), (line_x, line_y), 2)
+
+            rec_rect = pygame.Rect(
+                i * self.button_width + 10,
+                self.button_height - 90,
+                self.button_width - 20,
+                10
+            )
+            if self.record_arm[i]:
+                pygame.draw.rect(surface, (255, 0, 0), rec_rect)
+            else:
+                pygame.draw.rect(surface, (80, 0, 0), rec_rect)
+
             mute_rect = pygame.Rect(
                 i * self.button_width + 4,
                 self.button_height - 22,
@@ -125,6 +158,23 @@ class TrackSwitcherUI:
 
                 if 0 <= index < self.track_count:
                     local_y = my - self.y
+
+                    if local_y >= self.button_height - 90 and local_y < self.button_height - 80:
+                        self.record_arm[index] = not self.record_arm[index]
+                        self.event_bus.emit("track_record_arm", index, self.record_arm[index])
+                        return {"record_arm": index}
+
+                    if local_y >= self.button_height - 60 and local_y < self.button_height - 30:
+                        rel = (local_y - (self.button_height - 60)) / 30
+                        self.volume[index] = max(0.0, min(1.0, rel))
+                        self.event_bus.emit("track_volume", index, self.volume[index])
+                        return {"volume": index}
+
+                    if local_y >= self.button_height - 75 and local_y < self.button_height - 65:
+                        rel = (mx - (self.x + index * self.button_width)) / self.button_width
+                        self.pan[index] = max(-1.0, min(1.0, (rel - 0.5) * 2))
+                        self.event_bus.emit("track_pan", index, self.pan[index])
+                        return {"pan": index}
 
                     if local_y >= self.button_height - 22 and local_y < self.button_height - 12:
                         self.mute[index] = not self.mute[index]
