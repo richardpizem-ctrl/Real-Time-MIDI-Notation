@@ -21,7 +21,7 @@ class TrackSwitcherUI:
 
     def draw(self, surface, active_track=None):
         for i in range(self.track_count):
-            color = self.track_colors[i]
+            base_color = self.track_colors[i]
             rect = pygame.Rect(
                 i * self.button_width,
                 0,
@@ -29,11 +29,14 @@ class TrackSwitcherUI:
                 self.button_height
             )
 
-            if self.active_tracks[i]:
-                pygame.draw.rect(surface, color, rect)
+            if self.solo[i]:
+                color = (255, 255, 120)
+            elif self.mute[i]:
+                color = (120, 120, 120)
             else:
-                pygame.draw.rect(surface, (60, 60, 60), rect)
+                color = base_color
 
+            pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
             if active_track == i:
