@@ -93,7 +93,14 @@ class UIManager:
             print(f"❌ Renderer visibility update error: {e}")
 
     def _on_track_selected(self, track_id):
+        # UI highlight
         self.active_track_id = track_id
+
+        # GLOBAL: TrackManager update
+        try:
+            self.track_system.track_manager.handle_track_selected(track_id + 1)
+        except Exception as e:
+            print(f"❌ TrackManager active track update error: {e}")
 
     # ---------------------------------------------------------
     # CANVAS
