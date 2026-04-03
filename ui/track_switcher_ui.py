@@ -17,6 +17,8 @@ class TrackSwitcherUI:
         self.mute = [False] * self.track_count
         self.solo = [False] * self.track_count
 
+        self.font = pygame.font.Font(None, 14)
+
     def draw(self, surface, active_track=None):
         for i in range(self.track_count):
             color = self.track_colors[i]
@@ -59,6 +61,18 @@ class TrackSwitcherUI:
                 pygame.draw.rect(surface, (255, 255, 80), solo_rect)
             else:
                 pygame.draw.rect(surface, (100, 100, 40), solo_rect)
+
+            try:
+                name = self.event_bus.track_manager.get_name(i + 1)
+            except Exception:
+                name = f"Track {i+1}"
+
+            text_surface = self.font.render(name, True, (0, 0, 0))
+            text_rect = text_surface.get_rect(center=(
+                i * self.button_width + self.button_width // 2,
+                10
+            ))
+            surface.blit(text_surface, text_rect)
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
