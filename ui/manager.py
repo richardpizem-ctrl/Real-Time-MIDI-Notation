@@ -49,7 +49,7 @@ class UIManager:
         self.staff = StaffUI(width, 200)
         self.visualizer = NoteVisualizerUI(width, 200)
 
-        self.active_track_id = 0
+        self.active_track_id = 0  # 0-based index pre UI / renderer
 
         # RENDERER
         self.renderer = GraphicNotationRenderer(width, 200, track_system)
@@ -66,8 +66,9 @@ class UIManager:
         self.canvas = None
 
         # Quantization state (for CanvasUI snapping)
-        self.quantize_division = 1.0   # 1.0 = 1/4, 0.5 = 1/8, 0.25 = 1/16, 0.125 = 1/32
-        self.swing_amount = 0.0        # 0.0–0.5
+        # 1.0 = 1/4, 0.5 = 1/8, 0.25 = 1/16, 0.125 = 1/32
+        self.quantize_division = 1.0
+        self.swing_amount = 0.0  # 0.0–0.5
 
         self.layout = {
             "transport": (0, 0),
@@ -112,6 +113,7 @@ class UIManager:
             pass
 
     def _on_track_selected(self, track_id):
+        # track_id je 0-based index z TrackSwitcherUI
         self.active_track_id = track_id
         try:
             self.track_system.track_manager.handle_track_selected(track_id + 1)
@@ -187,14 +189,13 @@ class UIManager:
                 # Loop flag je v transporte, logiku prehrávania môže riešiť processor
                 pass
 
-        # Export
+        # Export + Track switcher
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.export_button_rect.collidepoint(event.pos):
                 if self.canvas is not None:
                     export_to_png(self.canvas, "export.png")
                     print("[EXPORT] export.png uložený")
 
-            # Track switcher
             try:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
