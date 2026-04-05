@@ -1,4 +1,5 @@
 import pygame
+import time
 
 class PianoRollUI:
     WHITE_KEY_WIDTH = 20
@@ -6,19 +7,25 @@ class PianoRollUI:
     BLACK_KEY_WIDTH = 12
     BLACK_KEY_HEIGHT = 80
 
-    FIRST_MIDI_NOTE = 36
-    LAST_MIDI_NOTE = 96
+    FIRST_MIDI_NOTE = 36   # C2
+    LAST_MIDI_NOTE = 96    # C7
 
     def __init__(self, width=1400, height=200):
         self.width = width
         self.height = height
 
-        self.active_keys = {}
+        self.active_keys = {}  # midi_note -> (color, timestamp)
         self.white_keys = []
         self.black_keys = []
 
+        pygame.font.init()
+        self.font = pygame.font.SysFont("Arial", 12, bold=True)
+
         self._calculate_key_positions()
 
+    # ---------------------------------------------------------
+    # CALCULATE KEY POSITIONS
+    # ---------------------------------------------------------
     def _calculate_key_positions(self):
         white_key_order = [0, 2, 4, 5, 7, 9, 11]
         black_key_offsets = {
@@ -33,6 +40,7 @@ class PianoRollUI:
         self.white_keys.clear()
         self.black_keys.clear()
 
+        # WHITE KEYS
         for midi_note in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
             note = midi_note % 12
             if note in white_key_order:
@@ -41,6 +49,7 @@ class PianoRollUI:
                 self.white_keys.append((midi_note, rect))
                 white_index += 1
 
+        # BLACK KEYS
         for midi_note in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
             note = midi_note % 12
             if note in black_key_offsets:
@@ -50,22 +59,67 @@ class PianoRollUI:
                 rect = pygame.Rect(x, 0, self.BLACK_KEY_WIDTH, self.BLACK_KEY_HEIGHT)
                 self.black_keys.append((midi_note, rect))
 
+    # ---------------------------------------------------------
+    # KEY HIGHLIGHT
+    # ---------------------------------------------------------
     def highlight_key(self, midi_note, color=(255, 80, 80)):
-        self.active_keys[midi_note] = color
+        self.active_keys[midi_note] = (color, time.time())
 
     def unhighlight_key(self, midi_note):
         if midi_note in self.active_keys:
             del self.active_keys[midi_note]
 
+    # ---------------------------------------------------------
+    # DRAW
+    # ---------------------------------------------------------
     def draw(self, surface):
         surface.fill((30, 30, 30))
 
+        now = time.time()
+
+        # --- WHITE KEYS ---
         for midi_note, rect in self.white_keys:
-            color = self.active_keys.get(midi_note, (255, 255, 255))
+            base_color = (255, 255, 255)
+
+            if midi_note in self.active_keys:
+                color, t = self.active_keys[midi_note]
+                fade = max(0.0, 1.0 - (now - t) * 1.5)
+                color = (
+                    int(color[0] * fade + base_color[0] * (1 - fade)),
+                    int(color[1] * fade + base_color[1] * (1 - fade)),
+                    int(color[2] * fade + base_color[2] * (1 - fade)),
+                )
+            else:
+                color = base_color
+
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
+        # --- BLACK KEYS ---
         for midi_note, rect in self.black_keys:
-            color = self.active_keys.get(midi_note, (0, 0, 0))
+            base_color = (0, 0, 0)
+
+            if midi_note in self.active_keys:
+                color, t = self.active_keys[midi_note]
+                fade = max(0.0, 1.0 - (now - t) * 1.5)
+                color = (
+                    int(color[0] * fade),
+                    int(color[1] * fade),
+                    int(color[2] * fade),
+                )
+            else:
+                color = base_color
+
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (50, 50, 50), rect, 1)
+
+        # --- OCTAVE LABELS ---
+        for midi_note, rect in self.white_keys:
+            if midi_note % 12 == 0:  # C note
+                octave = midi_note // 12 - 1
+                label = f"C{octave}"
+                text = self.font.render(label, True, (0, 0, 0))
+                surface.blit(text, (rect.x + 2, rect.y + self.WHITE_KEY_HEIGHT - 18))
+
+        # --- HORIZONTAL GRID LINE ---
+        pygame.draw.line(surface, (80, 80, 80), (0, self.WHITE_KEY_HEIGHT), (self.width, self.WHITE_KEY_HEIGHT), 2)
