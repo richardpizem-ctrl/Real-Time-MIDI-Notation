@@ -2,7 +2,6 @@
 
 from collections import defaultdict, Counter
 from math import fabs
-
 from ..core.logger import Logger
 
 
@@ -34,7 +33,7 @@ class RhythmAnalyzerConfig:
 
 class RhythmAnalyzer:
     """
-    Vstup: timeline – zoznam nôt so 'start', 'duration', 'velocity', 'track_type', 'bar_index', 'beat_in_bar' (ak máš).
+    Vstup: timeline – zoznam nôt so 'start', 'duration', 'velocity', 'track_type', 'bar_index', 'beat_in_bar'
     Výstup: slovník s analýzou rytmu, swingom, patternmi, groove, timingom a dynamikou.
     """
 
@@ -43,7 +42,7 @@ class RhythmAnalyzer:
         Logger.info("RhythmAnalyzer initialized with config.")
 
     # -------------------------------------------------
-    # Public API
+    # PUBLIC API
     # -------------------------------------------------
 
     def analyze(self, timeline):
@@ -125,6 +124,7 @@ class RhythmAnalyzer:
 
     def _analyze_timing_deviation(self, timeline, quantized):
         deviations = []
+
         for orig, q in zip(timeline, quantized):
             if not isinstance(orig, dict) or not isinstance(q, dict):
                 continue
@@ -142,8 +142,7 @@ class RhythmAnalyzer:
             except Exception:
                 q_start = start
 
-            dev = start - q_start
-            deviations.append(dev)
+            deviations.append(start - q_start)
 
         if not deviations:
             return {
@@ -175,16 +174,8 @@ class RhythmAnalyzer:
     # -------------------------------------------------
 
     def _analyze_velocity_patterns(self, timeline):
-        if not timeline:
-            return {
-                "avg_velocity": 0.0,
-                "accents": [],
-                "ghost_notes": [],
-                "dynamic_range": 0.0,
-                "velocity_profile": [],
-            }
-
         velocities = []
+
         for n in timeline:
             if not isinstance(n, dict):
                 continue
@@ -258,7 +249,6 @@ class RhythmAnalyzer:
         if not timeline:
             return {"type": "unknown", "ratio": 0.0}
 
-        grid = self.config.quant_grid
         pairs = []
         by_bar = defaultdict(list)
 
@@ -276,11 +266,9 @@ class RhythmAnalyzer:
             for i in range(len(notes_sorted) - 1):
                 a = notes_sorted[i]
                 b = notes_sorted[i + 1]
-                sa = a.get("start", 0.0)
-                sb = b.get("start", 0.0)
                 try:
-                    sa = float(sa)
-                    sb = float(sb)
+                    sa = float(a.get("start", 0.0))
+                    sb = float(b.get("start", 0.0))
                 except Exception:
                     continue
 
@@ -296,8 +284,7 @@ class RhythmAnalyzer:
             total = 0.5
             first = diff
             second = max(total - first, 1e-6)
-            ratio = first / (first + second)
-            ratios.append(ratio)
+            ratios.append(first / (first + second))
 
         if not ratios:
             return {"type": "straight", "ratio": 0.0}
@@ -319,7 +306,7 @@ class RhythmAnalyzer:
         }
 
     # -------------------------------------------------
-    # 5) Pattern recognition (rhythmic patterns)
+    # 5) Pattern recognition
     # -------------------------------------------------
 
     def _detect_rhythm_patterns(self, quantized):
@@ -341,11 +328,11 @@ class RhythmAnalyzer:
                 [x for x in notes if isinstance(x, dict)],
                 key=lambda x: x.get("q_start", 0.0),
             )
+
             starts = []
             for n in notes_sorted:
-                qs = n.get("q_start", 0.0)
                 try:
-                    qs = float(qs)
+                    qs = float(n.get("q_start", 0.0))
                 except Exception:
                     qs = 0.0
                 starts.append(qs)
@@ -356,8 +343,7 @@ class RhythmAnalyzer:
 
             diffs = []
             for i in range(len(starts) - 1):
-                d = round(starts[i + 1] - starts[i], 3)
-                diffs.append(d)
+                diffs.append(round(starts[i + 1] - starts[i], 3))
 
             pattern = tuple(diffs)
             bar_patterns[bar_idx] = pattern
@@ -437,6 +423,7 @@ class RhythmAnalyzer:
         label = "unknown"
         tags = []
 
+        # Swing / straight
         if swing_type == "straight":
             tags.append("straight")
         elif swing_type == "swing":
@@ -444,13 +431,16 @@ class RhythmAnalyzer:
         elif swing_type == "shuffle":
             tags.append("shuffle")
 
+        # Timing feel
         tags.append(timing_feel)
 
+        # Dynamics
         if dyn_range > 40:
             tags.append("dynamic")
         elif dyn_range < 15:
             tags.append("flat")
 
+        # Pattern tags
         if patterns_list:
             most_common = patterns_list[0]
             pat = most_common.get("pattern", ())
@@ -463,6 +453,7 @@ class RhythmAnalyzer:
             if any(abs(d - 0.25) < 0.01 for d in pat):
                 tags.append("sixteenth_based")
 
+        # Label selection
         if "swing" in tags or "shuffle" in tags:
             if "sixteenth_based" in tags:
                 label = "16th_swing"
