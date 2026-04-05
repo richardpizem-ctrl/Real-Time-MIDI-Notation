@@ -221,10 +221,10 @@ class NoteVisualizerUI:
             depth = self.compute_depth(n.get("pitch"))
             notes_with_depth.append((depth, n))
 
-        # Najprv zoradíme podľa „hĺbky“ (nižšie tóny vzadu)
+        # Zoradenie podľa hĺbky
         notes_with_depth.sort(key=lambda x: x[0])
 
-        # Intervalové offsety (pripravené na prípadné ďalšie vizuálne prvky)
+        # Intervalové offsety (pripravené pre budúce efekty)
         intervals = self.compute_intervals(notes_with_depth)
         _interval_offsets = self.compute_interval_offsets(intervals)
 
@@ -270,7 +270,7 @@ class NoteVisualizerUI:
             text_rect.centerx = center_x
             text_rect.centery = center_y
 
-            # Jemný offset podľa indexu (aby sa noty neprekrývali úplne)
+            # Jemný offset podľa indexu
             text_rect.x += (idx - len(notes_with_depth) // 2) * 40
 
             # Halo
