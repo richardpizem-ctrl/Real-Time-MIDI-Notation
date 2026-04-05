@@ -14,19 +14,27 @@ class UIWindow:
         self.screen = pygame.display.set_mode((width, height))
         self.clock = pygame.time.Clock()
 
+        # MIDI + UI
         self.midi = MidiInput()
-        self.ui = UIManager(width, height, self.midi.track_system, self.midi.notation_processor)
+        self.ui = UIManager(
+            width,
+            height,
+            self.midi.track_system,
+            self.midi.notation_processor
+        )
 
     def run(self):
         running = True
 
         while running:
+            # --- EVENTS ---
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
                 self.ui.handle_event(event)
 
+            # --- MIDI EVENTS ---
             midi_events = self.midi.poll_events()
             for e in midi_events:
                 if e["type"] == "note_on":
@@ -34,6 +42,7 @@ class UIWindow:
                 elif e["type"] == "note_off":
                     self.ui.on_note_off(e)
 
+            # --- DRAW ---
             self.screen.fill((30, 30, 30))
             self.ui.draw(self.screen)
 
