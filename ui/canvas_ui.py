@@ -212,15 +212,25 @@ class CanvasUI:
         y = self._row_to_screen_y(note["row"])
         h = self.ROW_HEIGHT - 2
 
-        fill = "#66aaff" if not note.get("selected", False) else "#ffcc66"
+        # ⭐ HEATMAP COLOR BASED ON VELOCITY
+        velocity = note.get("velocity", 100)
+
+        if velocity <= 50:
+            fill = "#4da6ff"   # blue
+        elif velocity <= 90:
+            fill = "#33cc33"   # green
+        else:
+            fill = "#ff4444"   # red
+
+        if note.get("selected", False):
+            fill = "#ffcc66"
+
         outline = "#225588" if not preview else "#888888"
 
         self.canvas.create_rectangle(x, y, x + w, y + h, fill=fill, outline=outline, width=1)
-
         self.canvas.create_text(x + 4, y + h / 2, text="♩", anchor="w", fill="#102030")
 
         # Velocity bar
-        velocity = note.get("velocity", 100)
         velocity = max(self.velocity_min, min(self.velocity_max, velocity))
         ratio = velocity / float(self.velocity_max)
         bar_height = max(2, int((h - 4) * ratio))
