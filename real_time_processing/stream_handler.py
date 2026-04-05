@@ -18,6 +18,9 @@ class StreamHandler:
         self.event_router = event_router
         self.perf = perf
 
+        # -----------------------------
+        # INIT MIDI
+        # -----------------------------
         try:
             pygame.midi.init()
         except Exception as e:
@@ -25,6 +28,9 @@ class StreamHandler:
             self.midi_input = None
             return
 
+        # -----------------------------
+        # GET DEFAULT DEVICE
+        # -----------------------------
         try:
             default_id = pygame.midi.get_default_input_id()
         except Exception as e:
@@ -35,18 +41,27 @@ class StreamHandler:
         if default_id == -1:
             print("⚠️  Žiadne MIDI zariadenie nebolo nájdené.")
             self.midi_input = None
-        else:
-            try:
-                self.midi_input = pygame.midi.Input(default_id)
-                print(f"🎹 MIDI Input otvorený: {default_id}")
-            except Exception as e:
-                print(f"❌ MIDI Input error: {e}")
-                self.midi_input = None
+            return
 
+        # -----------------------------
+        # OPEN DEVICE
+        # -----------------------------
+        try:
+            self.midi_input = pygame.midi.Input(default_id)
+            print(f"🎹 MIDI Input otvorený: {default_id}")
+        except Exception as e:
+            print(f"❌ MIDI Input error: {e}")
+            self.midi_input = None
+
+    # ---------------------------------------------------------
+    # POLLING
+    # ---------------------------------------------------------
     def poll(self):
+        """Bezpečné čítanie MIDI eventov."""
         if self.midi_input is None:
             return
 
+        # Poll
         try:
             if not self.midi_input.poll():
                 return
@@ -54,12 +69,16 @@ class StreamHandler:
             print(f"❌ MIDI poll error: {e}")
             return
 
+        # Read
         try:
             events = self.midi_input.read(32)
         except Exception as e:
             print(f"❌ MIDI read error: {e}")
             return
 
+        # -----------------------------------------------------
+        # PROCESS EVENTS
+        # -----------------------------------------------------
         for event in events:
             if not isinstance(event, (list, tuple)) or len(event) != 2:
                 print(f"⚠️ Nevalidný MIDI event: {event}")
@@ -73,14 +92,17 @@ class StreamHandler:
 
             pipeline_start = time.perf_counter()
 
+            # -----------------------------
+            # PARSE MIDI MESSAGE
+            # -----------------------------
             status = data[0]
             note = data[1]
             velocity = data[2]
 
-            event_type = None
             channel = status & 0x0F
             status_type = status & 0xF0
 
+            # Determine event type
             if status_type == 0x90 and velocity > 0:
                 event_type = "note_on"
             elif status_type == 0x90 and velocity == 0:
@@ -93,21 +115,30 @@ class StreamHandler:
                 print(f"⚠️ Neznámy MIDI status: {status}")
                 continue
 
+            # -----------------------------
+            # BUILD EVENT DICT
+            # -----------------------------
             midi_event = {
                 "type": event_type,
                 "status": status,
                 "note": note,
                 "velocity": velocity,
                 "channel": channel,
-                "timestamp": timestamp
+                "time": timestamp  # unified key name
             }
 
+            # -----------------------------
+            # ROUTE EVENT
+            # -----------------------------
             try:
                 if self.event_router:
                     self.event_router.route(midi_event)
             except Exception as e:
                 print(f"❌ EventRouter error: {e}")
 
+            # -----------------------------
+            # LATENCY TRACKING
+            # -----------------------------
             pipeline_end = time.perf_counter()
             latency_ms = (pipeline_end - pipeline_start) * 1000.0
 
