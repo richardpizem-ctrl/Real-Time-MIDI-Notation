@@ -9,7 +9,7 @@ class EventRouter:
         event_bus,
         ui_manager=None,
         notation_processor=None,
-        track_system=None
+        track_system=None,
     ):
         """
         event_bus          = centrálny EventBus
@@ -68,10 +68,12 @@ class EventRouter:
                     event = self.track_system.build_note_event_for_active_track(
                         note=note,
                         velocity=velocity,
-                        event_type=event_type
+                        event_type=event_type,
                     )
                 except Exception as e:
-                    Logger.error(f"TrackSystem build_note_event_for_active_track error: {e}")
+                    Logger.error(
+                        f"TrackSystem build_note_event_for_active_track error: {e}"
+                    )
                     event = None
 
                 if isinstance(event, dict):
@@ -105,15 +107,19 @@ class EventRouter:
                 # NotationProcessor
                 if self.notation:
                     try:
-                        self.notation.process_midi_event({
-                            "type": event_type,
-                            "note": note,
-                            "velocity": velocity,
-                            "time": midi_event.get("timestamp", 0.0),
-                            "channel": channel,
-                        })
+                        self.notation.process_midi_event(
+                            {
+                                "type": event_type,
+                                "note": note,
+                                "velocity": velocity,
+                                "time": midi_event.get("timestamp", 0.0),
+                                "channel": channel,
+                            }
+                        )
                     except Exception as e:
-                        Logger.error(f"NotationProcessor process_midi_event error: {e}")
+                        Logger.error(
+                            f"NotationProcessor process_midi_event error: {e}"
+                        )
 
             # ---------------------------------------------------------
             # CONTROL CHANGE
