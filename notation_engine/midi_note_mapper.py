@@ -1,7 +1,10 @@
+from typing import Optional, Dict, Tuple
+
+
 class Duration:
     def __init__(self, ticks: int, dotted: bool = False):
-        self.ticks = ticks
-        self.dotted = dotted
+        self.ticks = int(ticks)
+        self.dotted = bool(dotted)
 
     def __repr__(self):
         return f"Duration(ticks={self.ticks}, dotted={self.dotted})"
@@ -9,22 +12,28 @@ class Duration:
 
 class MeasurePosition:
     def __init__(self, measure: int, beat: float):
-        self.measure = measure
-        self.beat = beat
+        self.measure = int(measure)
+        self.beat = float(beat)
 
     def __repr__(self):
         return f"MeasurePosition(measure={self.measure}, beat={self.beat})"
 
 
 class Note:
-    def __init__(self, pitch: int, velocity: int, start_time: float,
-                 duration: Duration, channel: int,
-                 position: MeasurePosition):
-        self.pitch = pitch
-        self.velocity = velocity
-        self.start_time = start_time
+    def __init__(
+        self,
+        pitch: int,
+        velocity: int,
+        start_time: float,
+        duration: Duration,
+        channel: int,
+        position: MeasurePosition,
+    ):
+        self.pitch = int(pitch)
+        self.velocity = int(velocity)
+        self.start_time = float(start_time)
         self.duration = duration
-        self.channel = channel
+        self.channel = int(channel)
         self.position = position
 
     def __repr__(self):
@@ -36,10 +45,21 @@ class Note:
 
 
 class MidiNoteMapper:
+    """
+    Stabilizovaný MIDI → Notation mapper.
+
+    - sleduje aktívne noty (note_on → note_off)
+    - konvertuje čas na ticks
+    - kvantizuje
+    - počíta measure/beat podľa time signature
+    - vytvára Note objekt
+    """
+
     def __init__(self, ppq: int = 480, tempo_bpm: float = 120.0):
-        self.active_notes = {}
-        self.ppq = ppq
-        self.tempo_bpm = tempo_bpm
+        self.active_notes: Dict[Tuple[int, int], Dict[str, float]] = {}
+
+        self.ppq = int(ppq)
+        self.tempo_bpm = float(tempo_bpm)
 
         # Position tracking
         self.current_measure = 0
@@ -55,71 +75,97 @@ class MidiNoteMapper:
         self.time_numerator = 4
         self.time_denominator = 4
 
-    # -----------------------------
-    # Timing
-    # -----------------------------
+    # ---------------------------------------------------------
+    # TIMING
+    # ---------------------------------------------------------
     def set_timing(self, ppq: int, tempo_bpm: float):
-        self.ppq = ppq
-        self.tempo_bpm = tempo_bpm
+        try:
+            self.ppq = int(ppq)
+            self.tempo_bpm = float(tempo_bpm)
+        except Exception:
+            pass
 
     def set_time_signature(self, numerator: int, denominator: int):
-        self.time_numerator = numerator
-        self.time_denominator = denominator
+        try:
+            self.time_numerator = int(numerator)
+            self.time_denominator = int(denominator)
+        except Exception:
+            pass
 
     def _seconds_to_ticks(self, seconds: float) -> int:
-        seconds_per_beat = 60.0 / self.tempo_bpm
-        beats = seconds / seconds_per_beat
-        return int(round(beats * self.ppq))
+        try:
+            seconds_per_beat = 60.0 / self.tempo_bpm
+            beats = seconds / seconds_per_beat
+            return int(round(beats * self.ppq))
+        except Exception:
+            return 0
 
     def _quantize_ticks(self, ticks: int) -> int:
-        q = self.quantize_resolution
-        return round(ticks / q) * q
+        try:
+            q = self.quantize_resolution
+            return int(round(ticks / q) * q)
+        except Exception:
+            return ticks
 
     def _update_position(self, timestamp: float):
-        seconds_per_beat = 60.0 / self.tempo_bpm
-        beats = timestamp / seconds_per_beat
+        try:
+            seconds_per_beat = 60.0 / self.tempo_bpm
+            beats = timestamp / seconds_per_beat
 
-        beat_in_measure = (beats % self.time_numerator) + 1
-        measure = int(beats // self.time_numerator)
+            beat_in_measure = (beats % self.time_numerator) + 1
+            measure = int(beats // self.time_numerator)
 
-        self.current_measure = measure
-        self.current_beat = beat_in_measure
+            self.current_measure = measure
+            self.current_beat = beat_in_measure
+        except Exception:
+            self.current_measure = 0
+            self.current_beat = 1.0
 
-    # -----------------------------
+    # ---------------------------------------------------------
     # MIDI EVENTS
-    # -----------------------------
-    def handle_note_on(self, pitch: int, velocity: int,
-                       channel: int, timestamp: float):
-
+    # ---------------------------------------------------------
+    def handle_note_on(self, pitch: int, velocity: int, channel: int, timestamp: float):
         self._update_position(timestamp)
 
-        self.active_notes[(pitch, channel)] = {
-            "start_time": timestamp,
-            "velocity": velocity,
-        }
+        try:
+            self.active_notes[(int(pitch), int(channel))] = {
+                "start_time": float(timestamp),
+                "velocity": int(velocity),
+            }
+        except Exception:
+            pass
 
     def handle_note_off(self, pitch: int, channel: int, timestamp: float):
-
         self._update_position(timestamp)
 
-        key = (pitch, channel)
+        key = (int(pitch), int(channel))
         if key not in self.active_notes:
             return
 
-        start_time = self.active_notes[key]["start_time"]
-        velocity = self.active_notes[key]["velocity"]
+        try:
+            start_time = float(self.active_notes[key]["start_time"])
+            velocity = int(self.active_notes[key]["velocity"])
+        except Exception:
+            del self.active_notes[key]
+            return
+
         del self.active_notes[key]
 
-        duration_seconds = timestamp - start_time
+        # Duration
+        duration_seconds = max(timestamp - start_time, 0.0)
         duration_ticks = self._seconds_to_ticks(duration_seconds)
         duration_ticks = self._quantize_ticks(duration_ticks)
         duration = Duration(ticks=duration_ticks)
 
-        quantized_beat = round(self.current_beat * 4) / 4
+        # Quantized beat
+        try:
+            quantized_beat = round(self.current_beat * 4) / 4
+        except Exception:
+            quantized_beat = 1.0
 
         position = MeasurePosition(
             measure=self.current_measure,
-            beat=quantized_beat
+            beat=quantized_beat,
         )
 
         note = Note(
@@ -128,10 +174,12 @@ class MidiNoteMapper:
             start_time=start_time,
             duration=duration,
             channel=channel,
-            position=position
+            position=position,
         )
 
-        if self.on_note_created is not None:
-            self.on_note_created(note)
-
-          
+        # Callback
+        if callable(self.on_note_created):
+            try:
+                self.on_note_created(note)
+            except Exception:
+                pass
