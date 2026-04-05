@@ -28,9 +28,14 @@ class CanvasUI:
         self.timeline_line_color = "#888"
 
         # Notes (hybrid: piano-roll rect + notation symbol)
-        # each note: {"x": float, "width": float, "row": int, "selected": bool}
+        # each note: {"x": float, "width": float, "row": int, "selected": bool, "velocity": int}
         self.notes = []
         self.current_note = None
+
+        # Velocity editing
+        self.velocity_min = 1
+        self.velocity_max = 127
+        self._velocity_target_note = None
 
         # Tools
         self.tool = "draw"  # "draw", "select", "erase"
@@ -54,6 +59,11 @@ class CanvasUI:
         self.canvas.bind("<MouseWheel>", self._on_mouse_wheel)
         self.canvas.bind("<Button-4>", self._on_mouse_wheel)  # Linux
         self.canvas.bind("<Button-5>", self._on_mouse_wheel)  # Linux
+
+        # Right button → velocity edit
+        self.canvas.bind("<ButtonPress-3>", self._on_right_mouse_down)
+        self.canvas.bind("<B3-Motion>", self._on_right_mouse_drag)
+        self.canvas.bind("<ButtonRelease-3>", self._on_right_mouse_up)
 
         # Redraw loop
         self._schedule_redraw()
@@ -201,6 +211,7 @@ class CanvasUI:
         fill = "#66aaff" if not note.get("selected", False) else "#ffcc66"
         outline = "#225588" if not preview else "#888888"
 
+        # main note rect
         self.canvas.create_rectangle(
             x, y, x + w, y + h,
             fill=fill,
@@ -214,6 +225,22 @@ class CanvasUI:
             text="♩",
             anchor="w",
             fill="#102030"
+        )
+
+        # Velocity bar (inside note, at bottom)
+        velocity = note.get("velocity", 100)
+        velocity = max(self.velocity_min, min(self.velocity_max, velocity))
+        ratio = velocity / float(self.velocity_max)
+        bar_height = max(2, int((h - 4) * ratio))
+        bar_x1 = x + 2
+        bar_x2 = x + 6
+        bar_y2 = y + h - 2
+        bar_y1 = bar_y2 - bar_height
+
+        self.canvas.create_rectangle(
+            bar_x1, bar_y1, bar_x2, bar_y2,
+            fill="#228833",
+            outline=""
         )
 
     # ---------------------------------------------------------
@@ -280,6 +307,48 @@ class CanvasUI:
         self.last_drag_y = event.y
 
     # ---------------------------------------------------------
+    # RIGHT MOUSE – VELOCITY EDIT
+    # ---------------------------------------------------------
+    def _note_at(self, x, y):
+        """Find first note under given screen coords."""
+        t = self._screen_x_to_time(x)
+        row = self._screen_y_to_row(y)
+
+        for note in self.notes:
+            if note["row"] != row:
+                continue
+            if note["x"] <= t <= note["x"] + note["width"]:
+                return note
+        return None
+
+    def _update_note_velocity_from_y(self, note, y_screen):
+        """Map Y inside note row to velocity."""
+        row_y = self._row_to_screen_y(note["row"])
+        row_bottom = row_y + self.ROW_HEIGHT
+        # clamp
+        y_clamped = max(row_y, min(row_bottom, y_screen))
+        ratio = (row_bottom - y_clamped) / float(self.ROW_HEIGHT)
+        velocity = int(ratio * self.velocity_max)
+        velocity = max(self.velocity_min, min(self.velocity_max, velocity))
+        note["velocity"] = velocity
+
+    def _on_right_mouse_down(self, event):
+        note = self._note_at(event.x, event.y)
+        if note is not None:
+            # ensure velocity field exists
+            if "velocity" not in note:
+                note["velocity"] = 100
+            self._velocity_target_note = note
+            self._update_note_velocity_from_y(note, event.y)
+
+    def _on_right_mouse_drag(self, event):
+        if self._velocity_target_note is not None:
+            self._update_note_velocity_from_y(self._velocity_target_note, event.y)
+
+    def _on_right_mouse_up(self, event):
+        self._velocity_target_note = None
+
+    # ---------------------------------------------------------
     # DRAW TOOL
     # ---------------------------------------------------------
     def _start_draw_note(self, event):
@@ -295,6 +364,7 @@ class CanvasUI:
             "width": self.snap_step,
             "row": row,
             "selected": False,
+            "velocity": 100,
         }
 
     def _update_draw_note(self, event):
