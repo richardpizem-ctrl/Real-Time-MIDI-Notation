@@ -1,5 +1,6 @@
 from ..core.logger import Logger
 
+
 class TextRenderer:
     def __init__(self, enabled=True, print_enabled=True):
         self.enabled = enabled
