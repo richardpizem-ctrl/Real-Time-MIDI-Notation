@@ -21,7 +21,7 @@ import pygame
 
 
 # ---------------------------------------------------------
-# TEST HANDLERY (ponechané podľa tvojej architektúry)
+# TEST HANDLERY (ponechané podľa architektúry)
 # ---------------------------------------------------------
 def on_note_recorded(data):
     print(f"[TEST] NOTE_RECORDED event received: {data}")
