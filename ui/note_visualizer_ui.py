@@ -23,6 +23,7 @@ CHORD_PATTERNS = {
     (0, 4, 7, 10): ("7", (255, 80, 80)),
 }
 
+
 def normalize_intervals(semitones):
     root = min(semitones)
     return tuple(sorted((s - root) % 12 for s in semitones))
@@ -223,9 +224,9 @@ class NoteVisualizerUI:
         # Najprv zoradíme podľa „hĺbky“ (nižšie tóny vzadu)
         notes_with_depth.sort(key=lambda x: x[0])
 
-        # Intervalové offsety (napr. pre vizuálne linky, ak by si chcel neskôr)
+        # Intervalové offsety (pripravené na prípadné ďalšie vizuálne prvky)
         intervals = self.compute_intervals(notes_with_depth)
-        interval_offsets = self.compute_interval_offsets(intervals)
+        _interval_offsets = self.compute_interval_offsets(intervals)
 
         # Kreslenie aktívnych nôt
         remaining_notes = []
@@ -273,7 +274,13 @@ class NoteVisualizerUI:
             text_rect.x += (idx - len(notes_with_depth) // 2) * 40
 
             # Halo
-            self.draw_halo(self.trail_surface, text_surface, text_rect, mixed_color, n["halo_strength"] * total_alpha)
+            self.draw_halo(
+                self.trail_surface,
+                text_surface,
+                text_rect,
+                mixed_color,
+                n["halo_strength"] * total_alpha
+            )
 
             # Hlavný text
             scaled_surface = pygame.transform.smoothscale(
