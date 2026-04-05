@@ -65,6 +65,10 @@ class UIManager:
         self.canvas_ui = None
         self.canvas = None
 
+        # Quantization state (for CanvasUI snapping)
+        self.quantize_division = 1.0   # 1.0 = 1/4, 0.5 = 1/8, 0.25 = 1/16, 0.125 = 1/32
+        self.swing_amount = 0.0        # 0.0–0.5
+
         self.layout = {
             "transport": (0, 0),
             "track_switcher": (0, 55),
@@ -135,6 +139,23 @@ class UIManager:
         self.canvas_ui = CanvasUI(parent)
         self.canvas = self.canvas_ui.get_canvas()
 
+        # inicializuj quantizáciu aj v CanvasUI, ak ju podporuje
+        if hasattr(self.canvas_ui, "set_quantization"):
+            self.canvas_ui.set_quantization(self.quantize_division)
+        if hasattr(self.canvas_ui, "set_swing"):
+            self.canvas_ui.set_swing(self.swing_amount)
+
+    # ---------------------------------------------------------
+    # INTERNAL: QUANTIZATION HELPERS
+    # ---------------------------------------------------------
+    def _apply_quantization_to_canvas(self):
+        if self.canvas_ui is None:
+            return
+        if hasattr(self.canvas_ui, "set_quantization"):
+            self.canvas_ui.set_quantization(self.quantize_division)
+        if hasattr(self.canvas_ui, "set_swing"):
+            self.canvas_ui.set_swing(self.swing_amount)
+
     # ---------------------------------------------------------
     # EVENTS
     # ---------------------------------------------------------
@@ -180,6 +201,35 @@ class UIManager:
                     self.active_track_id = result["selected_track"]
             except Exception as e:
                 print(f"❌ TrackSwitcherUI error: {e}")
+
+        # Quantization keyboard shortcuts
+        if event.type == pygame.KEYDOWN:
+            updated = False
+
+            # 1/4, 1/8, 1/16, 1/32
+            if event.key == pygame.K_1:
+                self.quantize_division = 1.0
+                updated = True
+            elif event.key == pygame.K_2:
+                self.quantize_division = 0.5
+                updated = True
+            elif event.key == pygame.K_3:
+                self.quantize_division = 0.25
+                updated = True
+            elif event.key == pygame.K_4:
+                self.quantize_division = 0.125
+                updated = True
+
+            # Swing on/off (Q = off, W = medium swing)
+            if event.key == pygame.K_q:
+                self.swing_amount = 0.0
+                updated = True
+            elif event.key == pygame.K_w:
+                self.swing_amount = 0.3
+                updated = True
+
+            if updated:
+                self._apply_quantization_to_canvas()
 
     # ---------------------------------------------------------
     # NOTE EVENTS
