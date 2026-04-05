@@ -1,4 +1,4 @@
-# Logger
+# Logger – stabilný thread‑safe logger pre celý projekt
 
 import datetime
 import threading
@@ -9,12 +9,16 @@ class Logger:
     Stabilizovaný thread‑safe logger:
     - bezpečné timestampy
     - thread‑safe výstup
-    - žiadne pády pri nevalidných správach
     - jednotný formát logov
+    - ochrana proti nevalidným správam
+    - podpora INFO / WARNING / ERROR / DEBUG
     """
 
     _lock = threading.Lock()
 
+    # ---------------------------------------------------------
+    # TIMESTAMP
+    # ---------------------------------------------------------
     @staticmethod
     def _timestamp():
         try:
@@ -22,26 +26,39 @@ class Logger:
         except Exception:
             return "0000-00-00 00:00:00"
 
+    # ---------------------------------------------------------
+    # INTERNAL SAFE PRINT
+    # ---------------------------------------------------------
     @classmethod
-    def info(cls, message):
+    def _safe_print(cls, level: str, message: str):
+        """Bezpečný výpis logu – nikdy nespadne."""
         with cls._lock:
             try:
-                print(f"[INFO] {cls._timestamp()} - {message}")
+                msg = str(message)
             except Exception:
-                print("[INFO] Logger error: failed to print message")
+                msg = "<invalid log message>"
+
+            try:
+                print(f"[{level}] {cls._timestamp()} - {msg}")
+            except Exception:
+                # Fallback – ak print() zlyhá, už nič nerobíme
+                pass
+
+    # ---------------------------------------------------------
+    # PUBLIC LOG METHODS
+    # ---------------------------------------------------------
+    @classmethod
+    def info(cls, message):
+        cls._safe_print("INFO", message)
 
     @classmethod
     def warning(cls, message):
-        with cls._lock:
-            try:
-                print(f"[WARNING] {cls._timestamp()} - {message}")
-            except Exception:
-                print("[WARNING] Logger error: failed to print message")
+        cls._safe_print("WARNING", message)
 
     @classmethod
     def error(cls, message):
-        with cls._lock:
-            try:
-                print(f"[ERROR] {cls._timestamp()} - {message}")
-            except Exception:
-                print("[ERROR] Logger error: failed to print message")
+        cls._safe_print("ERROR", message)
+
+    @classmethod
+    def debug(cls, message):
+        cls._safe_print("DEBUG", message)
