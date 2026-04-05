@@ -20,6 +20,9 @@ class TrackSelectorUI:
 
         self._generate_buttons()
 
+    # ---------------------------------------------------------
+    # BUTTON GENERATION
+    # ---------------------------------------------------------
     def _generate_buttons(self):
         self.track_buttons = []
 
@@ -43,6 +46,9 @@ class TrackSelectorUI:
                 "rect": rect
             })
 
+    # ---------------------------------------------------------
+    # CLICK HANDLING
+    # ---------------------------------------------------------
     def handle_click(self, pos):
         if not isinstance(pos, (tuple, list)) or len(pos) != 2:
             return None
@@ -56,12 +62,14 @@ class TrackSelectorUI:
 
             try:
                 if rect.collidepoint(pos):
+                    # Toggle visibility
                     try:
                         current = self.track_system.is_visible(track_id)
                         self.track_system.set_visible(track_id, not current)
                     except Exception:
                         pass
 
+                    # Set active track
                     try:
                         self.track_system.set_active_track(track_id)
                     except Exception:
@@ -73,6 +81,9 @@ class TrackSelectorUI:
 
         return None
 
+    # ---------------------------------------------------------
+    # DRAW
+    # ---------------------------------------------------------
     def draw(self, surface, active_track=None, track_activity=None):
         if surface is None:
             return
@@ -95,6 +106,7 @@ class TrackSelectorUI:
             if rect is None or track_id is None:
                 continue
 
+            # Track color
             try:
                 color = self.track_system.get_color(track_id)
                 if not (
@@ -106,23 +118,26 @@ class TrackSelectorUI:
             except Exception:
                 color = (255, 255, 255)
 
+            # Dim if hidden
             try:
                 if not self.track_system.is_visible(track_id):
                     color = (color[0] // 3, color[1] // 3, color[2] // 3)
             except Exception:
                 pass
 
+            # Active track border
             is_active = (track_id == active_track)
-
             border_color = (0, 150, 255) if is_active else (80, 80, 80)
             border_width = 4 if is_active else 2
 
+            # Draw button
             try:
                 pygame.draw.rect(surface, color, rect)
                 pygame.draw.rect(surface, border_color, rect, border_width)
             except Exception:
                 continue
 
+            # Activity meter
             try:
                 activity = track_activity.get(track_id, 0.0)
                 if activity > 0:
@@ -137,6 +152,7 @@ class TrackSelectorUI:
             except Exception:
                 pass
 
+            # Track name
             try:
                 if hasattr(self.track_system, "get_name"):
                     name = self.track_system.get_name(track_id)
@@ -148,6 +164,7 @@ class TrackSelectorUI:
             if not name:
                 name = f"Track {track_id + 1}"
 
+            # Draw text
             try:
                 if self.font:
                     number_surface = self.font.render(str(track_id + 1), True, (0, 0, 0))
