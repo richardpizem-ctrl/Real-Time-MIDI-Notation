@@ -95,7 +95,7 @@ class CanvasUI:
         if mode in ("classic", "heatmap", "glow"):
             self.color_mode = mode
 
-    # ⭐ NEW: QUANTIZATION API
+    # ⭐ QUANTIZATION API
     def set_quantization(self, division: float):
         """
         division:
@@ -135,7 +135,7 @@ class CanvasUI:
     def _screen_y_to_row(self, y):
         return int((y - self.timeline_height - self.offset_y) / self.ROW_HEIGHT)
 
-    # ⭐ UPDATED: snapping with swing
+    # ⭐ snapping with swing
     def _snap_time(self, t):
         if not self.snap:
             return t
