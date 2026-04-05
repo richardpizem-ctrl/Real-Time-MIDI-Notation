@@ -1,88 +1,112 @@
-# Real-Time MIDI Notation
+# Real-Time MIDI Notation – Kompletný Projektový Prehľad
 
-Real-Time MIDI Notation je nástroj na vizualizáciu MIDI dát v reálnom čase, ktorý prevádza živé MIDI udalosti na prehľadnú grafickú notáciu.  
-Projekt je navrhnutý ako modulárny, rozšíriteľný a pripravený na profesionálne použitie aj ďalší vývoj.
+## ✅ HOTOVÉ MODULY A FUNKCIE
 
----
-
-## Architecture Overview (Architektúra)
-
-Projekt Real-Time MIDI Notation spracúva MIDI dáta v reálnom čase cez štyri hlavné vrstvy:
-
-1. **MIDI Input (MIDI vstup)**  
-   Prijíma MIDI eventy zo zariadenia alebo virtuálneho portu.
-
-2. **Processor (Procesor)**  
-   Analyzuje rytmus, timestampy, velocity, BPM, dĺžky tónov a mapuje noty do jednotného formátu.
-
-3. **GraphicNotationRenderer (Grafický renderer)**  
-   Prevádza MIDI eventy na grafické objekty, vykresľuje noty, taktové čiary, grid, playhead a podporuje 16 stôp podľa Yamaha štandardu.
-
-4. **UI Layer (UI vrstva)**  
-   Zobrazuje noty, taktové čiary, playhead, track activity a ďalšie vizuálne prvky v reálnom čase.
-
----
-
-## How It Works (Ako to funguje)
-
-- MIDI eventy sa načítavajú v reálnom čase.
-- Processor analyzuje rytmus, BPM, velocity a dĺžky tónov.
-- Renderer generuje grafické prvky pre každú notu (vrátane velocity shading, stems, beams, chord grouping).
-- UI vrstva vykresľuje noty, taktové čiary, grid, playhead a track activity.
-- TrackManager spracúva až **16 stôp** podľa Yamaha štandardu a riadi viditeľnosť, hlasitosť a aktivitu stôp.
-
----
-
-## Renderer Features (Funkcie renderera)
-
-### 🎼 GraphicNotationRenderer
-- Real-time vykresľovanie nôt
-- Velocity shading (farba + veľkosť podľa úderu)
-- Chord grouping + ligatúry
-- Beam detection (8th/16th grouping)
-- Premium stems (dynamická dĺžka podľa výšky tónu)
-- Taktové čiary, grid, timeline ruler
-- Playhead v reálnom čase
-- Podpora 16 stôp (Yamaha štandard)
-- Track activity meter
-- Staff caching pre vysoký výkon
-- Zoom, scroll, čas → X a pitch → Y layout engine
+### 🎼 GraphicNotationRenderer (hlavný grafický renderer)
+- kompletný real-time layout engine
+- čas → X mapping
+- pitch → Y mapping
+- staff cache (výkonová optimalizácia)
+- taktové čiary, grid, timeline ruler
+- playhead v reálnom čase
+- velocity shading (farba + veľkosť podľa úderu)
+- chord grouping
+- beam detection (8th/16th)
+- premium stems (dynamická dĺžka podľa výšky tónu)
+- podpora 16 stôp (Yamaha štandard)
+- track visibility, volume shading
+- realtime activity meter
+- zoom + scroll
+- stabilizovaný, pripravený na ďalší vývoj
 
 ### 📝 NotationRenderer (textový renderer)
-- Textová vizualizácia MIDI udalostí
-- Podpora bubnových značiek
-- Layer offset pre bubny
-- Timestamp pri každom výpise
-- Filter() pre selektívny výpis
-- Clear() pre reset bufferu
-- Bezpečný fallback ak pygame nie je dostupný
+- textová vizualizácia MIDI udalostí
+- podpora bubnových značiek
+- layer offset pre bubny
+- timestamp pri každom výpise
+- clear() – vymazanie bufferu
+- filter() – selektívny výpis podľa pitch, kanála, bubnov atď.
+- bezpečný fallback ak pygame nie je dostupný
+- stabilný, ideálny pre debug
+
+### 🧠 Processor
+- mapovanie nôt
+- rytmická analýza
+- BPM, velocity, timestampy
+- základný Rhythm Analyzer (hotový)
+
+### 🎚 TrackManager
+- 16 stôp podľa Yamaha štandardu
+- farby stôp
+- hlasitosť, viditeľnosť, aktivita
+- active track highlighting
+- realtime activity update
 
 ---
 
-## Modules (Moduly)
+## 🏗 ARCHITEKTÚRA PROJEKTU
 
-- **midi_input/** – MIDI listener, event parsing  
-- **processor/** – mapovanie nôt, rytmická analýza, timestampy  
-- **renderer/** – grafický renderer + textový renderer  
-- **ui/** – UI manažér, track switcher, realtime zobrazenie  
-- **core/** – event bus, device manager, systémové komponenty  
-- **tests/** – testy pre MIDI, rytmus a renderer  
+1. MIDI Input – prijíma MIDI eventy  
+2. Processor – analyzuje rytmus, BPM, velocity, dĺžky tónov  
+3. Renderer – generuje grafické objekty  
+4. UI Layer – zobrazuje noty, playhead, grid, activity  
+5. TrackManager – riadi 16 stôp  
+6. Debug Layer – textový renderer  
 
----
-
-## Roadmap (Plán vývoja)
-
-- **1.1** – doplnená dokumentácia + stabilizácia  
-- **1.2** – menšie UI vylepšenia (Track Switcher, activity meter)  
-- **1.3** – export do PNG/SVG  
-- **2.0** – advanced layout engine (pokročilý layout)  
-- **2.1** – multi-voice notation + polyfónia  
-- **2.2** – MIDI file import/export  
-- **3.0** – profesionálny notation engine (úroveň MuseScore/LilyPond)
+Projekt je modulárny, rozšíriteľný a pripravený na profesionálne použitie.
 
 ---
 
-## Status
+## 🚀 AKTUÁLNY STAV
 
-Projekt je aktívne vyvíjaný a postupne smeruje k profesionálnemu real-time notation enginu.
+- GraphicNotationRenderer → kompletne doplnený a stabilizovaný  
+- NotationRenderer → doplnený o timestamp, filter, clear  
+- Processor → funkčný  
+- Rhythm Analyzer → hotový základ  
+- TrackManager → plne integrovaný  
+- README → prepracované, profesionálne  
 
+Pipeline funguje: **MIDI → Processor → Renderer → UI**
+
+---
+
+## 🗺 ROADMAP
+
+### 🔜 Najbližšie kroky
+- UI Track Switcher (16-track control)
+- menšie UI vylepšenia
+- doplnenie dokumentácie (How renderer works)
+
+### 🎯 Verzia 1.2 – UI vylepšenia
+- track activity meter
+- lepší layout UI prvkov
+- farby stôp v UI
+
+### 🎯 Verzia 1.3 – Export
+- export do PNG
+- export do SVG
+- screenshot engine
+
+### 🎯 Verzia 2.0 – Advanced Layout Engine
+- multi-voice notation
+- polyfónia
+- pokročilé beams
+- dynamické symboly
+- artikulácie
+
+### 🎯 Verzia 3.0 – Pro notation engine
+- úroveň MuseScore / LilyPond
+- profesionálny engraving
+
+---
+
+## 🧩 ZHRNUTIE
+
+Projekt Real-Time MIDI Notation je teraz v stave:
+- stabilné jadro
+- hotové renderery
+- hotová pipeline
+- profesionálna architektúra
+- pripravený na rýchly ďalší vývoj
+
+Toto je základ pre plnohodnotný real-time notation engine.
