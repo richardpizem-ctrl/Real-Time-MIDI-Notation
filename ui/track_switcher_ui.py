@@ -14,13 +14,13 @@ class TrackSwitcherUI:
         self.button_width = width // self.track_count
         self.button_height = height
 
-        # Peak hold zostáva v UI (vizuálna funkcia)
+        # Peak hold vizuál
         self.peak_hold = [0.0] * self.track_count
 
         self.font = pygame.font.Font(None, 14)
 
     # ---------------------------------------------------------
-    # UPDATE PEAK HOLD (UI vizuál)
+    # UPDATE PEAK HOLD
     # ---------------------------------------------------------
     def update_peak_hold(self):
         tm = self.event_bus.track_manager
@@ -56,7 +56,6 @@ class TrackSwitcherUI:
         tm = self.event_bus.track_manager
         any_solo = self._any_solo()
 
-        # Peak hold update
         self.update_peak_hold()
 
         for i in range(self.track_count):
@@ -64,8 +63,8 @@ class TrackSwitcherUI:
             base_color = self.track_colors[i]
 
             rect = pygame.Rect(
-                i * self.button_width,
-                0,
+                self.x + i * self.button_width,
+                self.y,
                 self.button_width,
                 self.button_height
             )
@@ -87,17 +86,17 @@ class TrackSwitcherUI:
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
-            if active_track == i:
+            # ACTIVE TRACK BORDER
+            if active_track == tid:
                 pygame.draw.rect(surface, (255, 255, 255), rect, 3)
 
-            # REALTIME LEVEL (z TrackManagera)
+            # REALTIME LEVEL
             level = tm.get_activity(tid)
-
             if level > 0:
                 meter_height = int(level * 20)
                 meter_rect = pygame.Rect(
-                    i * self.button_width + 4,
-                    2,
+                    rect.x + 4,
+                    rect.y + 2,
                     self.button_width - 8,
                     meter_height
                 )
@@ -106,9 +105,9 @@ class TrackSwitcherUI:
             # PEAK HOLD
             peak = self.peak_hold[i]
             if peak > 0:
-                peak_y = 2 + int(peak * 20)
+                peak_y = rect.y + 2 + int(peak * 20)
                 peak_rect = pygame.Rect(
-                    i * self.button_width + 4,
+                    rect.x + 4,
                     peak_y,
                     self.button_width - 8,
                     2
@@ -119,8 +118,8 @@ class TrackSwitcherUI:
             vol = tm.get_volume(tid)
             vol_h = int(vol * 30)
             vol_rect = pygame.Rect(
-                i * self.button_width + 6,
-                self.button_height - 55,
+                rect.x + 6,
+                rect.y + self.button_height - 55,
                 self.button_width - 12,
                 vol_h
             )
@@ -128,8 +127,8 @@ class TrackSwitcherUI:
 
             # PAN
             pan_val = tm.get_pan(tid)
-            pan_x = i * self.button_width + self.button_width // 2
-            pan_y = self.button_height - 70
+            pan_x = rect.x + self.button_width // 2
+            pan_y = rect.y + self.button_height - 70
             pygame.draw.circle(surface, (50, 50, 50), (pan_x, pan_y), 6)
             angle = pan_val * math.pi
             line_x = pan_x + int(6 * math.sin(angle))
@@ -138,39 +137,36 @@ class TrackSwitcherUI:
 
             # RECORD ARM
             rec_rect = pygame.Rect(
-                i * self.button_width + 4,
-                self.button_height - 85,
+                rect.x + 4,
+                rect.y + self.button_height - 85,
                 self.button_width - 8,
                 10
             )
-            if tm.is_record_armed(tid):
-                pygame.draw.rect(surface, (255, 0, 0), rec_rect)
-            else:
-                pygame.draw.rect(surface, (80, 0, 0), rec_rect)
+            pygame.draw.rect(surface,
+                             (255, 0, 0) if tm.is_record_armed(tid) else (80, 0, 0),
+                             rec_rect)
 
             # MUTE
             mute_rect = pygame.Rect(
-                i * self.button_width + 4,
-                self.button_height - 20,
+                rect.x + 4,
+                rect.y + self.button_height - 20,
                 self.button_width - 8,
                 10
             )
-            if tm.is_muted(tid):
-                pygame.draw.rect(surface, (255, 80, 80), mute_rect)
-            else:
-                pygame.draw.rect(surface, (100, 40, 40), mute_rect)
+            pygame.draw.rect(surface,
+                             (255, 80, 80) if tm.is_muted(tid) else (100, 40, 40),
+                             mute_rect)
 
             # SOLO
             solo_rect = pygame.Rect(
-                i * self.button_width + 4,
-                self.button_height - 10,
+                rect.x + 4,
+                rect.y + self.button_height - 10,
                 self.button_width - 8,
                 10
             )
-            if tm.is_solo(tid):
-                pygame.draw.rect(surface, (255, 255, 80), solo_rect)
-            else:
-                pygame.draw.rect(surface, (100, 100, 40), solo_rect)
+            pygame.draw.rect(surface,
+                             (255, 255, 80) if tm.is_solo(tid) else (100, 100, 40),
+                             solo_rect)
 
             # NAME
             try:
@@ -178,11 +174,11 @@ class TrackSwitcherUI:
             except Exception:
                 name = f"Track {tid}"
 
-            name_color = (255, 255, 255) if active_track == i else (0, 0, 0)
+            name_color = (255, 255, 255) if active_track == tid else (0, 0, 0)
             text_surface = self.font.render(name, True, name_color)
             text_rect = text_surface.get_rect(center=(
-                i * self.button_width + self.button_width // 2,
-                12
+                rect.x + self.button_width // 2,
+                rect.y + 12
             ))
             surface.blit(text_surface, text_rect)
 
@@ -195,51 +191,53 @@ class TrackSwitcherUI:
         if event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
 
-            if 0 <= my - self.y <= self.button_height:
-                index = (mx - self.x) // self.button_width
-                tid = index + 1
+            if not (self.x <= mx <= self.x + self.width):
+                return None
+            if not (self.y <= my <= self.y + self.button_height):
+                return None
 
-                if 0 <= index < self.track_count:
-                    local_y = my - self.y
+            index = (mx - self.x) // self.button_width
+            tid = index + 1
+            local_y = my - self.y
 
-                    # RECORD ARM
-                    if self.button_height - 85 <= local_y < self.button_height - 75:
-                        tm.toggle_record_arm(tid)
-                        self.event_bus.emit("track_record_arm", index, tm.is_record_armed(tid))
-                        return {"record_arm": index}
+            # RECORD ARM
+            if self.button_height - 85 <= local_y < self.button_height - 75:
+                tm.toggle_record_arm(tid)
+                self.event_bus.emit("track_record_arm", index, tm.is_record_armed(tid))
+                return {"record_arm": index}
 
-                    # PAN
-                    if self.button_height - 75 <= local_y < self.button_height - 65:
-                        rel = (mx - (self.x + index * self.button_width)) / self.button_width
-                        tm.set_pan(tid, (rel - 0.5) * 2)
-                        self.event_bus.emit("track_pan", index, tm.get_pan(tid))
-                        return {"pan": index}
+            # PAN
+            if self.button_height - 75 <= local_y < self.button_height - 65:
+                rel = (mx - (self.x + index * self.button_width)) / self.button_width
+                tm.set_pan(tid, (rel - 0.5) * 2)
+                self.event_bus.emit("track_pan", index, tm.get_pan(tid))
+                return {"pan": index}
 
-                    # VOLUME
-                    if self.button_height - 55 <= local_y < self.button_height - 25:
-                        rel = (local_y - (self.button_height - 55)) / 30
-                        tm.set_volume(tid, rel)
-                        self.event_bus.emit("track_volume", index, tm.get_volume(tid))
-                        return {"volume": index}
+            # VOLUME
+            if self.button_height - 55 <= local_y < self.button_height - 25:
+                rel = (local_y - (self.button_height - 55)) / 30
+                tm.set_volume(tid, rel)
+                self.event_bus.emit("track_volume", index, tm.get_volume(tid))
+                return {"volume": index}
 
-                    # MUTE
-                    if self.button_height - 20 <= local_y < self.button_height - 10:
-                        tm.set_mute(tid, not tm.is_muted(tid))
-                        self.event_bus.emit("track_mute", index, tm.is_muted(tid))
-                        self._emit_audible_state()
-                        return {"mute": index}
+            # MUTE
+            if self.button_height - 20 <= local_y < self.button_height - 10:
+                tm.set_mute(tid, not tm.is_muted(tid))
+                self.event_bus.emit("track_mute", index, tm.is_muted(tid))
+                self._emit_audible_state()
+                return {"mute": index}
 
-                    # SOLO
-                    if local_y >= self.button_height - 10:
-                        tm.set_solo(tid, not tm.is_solo(tid))
-                        self.event_bus.emit("track_solo", index, tm.is_solo(tid))
-                        self._emit_audible_state()
-                        return {"solo": index}
+            # SOLO
+            if local_y >= self.button_height - 10:
+                tm.set_solo(tid, not tm.is_solo(tid))
+                self.event_bus.emit("track_solo", index, tm.is_solo(tid))
+                self._emit_audible_state()
+                return {"solo": index}
 
-                    # SELECT TRACK
-                    tm.set_active_track(tid)
-                    self.event_bus.emit("track_selected", index)
-                    self._emit_audible_state()
-                    return {"selected_track": index}
+            # SELECT TRACK
+            tm.set_active_track(tid)
+            self.event_bus.emit("track_selected", index)
+            self._emit_audible_state()
+            return {"selected_track": index}
 
         return None
