@@ -3,6 +3,7 @@
 class SymbolManager:
     """
     SymbolManager vytvára vizuálne a logické symboly pre noty.
+
     Stabilizované:
     - ochrana pred None
     - ochrana pred nevalidnými Note objektmi
@@ -13,18 +14,18 @@ class SymbolManager:
     def __init__(self):
         # Farebná paleta podľa výšky tónu (12-TET)
         self.pitch_colors = {
-            0: "#FF5555",   # C
-            1: "#FF8855",   # C#
-            2: "#FFCC55",   # D
-            3: "#DDFF55",   # D#
-            4: "#99FF55",   # E
-            5: "#55FF88",   # F
-            6: "#55FFCC",   # F#
-            7: "#55DDFF",   # G
-            8: "#5599FF",   # G#
-            9: "#8855FF",   # A
-            10: "#CC55FF",  # A#
-            11: "#FF55CC",  # B
+            0:  "#FF5555",   # C
+            1:  "#FF8855",   # C#
+            2:  "#FFCC55",   # D
+            3:  "#DDFF55",   # D#
+            4:  "#99FF55",   # E
+            5:  "#55FF88",   # F
+            6:  "#55FFCC",   # F#
+            7:  "#55DDFF",   # G
+            8:  "#5599FF",   # G#
+            9:  "#8855FF",   # A
+            10: "#CC55FF",   # A#
+            11: "#FF55CC",   # B
         }
 
     # ---------------------------------------------------------
@@ -33,6 +34,7 @@ class SymbolManager:
     def get_symbol(self, note, rhythm: str):
         """
         Vráti symbol pre danú notu.
+
         Stabilizované:
         - ochrana pred None
         - ochrana pred nevalidnými typmi
@@ -42,28 +44,32 @@ class SymbolManager:
         if note is None or rhythm is None:
             return None
 
-        # Bezpečné čítanie pitch
+        # -----------------------------
+        # PITCH
+        # -----------------------------
         try:
             pitch = int(note.pitch)
         except Exception:
             pitch = 60  # fallback C4
 
-        # Pitch class
         try:
             pitch_class = pitch % 12
         except Exception:
             pitch_class = 0
 
-        # Farba
         color = self.pitch_colors.get(pitch_class, "#FFFFFF")
 
-        # Duration ticks
+        # -----------------------------
+        # DURATION
+        # -----------------------------
         try:
             duration_ticks = int(note.duration.ticks)
         except Exception:
             duration_ticks = 0
 
-        # Measure & beat
+        # -----------------------------
+        # POSITION
+        # -----------------------------
         try:
             measure = int(note.position.measure)
         except Exception:
@@ -74,6 +80,9 @@ class SymbolManager:
         except Exception:
             beat = 1.0
 
+        # -----------------------------
+        # SYMBOL OUTPUT
+        # -----------------------------
         symbol = {
             "pitch": pitch,
             "duration_ticks": duration_ticks,
