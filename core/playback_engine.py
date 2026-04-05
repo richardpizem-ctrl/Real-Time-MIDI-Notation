@@ -12,6 +12,7 @@ from typing import List, Dict, Any, Optional
 from core.track_manager import TrackManager
 from renderer.graphic_renderer import GraphicNotationRenderer
 from ui.canvas_ui import CanvasUI
+from core.logger import Logger
 
 
 class PlaybackEngine:
@@ -33,32 +34,32 @@ class PlaybackEngine:
 
         # Playback state
         self.playing: bool = False
-        self.position_sec: float = 0.0  # current song time in seconds
+        self.position_sec: float = 0.0
         self._last_time: float = time.time()
 
-        # Note data (timeline)
+        # Timeline notes
         self.notes: List[Dict[str, Any]] = []
 
-        # Sync renderer tempo
         self._sync_renderer_tempo()
+        Logger.info("PlaybackEngine initialized.")
 
     # ---------------------------------------------------------
     # INTERNAL: TEMPO SYNC
     # ---------------------------------------------------------
     def _sync_renderer_tempo(self):
-        """
-        Synchronizuje BPM a meter do rendereru.
-        Renderer ich používa pre grid, barlines, measure numbers.
-        """
+        """Synchronizuje BPM a meter do rendereru."""
+        if self.renderer is None:
+            return
+
         try:
             self.renderer.bpm = float(self.bpm)
         except Exception:
-            pass
+            Logger.warning("Renderer rejected BPM value.")
 
         try:
             self.renderer.beats_per_bar = int(self.beats_per_bar)
         except Exception:
-            pass
+            Logger.warning("Renderer rejected beats_per_bar value.")
 
     # ---------------------------------------------------------
     # TEMPO / METER API
@@ -91,27 +92,15 @@ class PlaybackEngine:
     # NOTES TIMELINE
     # ---------------------------------------------------------
     def set_notes(self, notes: List[Dict[str, Any]]):
-        """
-        Nastaví kompletný zoznam nôt pre prehrávanie.
-
-        Očakávaný formát jednej noty:
-        {
-            "timestamp": float (sekundy od začiatku),
-            "duration": float (sekundy, voliteľné),
-            "track_id": int,
-            "pitch" alebo "note": int,
-            "velocity": int
-        }
-        """
+        """Nastaví kompletný zoznam nôt pre prehrávanie."""
         if not isinstance(notes, (list, tuple)):
             self.notes = []
             return
 
         cleaned: List[Dict[str, Any]] = []
         for n in notes:
-            if not isinstance(n, dict):
-                continue
-            cleaned.append(dict(n))
+            if isinstance(n, dict):
+                cleaned.append(dict(n))
 
         cleaned.sort(key=lambda n: float(n.get("timestamp", 0.0)))
         self.notes = cleaned
@@ -122,13 +111,16 @@ class PlaybackEngine:
     def play(self):
         self.playing = True
         self._last_time = time.time()
+        Logger.info("Playback started.")
 
     def pause(self):
         self.playing = False
+        Logger.info("Playback paused.")
 
     def stop(self):
         self.playing = False
         self.position_sec = 0.0
+        Logger.info("Playback stopped.")
 
     def seek(self, position_sec: float):
         try:
@@ -164,9 +156,7 @@ class PlaybackEngine:
     # ACTIVE NOTES SELECTION
     # ---------------------------------------------------------
     def _collect_active_notes(self) -> List[Dict[str, Any]]:
-        """
-        Vyberie noty, ktoré sú aktuálne „aktívne“ v čase self.position_sec.
-        """
+        """Vyberie noty, ktoré sú aktívne v čase self.position_sec."""
         active: List[Dict[str, Any]] = []
         t_now = self.position_sec
 
@@ -181,19 +171,18 @@ class PlaybackEngine:
             except Exception:
                 duration = 0.0
 
-            if duration <= 0.0:
-                duration = 0.05  # krátky impulz, ak nie je špecifikované
+            if duration <= 0:
+                duration = 0.05
 
             end = start + duration
 
-            if t_now < start or t_now > end:
+            if not (start <= t_now <= end):
                 continue
 
             track_id = note.get("track_id")
             if track_id is None:
                 continue
 
-            # DAW logika (mute/solo/volume) cez TrackManager
             pitch = note.get("pitch", note.get("note"))
             velocity = note.get("velocity", 100)
 
@@ -206,11 +195,13 @@ class PlaybackEngine:
             except Exception:
                 continue
 
-            transformed = self.track_manager.apply_midi_transform(track_id, pitch_int, vel_int)
-            if transformed is None:
-                continue
-
-            new_pitch, new_vel = transformed
+            if self.track_manager:
+                transformed = self.track_manager.apply_midi_transform(track_id, pitch_int, vel_int)
+                if transformed is None:
+                    continue
+                new_pitch, new_vel = transformed
+            else:
+                new_pitch, new_vel = pitch_int, vel_int
 
             active.append(
                 {
@@ -228,8 +219,7 @@ class PlaybackEngine:
     # ---------------------------------------------------------
     def update(self) -> Optional[Any]:
         """
-        Hlavný tick, ktorý sa volá z hlavného loopu aplikácie.
-
+        Hlavný tick:
         - aktualizuje čas
         - vyberie aktívne noty
         - zavolá renderer.draw(active_notes)
@@ -237,19 +227,22 @@ class PlaybackEngine:
         """
         self._update_time()
 
-        # Sync playhead do CanvasUI (ms)
-        try:
-            self.canvas_ui.set_playhead_time(int(self.position_sec * 1000))
-        except Exception:
-            pass
+        # Sync playhead do CanvasUI
+        if self.canvas_ui:
+            try:
+                self.canvas_ui.set_playhead_time(int(self.position_sec * 1000))
+            except Exception:
+                Logger.warning("CanvasUI rejected playhead update.")
 
-        # Získaj aktívne noty pre aktuálny čas
+        # Aktívne noty
         active_notes = self._collect_active_notes()
 
-        # Renderer dostane aktuálne noty
-        try:
-            surface = self.renderer.draw(active_notes)
-        except Exception:
-            surface = None
+        # Renderer
+        surface = None
+        if self.renderer:
+            try:
+                surface = self.renderer.draw(active_notes)
+            except Exception as e:
+                Logger.error(f"Renderer error: {e}")
 
         return surface
