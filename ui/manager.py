@@ -19,11 +19,13 @@ class UIManager:
 
         pygame.font.init()
 
+        # TRANSPORT
         self.transport = TransportUI(width, 50)
         self.is_playing = False
         self.play_start_time = 0
         self.current_time_ms = 0
 
+        # TRACK SWITCHER
         self.track_switcher = TrackSwitcherUI(
             x=0,
             y=55,
@@ -33,6 +35,7 @@ class UIManager:
             event_bus=track_system.event_bus
         )
 
+        # TRACK VISIBILITY (pre renderer)
         self.track_visibility = {i: True for i in range(16)}
 
         track_system.event_bus.subscribe("track_toggle", self._on_track_toggle)
@@ -40,6 +43,7 @@ class UIManager:
         track_system.event_bus.subscribe("track_mute", self._on_track_mute)
         track_system.event_bus.subscribe("track_solo", self._on_track_solo)
 
+        # PIANO / PIANO ROLL / STAFF / VISUALIZER
         self.piano = PianoUI(width, 180)
         self.piano_roll = PianoRollUI(width, 180)
         self.staff = StaffUI(width, 200)
@@ -47,17 +51,9 @@ class UIManager:
 
         self.active_track_id = 0
 
-        self.track_activity = {}
-        try:
-            track_count = len(getattr(self.track_system, "tracks", {}))
-        except Exception:
-            track_count = 0
-
-        for i in range(track_count):
-            self.track_activity[i] = 0.0
-
+        # RENDERER
         self.renderer = GraphicNotationRenderer(width, 200, track_system)
-        self.renderer.set_track_visibility(self.track_visibility)
+        self._rebuild_track_visibility()
 
         if self.notation_processor is not None:
             try:
@@ -65,6 +61,7 @@ class UIManager:
             except Exception as e:
                 print(f"❌ NotationProcessor bind_renderer error: {e}")
 
+        # CANVAS / EXPORT
         self.canvas_ui = None
         self.canvas = None
 
@@ -81,14 +78,22 @@ class UIManager:
         self.export_button_rect = pygame.Rect(self.width - 120, 10, 110, 35)
         self.export_font = pygame.font.SysFont("Arial", 20)
 
-    def _apply_solo_priority(self):
-        solo_states = self.track_switcher.solo
-        if any(solo_states):
-            for i in range(16):
-                self.track_visibility[i] = solo_states[i]
-        else:
-            for i in range(16):
-                self.track_visibility[i] = self.track_switcher.active_tracks[i]
+    # ---------------------------------------------------------
+    # TRACK VISIBILITY / SOLO / MUTE
+    # ---------------------------------------------------------
+    def _rebuild_track_visibility(self):
+        for i in range(16):
+            tid = i + 1
+            try:
+                if hasattr(self.track_system, "track_manager") and hasattr(
+                    self.track_system.track_manager, "is_effectively_active"
+                ):
+                    audible = self.track_system.track_manager.is_effectively_active(tid)
+                else:
+                    audible = True
+            except Exception:
+                audible = True
+            self.track_visibility[i] = audible
 
         try:
             self.renderer.set_track_visibility(self.track_visibility)
@@ -97,7 +102,10 @@ class UIManager:
 
     def _on_track_toggle(self, track_id, state):
         self.track_visibility[track_id] = state
-        self._apply_solo_priority()
+        try:
+            self.renderer.set_track_visibility(self.track_visibility)
+        except Exception:
+            pass
 
     def _on_track_selected(self, track_id):
         self.active_track_id = track_id
@@ -111,20 +119,27 @@ class UIManager:
             self.track_system.track_manager.set_mute(track_id + 1, state)
         except Exception as e:
             print(f"❌ TrackManager mute update error: {e}")
+        self._rebuild_track_visibility()
 
     def _on_track_solo(self, track_id, state):
         try:
             self.track_system.track_manager.set_solo(track_id + 1, state)
         except Exception as e:
             print(f"❌ TrackManager solo update error: {e}")
+        self._rebuild_track_visibility()
 
-        self._apply_solo_priority()
-
+    # ---------------------------------------------------------
+    # LAYOUT / CANVAS
+    # ---------------------------------------------------------
     def build_layout(self, parent):
         self.canvas_ui = CanvasUI(parent)
         self.canvas = self.canvas_ui.get_canvas()
 
+    # ---------------------------------------------------------
+    # EVENTS
+    # ---------------------------------------------------------
     def handle_event(self, event):
+        # Transport
         t = self.transport.handle_event(event)
         if t:
             action = t.get("action")
@@ -138,11 +153,27 @@ class UIManager:
                 self.current_time_ms = 0
                 self.transport.set_time("00:00.0")
 
+            elif action == "rewind":
+                self.current_time_ms = 0
+                self.play_start_time = pygame.time.get_ticks()
+                self.transport.set_time("00:00.0")
+
+            elif action == "bpm":
+                # BPM je uložené v transporte, vizualizér si ho berie v draw()
+                pass
+
+            elif action == "loop":
+                # Loop flag je v transporte, logiku prehrávania môže riešiť processor
+                pass
+
+        # Export
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.export_button_rect.collidepoint(event.pos):
-                export_to_png(self.canvas, "export.png")
-                print("[EXPORT] export.png uložený")
+                if self.canvas is not None:
+                    export_to_png(self.canvas, "export.png")
+                    print("[EXPORT] export.png uložený")
 
+            # Track switcher
             try:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
@@ -150,6 +181,9 @@ class UIManager:
             except Exception as e:
                 print(f"❌ TrackSwitcherUI error: {e}")
 
+    # ---------------------------------------------------------
+    # NOTE EVENTS
+    # ---------------------------------------------------------
     def on_note_on(self, event):
         if not isinstance(event, dict):
             return
@@ -163,10 +197,6 @@ class UIManager:
             return
 
         velocity = event.get("velocity", 100)
-        try:
-            self.track_activity[track_id] = min(1.0, velocity / 127.0)
-        except Exception:
-            pass
 
         track_color = None
         if self.track_system is not None:
@@ -224,11 +254,6 @@ class UIManager:
             return
 
         try:
-            self.track_activity[track_id] = 0.0
-        except Exception:
-            pass
-
-        try:
             self.piano.unhighlight_key(note)
         except Exception:
             pass
@@ -260,13 +285,9 @@ class UIManager:
             except Exception:
                 pass
 
-    def _fade_activity(self):
-        try:
-            for track_id in self.track_activity:
-                self.track_activity[track_id] = max(0.0, self.track_activity[track_id] - 0.02)
-        except Exception:
-            pass
-
+    # ---------------------------------------------------------
+    # TIME / BPM
+    # ---------------------------------------------------------
     def _update_time(self):
         if self.is_playing:
             self.current_time_ms = pygame.time.get_ticks() - self.play_start_time
@@ -279,19 +300,22 @@ class UIManager:
             time_str = f"{minutes:02}:{seconds:02}.{tenths}"
             self.transport.set_time(time_str)
 
+    # ---------------------------------------------------------
+    # DRAW
+    # ---------------------------------------------------------
     def draw(self, surface):
-        self._fade_activity()
         self._update_time()
 
+        # TRANSPORT
         try:
             x, y = self.layout["transport"]
             self.transport.draw(surface.subsurface((x, y, self.width, 50)))
         except Exception:
             pass
 
+        # TRACK SWITCHER
         try:
             x, y = self.layout["track_switcher"]
-            self.track_switcher.update_activity(self.track_activity)
             self.track_switcher.draw(
                 surface.subsurface((x, y, self.width, 60)),
                 active_track=self.active_track_id
@@ -299,36 +323,44 @@ class UIManager:
         except Exception:
             pass
 
+        # PIANO
         try:
             x, y = self.layout["piano"]
             self.piano.draw(surface.subsurface((x, y, self.width, 180)))
         except Exception:
             pass
 
+        # PIANO ROLL
         try:
             x, y = self.layout["piano_roll"]
             self.piano_roll.draw(surface.subsurface((x, y, self.width, 180)))
         except Exception:
             pass
 
+        # STAFF
         try:
             x, y = self.layout["staff"]
             self.staff.draw(surface.subsurface((x, y, self.width, 200)))
         except Exception:
             pass
 
+        # VISUALIZER (s BPM pulzom)
         try:
             x, y = self.layout["visualizer"]
+            timestamp = pygame.time.get_ticks() / 1000.0
+            self.visualizer.update_bpm_pulse(self.transport.bpm, timestamp)
             self.visualizer.draw(surface.subsurface((x, y, self.width, 200)))
         except Exception:
             pass
 
+        # RENDERER
         try:
             x, y = self.layout["renderer"]
             self.renderer.draw(surface.subsurface((x, y, self.width, 200)))
         except Exception:
             pass
 
+        # EXPORT BUTTON
         pygame.draw.rect(surface, (40, 40, 40), self.export_button_rect)
         text = self.export_font.render("EXPORT", True, (255, 255, 255))
         surface.blit(text, (self.width - 110, 17))
