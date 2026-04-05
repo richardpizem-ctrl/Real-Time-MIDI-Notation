@@ -120,6 +120,8 @@ Každý krok je oddelený, aby bol projekt modulárny a rozšíriteľný.
 ---
 
 # ▶️ 4. Ako sa projekt spúšťa
+
+Každý krok je oddelený, aby bol projekt modulárny a rozšíriteľný.
 python run.py
 
 `run.py`:
@@ -157,3 +159,94 @@ Všetky hlavné moduly sú **hotové a stabilné**:
 Projekt je pripravený na ďalšie rozširovanie.
 
 ---
+
+# 🕹️ 7. Návod na použitie (User Guide)
+
+## ▶️ Spustenie aplikácie
+Projekt sa spúšťa príkazom:
+python run.py
+
+Po spustení sa otvorí hlavné okno aplikácie (pygame).
+
+---
+
+## 🎹 MIDI vstup
+- Ak máš pripojený MIDI kontrolér, StreamHandler ho automaticky deteguje.  
+- Každá zahraná nota sa okamžite:
+  - odošle do EventRoutera  
+  - zobrazí v UI  
+  - spracuje v NotationProcessore  
+  - vykreslí v GraphicNotationRendereri  
+
+---
+
+## 🎼 Prehrávanie (PlaybackEngine)
+PlaybackEngine riadi:
+
+- čas  
+- prehrávanie  
+- playhead  
+- aktívne noty  
+- tempo (BPM)  
+- meter (beats per bar)
+
+### Ovládanie (dočasné, kým nepridáme toolbar):
+- prehrávanie sa spúšťa automaticky pri príchode MIDI  
+- playhead sa pohybuje podľa BPM  
+- renderer vykresľuje noty v reálnom čase  
+
+---
+
+## 🎚️ Track systém
+TrackSystem + TrackManager umožňujú:
+
+- mute / solo  
+- volume  
+- pan  
+- record arm  
+- farby stôp  
+- aktivitu (peak meter – pripravuje sa)
+
+Každá nota má track_id → renderer ju vykreslí farbou danej stopy.
+
+---
+
+## 🖥️ UI (CanvasUI + UIManager)
+UI pozostáva z:
+
+- hlavného okna (pygame)  
+- CanvasUI (playhead + renderer)  
+- UIManager (ostatné UI prvky)
+
+UIManager spracúva:
+
+- kliknutia  
+- klávesy  
+- interakcie so stopami  
+- vizualizáciu MIDI vstupu  
+
+---
+
+## 🎨 Renderer
+GraphicNotationRenderer:
+
+- vykresľuje noty podľa časovej osi  
+- používa heatmap farby  
+- zobrazuje velocity  
+- kreslí taktové čiary  
+- posúva noty podľa playheadu  
+
+---
+
+## 💾 Export (pripravuje sa)
+V budúcnosti bude možné:
+
+- exportovať MIDI  
+- exportovať obrázky  
+- exportovať PDF  
+
+---
+
+# 🔚 Koniec dokumentácie
+
+
