@@ -14,11 +14,11 @@ class CanvasUI:
 
         # Viewport transform
         self.offset_x = 0
-        self.offset_y = 40  # nech je trochu miesta nad prvým riadkom
+        self.offset_y = 40
         self.zoom = 1.0
 
-        # Playhead (logical x, in same units as notes/grid)
-        self.playhead_time = 1000  # ms-based default, but treated as logical units
+        # Playhead
+        self.playhead_time = 1000
         self.playhead_color = "#ff4444"
         self.playhead_width = 2
 
@@ -27,8 +27,7 @@ class CanvasUI:
         self.timeline_bg = "#f0f0f0"
         self.timeline_line_color = "#888"
 
-        # Notes (hybrid: piano-roll rect + notation symbol)
-        # each note: {"x": float, "width": float, "row": int, "selected": bool, "velocity": int}
+        # Notes
         self.notes = []
         self.current_note = None
 
@@ -38,9 +37,13 @@ class CanvasUI:
         self._velocity_target_note = None
 
         # Tools
-        self.tool = "draw"  # "draw", "select", "erase"
+        self.tool = "draw"
         self.snap = True
-        self.snap_step = self.GRID_STEP_TIME  # snap to grid
+        self.snap_step = self.GRID_STEP_TIME
+
+        # Quantization
+        self.quantize_division = 1.0   # 1.0=1/4, 0.5=1/8, 0.25=1/16, 0.125=1/32
+        self.swing_amount = 0.0        # 0.0–0.5
 
         # Dragging viewport
         self.dragging_view = False
@@ -57,10 +60,10 @@ class CanvasUI:
         self.canvas.bind("<ButtonRelease-1>", self._on_mouse_up)
         self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
         self.canvas.bind("<MouseWheel>", self._on_mouse_wheel)
-        self.canvas.bind("<Button-4>", self._on_mouse_wheel)  # Linux
-        self.canvas.bind("<Button-5>", self._on_mouse_wheel)  # Linux
+        self.canvas.bind("<Button-4>", self._on_mouse_wheel)
+        self.canvas.bind("<Button-5>", self._on_mouse_wheel)
 
-        # Right button → velocity edit
+        # Right mouse → velocity edit
         self.canvas.bind("<ButtonPress-3>", self._on_right_mouse_down)
         self.canvas.bind("<B3-Motion>", self._on_right_mouse_drag)
         self.canvas.bind("<ButtonRelease-3>", self._on_right_mouse_up)
@@ -75,26 +78,37 @@ class CanvasUI:
         return self.canvas
 
     def set_playhead_time(self, time_ms, pixels_per_second=100):
-        """
-        UIManager volá túto funkciu pri update času.
-        time_ms je len logická hodnota – tu ju prepočítame na "time units".
-        """
         self.playhead_time = (time_ms / 1000.0) * pixels_per_second
         self._center_playhead_if_needed()
 
     def set_tool(self, tool_name):
-        """
-        Nastavenie nástroja z vonku: "draw", "select", "erase".
-        """
         if tool_name in ("draw", "select", "erase"):
             self.tool = tool_name
+
+    # ⭐ NEW: QUANTIZATION API
+    def set_quantization(self, division: float):
+        """
+        division:
+            1.0   = 1/4
+            0.5   = 1/8
+            0.25  = 1/16
+            0.125 = 1/32
+        """
+        self.quantize_division = max(0.03125, min(4.0, division))
+        self.snap_step = self.GRID_STEP_TIME * self.quantize_division
+
+    def set_swing(self, amount: float):
+        """
+        amount: 0.0–0.5
+        """
+        self.swing_amount = max(0.0, min(0.5, amount))
 
     # ---------------------------------------------------------
     # INTERNAL: REDRAW LOOP
     # ---------------------------------------------------------
     def _schedule_redraw(self):
         self._draw()
-        self.canvas.after(16, self._schedule_redraw)  # ~60 FPS
+        self.canvas.after(16, self._schedule_redraw)
 
     # ---------------------------------------------------------
     # COORD TRANSFORMS
@@ -111,11 +125,22 @@ class CanvasUI:
     def _screen_y_to_row(self, y):
         return int((y - self.timeline_height - self.offset_y) / self.ROW_HEIGHT)
 
+    # ⭐ UPDATED: snapping with swing
     def _snap_time(self, t):
         if not self.snap:
             return t
+
         step = self.snap_step
-        return round(t / step) * step
+        base = round(t / step) * step
+
+        if self.swing_amount == 0.0:
+            return base
+
+        index = round(t / step)
+        if index % 2 == 1:
+            base += step * self.swing_amount
+
+        return base
 
     # ---------------------------------------------------------
     # DRAW
@@ -126,23 +151,20 @@ class CanvasUI:
         width = self.canvas.winfo_width()
         height = self.canvas.winfo_height()
 
-        # Timeline background
+        # Timeline
         self.canvas.create_rectangle(
             0, 0, width, self.timeline_height,
             fill=self.timeline_bg, outline=""
         )
 
-        # Timeline ticks (based on logical time)
         max_time = self._screen_x_to_time(width + 200)
         min_time = self._screen_x_to_time(-200)
+
         t = (min_time // self.GRID_STEP_TIME) * self.GRID_STEP_TIME
         while t < max_time:
             x = self._time_to_screen_x(t)
             if 0 <= x <= width:
-                self.canvas.create_line(
-                    x, 0, x, self.timeline_height,
-                    fill=self.timeline_line_color
-                )
+                self.canvas.create_line(x, 0, x, self.timeline_height, fill=self.timeline_line_color)
                 self.canvas.create_text(
                     x + 2, self.timeline_height // 2,
                     text=f"{int(t / self.GRID_STEP_TIME)}",
@@ -151,35 +173,26 @@ class CanvasUI:
                 )
             t += self.GRID_STEP_TIME
 
-        # Piano-roll grid (horizontal rows + vertical lines)
-        # Horizontal rows
+        # Grid rows
         max_rows = int((height - self.timeline_height) / self.ROW_HEIGHT) + 4
         for r in range(-2, max_rows):
             y = self._row_to_screen_y(r)
             if 0 <= y <= height:
                 color = "#f7f7f7" if r % 2 == 0 else "#f0f0f0"
-                self.canvas.create_rectangle(
-                    0, y, width, y + self.ROW_HEIGHT,
-                    fill=color, outline=""
-                )
+                self.canvas.create_rectangle(0, y, width, y + self.ROW_HEIGHT, fill=color, outline="")
 
-        # Vertical grid lines (extend through editor area)
+        # Vertical grid lines
         t = (min_time // self.GRID_STEP_TIME) * self.GRID_STEP_TIME
         while t < max_time:
             x = self._time_to_screen_x(t)
             if 0 <= x <= width:
-                self.canvas.create_line(
-                    x, self.timeline_height,
-                    x, height,
-                    fill="#dddddd"
-                )
+                self.canvas.create_line(x, self.timeline_height, x, height, fill="#dddddd")
             t += self.GRID_STEP_TIME
 
-        # Notes (hybrid: rect + notation symbol)
+        # Notes
         for note in self.notes:
             self._draw_note(note)
 
-        # Current drawing note
         if self.current_note is not None:
             self._draw_note(self.current_note, preview=True)
 
@@ -187,20 +200,11 @@ class CanvasUI:
         if self.selecting and self.selection_start and self.selection_end:
             x1, y1 = self.selection_start
             x2, y2 = self.selection_end
-            self.canvas.create_rectangle(
-                x1, y1, x2, y2,
-                outline="#3399ff",
-                dash=(3, 3)
-            )
+            self.canvas.create_rectangle(x1, y1, x2, y2, outline="#3399ff", dash=(3, 3))
 
         # Playhead
         px = self._time_to_screen_x(self.playhead_time)
-        self.canvas.create_line(
-            px, 0,
-            px, height,
-            fill=self.playhead_color,
-            width=self.playhead_width
-        )
+        self.canvas.create_line(px, 0, px, height, fill=self.playhead_color, width=self.playhead_width)
 
     def _draw_note(self, note, preview=False):
         x = self._time_to_screen_x(note["x"])
@@ -211,23 +215,11 @@ class CanvasUI:
         fill = "#66aaff" if not note.get("selected", False) else "#ffcc66"
         outline = "#225588" if not preview else "#888888"
 
-        # main note rect
-        self.canvas.create_rectangle(
-            x, y, x + w, y + h,
-            fill=fill,
-            outline=outline,
-            width=1
-        )
+        self.canvas.create_rectangle(x, y, x + w, y + h, fill=fill, outline=outline, width=1)
 
-        # Hybrid overlay – malý notový symbol
-        self.canvas.create_text(
-            x + 4, y + h / 2,
-            text="♩",
-            anchor="w",
-            fill="#102030"
-        )
+        self.canvas.create_text(x + 4, y + h / 2, text="♩", anchor="w", fill="#102030")
 
-        # Velocity bar (inside note, at bottom)
+        # Velocity bar
         velocity = note.get("velocity", 100)
         velocity = max(self.velocity_min, min(self.velocity_max, velocity))
         ratio = velocity / float(self.velocity_max)
@@ -237,23 +229,17 @@ class CanvasUI:
         bar_y2 = y + h - 2
         bar_y1 = bar_y2 - bar_height
 
-        self.canvas.create_rectangle(
-            bar_x1, bar_y1, bar_x2, bar_y2,
-            fill="#228833",
-            outline=""
-        )
+        self.canvas.create_rectangle(bar_x1, bar_y1, bar_x2, bar_y2, fill="#228833", outline="")
 
     # ---------------------------------------------------------
     # MOUSE EVENTS
     # ---------------------------------------------------------
     def _on_mouse_down(self, event):
-        # Timeline click → move playhead
         if event.y <= self.timeline_height:
             self.playhead_time = self._screen_x_to_time(event.x)
             self._center_playhead_if_needed()
             return
 
-        # Tools
         if self.tool == "draw":
             self._start_draw_note(event)
         elif self.tool == "erase":
@@ -261,17 +247,15 @@ class CanvasUI:
         elif self.tool == "select":
             self._start_selection(event)
         else:
-            # fallback: drag viewport
             self.dragging_view = True
             self.last_drag_x = event.x
             self.last_drag_y = event.y
 
     def _on_mouse_up(self, event):
-        if self.tool == "draw":
-            if self.current_note is not None:
-                if self.current_note["width"] > 5:
-                    self.notes.append(self.current_note)
-                self.current_note = None
+        if self.tool == "draw" and self.current_note is not None:
+            if self.current_note["width"] > 5:
+                self.notes.append(self.current_note)
+            self.current_note = None
 
         if self.tool == "select" and self.selecting:
             self._finalize_selection()
@@ -290,7 +274,6 @@ class CanvasUI:
             self.selection_end = (event.x, event.y)
             return
 
-        # viewport drag (middle of editor)
         if not self.dragging_view:
             self.dragging_view = True
             self.last_drag_x = event.x
@@ -310,7 +293,6 @@ class CanvasUI:
     # RIGHT MOUSE – VELOCITY EDIT
     # ---------------------------------------------------------
     def _note_at(self, x, y):
-        """Find first note under given screen coords."""
         t = self._screen_x_to_time(x)
         row = self._screen_y_to_row(y)
 
@@ -322,10 +304,8 @@ class CanvasUI:
         return None
 
     def _update_note_velocity_from_y(self, note, y_screen):
-        """Map Y inside note row to velocity."""
         row_y = self._row_to_screen_y(note["row"])
         row_bottom = row_y + self.ROW_HEIGHT
-        # clamp
         y_clamped = max(row_y, min(row_bottom, y_screen))
         ratio = (row_bottom - y_clamped) / float(self.ROW_HEIGHT)
         velocity = int(ratio * self.velocity_max)
@@ -335,7 +315,6 @@ class CanvasUI:
     def _on_right_mouse_down(self, event):
         note = self._note_at(event.x, event.y)
         if note is not None:
-            # ensure velocity field exists
             if "velocity" not in note:
                 note["velocity"] = 100
             self._velocity_target_note = note
@@ -401,7 +380,6 @@ class CanvasUI:
         self.selecting = True
         self.selection_start = (event.x, event.y)
         self.selection_end = (event.x, event.y)
-        # reset selection
         for n in self.notes:
             n["selected"] = False
 
@@ -427,7 +405,6 @@ class CanvasUI:
     # ZOOM
     # ---------------------------------------------------------
     def _on_mouse_wheel(self, event):
-        # Ctrl + wheel → zoom (x-axis)
         ctrl_pressed = (event.state & 0x0004) != 0
 
         if ctrl_pressed:
@@ -439,16 +416,13 @@ class CanvasUI:
 
             self.zoom = max(self.MIN_ZOOM, min(self.MAX_ZOOM, self.zoom))
 
-            # zoom around cursor
             if self.zoom != old_zoom:
                 mouse_time = self._screen_x_to_time(event.x)
                 new_offset_x = event.x - mouse_time * self.zoom
                 self.offset_x = new_offset_x
         else:
-            # Normal wheel → vertical scroll
             delta = getattr(event, "delta", 0)
             if delta == 0:
-                # Linux Button-4/5
                 if getattr(event, "num", None) == 4:
                     delta = 120
                 elif getattr(event, "num", None) == 5:
@@ -459,7 +433,6 @@ class CanvasUI:
     # PLAYHEAD CENTERING
     # ---------------------------------------------------------
     def _center_playhead_if_needed(self):
-        """Ak playhead utečie mimo obrazovky, posunieme viewport."""
         width = self.canvas.winfo_width()
         margin = 200
 
