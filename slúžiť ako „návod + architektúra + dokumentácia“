@@ -120,18 +120,6 @@ Každý krok je oddelený, aby bol projekt modulárny a rozšíriteľný.
 ---
 
 # ▶️ 4. Ako sa projekt spúšťa
-
-Každý krok je oddelený, aby bol projekt modulárny a rozšíriteľný.
-
----
-
-# ▶️ 4. Ako sa projekt spúšťa
-
-Každý krok je oddelený, aby bol projekt modulárny a rozšíriteľný.
-
----
-
-# ▶️ 4. Ako sa projekt spúšťa
 python run.py
 
 `run.py`:
@@ -169,5 +157,3 @@ Všetky hlavné moduly sú **hotové a stabilné**:
 Projekt je pripravený na ďalšie rozširovanie.
 
 ---
-
-
