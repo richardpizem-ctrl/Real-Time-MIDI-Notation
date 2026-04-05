@@ -19,9 +19,15 @@ from midi_input.event_router import EventRouter
 
 from core.logger import Logger
 
+# NOVÉ IMPORTY
+from core.track_manager import TrackManager
+from renderer.graphic_renderer import GraphicNotationRenderer
+from ui.canvas_ui import CanvasUI
+from core.playback_engine import PlaybackEngine
+
 
 # ---------------------------------------------------------
-# TEST HANDLERY (ponechané podľa tvojej architektúry)
+# TEST HANDLERY
 # ---------------------------------------------------------
 def on_note_recorded(data):
     Logger.info(f"[TEST] NOTE_RECORDED event received: {data}")
@@ -58,7 +64,6 @@ def main():
     # -----------------------------------------------------
     event_bus = EventBus()
 
-    # Registrácia handlerov
     try:
         event_bus.subscribe(NOTE_RECORDED, on_note_recorded)
         event_bus.subscribe(TRACK_SELECTED, on_track_selected)
@@ -91,7 +96,6 @@ def main():
         Logger.error(f"Failed to initialize UIManager: {e}")
         return
 
-    # Prepojenie UI komponentov do NotationProcessoru
     try:
         notation_processor.bind_staff(ui.staff)
         notation_processor.bind_piano(ui.piano)
@@ -124,7 +128,34 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 6. HLAVNÁ RENDER SLUČKA
+    # 6. NOVÉ: TrackManager + Renderer + CanvasUI + PlaybackEngine
+    # -----------------------------------------------------
+    try:
+        track_manager = TrackManager(track_system)
+
+        canvas_ui = CanvasUI(parent=None)  # CanvasUI beží mimo pygame okna
+        renderer = GraphicNotationRenderer(
+            width=1400,
+            height=400,
+            track_manager=track_manager
+        )
+
+        playback = PlaybackEngine(
+            track_manager=track_manager,
+            renderer=renderer,
+            canvas_ui=canvas_ui,
+            bpm=120.0,
+            beats_per_bar=4
+        )
+
+        # DEMO: prázdne noty (môžeš neskôr nahradiť MIDI loaderom)
+        playback.set_notes([])
+    except Exception as e:
+        Logger.error(f"Failed to initialize PlaybackEngine stack: {e}")
+        return
+
+    # -----------------------------------------------------
+    # 7. HLAVNÁ RENDER SLUČKA
     # -----------------------------------------------------
     running = True
     while running:
@@ -138,7 +169,15 @@ def main():
             # MIDI vstup
             stream_handler.poll()
 
+            # Playback engine tick
+            playback_surface = playback.update()
+
+            # UI kreslenie
             ui.draw(screen)
+
+            # Renderer kreslenie (ak existuje surface)
+            if playback_surface is not None:
+                screen.blit(playback_surface, (0, 700))
 
             pygame.display.update()
             clock.tick(60)
