@@ -55,6 +55,9 @@ class CanvasUI:
         self.selection_start = None
         self.selection_end = None
 
+        # Color modes: "classic", "heatmap", "glow"
+        self.color_mode = "heatmap"
+
         # Bind events
         self.canvas.bind("<ButtonPress-1>", self._on_mouse_down)
         self.canvas.bind("<ButtonRelease-1>", self._on_mouse_up)
@@ -84,6 +87,13 @@ class CanvasUI:
     def set_tool(self, tool_name):
         if tool_name in ("draw", "select", "erase"):
             self.tool = tool_name
+
+    def set_color_mode(self, mode: str):
+        """
+        mode: "classic", "heatmap", "glow"
+        """
+        if mode in ("classic", "heatmap", "glow"):
+            self.color_mode = mode
 
     # ⭐ NEW: QUANTIZATION API
     def set_quantization(self, division: float):
@@ -139,6 +149,65 @@ class CanvasUI:
         index = round(t / step)
         if index % 2 == 1:
             base += step * self.swing_amount
+
+        return base
+
+    # ---------------------------------------------------------
+    # COLOR HELPERS
+    # ---------------------------------------------------------
+    def _hex_to_rgb(self, h: str):
+        h = h.lstrip("#")
+        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+    def _rgb_to_hex(self, r: int, g: int, b: int):
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    def _lerp(self, a: int, b: int, t: float):
+        return int(a + (b - a) * t)
+
+    def _mix_colors(self, c1: str, c2: str, t: float):
+        r1, g1, b1 = self._hex_to_rgb(c1)
+        r2, g2, b2 = self._hex_to_rgb(c2)
+        r = self._lerp(r1, r2, t)
+        g = self._lerp(g1, g2, t)
+        b = self._lerp(b1, b2, t)
+        return self._rgb_to_hex(r, g, b)
+
+    def _velocity_to_color(self, velocity: int) -> str:
+        """
+        Classic: statická farba
+        Heatmap: 0–50 modrá, 50–90 zelená, 90–127 červená (plynulý prechod)
+        Glow: heatmap + zosvetlenie
+        """
+        v = max(self.velocity_min, min(self.velocity_max, velocity))
+        t = v / float(self.velocity_max)
+
+        if self.color_mode == "classic":
+            return "#66aaff"
+
+        # Base colors
+        blue = (0x4d, 0xa6, 0xff)   # #4da6ff
+        green = (0x33, 0xcc, 0x33)  # #33cc33
+        red = (0xff, 0x44, 0x44)    # #ff4444
+
+        if t <= 0.5:
+            # blue -> green
+            local_t = t / 0.5
+            r = self._lerp(blue[0], green[0], local_t)
+            g = self._lerp(blue[1], green[1], local_t)
+            b = self._lerp(blue[2], green[2], local_t)
+        else:
+            # green -> red
+            local_t = (t - 0.5) / 0.5
+            r = self._lerp(green[0], red[0], local_t)
+            g = self._lerp(green[1], red[1], local_t)
+            b = self._lerp(green[2], red[2], local_t)
+
+        base = self._rgb_to_hex(r, g, b)
+
+        if self.color_mode == "glow":
+            # mix with white for glow effect
+            base = self._mix_colors(base, "#ffffff", 0.35)
 
         return base
 
@@ -206,24 +275,60 @@ class CanvasUI:
         px = self._time_to_screen_x(self.playhead_time)
         self.canvas.create_line(px, 0, px, height, fill=self.playhead_color, width=self.playhead_width)
 
+        # Legend (velocity heatmap)
+        self._draw_legend(width, height)
+
+    def _draw_legend(self, width, height):
+        legend_height = 22
+        y0 = height - legend_height
+        y1 = height
+
+        self.canvas.create_rectangle(0, y0, width, y1, fill="#f8f8f8", outline="#dddddd")
+
+        # Gradient bar from soft → strong
+        x0 = 10
+        x1 = 210
+        steps = 50
+        for i in range(steps):
+            t = i / (steps - 1)
+            v = int(t * self.velocity_max)
+            color = self._velocity_to_color(v)
+            sx0 = x0 + (x1 - x0) * t
+            sx1 = x0 + (x1 - x0) * ((i + 1) / (steps - 1))
+            self.canvas.create_rectangle(sx0, y0 + 4, sx1, y1 - 4, fill=color, outline=color)
+
+        self.canvas.create_text(x1 + 10, (y0 + y1) / 2,
+                                text="Soft → Strong (velocity)",
+                                anchor="w",
+                                fill="#444",
+                                font=("TkDefaultFont", 8))
+
+        self.canvas.create_text(width - 10, (y0 + y1) / 2,
+                                text=f"Color mode: {self.color_mode}",
+                                anchor="e",
+                                fill="#666",
+                                font=("TkDefaultFont", 8))
+
     def _draw_note(self, note, preview=False):
         x = self._time_to_screen_x(note["x"])
         w = note["width"] * self.zoom
         y = self._row_to_screen_y(note["row"])
         h = self.ROW_HEIGHT - 2
 
-        # ⭐ HEATMAP COLOR BASED ON VELOCITY
         velocity = note.get("velocity", 100)
+        fill = self._velocity_to_color(velocity)
 
-        if velocity <= 50:
-            fill = "#4da6ff"   # blue
-        elif velocity <= 90:
-            fill = "#33cc33"   # green
-        else:
-            fill = "#ff4444"   # red
-
+        # Selection override
         if note.get("selected", False):
             fill = "#ffcc66"
+
+        # Simple flash animation (on creation / velocity change)
+        flash = note.get("flash", 0.0)
+        if flash > 0.01:
+            fill = self._mix_colors(fill, "#ffffff", min(0.8, flash))
+            note["flash"] = flash * 0.85
+        else:
+            note["flash"] = 0.0
 
         outline = "#225588" if not preview else "#888888"
 
@@ -321,6 +426,7 @@ class CanvasUI:
         velocity = int(ratio * self.velocity_max)
         velocity = max(self.velocity_min, min(self.velocity_max, velocity))
         note["velocity"] = velocity
+        note["flash"] = 1.0  # flash on velocity change
 
     def _on_right_mouse_down(self, event):
         note = self._note_at(event.x, event.y)
@@ -354,6 +460,7 @@ class CanvasUI:
             "row": row,
             "selected": False,
             "velocity": 100,
+            "flash": 1.0,
         }
 
     def _update_draw_note(self, event):
