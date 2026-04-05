@@ -1,10 +1,21 @@
-# drum_notation.py
-# Profesionálna notácia bicích – mapping, tvary hlavičiek, stonky, layering
+"""
+Drum Notation – profesionálny mapping bicích pre Real-Time-MIDI-Notation.
+
+Stabilizované:
+- bezpečné spracovanie pitchov a velocity
+- fallback pri chybách
+- jednotné štruktúry pre renderer
+- podpora layering (offsety)
+- podpora ghost / accent úderov
+"""
 
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 
 
+# ---------------------------------------------------------
+# DRUM SYMBOL SPEC
+# ---------------------------------------------------------
 @dataclass
 class DrumSymbolSpec:
     name: str
@@ -19,7 +30,9 @@ class DrumSymbolSpec:
     default_layer_offset: float = 0.0
 
 
-# GM Drum Map – profesionálny mapping
+# ---------------------------------------------------------
+# GM DRUM MAP
+# ---------------------------------------------------------
 DRUM_PITCH_MAP: Dict[int, DrumSymbolSpec] = {
     36: DrumSymbolSpec("Kick", "normal", "none", is_kick=True),
     35: DrumSymbolSpec("Kick 2", "normal", "none", is_kick=True),
@@ -53,6 +66,9 @@ DRUM_PITCH_MAP: Dict[int, DrumSymbolSpec] = {
 }
 
 
+# ---------------------------------------------------------
+# SAFE HELPERS
+# ---------------------------------------------------------
 def get_drum_spec(pitch: int) -> DrumSymbolSpec:
     try:
         p = int(pitch)
@@ -64,11 +80,7 @@ def get_drum_spec(pitch: int) -> DrumSymbolSpec:
 def _safe_velocity(velocity: Any, default: int = 80) -> int:
     try:
         v = int(velocity)
-        if v < 0:
-            v = 0
-        if v > 127:
-            v = 127
-        return v
+        return max(0, min(127, v))
     except Exception:
         return default
 
@@ -83,6 +95,9 @@ def is_accent_velocity(velocity: int, accent_threshold: float = 0.8) -> bool:
     return (v / 127.0) >= accent_threshold
 
 
+# ---------------------------------------------------------
+# ANNOTATE SINGLE DRUM NOTE
+# ---------------------------------------------------------
 def annotate_drum_note(note: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(note, dict):
         return {
@@ -106,8 +121,7 @@ def annotate_drum_note(note: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     pitch = note.get("pitch", 38)
-    velocity = note.get("velocity", 80)
-    velocity = _safe_velocity(velocity)
+    velocity = _safe_velocity(note.get("velocity", 80))
 
     spec = get_drum_spec(pitch)
 
@@ -142,10 +156,14 @@ def annotate_drum_note(note: Dict[str, Any]) -> Dict[str, Any]:
     return annotated
 
 
+# ---------------------------------------------------------
+# GROUPING DRUM NOTES BY TIME
+# ---------------------------------------------------------
 def group_drum_notes_by_time(
     timeline: List[Dict[str, Any]],
     time_epsilon: float = 1e-3
 ) -> List[List[Dict[str, Any]]]:
+
     groups: List[List[Dict[str, Any]]] = []
     current_group: List[Dict[str, Any]] = []
     last_start: Optional[float] = None
@@ -180,10 +198,14 @@ def group_drum_notes_by_time(
     return groups
 
 
+# ---------------------------------------------------------
+# LAYER OFFSETS
+# ---------------------------------------------------------
 def assign_layer_offsets_to_group(
     group: List[Dict[str, Any]],
     base_offset: float = 4.0
 ) -> None:
+
     if not isinstance(group, list) or not group:
         return
 
@@ -210,11 +232,15 @@ def assign_layer_offsets_to_group(
         n["drum_layer_offset"] = offset_index * base_offset
 
 
+# ---------------------------------------------------------
+# FULL TIMELINE ANNOTATION
+# ---------------------------------------------------------
 def annotate_drum_timeline(timeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not isinstance(timeline, list):
         return []
 
     annotated: List[Dict[str, Any]] = []
+
     for note in timeline:
         if not isinstance(note, dict):
             continue
@@ -225,6 +251,7 @@ def annotate_drum_timeline(timeline: List[Dict[str, Any]]) -> List[Dict[str, Any
             annotated.append(note)
 
     groups = group_drum_notes_by_time(annotated)
+
     for g in groups:
         assign_layer_offsets_to_group(g)
 
