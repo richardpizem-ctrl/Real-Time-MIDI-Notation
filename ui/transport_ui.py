@@ -25,6 +25,7 @@ class TransportUI:
         self.bpm = 120
         self.time_text = "00:00.0"
         self.loop_enabled = False
+        self.is_playing = False
 
     # ---------------------------------------------------------
     # EVENT HANDLING
@@ -34,12 +35,15 @@ class TransportUI:
             pos = event.pos
 
             if self.buttons["rewind"].collidepoint(pos):
+                self.is_playing = False
                 return {"action": "rewind"}
 
             if self.buttons["play"].collidepoint(pos):
+                self.is_playing = True
                 return {"action": "play"}
 
             if self.buttons["stop"].collidepoint(pos):
+                self.is_playing = False
                 return {"action": "stop"}
 
             if self.buttons["loop"].collidepoint(pos):
@@ -60,7 +64,7 @@ class TransportUI:
     # SETTERS
     # ---------------------------------------------------------
     def set_bpm(self, bpm):
-        self.bpm = bpm
+        self.bpm = max(20, min(300, bpm))
 
     def set_time(self, text):
         self.time_text = text
@@ -77,7 +81,7 @@ class TransportUI:
 
         # --- BUTTON COLORS ---
         pygame.draw.rect(surface, (80, 80, 80), self.buttons["rewind"])
-        pygame.draw.rect(surface, (0, 200, 0), self.buttons["play"])
+        pygame.draw.rect(surface, (0, 200, 0) if not self.is_playing else (0, 150, 0), self.buttons["play"])
         pygame.draw.rect(surface, (200, 0, 0), self.buttons["stop"])
 
         loop_color = (0, 120, 255) if self.loop_enabled else (120, 120, 120)
