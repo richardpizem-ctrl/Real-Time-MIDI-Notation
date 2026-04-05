@@ -4,11 +4,11 @@ from .logger import Logger
 from .event_bus import EventBus
 from .config_manager import ConfigManager
 
-# Reálne funkčné moduly
+# Core functional modules
 from .track_manager import TrackSystem
 from .notation_processor import NotationProcessor
 
-# Event typy
+# Event types
 from .event_types import (
     APP_STARTED,
     APP_STOPPED,
@@ -32,37 +32,30 @@ class AppController:
     def __init__(self):
         Logger.info("Initializing AppController...")
 
-        # Core systems
-        try:
-            self.event_bus = EventBus()
-        except Exception as e:
-            Logger.error(f"Failed to initialize EventBus: {e}")
-            self.event_bus = None
-
-        try:
-            self.config = ConfigManager()
-        except Exception as e:
-            Logger.error(f"Failed to initialize ConfigManager: {e}")
-            self.config = None
+        # -----------------------------------------------------
+        # INITIALIZATION OF CORE SYSTEMS
+        # -----------------------------------------------------
+        self.event_bus = self._safe_init(EventBus, "EventBus")
+        self.config = self._safe_init(ConfigManager, "ConfigManager")
 
         # Track system prepojený s EventBusom
-        try:
-            self.track_system = TrackSystem(event_bus=self.event_bus)
-        except Exception as e:
-            Logger.error(f"Failed to initialize TrackSystem: {e}")
-            self.track_system = None
+        self.track_system = self._safe_init(
+            lambda: TrackSystem(event_bus=self.event_bus),
+            "TrackSystem"
+        )
 
         # Notation processor prepojený s EventBusom
-        try:
-            self.notation_processor = NotationProcessor(
+        self.notation_processor = self._safe_init(
+            lambda: NotationProcessor(
                 track_system=self.track_system,
                 event_bus=self.event_bus
-            )
-        except Exception as e:
-            Logger.error(f"Failed to initialize NotationProcessor: {e}")
-            self.notation_processor = None
+            ),
+            "NotationProcessor"
+        )
 
-        # Odbery udalostí
+        # -----------------------------------------------------
+        # EVENT SUBSCRIPTIONS
+        # -----------------------------------------------------
         if self.event_bus:
             try:
                 self.event_bus.subscribe(MIDI_EXPORTED, self._on_midi_exported)
@@ -73,7 +66,20 @@ class AppController:
         Logger.info("AppController initialized successfully.")
 
     # ---------------------------------------------------------
-    # ŠTART APLIKÁCIE
+    # SAFE INITIALIZATION WRAPPER
+    # ---------------------------------------------------------
+    def _safe_init(self, constructor, name):
+        """Bezpečne inicializuje modul a zachytí chyby."""
+        try:
+            instance = constructor()
+            Logger.info(f"{name} initialized.")
+            return instance
+        except Exception as e:
+            Logger.error(f"Failed to initialize {name}: {e}")
+            return None
+
+    # ---------------------------------------------------------
+    # START APPLICATION
     # ---------------------------------------------------------
     def start(self):
         """Štart aplikácie."""
@@ -87,7 +93,7 @@ class AppController:
                 Logger.error(f"Failed to publish start events: {e}")
 
     # ---------------------------------------------------------
-    # STOP APLIKÁCIE
+    # STOP APPLICATION
     # ---------------------------------------------------------
     def stop(self):
         """Bezpečné ukončenie aplikácie."""
@@ -117,3 +123,34 @@ class AppController:
                 Logger.error(f"Failed to publish MIDI_EXPORT_REQUEST: {e}")
 
         if self.notation_processor:
+            try:
+                self.notation_processor.export_midi(filename)
+            except Exception as e:
+                Logger.error(f"NotationProcessor export failed: {e}")
+
+    # ---------------------------------------------------------
+    # EVENT HANDLERS
+    # ---------------------------------------------------------
+    def _on_midi_exported(self, filename):
+        Logger.info(f"MIDI exported successfully: {filename}")
+
+        if self.event_bus:
+            try:
+                self.event_bus.publish(
+                    STATUS_MESSAGE,
+                    f"MIDI exported: {filename}"
+                )
+            except Exception as e:
+                Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
+
+    def _on_error(self, error_message):
+        Logger.error(f"Application error: {error_message}")
+
+        if self.event_bus:
+            try:
+                self.event_bus.publish(
+                    STATUS_MESSAGE,
+                    f"Error: {error_message}"
+                )
+            except Exception as e:
+                Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
