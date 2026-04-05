@@ -35,7 +35,7 @@ class UIManager:
             event_bus=track_system.event_bus
         )
 
-        # TRACK VISIBILITY (pre renderer)
+        # TRACK VISIBILITY
         self.track_visibility = {i: True for i in range(16)}
 
         track_system.event_bus.subscribe("track_toggle", self._on_track_toggle)
@@ -43,7 +43,7 @@ class UIManager:
         track_system.event_bus.subscribe("track_mute", self._on_track_mute)
         track_system.event_bus.subscribe("track_solo", self._on_track_solo)
 
-        # PIANO / PIANO ROLL / STAFF / VISUALIZER
+        # UI PANELS
         self.piano = PianoUI(width, 180)
         self.piano_roll = PianoRollUI(width, 180)
         self.staff = StaffUI(width, 200)
@@ -65,11 +65,11 @@ class UIManager:
         self.canvas_ui = None
         self.canvas = None
 
-        # Quantization state (for CanvasUI snapping)
-        # 1.0 = 1/4, 0.5 = 1/8, 0.25 = 1/16, 0.125 = 1/32
+        # Quantization state
         self.quantize_division = 1.0
-        self.swing_amount = 0.0  # 0.0–0.5
+        self.swing_amount = 0.0
 
+        # Layout
         self.layout = {
             "transport": (0, 0),
             "track_switcher": (0, 55),
@@ -113,7 +113,6 @@ class UIManager:
             pass
 
     def _on_track_selected(self, track_id):
-        # track_id je 0-based index z TrackSwitcherUI
         self.active_track_id = track_id
         try:
             self.track_system.track_manager.handle_track_selected(track_id + 1)
@@ -141,15 +140,11 @@ class UIManager:
         self.canvas_ui = CanvasUI(parent)
         self.canvas = self.canvas_ui.get_canvas()
 
-        # inicializuj quantizáciu aj v CanvasUI, ak ju podporuje
         if hasattr(self.canvas_ui, "set_quantization"):
             self.canvas_ui.set_quantization(self.quantize_division)
         if hasattr(self.canvas_ui, "set_swing"):
             self.canvas_ui.set_swing(self.swing_amount)
 
-    # ---------------------------------------------------------
-    # INTERNAL: QUANTIZATION HELPERS
-    # ---------------------------------------------------------
     def _apply_quantization_to_canvas(self):
         if self.canvas_ui is None:
             return
@@ -181,14 +176,6 @@ class UIManager:
                 self.play_start_time = pygame.time.get_ticks()
                 self.transport.set_time("00:00.0")
 
-            elif action == "bpm":
-                # BPM je uložené v transporte, vizualizér si ho berie v draw()
-                pass
-
-            elif action == "loop":
-                # Loop flag je v transporte, logiku prehrávania môže riešiť processor
-                pass
-
         # Export + Track switcher
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.export_button_rect.collidepoint(event.pos):
@@ -203,11 +190,10 @@ class UIManager:
             except Exception as e:
                 print(f"❌ TrackSwitcherUI error: {e}")
 
-        # Quantization keyboard shortcuts
+        # Quantization shortcuts
         if event.type == pygame.KEYDOWN:
             updated = False
 
-            # 1/4, 1/8, 1/16, 1/32
             if event.key == pygame.K_1:
                 self.quantize_division = 1.0
                 updated = True
@@ -221,7 +207,6 @@ class UIManager:
                 self.quantize_division = 0.125
                 updated = True
 
-            # Swing on/off (Q = off, W = medium swing)
             if event.key == pygame.K_q:
                 self.swing_amount = 0.0
                 updated = True
@@ -395,7 +380,7 @@ class UIManager:
         except Exception:
             pass
 
-        # VISUALIZER (s BPM pulzom)
+        # VISUALIZER
         try:
             x, y = self.layout["visualizer"]
             timestamp = pygame.time.get_ticks() / 1000.0
