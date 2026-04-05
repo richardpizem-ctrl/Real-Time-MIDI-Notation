@@ -1,6 +1,18 @@
-# notation_engine/harmony_engine.py
+"""
+Harmony Engine – stabilná harmonická analýza pre Real-Time-MIDI-Notation.
 
-from typing import List, Dict, Optional, Tuple
+ÚLOHA:
+- dostať informáciu o kľúči (tonalite) a akorde
+- analyzovať MIDI pitch hodnoty
+- vrátiť harmonickú rolu:
+    - root
+    - chord_tone
+    - tension
+    - scale_tone
+    - outside
+"""
+
+from typing import List, Dict, Optional
 
 
 class HarmonyRole:
@@ -13,17 +25,7 @@ class HarmonyRole:
 
 class HarmonyEngine:
     """
-    Všeobecný harmonický engine.
-
-    ÚLOHA:
-    - dostať informáciu o aktuálnom kľúči (tonalite) a akorde
-    - dostať zoznam tónov (MIDI pitch)
-    - vrátiť pre každý tón jeho harmonickú rolu:
-        - root
-        - chord_tone (3, 5, 7)
-        - tension (9, 11, 13)
-        - scale_tone (v stupnici, ale mimo akordu)
-        - outside (mimo stupnice)
+    Stabilizovaný harmonický engine.
     """
 
     def __init__(self):
@@ -35,25 +37,34 @@ class HarmonyEngine:
         }
 
     # ---------------------------------------------------------
-    # POMOCNÉ FUNKCIE
+    # HELPERS
     # ---------------------------------------------------------
     @staticmethod
     def _normalize_pitch(pitch: int) -> int:
-        return pitch % 12
+        try:
+            return int(pitch) % 12
+        except Exception:
+            return 0
 
     @staticmethod
     def _build_scale(key_root: int, is_major: bool = True) -> List[int]:
         """
         Jednoduchá diatonická stupnica (major/minor) v 12-tónovom cykle.
         """
+        try:
+            key_root = int(key_root) % 12
+        except Exception:
+            return []
+
         if is_major:
             pattern = [0, 2, 4, 5, 7, 9, 11]
         else:
             pattern = [0, 2, 3, 5, 7, 8, 10]
-        return [ (key_root + step) % 12 for step in pattern ]
+
+        return [(key_root + step) % 12 for step in pattern]
 
     # ---------------------------------------------------------
-    # HLAVNÁ FUNKCIA
+    # MAIN ANALYSIS
     # ---------------------------------------------------------
     def analyze(
         self,
@@ -64,27 +75,42 @@ class HarmonyEngine:
     ) -> Dict[int, str]:
         """
         Vstup:
-            pitches   - zoznam MIDI pitch hodnôt (napr. [60, 64, 67])
-            key_root  - root stupnice (0–11, C=0, C#=1, ...)
+            pitches   - MIDI pitch hodnoty
+            key_root  - root stupnice (0–11)
             is_major  - True = dur, False = mol
-            chord_root- root akordu (0–11), ak je známy
+            chord_root- root akordu (0–11)
 
         Výstup:
             dict: pitch -> HarmonyRole.*
         """
         roles: Dict[int, str] = {}
 
-        # Ak nemáme key_root, nevieme posúdiť scale/outside → všetko berieme len voči akordu
+        if not isinstance(pitches, list):
+            return roles
+
+        # Stupnica
         scale_pitches: List[int] = []
         if key_root is not None:
             scale_pitches = self._build_scale(key_root, is_major)
 
+        # Normalizovaný root akordu
+        chord_root_norm = None
+        if chord_root is not None:
+            try:
+                chord_root_norm = int(chord_root) % 12
+            except Exception:
+                chord_root_norm = None
+
         for p in pitches:
-            norm = self._normalize_pitch(p)
+            try:
+                norm = self._normalize_pitch(p)
+            except Exception:
+                roles[p] = HarmonyRole.OUTSIDE
+                continue
 
             # 1) ROOT akordu
-            if chord_root is not None:
-                interval = (norm - chord_root) % 12
+            if chord_root_norm is not None:
+                interval = (norm - chord_root_norm) % 12
 
                 if interval in self.chord_intervals[HarmonyRole.ROOT]:
                     roles[p] = HarmonyRole.ROOT
@@ -113,7 +139,7 @@ class HarmonyEngine:
         return roles
 
     # ---------------------------------------------------------
-    # VYŠŠIA ÚROVEŇ – ANALÝZA Z NOTE OBJEKTOV
+    # ANALÝZA Z NOTE OBJEKTOV
     # ---------------------------------------------------------
     def analyze_notes(
         self,
@@ -126,16 +152,22 @@ class HarmonyEngine:
         """
         Alternatíva, ak pracuješ s objektmi nôt (napr. timeline items).
 
-        notes      - zoznam objektov, ktoré majú atribút s názvom pitch_attr
-        pitch_attr - názov atribútu, kde je uložený MIDI pitch (default 'pitch')
+        notes      - zoznam objektov, ktoré majú atribút pitch_attr
+        pitch_attr - názov atribútu s MIDI pitch hodnotou
 
         Výstup:
             dict: note_obj -> HarmonyRole.*
         """
+        if not isinstance(notes, list):
+            return {}
+
         pitches = []
         for n in notes:
-            if hasattr(n, pitch_attr):
-                pitches.append(getattr(n, pitch_attr))
+            try:
+                if hasattr(n, pitch_attr):
+                    pitches.append(int(getattr(n, pitch_attr)))
+            except Exception:
+                continue
 
         pitch_roles = self.analyze(
             pitches=pitches,
@@ -147,8 +179,11 @@ class HarmonyEngine:
         result: Dict[object, str] = {}
         for n in notes:
             if hasattr(n, pitch_attr):
-                p = getattr(n, pitch_attr)
-                result[n] = pitch_roles.get(p, HarmonyRole.OUTSIDE)
+                try:
+                    p = int(getattr(n, pitch_attr))
+                    result[n] = pitch_roles.get(p, HarmonyRole.OUTSIDE)
+                except Exception:
+                    result[n] = HarmonyRole.OUTSIDE
             else:
                 result[n] = HarmonyRole.OUTSIDE
 
