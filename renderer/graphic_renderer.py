@@ -45,6 +45,16 @@ class GraphicNotationRenderer:
         # Playhead
         self.playhead_x = width // 2
 
+        # Color mode: "classic", "heatmap", "glow"
+        self.color_mode = "heatmap"
+
+    # ---------------------------------------------------------
+    # PUBLIC API
+    # ---------------------------------------------------------
+    def set_color_mode(self, mode: str):
+        if mode in ("classic", "heatmap", "glow"):
+            self.color_mode = mode
+
     # ---------------------------------------------------------
     # INTERNAL TIME UPDATE
     # ---------------------------------------------------------
@@ -57,26 +67,14 @@ class GraphicNotationRenderer:
         if dt < 0:
             dt = 0.0
 
-        # playback_time ide dopredu v reálnom čase
         self.playback_time += dt
-
-        # scroll_offset posúva obraz podľa času (čas → x)
         self.scroll_offset += self.scroll_speed * dt
 
     # ---------------------------------------------------------
     # TIME → X (hlavný časový layout)
     # ---------------------------------------------------------
     def _time_to_x(self, t: float) -> float:
-        """
-        Mapuje čas v sekundách na X pozíciu v pixeloch.
-
-        - playhead je v strede (self.playhead_x)
-        - playback_time je aktuálny čas
-        - zoom ovplyvňuje hustotu
-        - scroll_offset posúva obraz
-        """
         if self.bpm <= 0:
-            # fallback: lineárny čas bez tempa
             pixels_per_second = 80.0 * self.zoom
         else:
             seconds_per_beat = 60.0 / self.bpm
@@ -91,12 +89,6 @@ class GraphicNotationRenderer:
     # PITCH → Y (vertikálny layout)
     # ---------------------------------------------------------
     def _pitch_to_y(self, midi: int) -> float:
-        """
-        Mapuje MIDI pitch na Y pozíciu.
-
-        - referenčný stred (napr. C4 = 60) je v strede staffu
-        - vyššie tóny idú hore, nižšie dole
-        """
         reference_pitch = 60  # C4
         staff_center = self.margin_top + 2 * self.staff_line_spacing
         semitone_step = self.staff_line_spacing / 2.0
@@ -109,9 +101,6 @@ class GraphicNotationRenderer:
     # STAFF LINES RENDERING (cache)
     # ---------------------------------------------------------
     def _render_staff_lines(self) -> pygame.Surface:
-        """
-        Vyrenderuje notovú osnovu do cache, aby sa nemusela kresliť každým frame.
-        """
         if (
             self.staff_cache is not None
             and self.staff_cache.get_width() == self.staff_cache_width
@@ -122,7 +111,6 @@ class GraphicNotationRenderer:
         staff_surface = pygame.Surface((self.staff_cache_width, self.staff_cache_height), pygame.SRCALPHA)
         staff_surface.fill((0, 0, 0, 0))
 
-        # 5 liniek
         for i in range(5):
             y = self.margin_top + i * self.staff_line_spacing
             pygame.draw.line(
@@ -137,6 +125,69 @@ class GraphicNotationRenderer:
         return self.staff_cache
 
     # ---------------------------------------------------------
+    # COLOR HELPERS
+    # ---------------------------------------------------------
+    def _hex_to_rgb(self, h: str):
+        h = h.lstrip("#")
+        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+    def _rgb_to_hex(self, r: int, g: int, b: int):
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    def _lerp(self, a: float, b: float, t: float) -> float:
+        return a + (b - a) * t
+
+    def _mix_colors(self, c1: Tuple[int, int, int], c2: Tuple[int, int, int], t: float) -> Tuple[int, int, int]:
+        r = int(self._lerp(c1[0], c2[0], t))
+        g = int(self._lerp(c1[1], c2[1], t))
+        b = int(self._lerp(c1[2], c2[2], t))
+        return (r, g, b)
+
+    def _velocity_to_color(self, base_color: Tuple[int, int, int], velocity: int) -> Tuple[int, int, int]:
+        """
+        Classic: base_color len zosilnený podľa velocity
+        Heatmap: 0–127 → blue → green → red
+        Glow: heatmap + mix s bielou
+        """
+        try:
+            v = int(velocity)
+        except Exception:
+            v = 100
+
+        v = max(1, min(127, v))
+        t = v / 127.0
+
+        if self.color_mode == "classic":
+            factor = 0.4 + 0.6 * t
+            return (
+                int(base_color[0] * factor),
+                int(base_color[1] * factor),
+                int(base_color[2] * factor),
+            )
+
+        blue = (0x4d, 0xa6, 0xff)
+        green = (0x33, 0xcc, 0x33)
+        red = (0xff, 0x44, 0x44)
+
+        if t <= 0.5:
+            lt = t / 0.5
+            r = int(self._lerp(blue[0], green[0], lt))
+            g = int(self._lerp(blue[1], green[1], lt))
+            b = int(self._lerp(blue[2], green[2], lt))
+        else:
+            lt = (t - 0.5) / 0.5
+            r = int(self._lerp(green[0], red[0], lt))
+            g = int(self._lerp(green[1], red[1], lt))
+            b = int(self._lerp(green[2], red[2], lt))
+
+        color = (r, g, b)
+
+        if self.color_mode == "glow":
+            color = self._mix_colors(color, (255, 255, 255), 0.35)
+
+        return color
+
+    # ---------------------------------------------------------
     # VELOCITY → vizuálny faktor
     # ---------------------------------------------------------
     def _velocity_factor(self, velocity: int) -> float:
@@ -147,26 +198,22 @@ class GraphicNotationRenderer:
         return max(0.3, min(1.0, v / 127.0))
 
     # ---------------------------------------------------------
-    # NOTE DRAWING (upravené pre velocity)
+    # NOTE DRAWING (upravené pre velocity + heatmap + glow + flash)
     # ---------------------------------------------------------
-    def _draw_note(self, surface, x: float, y: float, color: Tuple[int, int, int], velocity: int):
+    def _draw_note(self, surface, x: float, y: float, base_color: Tuple[int, int, int], velocity: int, flash: float = 0.0):
         factor = self._velocity_factor(velocity)
 
-        # farba podľa velocity
-        color = (
-            int(color[0] * factor),
-            int(color[1] * factor),
-            int(color[2] * factor)
-        )
+        color = self._velocity_to_color(base_color, velocity)
 
-        # veľkosť podľa velocity
+        if flash > 0.01:
+            color = self._mix_colors(color, (255, 255, 255), min(0.8, flash))
+
         w = int(16 * (0.8 + 0.4 * factor))
         h = int(12 * (0.8 + 0.4 * factor))
 
         rect = pygame.Rect(int(x), int(y), w, h)
         pygame.draw.ellipse(surface, color, rect)
 
-        # obrys podľa velocity
         outline = int(1 + factor * 2)
         pygame.draw.ellipse(surface, (0, 0, 0), rect, outline)
 
@@ -340,16 +387,12 @@ class GraphicNotationRenderer:
     # TRACK COLOR HELPER
     # ---------------------------------------------------------
     def _get_track_color(self, track_id: int, active_track_id: Optional[int]) -> Tuple[int, int, int]:
-        """
-        Získa farbu stopy z track_managera, zvýrazní aktívnu stopu.
-        """
         try:
             base_color = self.track_manager.get_color(track_id)
         except Exception:
             base_color = (120, 180, 220)
 
         if active_track_id is not None and track_id == active_track_id:
-            # jemné zvýraznenie aktívnej stopy
             r = min(255, int(base_color[0] * 1.1))
             g = min(255, int(base_color[1] * 1.1))
             b = min(255, int(base_color[2] * 1.1))
@@ -358,7 +401,7 @@ class GraphicNotationRenderer:
         return base_color
 
     # ---------------------------------------------------------
-    # MAIN DRAW (začiatok)
+    # MAIN DRAW
     # ---------------------------------------------------------
     def draw(self, notes):
         if self.surface is None:
@@ -390,12 +433,9 @@ class GraphicNotationRenderer:
         seconds_per_beat = 60.0 / self.bpm if self.bpm > 0 else None
 
         chord_positions: Dict[int, List[Tuple[float, float, float, float, Tuple[int, int, int]]]] = {}
-
-        # REALTIME ACTIVITY ACCUMULATOR
         activity_accumulator = {i: 0.0 for i in range(1, 17)}
 
         for (timestamp, track_id), chord_notes in grouped.items():
-
             try:
                 if not self.track_manager.is_effectively_active(track_id):
                     continue
@@ -408,7 +448,7 @@ class GraphicNotationRenderer:
             except Exception:
                 pass
 
-            color = self._get_track_color(track_id, active_track_id)
+            base_color = self._get_track_color(track_id, active_track_id)
 
             try:
                 vol = self.track_manager.get_volume(track_id)
@@ -416,10 +456,10 @@ class GraphicNotationRenderer:
             except Exception:
                 vol = 1.0
 
-            vr = int(color[0] * (0.4 + 0.6 * vol))
-            vg = int(color[1] * (0.4 + 0.6 * vol))
-            vb = int(color[2] * (0.4 + 0.6 * vol))
-            color = (vr, vg, vb)
+            vr = int(base_color[0] * (0.4 + 0.6 * vol))
+            vg = int(base_color[1] * (0.4 + 0.6 * vol))
+            vb = int(base_color[2] * (0.4 + 0.6 * vol))
+            track_color = (vr, vg, vb)
 
             base_x = self._time_to_x(timestamp)
 
@@ -449,7 +489,9 @@ class GraphicNotationRenderer:
                 y = self._pitch_to_y(midi_int)
                 x = base_x + idx * 6
 
-                self._draw_note(self.surface, x, y, color, velocity)
+                flash = note.get("_flash", 1.0)
+                self._draw_note(self.surface, x, y, track_color, velocity, flash=flash)
+                note["_flash"] = flash * 0.85
 
                 activity_accumulator[track_id] += velocity / 127.0
 
@@ -460,12 +502,9 @@ class GraphicNotationRenderer:
 
             if min_y != float("inf") and max_y != float("-inf"):
                 chord_positions.setdefault(track_id, []).append(
-                    (timestamp, base_x, min_y, max_y, color)
+                    (timestamp, base_x, min_y, max_y, track_color)
                 )
 
-        # -----------------------------------------------------
-        # SEND REALTIME ACTIVITY TO TRACKMANAGER
-        # -----------------------------------------------------
         for tid, val in activity_accumulator.items():
             level = min(1.0, val)
             try:
@@ -473,9 +512,6 @@ class GraphicNotationRenderer:
             except Exception:
                 pass
 
-        # -----------------------------------------------------
-        # PREMIUM STEMS
-        # -----------------------------------------------------
         if seconds_per_beat is not None:
             beam_candidates: Dict[int, set] = {}
 
@@ -496,7 +532,6 @@ class GraphicNotationRenderer:
 
             for track_id, chords in chord_positions.items():
                 for (timestamp, base_x, min_y, max_y, color) in chords:
-
                     staff_middle = self.margin_top + 2 * self.staff_line_spacing
                     chord_center = (min_y + max_y) / 2.0
 
@@ -512,7 +547,6 @@ class GraphicNotationRenderer:
 
                     start_y = anchor_y + 6
                     end_y = start_y - stem_length if stem_up else start_y + stem_length
-
                     end_y = max(self.margin_top - 30, min(self.height - 20, end_y))
 
                     pygame.draw.line(
@@ -523,9 +557,6 @@ class GraphicNotationRenderer:
                         3
                     )
 
-        # -----------------------------------------------------
-        # GROUPING: BEAMS
-        # -----------------------------------------------------
         if seconds_per_beat is not None:
             for track_id, chords in chord_positions.items():
                 if len(chords) < 2:
@@ -546,12 +577,5 @@ class GraphicNotationRenderer:
 
                     self._draw_beam(x1, y1, x2, y2, color1, levels=1)
 
-        # -----------------------------------------------------
-        # PLAYHEAD
-        # -----------------------------------------------------
         self._draw_playhead()
-
-        # -----------------------------------------------------
-        # RETURN SURFACE
-        # -----------------------------------------------------
         return self.surface
