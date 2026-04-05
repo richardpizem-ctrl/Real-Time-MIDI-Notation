@@ -46,6 +46,97 @@ class GraphicNotationRenderer:
         self.playhead_x = width // 2
 
     # ---------------------------------------------------------
+    # INTERNAL TIME UPDATE
+    # ---------------------------------------------------------
+    def _update_time(self):
+        """Update playback_time based on real elapsed time and scroll."""
+        now = time.time()
+        dt = now - self.last_frame_time
+        self.last_frame_time = now
+
+        if dt < 0:
+            dt = 0.0
+
+        # playback_time ide dopredu v reálnom čase
+        self.playback_time += dt
+
+        # scroll_offset posúva obraz podľa času (čas → x)
+        self.scroll_offset += self.scroll_speed * dt
+
+    # ---------------------------------------------------------
+    # TIME → X (hlavný časový layout)
+    # ---------------------------------------------------------
+    def _time_to_x(self, t: float) -> float:
+        """
+        Mapuje čas v sekundách na X pozíciu v pixeloch.
+
+        - playhead je v strede (self.playhead_x)
+        - playback_time je aktuálny čas
+        - zoom ovplyvňuje hustotu
+        - scroll_offset posúva obraz
+        """
+        if self.bpm <= 0:
+            # fallback: lineárny čas bez tempa
+            pixels_per_second = 80.0 * self.zoom
+        else:
+            seconds_per_beat = 60.0 / self.bpm
+            pixels_per_beat = 80.0 * self.zoom
+            pixels_per_second = pixels_per_beat / seconds_per_beat
+
+        dt = t - self.playback_time
+        x = self.playhead_x + dt * pixels_per_second - self.scroll_offset
+        return x
+
+    # ---------------------------------------------------------
+    # PITCH → Y (vertikálny layout)
+    # ---------------------------------------------------------
+    def _pitch_to_y(self, midi: int) -> float:
+        """
+        Mapuje MIDI pitch na Y pozíciu.
+
+        - referenčný stred (napr. C4 = 60) je v strede staffu
+        - vyššie tóny idú hore, nižšie dole
+        """
+        reference_pitch = 60  # C4
+        staff_center = self.margin_top + 2 * self.staff_line_spacing
+        semitone_step = self.staff_line_spacing / 2.0
+
+        dy = (reference_pitch - midi) * semitone_step
+        y = staff_center + dy
+        return y
+
+    # ---------------------------------------------------------
+    # STAFF LINES RENDERING (cache)
+    # ---------------------------------------------------------
+    def _render_staff_lines(self) -> pygame.Surface:
+        """
+        Vyrenderuje notovú osnovu do cache, aby sa nemusela kresliť každým frame.
+        """
+        if (
+            self.staff_cache is not None
+            and self.staff_cache.get_width() == self.staff_cache_width
+            and self.staff_cache.get_height() == self.staff_cache_height
+        ):
+            return self.staff_cache
+
+        staff_surface = pygame.Surface((self.staff_cache_width, self.staff_cache_height), pygame.SRCALPHA)
+        staff_surface.fill((0, 0, 0, 0))
+
+        # 5 liniek
+        for i in range(5):
+            y = self.margin_top + i * self.staff_line_spacing
+            pygame.draw.line(
+                staff_surface,
+                (200, 200, 200),
+                (self.margin_left, int(y)),
+                (self.staff_cache_width - 20, int(y)),
+                2,
+            )
+
+        self.staff_cache = staff_surface
+        return self.staff_cache
+
+    # ---------------------------------------------------------
     # VELOCITY → vizuálny faktor
     # ---------------------------------------------------------
     def _velocity_factor(self, velocity: int) -> float:
@@ -78,6 +169,7 @@ class GraphicNotationRenderer:
         # obrys podľa velocity
         outline = int(1 + factor * 2)
         pygame.draw.ellipse(surface, (0, 0, 0), rect, outline)
+
     # ---------------------------------------------------------
     # LIGATURE / SIMPLE BEAM DRAWING
     # ---------------------------------------------------------
@@ -245,6 +337,27 @@ class GraphicNotationRenderer:
         )
 
     # ---------------------------------------------------------
+    # TRACK COLOR HELPER
+    # ---------------------------------------------------------
+    def _get_track_color(self, track_id: int, active_track_id: Optional[int]) -> Tuple[int, int, int]:
+        """
+        Získa farbu stopy z track_managera, zvýrazní aktívnu stopu.
+        """
+        try:
+            base_color = self.track_manager.get_color(track_id)
+        except Exception:
+            base_color = (120, 180, 220)
+
+        if active_track_id is not None and track_id == active_track_id:
+            # jemné zvýraznenie aktívnej stopy
+            r = min(255, int(base_color[0] * 1.1))
+            g = min(255, int(base_color[1] * 1.1))
+            b = min(255, int(base_color[2] * 1.1))
+            return (r, g, b)
+
+        return base_color
+
+    # ---------------------------------------------------------
     # MAIN DRAW (začiatok)
     # ---------------------------------------------------------
     def draw(self, notes):
@@ -349,6 +462,7 @@ class GraphicNotationRenderer:
                 chord_positions.setdefault(track_id, []).append(
                     (timestamp, base_x, min_y, max_y, color)
                 )
+
         # -----------------------------------------------------
         # SEND REALTIME ACTIVITY TO TRACKMANAGER
         # -----------------------------------------------------
