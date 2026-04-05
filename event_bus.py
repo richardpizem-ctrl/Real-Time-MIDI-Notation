@@ -35,7 +35,6 @@ class EventBus:
             if callback in self._subscribers[event_type]:
                 self._subscribers[event_type].remove(callback)
 
-            # Ak už nemá žiadnych odberateľov, odstránime celý záznam
             if not self._subscribers[event_type]:
                 del self._subscribers[event_type]
 
@@ -64,4 +63,3 @@ class EventBus:
             daemon=True
         )
         thread.start()
-
