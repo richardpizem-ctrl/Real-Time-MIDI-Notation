@@ -14,6 +14,9 @@ class DeviceManager:
         self.input_port = None
         self.refresh_devices()
 
+    # ---------------------------------------------------------
+    # REFRESH DEVICE LIST
+    # ---------------------------------------------------------
     def refresh_devices(self) -> None:
         """Aktualizuje zoznam dostupných MIDI vstupov."""
         try:
@@ -22,10 +25,16 @@ class DeviceManager:
             print(f"[DeviceManager] Chyba pri načítaní MIDI zariadení: {e}")
             self.available_inputs = []
 
+    # ---------------------------------------------------------
+    # LIST DEVICES
+    # ---------------------------------------------------------
     def list_devices(self) -> list[str]:
         """Vráti zoznam dostupných MIDI vstupov."""
         return self.available_inputs
 
+    # ---------------------------------------------------------
+    # SELECT DEVICE
+    # ---------------------------------------------------------
     def select_device(self, index: int) -> bool:
         """Vyberie MIDI zariadenie podľa indexu."""
         if not self.available_inputs:
@@ -40,6 +49,9 @@ class DeviceManager:
         print(f"[DeviceManager] Vybrané zariadenie: {self.selected_input}")
         return True
 
+    # ---------------------------------------------------------
+    # OPEN INPUT PORT
+    # ---------------------------------------------------------
     def open_input(self):
         """Otvorí vstupný MIDI port."""
         if not self.selected_input:
@@ -54,6 +66,9 @@ class DeviceManager:
             print(f"[DeviceManager] Chyba pri otváraní portu: {e}")
             return None
 
+    # ---------------------------------------------------------
+    # CLOSE INPUT PORT
+    # ---------------------------------------------------------
     def close_input(self) -> None:
         """Zatvorí vstupný port, ak je otvorený."""
         if self.input_port:
