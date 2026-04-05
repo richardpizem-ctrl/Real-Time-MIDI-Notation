@@ -1,21 +1,21 @@
 # Real-Time MIDI Notation – Project Overview
 
-Tento dokument slúži ako **návod, architektúra a technická dokumentácia** pre celý projekt  
-**Real-Time MIDI Notation**.
+This document serves as a **guide, architecture description, and technical documentation** for the entire  
+**Real-Time MIDI Notation** project.
 
-Cieľom projektu je vytvoriť profesionálny nástroj, ktorý:
+The goal of the project is to create a professional tool that:
 
-- prijíma MIDI v reálnom čase  
-- analyzuje noty a rytmus  
-- vykresľuje notový zápis v reálnom čase  
-- poskytuje DAW‑štýlové ovládanie stôp  
-- umožňuje prehrávanie, vizualizáciu a export  
+- receives MIDI in real time  
+- analyzes notes and rhythm  
+- renders musical notation in real time  
+- provides DAW‑style track control  
+- enables playback, visualization, and export  
 
 ---
 
-# 🧩 1. Architektúra projektu
+# 🧩 1. Project Architecture
 
-Projekt je rozdelený do modulov podľa funkcie:
+The project is divided into modules by function:
 core/
 renderer/
 ui/
@@ -26,227 +26,226 @@ midi_input/
 real_time_processing/
 docs/
 
-Každý priečinok má jasnú zodpovednosť:
+Each directory has a clear responsibility:
 
-| Priečinok | Účel |
-|----------|------|
-| **core/** | Logika projektu: TrackManager, PlaybackEngine, Logger |
-| **renderer/** | GraphicNotationRenderer – vykresľovanie nôt |
-| **ui/** | CanvasUI, UIManager – vizuálne rozhranie |
-| **track_system/** | 16‑kanálový MIDI systém |
-| **notation_processor/** | MIDI → noty → rytmus → vizualizácia |
-| **event_bus/** | Komunikácia medzi modulmi |
-| **midi_input/** | MIDI vstup, EventRouter |
+| Directory | Purpose |
+|----------|---------|
+| **core/** | Project logic: TrackManager, PlaybackEngine, Logger |
+| **renderer/** | GraphicNotationRenderer – real‑time note rendering |
+| **ui/** | CanvasUI, UIManager – visual interface |
+| **track_system/** | 16‑channel MIDI track system |
+| **notation_processor/** | MIDI → notes → rhythm → visualization |
+| **event_bus/** | Communication between modules |
+| **midi_input/** | MIDI input, EventRouter |
 | **real_time_processing/** | StreamHandler – realtime MIDI pipeline |
-| **docs/** | Dokumentácia projektu |
+| **docs/** | Project documentation |
 
 ---
 
-# 🎼 2. Hlavné moduly a ich účel
+# 🎼 2. Main Modules and Their Purpose
 
 ## **TrackManager (core/track_manager.py)**
-- riadi viditeľnosť stôp  
+- controls track visibility  
 - mute / solo / volume / pan  
 - record arm  
 - realtime activity (peak meter)  
-- aplikuje DAW logiku na MIDI eventy  
+- applies DAW logic to MIDI events  
 
 ## **GraphicNotationRenderer (renderer/graphic_renderer.py)**
-- vykresľuje noty v reálnom čase  
-- heatmap farby, glow efekt, velocity vizualizácia  
-- taktové čiary, grid, playhead  
-- spracúva skupiny nôt (chords, beams)  
+- renders notes in real time  
+- heatmap colors, glow effect, velocity visualization  
+- barlines, grid, playhead  
+- processes note groups (chords, beams)  
 
 ## **CanvasUI (ui/canvas_ui.py)**
-- zobrazuje playhead  
-- UI vrstva pre renderer  
-- prijíma čas z PlaybackEngine  
+- displays the playhead  
+- UI layer for the renderer  
+- receives timing from PlaybackEngine  
 
 ## **PlaybackEngine (core/playback_engine.py)**
-- riadi prehrávanie  
-- počíta čas  
-- vyberá aktívne noty  
-- posiela ich rendereru  
-- synchronizuje playhead s UI  
-- aplikuje BPM a meter  
+- controls playback  
+- calculates time  
+- selects active notes  
+- sends them to the renderer  
+- synchronizes playhead with UI  
+- applies BPM and meter  
 
 ## **UIManager (ui/ui_manager.py)**
-- hlavné UI aplikácie  
-- prepája všetky UI komponenty  
-- spracúva vstupy používateľa  
+- main UI controller  
+- connects all UI components  
+- handles user input  
 
 ## **TrackSystem (track_system/track_system.py)**
-- 16 MIDI kanálov  
-- farby, názvy, atribúty stôp  
+- 16 MIDI channels  
+- track colors, names, attributes  
 
 ## **NotationProcessor (notation_processor/notation_processor.py)**
-- analyzuje MIDI  
-- generuje noty, rytmus, vizualizáciu  
+- analyzes MIDI  
+- generates notes, rhythm, visualization  
 
 ## **EventBus (event_bus/event_bus.py)**
-- publish/subscribe systém  
-- prepája UI, MIDI vstup, procesor, renderer  
+- publish/subscribe system  
+- connects UI, MIDI input, processor, renderer  
 
 ## **StreamHandler (real_time_processing/stream_handler.py)**
-- číta MIDI vstup v reálnom čase  
-- posiela eventy do EventRoutera  
+- reads MIDI input in real time  
+- sends events to EventRouter  
 
 ## **EventRouter (midi_input/event_router.py)**
 - MIDI → EventBus → UI → TrackSystem  
 
 ---
 
-# 🔄 3. Realtime pipeline
-MIDI vstup
-↓
-StreamHandler
-↓
-EventRouter
-↓
-EventBus
-↓
-TrackSystem + NotationProcessor
-↓
-PlaybackEngine
-↓
-GraphicNotationRenderer
-↓
-CanvasUI + UIManager
-↓
-Pygame okno
+# 🔄 3. Realtime Pipeline
 
-Každý krok je oddelený, aby bol projekt modulárny a rozšíriteľný.
+MIDI input  
+↓  
+StreamHandler  
+↓  
+EventRouter  
+↓  
+EventBus  
+↓  
+TrackSystem + NotationProcessor  
+↓  
+PlaybackEngine  
+↓  
+GraphicNotationRenderer  
+↓  
+CanvasUI + UIManager  
+↓  
+Pygame window  
+
+Each step is separated to keep the project modular and extendable.
 
 ---
 
-# ▶️ 4. Ako sa projekt spúšťa
+# ▶️ 4. How to Run the Project
 
-Každý krok je oddelený, aby bol projekt modulárny a rozšíriteľný.
+Each step is separated to keep the project modular and extendable.  
 python run.py
 
 `run.py`:
 
-- inicializuje všetky moduly  
-- vytvorí UI  
-- spustí PlaybackEngine  
-- spustí hlavný render loop  
+- initializes all modules  
+- creates the UI  
+- starts the PlaybackEngine  
+- starts the main render loop  
 
 ---
 
-# 🚀 5. Budúce rozšírenia
+# 🚀 5. Future Extensions
 
 - Toolbar (Play / Pause / Stop / Seek)  
-- MIDI loader (import .mid súborov)  
-- Peak meter vizualizácia  
-- Metronóm  
-- Export do PDF / PNG  
-- Recording mód  
+- MIDI loader (import .mid files)  
+- Peak meter visualization  
+- Metronome  
+- Export to PDF / PNG  
+- Recording mode  
 - Tempo automation  
 - Track inspector panel  
 
 ---
 
-# 🏁 6. Stav projektu
+# 🏁 6. Project Status
 
-Všetky hlavné moduly sú **hotové a stabilné**:
+All major modules are **finished and stable**:
 
 - CanvasUI – final  
 - GraphicNotationRenderer – final  
 - TrackManager – final  
 - PlaybackEngine – final  
-- run.py – final integrácia  
+- run.py – final integration  
 
-Projekt je pripravený na ďalšie rozširovanie.
+The project is ready for further expansion.
 
 ---
 
-# 🕹️ 7. Návod na použitie (User Guide)
+# 🕹️ 7. User Guide
 
-## ▶️ Spustenie aplikácie
-Projekt sa spúšťa príkazom:
+## ▶️ Launching the Application
+The project is launched with:
 python run.py
 
-Po spustení sa otvorí hlavné okno aplikácie (pygame).
+After launching, the main application window (pygame) opens.
 
 ---
 
-## 🎹 MIDI vstup
-- Ak máš pripojený MIDI kontrolér, StreamHandler ho automaticky deteguje.  
-- Každá zahraná nota sa okamžite:
-  - odošle do EventRoutera  
-  - zobrazí v UI  
-  - spracuje v NotationProcessore  
-  - vykreslí v GraphicNotationRendereri  
+## 🎹 MIDI Input
+- If you have a connected MIDI controller, StreamHandler detects it automatically.  
+- Every played note is immediately:
+  - sent to EventRouter  
+  - displayed in the UI  
+  - processed in NotationProcessor  
+  - rendered in GraphicNotationRenderer  
 
 ---
 
-## 🎼 Prehrávanie (PlaybackEngine)
-PlaybackEngine riadi:
+## 🎼 Playback (PlaybackEngine)
+PlaybackEngine controls:
 
-- čas  
-- prehrávanie  
+- time  
+- playback  
 - playhead  
-- aktívne noty  
+- active notes  
 - tempo (BPM)  
 - meter (beats per bar)
 
-### Ovládanie (dočasné, kým nepridáme toolbar):
-- prehrávanie sa spúšťa automaticky pri príchode MIDI  
-- playhead sa pohybuje podľa BPM  
-- renderer vykresľuje noty v reálnom čase  
+### Controls (temporary until toolbar is added):
+- playback starts automatically when MIDI arrives  
+- playhead moves according to BPM  
+- renderer draws notes in real time  
 
 ---
 
-## 🎚️ Track systém
-TrackSystem + TrackManager umožňujú:
+## 🎚️ Track System
+TrackSystem + TrackManager allow:
 
 - mute / solo  
 - volume  
 - pan  
 - record arm  
-- farby stôp  
-- aktivitu (peak meter – pripravuje sa)
+- track colors  
+- activity (peak meter – coming soon)
 
-Každá nota má track_id → renderer ju vykreslí farbou danej stopy.
+Each note has a track_id → renderer draws it using the track’s color.
 
 ---
 
 ## 🖥️ UI (CanvasUI + UIManager)
-UI pozostáva z:
+The UI consists of:
 
-- hlavného okna (pygame)  
+- the main window (pygame)  
 - CanvasUI (playhead + renderer)  
-- UIManager (ostatné UI prvky)
+- UIManager (other UI elements)
 
-UIManager spracúva:
+UIManager handles:
 
-- kliknutia  
-- klávesy  
-- interakcie so stopami  
-- vizualizáciu MIDI vstupu  
+- mouse clicks  
+- keyboard input  
+- track interactions  
+- MIDI input visualization  
 
 ---
 
 ## 🎨 Renderer
 GraphicNotationRenderer:
 
-- vykresľuje noty podľa časovej osi  
-- používa heatmap farby  
-- zobrazuje velocity  
-- kreslí taktové čiary  
-- posúva noty podľa playheadu  
+- renders notes along the timeline  
+- uses heatmap colors  
+- displays velocity  
+- draws barlines  
+- scrolls notes according to the playhead  
 
 ---
 
-## 💾 Export (pripravuje sa)
-V budúcnosti bude možné:
+## 💾 Export (planned)
+In the future it will be possible to:
 
-- exportovať MIDI  
-- exportovať obrázky  
-- exportovať PDF  
+- export MIDI  
+- export images  
+- export PDF  
 
 ---
 
-# 🔚 Koniec dokumentácie
-
-
+# 🔚 End of Documentation
