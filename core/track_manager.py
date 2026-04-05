@@ -1,5 +1,5 @@
 """
-TrackManager – vizuálna vrstva pre renderer a UI.
+TrackManager – vizuálna a logická vrstva pre renderer a UI.
 Prepája sa priamo s TrackSystem (16 MIDI kanálov).
 """
 
@@ -12,18 +12,21 @@ class TrackManager:
     def __init__(self, track_system: TrackSystem):
         self.track_system = track_system
 
-        self.track_visibility: Dict[int, bool] = {
-            i: True for i in range(1, 17)
-        }
+        # Visibility of tracks (UI + Renderer)
+        self.track_visibility: Dict[int, bool] = {i: True for i in range(1, 17)}
 
+        # Active track (UI selection)
         self.active_track: int = 1
 
+        # Mute / Solo states
         self.mute: Dict[int, bool] = {i: False for i in range(1, 17)}
         self.solo: Dict[int, bool] = {i: False for i in range(1, 17)}
 
+        # Volume / Pan
         self.volume: Dict[int, float] = {i: 1.0 for i in range(1, 17)}
         self.pan: Dict[int, float] = {i: 0.0 for i in range(1, 17)}
 
+        # Record arm
         self.record_arm: Dict[int, bool] = {i: False for i in range(1, 17)}
 
         # Real-time activity (renderer → TrackManager → UI)
@@ -83,12 +86,16 @@ class TrackManager:
     # COLORS
     # ---------------------------------------------------------
     def get_color(self, track_id: int) -> Tuple[int, int, int]:
+        """
+        Vráti RGB farbu stopy.
+        Ak TrackSystem vráti nevalidné dáta, použije sa fallback.
+        """
         try:
             color = self.track_system.get_track_color(track_id)
             if (
-                isinstance(color, (tuple, list)) and
-                len(color) == 3 and
-                all(isinstance(c, int) for c in color)
+                isinstance(color, (tuple, list))
+                and len(color) == 3
+                and all(isinstance(c, int) for c in color)
             ):
                 return tuple(color)
         except Exception as e:
@@ -133,6 +140,11 @@ class TrackManager:
     # EFFECTIVE ACTIVE STATE (DAW-úroveň logiky)
     # ---------------------------------------------------------
     def is_effectively_active(self, track_id: int) -> bool:
+        """
+        DAW logika:
+        - ak je solo mód aktívny → hrajú iba solo stopy
+        - mute vždy vypína stopu
+        """
         if track_id not in self.mute:
             return True
 
@@ -183,21 +195,23 @@ class TrackManager:
     def update_activity(self, track_id: int, level: float):
         """
         Nastaví aktuálnu aktivitu stopy v rozsahu 0.0–1.0.
-        Volá renderer podľa realtime energie/velocity.
+        Renderer to volá podľa realtime energie/velocity.
         """
         if track_id not in self.activity:
             return
+
         try:
             level = float(level)
         except Exception:
             return
+
         level = max(0.0, min(1.0, level))
         self.activity[track_id] = level
 
     def get_activity(self, track_id: int) -> float:
         """
         Vráti aktuálnu aktivitu stopy (0.0–1.0).
-        Číta ju UI pre peak meter.
+        UI to používa pre peak meter.
         """
         return self.activity.get(track_id, 0.0)
 
@@ -205,6 +219,11 @@ class TrackManager:
     # APPLY TO MIDI ENGINE
     # ---------------------------------------------------------
     def apply_midi_transform(self, track_id: int, note: int, velocity: int) -> Optional[Tuple[int, int]]:
+        """
+        Aplikuje DAW logiku na MIDI event:
+        - mute / solo
+        - volume scaling
+        """
         if not self.is_effectively_active(track_id):
             return None
 
