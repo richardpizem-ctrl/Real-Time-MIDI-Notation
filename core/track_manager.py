@@ -1,15 +1,20 @@
 """
 TrackManager – vizuálna a logická vrstva pre renderer a UI.
-Prepája sa priamo s TrackSystem (16 MIDI kanálov).
+Prepája sa s TrackSystem (16 MIDI kanálov) cez dependency injection.
 """
 
 from typing import Dict, Tuple, Optional, List
-from core.track_manager import TrackSystem
 from core.logger import Logger
 
 
 class TrackManager:
-    def __init__(self, track_system: TrackSystem):
+    def __init__(self, track_system):
+        """
+        track_system: objekt, ktorý poskytuje API:
+            - get_track_color(track_id)
+            - get_track_name(track_id)
+            - apply_midi_transform(track_id, pitch, velocity)
+        """
         self.track_system = track_system
 
         # Visibility of tracks (UI + Renderer)
@@ -55,24 +60,14 @@ class TrackManager:
     # VISIBILITY
     # ---------------------------------------------------------
     def set_visible(self, track_id: int, visible: bool):
-        if not isinstance(track_id, int):
-            Logger.warning(f"TrackManager.set_visible: invalid track_id {track_id}")
-            return
-
         if track_id in self.track_visibility:
             self.track_visibility[track_id] = bool(visible)
 
     def toggle(self, track_id: int):
-        if not isinstance(track_id, int):
-            Logger.warning(f"TrackManager.toggle: invalid track_id {track_id}")
-            return
-
         if track_id in self.track_visibility:
             self.track_visibility[track_id] = not self.track_visibility[track_id]
 
     def is_visible(self, track_id: int) -> bool:
-        if not isinstance(track_id, int):
-            return True
         return self.track_visibility.get(track_id, True)
 
     def get_visible_tracks(self) -> List[int]:
@@ -90,6 +85,9 @@ class TrackManager:
         Vráti RGB farbu stopy.
         Ak TrackSystem vráti nevalidné dáta, použije sa fallback.
         """
+        if self.track_system is None:
+            return (255, 255, 255)
+
         try:
             color = self.track_system.get_track_color(track_id)
             if (
@@ -107,6 +105,9 @@ class TrackManager:
     # NAMES
     # ---------------------------------------------------------
     def get_name(self, track_id: int) -> str:
+        if self.track_system is None:
+            return f"Track {track_id}"
+
         try:
             name = self.track_system.get_track_name(track_id)
             if isinstance(name, str) and name.strip():
@@ -137,7 +138,7 @@ class TrackManager:
         return any(self.solo.values())
 
     # ---------------------------------------------------------
-    # EFFECTIVE ACTIVE STATE (DAW-úroveň logiky)
+    # EFFECTIVE ACTIVE STATE (DAW LOGIC)
     # ---------------------------------------------------------
     def is_effectively_active(self, track_id: int) -> bool:
         """
@@ -175,28 +176,31 @@ class TrackManager:
     # ---------------------------------------------------------
     def set_volume(self, track_id: int, volume: float):
         if track_id in self.volume:
-            volume = max(0.0, min(1.0, float(volume)))
-            self.volume[track_id] = volume
+            try:
+                volume = float(volume)
+            except Exception:
+                return
+            self.volume[track_id] = max(0.0, min(1.0, volume))
 
     def get_volume(self, track_id: int) -> float:
         return self.volume.get(track_id, 1.0)
 
     def set_pan(self, track_id: int, pan: float):
         if track_id in self.pan:
-            pan = max(-1.0, min(1.0, float(pan)))
-            self.pan[track_id] = pan
+            try:
+                pan = float(pan)
+            except Exception:
+                return
+            self.pan[track_id] = max(-1.0, min(1.0, pan))
 
     def get_pan(self, track_id: int) -> float:
         return self.pan.get(track_id, 0.0)
 
     # ---------------------------------------------------------
-    # REAL-TIME ACTIVITY (RENDERER → TRACKMANAGER → UI)
+    # REAL-TIME ACTIVITY
     # ---------------------------------------------------------
     def update_activity(self, track_id: int, level: float):
-        """
-        Nastaví aktuálnu aktivitu stopy v rozsahu 0.0–1.0.
-        Renderer to volá podľa realtime energie/velocity.
-        """
+        """Nastaví aktuálnu aktivitu stopy (0.0–1.0)."""
         if track_id not in self.activity:
             return
 
@@ -205,14 +209,9 @@ class TrackManager:
         except Exception:
             return
 
-        level = max(0.0, min(1.0, level))
-        self.activity[track_id] = level
+        self.activity[track_id] = max(0.0, min(1.0, level))
 
     def get_activity(self, track_id: int) -> float:
-        """
-        Vráti aktuálnu aktivitu stopy (0.0–1.0).
-        UI to používa pre peak meter.
-        """
         return self.activity.get(track_id, 0.0)
 
     # ---------------------------------------------------------
