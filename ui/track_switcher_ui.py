@@ -18,6 +18,7 @@ class TrackSwitcherUI:
         self.peak_hold = [0.0] * self.track_count
 
         self.font = pygame.font.Font(None, 14)
+        self.small_font = pygame.font.Font(None, 12)
 
     # ---------------------------------------------------------
     # UPDATE PEAK HOLD
@@ -50,6 +51,47 @@ class TrackSwitcherUI:
             self.event_bus.emit("track_audible_state", i, audible, any_solo)
 
     # ---------------------------------------------------------
+    # DRAW HELPERS
+    # ---------------------------------------------------------
+    def _draw_meter(self, surface, rect, level):
+        if level <= 0:
+            return
+        meter_height = int(level * 20)
+        meter_rect = pygame.Rect(rect.x + 4, rect.y + 2, self.button_width - 8, meter_height)
+        pygame.draw.rect(surface, (0, 255, 0), meter_rect)
+
+    def _draw_peak(self, surface, rect, peak):
+        if peak <= 0:
+            return
+        peak_y = rect.y + 2 + int(peak * 20)
+        peak_rect = pygame.Rect(rect.x + 4, peak_y, self.button_width - 8, 2)
+        pygame.draw.rect(surface, (255, 255, 255), peak_rect)
+
+    def _draw_volume(self, surface, rect, vol):
+        vol_h = int(vol * 30)
+        vol_rect = pygame.Rect(rect.x + 6, rect.y + self.button_height - 55,
+                               self.button_width - 12, vol_h)
+        pygame.draw.rect(surface, (180, 180, 255), vol_rect)
+        txt = self.small_font.render("V", True, (0, 0, 0))
+        surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 60))
+
+    def _draw_pan(self, surface, rect, pan_val):
+        pan_x = rect.x + self.button_width // 2
+        pan_y = rect.y + self.button_height - 70
+        pygame.draw.circle(surface, (50, 50, 50), (pan_x, pan_y), 6)
+        angle = pan_val * math.pi
+        line_x = pan_x + int(6 * math.sin(angle))
+        line_y = pan_y - int(6 * math.cos(angle))
+        pygame.draw.line(surface, (255, 255, 255), (pan_x, pan_y), (line_x, line_y), 2)
+        txt = self.small_font.render("P", True, (0, 0, 0))
+        surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 75))
+
+    def _draw_button(self, surface, rect, active, color_on, color_off, label):
+        pygame.draw.rect(surface, color_on if active else color_off, rect)
+        txt = self.small_font.render(label, True, (0, 0, 0))
+        surface.blit(txt, (rect.x + 2, rect.y + 1))
+
+    # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface, active_track=None):
@@ -60,7 +102,7 @@ class TrackSwitcherUI:
 
         for i in range(self.track_count):
             tid = i + 1
-            base_color = self.track_colors[i]
+            base_color = self.track_colors[i % len(self.track_colors)]
 
             rect = pygame.Rect(
                 self.x + i * self.button_width,
@@ -73,15 +115,9 @@ class TrackSwitcherUI:
             if tm.is_muted(tid):
                 color = (120, 120, 120)
             elif any_solo:
-                if tm.is_solo(tid):
-                    color = (255, 255, 120)
-                else:
-                    color = (80, 80, 80)
+                color = (255, 255, 120) if tm.is_solo(tid) else (80, 80, 80)
             else:
-                if tm.is_solo(tid):
-                    color = (255, 255, 120)
-                else:
-                    color = base_color
+                color = (255, 255, 120) if tm.is_solo(tid) else base_color
 
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
@@ -90,83 +126,33 @@ class TrackSwitcherUI:
             if active_track == tid:
                 pygame.draw.rect(surface, (255, 255, 255), rect, 3)
 
-            # REALTIME LEVEL
-            level = tm.get_activity(tid)
-            if level > 0:
-                meter_height = int(level * 20)
-                meter_rect = pygame.Rect(
-                    rect.x + 4,
-                    rect.y + 2,
-                    self.button_width - 8,
-                    meter_height
-                )
-                pygame.draw.rect(surface, (0, 255, 0), meter_rect)
-
-            # PEAK HOLD
-            peak = self.peak_hold[i]
-            if peak > 0:
-                peak_y = rect.y + 2 + int(peak * 20)
-                peak_rect = pygame.Rect(
-                    rect.x + 4,
-                    peak_y,
-                    self.button_width - 8,
-                    2
-                )
-                pygame.draw.rect(surface, (255, 255, 255), peak_rect)
+            # REALTIME LEVEL + PEAK
+            self._draw_meter(surface, rect, tm.get_activity(tid))
+            self._draw_peak(surface, rect, self.peak_hold[i])
 
             # VOLUME
-            vol = tm.get_volume(tid)
-            vol_h = int(vol * 30)
-            vol_rect = pygame.Rect(
-                rect.x + 6,
-                rect.y + self.button_height - 55,
-                self.button_width - 12,
-                vol_h
-            )
-            pygame.draw.rect(surface, (180, 180, 255), vol_rect)
+            self._draw_volume(surface, rect, tm.get_volume(tid))
 
             # PAN
-            pan_val = tm.get_pan(tid)
-            pan_x = rect.x + self.button_width // 2
-            pan_y = rect.y + self.button_height - 70
-            pygame.draw.circle(surface, (50, 50, 50), (pan_x, pan_y), 6)
-            angle = pan_val * math.pi
-            line_x = pan_x + int(6 * math.sin(angle))
-            line_y = pan_y - int(6 * math.cos(angle))
-            pygame.draw.line(surface, (255, 255, 255), (pan_x, pan_y), (line_x, line_y), 2)
+            self._draw_pan(surface, rect, tm.get_pan(tid))
 
             # RECORD ARM
-            rec_rect = pygame.Rect(
-                rect.x + 4,
-                rect.y + self.button_height - 85,
-                self.button_width - 8,
-                10
-            )
-            pygame.draw.rect(surface,
-                             (255, 0, 0) if tm.is_record_armed(tid) else (80, 0, 0),
-                             rec_rect)
+            rec_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 85,
+                                   self.button_width - 8, 10)
+            self._draw_button(surface, rec_rect, tm.is_record_armed(tid),
+                              (255, 0, 0), (80, 0, 0), "R")
 
             # MUTE
-            mute_rect = pygame.Rect(
-                rect.x + 4,
-                rect.y + self.button_height - 20,
-                self.button_width - 8,
-                10
-            )
-            pygame.draw.rect(surface,
-                             (255, 80, 80) if tm.is_muted(tid) else (100, 40, 40),
-                             mute_rect)
+            mute_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 20,
+                                    self.button_width - 8, 10)
+            self._draw_button(surface, mute_rect, tm.is_muted(tid),
+                              (255, 80, 80), (100, 40, 40), "M")
 
             # SOLO
-            solo_rect = pygame.Rect(
-                rect.x + 4,
-                rect.y + self.button_height - 10,
-                self.button_width - 8,
-                10
-            )
-            pygame.draw.rect(surface,
-                             (255, 255, 80) if tm.is_solo(tid) else (100, 100, 40),
-                             solo_rect)
+            solo_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 10,
+                                    self.button_width - 8, 10)
+            self._draw_button(surface, solo_rect, tm.is_solo(tid),
+                              (255, 255, 80), (100, 100, 40), "S")
 
             # NAME
             try:
@@ -176,10 +162,8 @@ class TrackSwitcherUI:
 
             name_color = (255, 255, 255) if active_track == tid else (0, 0, 0)
             text_surface = self.font.render(name, True, name_color)
-            text_rect = text_surface.get_rect(center=(
-                rect.x + self.button_width // 2,
-                rect.y + 12
-            ))
+            text_rect = text_surface.get_rect(center=(rect.x + self.button_width // 2,
+                                                      rect.y + 12))
             surface.blit(text_surface, text_rect)
 
     # ---------------------------------------------------------
@@ -199,6 +183,10 @@ class TrackSwitcherUI:
             index = (mx - self.x) // self.button_width
             tid = index + 1
             local_y = my - self.y
+
+            mods = pygame.key.get_mods()
+            shift = mods & pygame.KMOD_SHIFT
+            ctrl = mods & pygame.KMOD_CTRL
 
             # RECORD ARM
             if self.button_height - 85 <= local_y < self.button_height - 75:
@@ -220,16 +208,22 @@ class TrackSwitcherUI:
                 self.event_bus.emit("track_volume", index, tm.get_volume(tid))
                 return {"volume": index}
 
-            # MUTE
+            # MUTE (CTRL = exclusive)
             if self.button_height - 20 <= local_y < self.button_height - 10:
-                tm.set_mute(tid, not tm.is_muted(tid))
+                if ctrl:
+                    tm.mute_exclusive(tid)
+                else:
+                    tm.set_mute(tid, not tm.is_muted(tid))
                 self.event_bus.emit("track_mute", index, tm.is_muted(tid))
                 self._emit_audible_state()
                 return {"mute": index}
 
-            # SOLO
+            # SOLO (SHIFT = exclusive)
             if local_y >= self.button_height - 10:
-                tm.set_solo(tid, not tm.is_solo(tid))
+                if shift:
+                    tm.solo_exclusive(tid)
+                else:
+                    tm.set_solo(tid, not tm.is_solo(tid))
                 self.event_bus.emit("track_solo", index, tm.is_solo(tid))
                 self._emit_audible_state()
                 return {"solo": index}
