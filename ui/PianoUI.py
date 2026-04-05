@@ -19,6 +19,9 @@ class PianoUI:
 
         self._calculate_positions()
 
+    # ---------------------------------------------------------
+    # CALCULATE KEY POSITIONS
+    # ---------------------------------------------------------
     def _calculate_positions(self):
         white_order = [0, 2, 4, 5, 7, 9, 11]
         black_offsets = {
@@ -34,6 +37,7 @@ class PianoUI:
 
         white_index = 0
 
+        # WHITE KEYS
         for midi in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
             note = midi % 12
             if note in white_order:
@@ -42,6 +46,7 @@ class PianoUI:
                 self.white_keys.append((midi, rect))
                 white_index += 1
 
+        # BLACK KEYS
         for midi in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
             note = midi % 12
             if note in black_offsets:
@@ -51,6 +56,9 @@ class PianoUI:
                 rect = pygame.Rect(x, 0, self.BLACK_KEY_WIDTH, self.BLACK_KEY_HEIGHT)
                 self.black_keys.append((midi, rect))
 
+    # ---------------------------------------------------------
+    # HIGHLIGHT / UNHIGHLIGHT
+    # ---------------------------------------------------------
     def highlight(self, midi_note, color=(255, 80, 80)):
         self.active_keys[midi_note] = color
 
@@ -58,14 +66,19 @@ class PianoUI:
         if midi_note in self.active_keys:
             del self.active_keys[midi_note]
 
+    # ---------------------------------------------------------
+    # DRAW
+    # ---------------------------------------------------------
     def draw(self, surface):
         surface.fill((25, 25, 25))
 
+        # WHITE KEYS
         for midi, rect in self.white_keys:
             color = self.active_keys.get(midi, (255, 255, 255))
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
+        # BLACK KEYS
         for midi, rect in self.black_keys:
             color = self.active_keys.get(midi, (0, 0, 0))
             pygame.draw.rect(surface, color, rect)
