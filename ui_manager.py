@@ -1,6 +1,8 @@
 # Analýza rytmu pre real-time MIDI notáciu
+
 import time
 from collections import deque
+
 
 class RhythmAnalyzer:
     """
@@ -20,6 +22,9 @@ class RhythmAnalyzer:
         self.current_bpm = None
         self.silence_timeout = silence_timeout
 
+    # ---------------------------------------------------------
+    # SPRACOVANIE MIDI EVENTU
+    # ---------------------------------------------------------
     def process_midi_event(self, event):
         """Spracuje MIDI event a aktualizuje rytmickú analýzu."""
         if event.get("type") != "note_on":
@@ -46,6 +51,9 @@ class RhythmAnalyzer:
 
         self.last_event_time = event_time
 
+    # ---------------------------------------------------------
+    # PREPOČET BPM
+    # ---------------------------------------------------------
     def _update_bpm(self):
         """Prepočíta BPM na základe priemerného intervalu."""
         if not self.intervals:
@@ -69,10 +77,16 @@ class RhythmAnalyzer:
         else:
             self.current_bpm = None
 
+    # ---------------------------------------------------------
+    # GET BPM
+    # ---------------------------------------------------------
     def get_bpm(self):
         """Vráti aktuálne odhadované BPM (alebo None)."""
         return self.current_bpm
 
+    # ---------------------------------------------------------
+    # STABILITA RYTMU
+    # ---------------------------------------------------------
     def get_stability(self):
         """
         Jednoduchý ukazovateľ stability rytmu (0–1).
