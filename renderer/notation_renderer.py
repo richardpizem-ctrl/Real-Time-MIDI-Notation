@@ -2,11 +2,12 @@ class NotationRenderer:
     """
     Jednoduchý textový renderer.
     Zobrazuje noty v konzole vždy, keď príde nová nota.
-    Podporuje aj bubnové značky a layering.
+    Podporuje aj bubnové značky, layering, timestampy, clear() a filter().
     """
 
     def __init__(self):
         self.notes = []
+        self.filter_fn = None  # voliteľný filter funkciou
 
         # pygame clock je voliteľný (len ak je pygame dostupný)
         try:
@@ -43,13 +44,52 @@ class NotationRenderer:
         self.render()
 
     # ---------------------------------------------------------
+    # CLEAR – vymazanie bufferu
+    # ---------------------------------------------------------
+    def clear(self):
+        """Vymaže všetky uložené noty."""
+        self.notes.clear()
+        print("\n🧹 NotationRenderer: buffer vymazaný.\n")
+
+    # ---------------------------------------------------------
+    # FILTER – nastaví filter funkciu
+    # ---------------------------------------------------------
+    def set_filter(self, fn):
+        """
+        Nastaví filter funkciu.
+        fn musí byť funkcia, ktorá dostane notu a vráti True/False.
+        Príklady:
+            renderer.set_filter(lambda n: n.get("channel") == 9)
+            renderer.set_filter(lambda n: n.get("pitch") > 60)
+            renderer.set_filter(lambda n: "drum" in n)
+        """
+        if fn is None or callable(fn):
+            self.filter_fn = fn
+            print("🔎 Filter nastavený.")
+        else:
+            print("⚠️ set_filter: filter musí byť funkcia alebo None.")
+
+    # ---------------------------------------------------------
     # Textový výpis
     # ---------------------------------------------------------
     def render(self):
         """Textová vizualizácia nôt vrátane bubnových značiek."""
-        print("\n--- RENDER ---")
+        import time
+        timestamp = time.strftime("%H:%M:%S")
+
+        print(f"\n--- RENDER [{timestamp}] ---")
 
         for n in self.notes:
+
+            # FILTER
+            if self.filter_fn is not None:
+                try:
+                    if not self.filter_fn(n):
+                        continue
+                except Exception:
+                    print("⚠️ Filter chyba pri spracovaní noty.")
+                    continue
+
             try:
                 base = (
                     f"pitch={n.get('pitch')}  "
