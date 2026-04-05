@@ -108,7 +108,10 @@ class GraphicNotationRenderer:
         ):
             return self.staff_cache
 
-        staff_surface = pygame.Surface((self.staff_cache_width, self.staff_cache_height), pygame.SRCALPHA)
+        staff_surface = pygame.Surface(
+            (self.staff_cache_width, self.staff_cache_height),
+            pygame.SRCALPHA
+        )
         staff_surface.fill((0, 0, 0, 0))
 
         for i in range(5):
@@ -137,13 +140,22 @@ class GraphicNotationRenderer:
     def _lerp(self, a: float, b: float, t: float) -> float:
         return a + (b - a) * t
 
-    def _mix_colors(self, c1: Tuple[int, int, int], c2: Tuple[int, int, int], t: float) -> Tuple[int, int, int]:
+    def _mix_colors(
+        self,
+        c1: Tuple[int, int, int],
+        c2: Tuple[int, int, int],
+        t: float
+    ) -> Tuple[int, int, int]:
         r = int(self._lerp(c1[0], c2[0], t))
         g = int(self._lerp(c1[1], c2[1], t))
         b = int(self._lerp(c1[2], c2[2], t))
         return (r, g, b)
 
-    def _velocity_to_color(self, base_color: Tuple[int, int, int], velocity: int) -> Tuple[int, int, int]:
+    def _velocity_to_color(
+        self,
+        base_color: Tuple[int, int, int],
+        velocity: int
+    ) -> Tuple[int, int, int]:
         """
         Classic: base_color len zosilnený podľa velocity
         Heatmap: 0–127 → blue → green → red
@@ -165,9 +177,9 @@ class GraphicNotationRenderer:
                 int(base_color[2] * factor),
             )
 
-        blue = (0x4d, 0xa6, 0xff)
-        green = (0x33, 0xcc, 0x33)
-        red = (0xff, 0x44, 0x44)
+        blue = (0x4D, 0xA6, 0xFF)
+        green = (0x33, 0xCC, 0x33)
+        red = (0xFF, 0x44, 0x44)
 
         if t <= 0.5:
             lt = t / 0.5
@@ -198,11 +210,18 @@ class GraphicNotationRenderer:
         return max(0.3, min(1.0, v / 127.0))
 
     # ---------------------------------------------------------
-    # NOTE DRAWING (upravené pre velocity + heatmap + glow + flash)
+    # NOTE DRAWING
     # ---------------------------------------------------------
-    def _draw_note(self, surface, x: float, y: float, base_color: Tuple[int, int, int], velocity: int, flash: float = 0.0):
+    def _draw_note(
+        self,
+        surface,
+        x: float,
+        y: float,
+        base_color: Tuple[int, int, int],
+        velocity: int,
+        flash: float = 0.0
+    ):
         factor = self._velocity_factor(velocity)
-
         color = self._velocity_to_color(base_color, velocity)
 
         if flash > 0.01:
@@ -220,13 +239,33 @@ class GraphicNotationRenderer:
     # ---------------------------------------------------------
     # LIGATURE / SIMPLE BEAM DRAWING
     # ---------------------------------------------------------
-    def _draw_ligature(self, x1: float, x2: float, y: float, color: Tuple[int, int, int]):
-        pygame.draw.line(self.surface, color, (int(x1), int(y)), (int(x2), int(y)), 4)
+    def _draw_ligature(
+        self,
+        x1: float,
+        x2: float,
+        y: float,
+        color: Tuple[int, int, int]
+    ):
+        pygame.draw.line(
+            self.surface,
+            color,
+            (int(x1), int(y)),
+            (int(x2), int(y)),
+            4
+        )
 
     # ---------------------------------------------------------
     # GROUPING BEAM DRAWING
     # ---------------------------------------------------------
-    def _draw_beam(self, x1: float, y1: float, x2: float, y2: float, color: Tuple[int, int, int], levels: int = 1):
+    def _draw_beam(
+        self,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        color: Tuple[int, int, int],
+        levels: int = 1
+    ):
         for level in range(levels):
             offset = level * 4
             pygame.draw.line(
@@ -313,7 +352,11 @@ class GraphicNotationRenderer:
             x = self._time_to_x(bar_time)
 
             if 0 <= x <= self.width:
-                label = self.font.render(str(bar_index + 1), True, (230, 230, 230))
+                label = self.font.render(
+                    str(bar_index + 1),
+                    True,
+                    (230, 230, 230)
+                )
                 self.surface.blit(label, (int(x) + 4, 0))
 
     def _draw_grid_lines(self):
@@ -336,19 +379,37 @@ class GraphicNotationRenderer:
                 t = bar_start + beat * seconds_per_beat
                 x = self._time_to_x(t)
                 if 0 <= x <= self.width:
-                    pygame.draw.line(self.surface, (70, 70, 70), (int(x), 0), (int(x), self.height), 1)
+                    pygame.draw.line(
+                        self.surface,
+                        (70, 70, 70),
+                        (int(x), 0),
+                        (int(x), self.height),
+                        1
+                    )
 
                 t8 = t + seconds_per_beat / 2
                 x8 = self._time_to_x(t8)
                 if 0 <= x8 <= self.width:
-                    pygame.draw.line(self.surface, (50, 50, 50), (int(x8), 0), (int(x8), self.height), 1)
+                    pygame.draw.line(
+                        self.surface,
+                        (50, 50, 50),
+                        (int(x8), 0),
+                        (int(x8), self.height),
+                        1
+                    )
 
                 t16a = t + seconds_per_beat / 4
                 t16b = t + 3 * seconds_per_beat / 4
                 for t16 in (t16a, t16b):
                     x16 = self._time_to_x(t16)
                     if 0 <= x16 <= self.width:
-                        pygame.draw.line(self.surface, (40, 40, 40), (int(x16), 0), (int(x16), self.height), 1)
+                        pygame.draw.line(
+                            self.surface,
+                            (40, 40, 40),
+                            (int(x16), 0),
+                            (int(x16), self.height),
+                            1
+                        )
 
     def _draw_measure_numbers(self):
         if self.bpm <= 0 or self.font is None:
@@ -368,7 +429,11 @@ class GraphicNotationRenderer:
             x = self._time_to_x(bar_time)
 
             if 0 <= x <= self.width:
-                label = self.font.render(str(bar_index + 1), True, (220, 220, 220))
+                label = self.font.render(
+                    str(bar_index + 1),
+                    True,
+                    (220, 220, 220)
+                )
                 self.surface.blit(label, (int(x) + 4, self.margin_top - 18))
 
     # ---------------------------------------------------------
@@ -386,7 +451,11 @@ class GraphicNotationRenderer:
     # ---------------------------------------------------------
     # TRACK COLOR HELPER
     # ---------------------------------------------------------
-    def _get_track_color(self, track_id: int, active_track_id: Optional[int]) -> Tuple[int, int, int]:
+    def _get_track_color(
+        self,
+        track_id: int,
+        active_track_id: Optional[int]
+    ) -> Tuple[int, int, int]:
         try:
             base_color = self.track_manager.get_color(track_id)
         except Exception:
@@ -432,7 +501,10 @@ class GraphicNotationRenderer:
 
         seconds_per_beat = 60.0 / self.bpm if self.bpm > 0 else None
 
-        chord_positions: Dict[int, List[Tuple[float, float, float, float, Tuple[int, int, int]]]] = {}
+        chord_positions: Dict[
+            int,
+            List[Tuple[float, float, float, float, Tuple[int, int, int]]]
+        ] = {}
         activity_accumulator = {i: 0.0 for i in range(1, 17)}
 
         for (timestamp, track_id), chord_notes in grouped.items():
@@ -490,7 +562,14 @@ class GraphicNotationRenderer:
                 x = base_x + idx * 6
 
                 flash = note.get("_flash", 1.0)
-                self._draw_note(self.surface, x, y, track_color, velocity, flash=flash)
+                self._draw_note(
+                    self.surface,
+                    x,
+                    y,
+                    track_color,
+                    velocity,
+                    flash=flash
+                )
                 note["_flash"] = flash * 0.85
 
                 activity_accumulator[track_id] += velocity / 127.0
@@ -542,7 +621,10 @@ class GraphicNotationRenderer:
                     if track_id in beam_candidates and timestamp in beam_candidates[track_id]:
                         base_length = 35.0
 
-                    distance_factor = min(1.5, max(0.7, abs(chord_center - staff_middle) / 40.0))
+                    distance_factor = min(
+                        1.5,
+                        max(0.7, abs(chord_center - staff_middle) / 40.0)
+                    )
                     stem_length = base_length * distance_factor
 
                     start_y = anchor_y + 6
