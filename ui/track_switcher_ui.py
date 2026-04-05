@@ -1,6 +1,7 @@
 import pygame
 import math
 
+
 class TrackSwitcherUI:
     def __init__(self, x, y, width, height, track_colors, event_bus):
         self.x = x
@@ -69,8 +70,12 @@ class TrackSwitcherUI:
 
     def _draw_volume(self, surface, rect, vol):
         vol_h = int(vol * 30)
-        vol_rect = pygame.Rect(rect.x + 6, rect.y + self.button_height - 55,
-                               self.button_width - 12, vol_h)
+        vol_rect = pygame.Rect(
+            rect.x + 6,
+            rect.y + self.button_height - 55,
+            self.button_width - 12,
+            vol_h,
+        )
         pygame.draw.rect(surface, (180, 180, 255), vol_rect)
         txt = self.small_font.render("V", True, (0, 0, 0))
         surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 60))
@@ -108,7 +113,7 @@ class TrackSwitcherUI:
                 self.x + i * self.button_width,
                 self.y,
                 self.button_width,
-                self.button_height
+                self.button_height,
             )
 
             # COLOR LOGIC
@@ -137,22 +142,52 @@ class TrackSwitcherUI:
             self._draw_pan(surface, rect, tm.get_pan(tid))
 
             # RECORD ARM
-            rec_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 85,
-                                   self.button_width - 8, 10)
-            self._draw_button(surface, rec_rect, tm.is_record_armed(tid),
-                              (255, 0, 0), (80, 0, 0), "R")
+            rec_rect = pygame.Rect(
+                rect.x + 4,
+                rect.y + self.button_height - 85,
+                self.button_width - 8,
+                10,
+            )
+            self._draw_button(
+                surface,
+                rec_rect,
+                tm.is_record_armed(tid),
+                (255, 0, 0),
+                (80, 0, 0),
+                "R",
+            )
 
             # MUTE
-            mute_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 20,
-                                    self.button_width - 8, 10)
-            self._draw_button(surface, mute_rect, tm.is_muted(tid),
-                              (255, 80, 80), (100, 40, 40), "M")
+            mute_rect = pygame.Rect(
+                rect.x + 4,
+                rect.y + self.button_height - 20,
+                self.button_width - 8,
+                10,
+            )
+            self._draw_button(
+                surface,
+                mute_rect,
+                tm.is_muted(tid),
+                (255, 80, 80),
+                (100, 40, 40),
+                "M",
+            )
 
             # SOLO
-            solo_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 10,
-                                    self.button_width - 8, 10)
-            self._draw_button(surface, solo_rect, tm.is_solo(tid),
-                              (255, 255, 80), (100, 100, 40), "S")
+            solo_rect = pygame.Rect(
+                rect.x + 4,
+                rect.y + self.button_height - 10,
+                self.button_width - 8,
+                10,
+            )
+            self._draw_button(
+                surface,
+                solo_rect,
+                tm.is_solo(tid),
+                (255, 255, 80),
+                (100, 100, 40),
+                "S",
+            )
 
             # NAME
             try:
@@ -162,8 +197,9 @@ class TrackSwitcherUI:
 
             name_color = (255, 255, 255) if active_track == tid else (0, 0, 0)
             text_surface = self.font.render(name, True, name_color)
-            text_rect = text_surface.get_rect(center=(rect.x + self.button_width // 2,
-                                                      rect.y + 12))
+            text_rect = text_surface.get_rect(
+                center=(rect.x + self.button_width // 2, rect.y + 12)
+            )
             surface.blit(text_surface, text_rect)
 
     # ---------------------------------------------------------
