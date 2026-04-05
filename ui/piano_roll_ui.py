@@ -14,12 +14,17 @@ class PianoRollUI:
         self.width = width
         self.height = height
 
-        self.active_keys = {}  # midi_note -> (color, timestamp)
+        # midi_note -> (color, timestamp)
+        self.active_keys = {}
+
         self.white_keys = []
         self.black_keys = []
 
         pygame.font.init()
-        self.font = pygame.font.SysFont("Arial", 12, bold=True)
+        try:
+            self.font = pygame.font.SysFont("Arial", 12, bold=True)
+        except Exception:
+            self.font = None
 
         self._calculate_key_positions()
 
@@ -63,6 +68,7 @@ class PianoRollUI:
     # KEY HIGHLIGHT
     # ---------------------------------------------------------
     def highlight_key(self, midi_note, color=(255, 80, 80)):
+        """Highlight a key with fade-out animation."""
         self.active_keys[midi_note] = (color, time.time())
 
     def unhighlight_key(self, midi_note):
@@ -74,7 +80,6 @@ class PianoRollUI:
     # ---------------------------------------------------------
     def draw(self, surface):
         surface.fill((30, 30, 30))
-
         now = time.time()
 
         # --- WHITE KEYS ---
@@ -114,12 +119,19 @@ class PianoRollUI:
             pygame.draw.rect(surface, (50, 50, 50), rect, 1)
 
         # --- OCTAVE LABELS ---
-        for midi_note, rect in self.white_keys:
-            if midi_note % 12 == 0:  # C note
-                octave = midi_note // 12 - 1
-                label = f"C{octave}"
-                text = self.font.render(label, True, (0, 0, 0))
-                surface.blit(text, (rect.x + 2, rect.y + self.WHITE_KEY_HEIGHT - 18))
+        if self.font:
+            for midi_note, rect in self.white_keys:
+                if midi_note % 12 == 0:  # C note
+                    octave = midi_note // 12 - 1
+                    label = f"C{octave}"
+                    text = self.font.render(label, True, (0, 0, 0))
+                    surface.blit(text, (rect.x + 2, rect.y + self.WHITE_KEY_HEIGHT - 18))
 
-        # --- HORIZONTAL GRID LINE ---
-        pygame.draw.line(surface, (80, 80, 80), (0, self.WHITE_KEY_HEIGHT), (self.width, self.WHITE_KEY_HEIGHT), 2)
+        # --- HORIZONTAL SEPARATOR ---
+        pygame.draw.line(
+            surface,
+            (80, 80, 80),
+            (0, self.WHITE_KEY_HEIGHT),
+            (self.width, self.WHITE_KEY_HEIGHT),
+            2
+        )
