@@ -1,4 +1,18 @@
-# notation_engine/chord_detector.py
+"""
+Chord Detector – stabilná detekcia základných triád.
+
+Podporované:
+- dur (major)
+- mol (minor)
+- dim (diminished)
+- aug (augmented)
+
+Stabilizované:
+- ochrana pred None
+- ochrana pred nevalidnými hodnotami
+- bezpečné spracovanie pitch-classov
+- fallback pri chybách
+"""
 
 from typing import Iterable, Optional
 
@@ -18,10 +32,10 @@ NOTE_NAMES = {
 }
 
 TRIAD_PATTERNS = {
-    (0, 4, 7): "",
-    (0, 3, 7): "m",
-    (0, 3, 6): "dim",
-    (0, 4, 8): "aug",
+    (0, 4, 7): "",       # major
+    (0, 3, 7): "m",      # minor
+    (0, 3, 6): "dim",    # diminished
+    (0, 4, 8): "aug",    # augmented
 }
 
 
@@ -39,6 +53,7 @@ def detect_chord(pitches: Iterable[int]) -> Optional[str]:
         return None
 
     try:
+        # Pitch classes (0–11), odstránenie duplikátov
         pcs = sorted({int(p) % 12 for p in pitches if isinstance(p, (int, float))})
     except Exception:
         return None
@@ -46,14 +61,14 @@ def detect_chord(pitches: Iterable[int]) -> Optional[str]:
     if len(pcs) < 3:
         return None
 
-    # Try each pitch as root
+    # Skúsime každý pitch ako root
     for root in pcs:
         try:
             intervals = sorted(((pc - root) % 12 for pc in pcs))
         except Exception:
             continue
 
-        # Filter only triad-relevant intervals
+        # Vyfiltrujeme len intervaly relevantné pre triády
         triad = tuple(i for i in intervals if i in (0, 3, 4, 6, 7, 8))
 
         if len(triad) < 3:
