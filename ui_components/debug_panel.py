@@ -1,6 +1,7 @@
 import pygame
 from ..core.logger import Logger
 
+
 class DebugPanel:
     def __init__(self, enabled=True, print_enabled=True):
         self.enabled = enabled
