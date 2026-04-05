@@ -128,7 +128,7 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 6. NOVÉ: TrackManager + Renderer + CanvasUI + PlaybackEngine
+    # 6. TrackManager + Renderer + CanvasUI + PlaybackEngine
     # -----------------------------------------------------
     try:
         track_manager = TrackManager(track_system)
