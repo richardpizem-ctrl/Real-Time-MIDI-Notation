@@ -1,82 +1,74 @@
+import pygame
 from ..core.logger import Logger
 
-class StatusBar:
+
+class DebugPanel:
     def __init__(self, enabled=True, print_enabled=True):
         self.enabled = enabled
         self.print_enabled = print_enabled
-
-        self.tempo = 120
-        self.latency_ms = 0
-        self.fps = 0
-        self.last_note = None
-        self.midi_status = "Disconnected"
-
-        Logger.info("StatusBar initialized.")
+        Logger.info("DebugPanel initialized.")
 
     # ---------------------------------------------------------
     # ENABLE / DISABLE
     # ---------------------------------------------------------
     def toggle(self):
         self.enabled = not self.enabled
-        Logger.info(f"StatusBar toggled: {self.enabled}")
+        Logger.info(f"DebugPanel toggled: {self.enabled}")
 
     # ---------------------------------------------------------
-    # UPDATE VALUES
+    # MIDI EVENT LOGGING
     # ---------------------------------------------------------
-    def update(self, tempo=None, latency=None, fps=None, last_note=None, midi_status=None):
+    def log_midi_event(self, event):
         if not self.enabled:
             return
 
         try:
-            if tempo is not None:
-                self.tempo = tempo
-
-            if latency is not None:
-                self.latency_ms = latency
-
-            if fps is not None:
-                self.fps = fps
-
-            if last_note is not None:
-                self.last_note = last_note
-
-            if midi_status is not None:
-                self.midi_status = midi_status
-
-            self.display()
-
-        except Exception as e:
-            Logger.error(f"StatusBar update error: {e}")
-
-    # ---------------------------------------------------------
-    # DISPLAY
-    # ---------------------------------------------------------
-    def display(self):
-        if not self.enabled:
-            return
-
-        try:
-            text = (
-                f"TEMPO: {self._safe(self.tempo)} BPM | "
-                f"LATENCY: {self._safe(self.latency_ms)} ms | "
-                f"FPS: {self._safe(self.fps)} | "
-                f"LAST NOTE: {self._safe(self.last_note)} | "
-                f"MIDI: {self._safe(self.midi_status)}"
-            )
+            safe_event = self._safe_format(event)
 
             if self.print_enabled:
-                print(text)
+                print(f"[MIDI EVENT] {safe_event}")
 
-            Logger.info(f"StatusBar: {text}")
+            Logger.info(f"Debug MIDI event: {safe_event}")
 
         except Exception as e:
-            Logger.error(f"StatusBar display error: {e}")
+            Logger.error(f"DebugPanel MIDI error: {e}")
+
+    # ---------------------------------------------------------
+    # PIPELINE LOGGING
+    # ---------------------------------------------------------
+    def log_pipeline(self, stage, data):
+        if not self.enabled:
+            return
+
+        try:
+            safe_data = self._safe_format(data)
+
+            if self.print_enabled:
+                print(f"[PIPELINE] {stage}: {safe_data}")
+
+            Logger.info(f"Debug pipeline {stage}: {safe_data}")
+
+        except Exception as e:
+            Logger.error(f"DebugPanel pipeline error: {e}")
+
+    # ---------------------------------------------------------
+    # ERROR LOGGING
+    # ---------------------------------------------------------
+    def log_error(self, message):
+        try:
+            if self.print_enabled:
+                print(f"[ERROR] {message}")
+
+            Logger.error(f"DebugPanel error: {message}")
+
+        except Exception as e:
+            Logger.error(f"DebugPanel logging failure: {e}")
 
     # ---------------------------------------------------------
     # SAFE FORMATTER
     # ---------------------------------------------------------
-    def _safe(self, value):
+    def _safe_format(self, obj):
         try:
-            return str(value)
+            return str(obj)
         except Exception:
-            return "<unprintable>"
+            return "<unprintable object>"
