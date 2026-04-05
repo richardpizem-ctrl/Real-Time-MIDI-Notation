@@ -1,9 +1,12 @@
-# Centrálne definované typy udalostí pre celý projekt
-# Stabilizované:
-# - jednotná štruktúra
-# - žiadne duplicity
-# - bezpečné, konzistentné názvy
-# - pripravené pre EventBus a celý systém
+"""
+Centrálne definované typy udalostí pre celý projekt.
+
+Stabilizované:
+- jednotná štruktúra
+- žiadne duplicity
+- bezpečné, konzistentné názvy
+- pripravené pre EventBus, UIManager, TrackSystem, NotationProcessor
+"""
 
 # ---------------------------------------------------------
 # MIDI EVENTS
