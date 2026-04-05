@@ -90,6 +90,7 @@ class NotationRenderer:
                     print("⚠️ Filter chyba pri spracovaní noty.")
                     continue
 
+            # ZÁKLADNÉ INFO
             try:
                 base = (
                     f"pitch={n.get('pitch')}  "
@@ -101,6 +102,7 @@ class NotationRenderer:
             except Exception:
                 base = "[NEPLATNÁ NOTA]"
 
+            # DRUM INFO
             drum_info = ""
             try:
                 if "drum" in n and isinstance(n["drum"], dict):
@@ -117,6 +119,7 @@ class NotationRenderer:
             except Exception:
                 drum_info = "   [DRUM: ERROR]"
 
+            # LAYER OFFSET
             layer = ""
             try:
                 if "drum_layer_offset" in n:
