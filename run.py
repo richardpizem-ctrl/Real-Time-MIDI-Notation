@@ -2,6 +2,9 @@
 
 import pygame
 
+# ---------------------------------------------------------
+# EVENT BUS
+# ---------------------------------------------------------
 from event_bus.event_bus import EventBus
 from event_bus.event_types import (
     NOTE_RECORDED,
@@ -10,20 +13,32 @@ from event_bus.event_types import (
     ERROR_OCCURRED
 )
 
+# ---------------------------------------------------------
+# CORE / TRACKS / PROCESSING
+# ---------------------------------------------------------
+from core.logger import Logger
+from core.track_manager import TrackManager
+from core.playback_engine import PlaybackEngine
+
 from track_system.track_system import TrackSystem
 from notation_processor.notation_processor import NotationProcessor
 
+# ---------------------------------------------------------
+# UI
+# ---------------------------------------------------------
 from ui.ui_manager import UIManager
-from real_time_processing.stream_handler import StreamHandler
-from midi_input.event_router import EventRouter
-
-from core.logger import Logger
-
-# NOVÉ IMPORTY
-from core.track_manager import TrackManager
-from renderer.graphic_renderer import GraphicNotationRenderer
 from ui.canvas_ui import CanvasUI
-from core.playback_engine import PlaybackEngine
+
+# ---------------------------------------------------------
+# MIDI INPUT
+# ---------------------------------------------------------
+from midi_input.event_router import EventRouter
+from real_time_processing.stream_handler import StreamHandler
+
+# ---------------------------------------------------------
+# RENDERER
+# ---------------------------------------------------------
+from renderer.graphic_renderer import GraphicNotationRenderer
 
 
 # ---------------------------------------------------------
@@ -133,7 +148,7 @@ def main():
     try:
         track_manager = TrackManager(track_system)
 
-        canvas_ui = CanvasUI(parent=None)  # CanvasUI beží mimo pygame okna
+        canvas_ui = CanvasUI(parent=None)
         renderer = GraphicNotationRenderer(
             width=1400,
             height=400,
@@ -148,8 +163,7 @@ def main():
             beats_per_bar=4
         )
 
-        # DEMO: prázdne noty (môžeš neskôr nahradiť MIDI loaderom)
-        playback.set_notes([])
+        playback.set_notes([])  # prázdne noty – neskôr nahradíš MIDI loaderom
     except Exception as e:
         Logger.error(f"Failed to initialize PlaybackEngine stack: {e}")
         return
@@ -166,16 +180,11 @@ def main():
 
                 ui.handle_event(event)
 
-            # MIDI vstup
             stream_handler.poll()
-
-            # Playback engine tick
             playback_surface = playback.update()
 
-            # UI kreslenie
             ui.draw(screen)
 
-            # Renderer kreslenie (ak existuje surface)
             if playback_surface is not None:
                 screen.blit(playback_surface, (0, 700))
 
