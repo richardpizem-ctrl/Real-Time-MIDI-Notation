@@ -229,6 +229,33 @@ class TrackSwitcherUI:
             surface.blit(text_surface, text_rect)
 
     # ---------------------------------------------------------
+    # PUBLIC API PRE UIManager / eventy
+    # ---------------------------------------------------------
+    def set_active_track(self, track_index: int):
+        """
+        Volané z UIManager._on_track_selected.
+        Momentálne nepotrebuje vlastný stav, aktívnu stopu číta z TrackControlManageru v draw().
+        """
+        # Rezervované pre prípadné budúce rozšírenie (napr. lokálny cache).
+        pass
+
+    def update_visibility(self, track_index: int, visible: bool):
+        """
+        Volané z UIManager._on_visibility_changed.
+        Aktuálne vizuál viditeľnosti rieši Renderer + TrackInspector,
+        TrackSwitcherUI môže byť neskôr rozšírený (napr. o ikonu oka).
+        """
+        pass
+
+    def update_color(self, track_index: int, color_hex: str):
+        """
+        Volané z UIManager._on_color_changed.
+        Farba sa pri kreslení vždy berie z TrackControlManager.get_color(),
+        takže tu netreba nič cacheovať.
+        """
+        pass
+
+    # ---------------------------------------------------------
     # EVENTS
     # ---------------------------------------------------------
     def handle_event(self, event):
