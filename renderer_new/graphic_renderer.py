@@ -30,6 +30,9 @@ class GraphicNotationRenderer:
         self.margin_top = 20
         self.staff_line_spacing = 12
 
+        # MULTI-TRACK lane height
+        self.track_lane_height = 22.0
+
         # Time / playback
         self.playback_time = 0.0
         self.last_frame_time = time.time()
@@ -48,6 +51,16 @@ class GraphicNotationRenderer:
 
         # Color mode: "classic", "heatmap", "glow"
         self.color_mode = "heatmap"
+
+    # ---------------------------------------------------------
+    # MULTI-TRACK LANE OFFSET
+    # ---------------------------------------------------------
+    def _track_lane_offset(self, track_id: int) -> float:
+        """
+        Každá stopa má vlastnú lane (vertikálny posun).
+        track_id je 1–16.
+        """
+        return (track_id - 1) * self.track_lane_height
 
     # ---------------------------------------------------------
     # PUBLIC API
@@ -87,15 +100,19 @@ class GraphicNotationRenderer:
         return x
 
     # ---------------------------------------------------------
-    # PITCH → Y (vertikálny layout)
+    # PITCH → Y (vertikálny layout + multi-track offset)
     # ---------------------------------------------------------
-    def _pitch_to_y(self, midi: int) -> float:
+    def _pitch_to_y(self, midi: int, track_id: int) -> float:
         reference_pitch = 60  # C4
         staff_center = self.margin_top + 2 * self.staff_line_spacing
         semitone_step = self.staff_line_spacing / 2.0
 
         dy = (reference_pitch - midi) * semitone_step
         y = staff_center + dy
+
+        # MULTI-TRACK OFFSET
+        y += self._track_lane_offset(track_id)
+
         return y
 
     # ---------------------------------------------------------
@@ -582,7 +599,7 @@ class GraphicNotationRenderer:
                 except Exception:
                     continue
 
-                y = self._pitch_to_y(midi_int)
+                y = self._pitch_to_y(midi_int, track_id)
                 x = base_x + idx * 6
 
                 flash = note.get("_flash", 1.0)
