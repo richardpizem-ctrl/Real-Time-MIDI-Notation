@@ -29,6 +29,13 @@ class UIManager:
         self.track_control = TrackControlManager(track_count=16)
 
         # ---------------------------------------------------------
+        # REGISTRÁCIA EVENTOV Z TrackControlManager (NOVÉ)
+        # ---------------------------------------------------------
+        self.track_control.on("track_selected", self._on_track_selected)
+        self.track_control.on("visibility_changed", self._on_visibility_changed)
+        self.track_control.on("color_changed", self._on_color_changed)
+
+        # ---------------------------------------------------------
         # TRANSPORT
         # ---------------------------------------------------------
         self.transport = TransportUI(width, 50)
@@ -106,6 +113,7 @@ class UIManager:
 
         self.export_button_rect = pygame.Rect(self.width - 120, 10, 110, 35)
         self.export_font = pygame.font.SysFont("Arial", 20)
+
     # ---------------------------------------------------------
     # LAYOUT / CANVAS
     # ---------------------------------------------------------
@@ -320,6 +328,63 @@ class UIManager:
 
             time_str = f"{minutes:02}:{seconds:02}.{tenths}"
             self.transport.set_time(time_str)
+
+    # ---------------------------------------------------------
+    # EVENT CALLBACKS (NOVÉ)
+    # ---------------------------------------------------------
+    def _on_track_selected(self, data):
+        """UI reaguje na zmenu aktívnej stopy."""
+        track = data.get("track", 0)
+
+        try:
+            self.track_selector.set_active_track(track)
+        except Exception:
+            pass
+
+        try:
+            self.track_switcher.set_active_track(track)
+        except Exception:
+            pass
+
+        try:
+            self.track_inspector.set_active_track(track)
+        except Exception:
+            pass
+
+    def _on_visibility_changed(self, data):
+        """UI reaguje na zmenu viditeľnosti stopy."""
+        track = data.get("track", 0)
+        visible = data.get("visible", True)
+
+        try:
+            self.track_switcher.update_visibility(track, visible)
+        except Exception:
+            pass
+
+        try:
+            self.renderer.update_visibility(track, visible)
+        except Exception:
+            pass
+
+    def _on_color_changed(self, data):
+        """UI reaguje na zmenu farby stopy."""
+        track = data.get("track", 0)
+        color = data.get("color", "#FFFFFF")
+
+        try:
+            self.track_switcher.update_color(track, color)
+        except Exception:
+            pass
+
+        try:
+            self.renderer.update_color(track, color)
+        except Exception:
+            pass
+
+        try:
+            self.track_inspector.update_color(track, color)
+        except Exception:
+            pass
 
     # ---------------------------------------------------------
     # DRAW
