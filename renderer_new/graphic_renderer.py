@@ -8,7 +8,7 @@ class GraphicNotationRenderer:
         self.width = width
         self.height = height
         self.track_manager = track_manager
-        self.track_control = track_control  # Fáza 4 – voliteľný TrackControlManager
+        self.track_control = track_control  # voliteľný TrackControlManager
 
         try:
             self.surface = pygame.Surface((width, height))
@@ -596,7 +596,8 @@ class GraphicNotationRenderer:
                 )
                 note["_flash"] = flash * 0.85
 
-                activity_accumulator[track_id] += velocity / 127.0
+                if track_id in activity_accumulator:
+                    activity_accumulator[track_id] += velocity / 127.0
 
                 if y < min_y:
                     min_y = y
