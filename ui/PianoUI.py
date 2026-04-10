@@ -13,7 +13,10 @@ class PianoUI:
         self.width = width
         self.height = height
 
+        # Aktívne (zvýraznené) klávesy: midi → farba
         self.active_keys = {}
+
+        # Prepočítané pozície kláves
         self.white_keys = []
         self.black_keys = []
 
@@ -59,10 +62,12 @@ class PianoUI:
     # ---------------------------------------------------------
     # HIGHLIGHT / UNHIGHLIGHT
     # ---------------------------------------------------------
-    def highlight(self, midi_note, color=(255, 80, 80)):
+    def highlight_key(self, midi_note, color=(255, 80, 80)):
+        """Zvýrazní klávesu pri NOTE ON."""
         self.active_keys[midi_note] = color
 
-    def unhighlight(self, midi_note):
+    def unhighlight_key(self, midi_note):
+        """Zruší zvýraznenie pri NOTE OFF."""
         if midi_note in self.active_keys:
             del self.active_keys[midi_note]
 
