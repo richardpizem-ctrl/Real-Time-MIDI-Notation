@@ -1,15 +1,29 @@
 import pygame
 import math
 
+from .track_control_manager import TrackControlManager
+
 
 class TrackSwitcherUI:
-    def __init__(self, x, y, width, height, track_colors, event_bus):
+    def __init__(
+        self,
+        x,
+        y,
+        width,
+        height,
+        track_colors,
+        event_bus,
+        track_control_manager: TrackControlManager | None = None,
+    ):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.track_colors = track_colors
         self.event_bus = event_bus
+
+        # Centrálne riadenie stôp (Fáza 4)
+        self.track_control_manager = track_control_manager
 
         self.track_count = 16
         self.button_width = width // self.track_count
@@ -105,9 +119,21 @@ class TrackSwitcherUI:
 
         self.update_peak_hold()
 
+        # Ak máme TrackControlManager, aktívnu stopu berieme z neho
+        if self.track_control_manager is not None:
+            # TrackControlManager používa 0-based index, tu máme 1-based tid
+            active_tid = self.track_control_manager.get_active_track() + 1
+        else:
+            active_tid = active_track
+
         for i in range(self.track_count):
             tid = i + 1
-            base_color = self.track_colors[i % len(self.track_colors)]
+
+            # Farba stopy – ak máme TrackControlManager, berieme z neho
+            if self.track_control_manager is not None:
+                base_color = self.track_control_manager.get_color(i)
+            else:
+                base_color = self.track_colors[i % len(self.track_colors)]
 
             rect = pygame.Rect(
                 self.x + i * self.button_width,
@@ -128,7 +154,7 @@ class TrackSwitcherUI:
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
             # ACTIVE TRACK BORDER
-            if active_track == tid:
+            if active_tid == tid:
                 pygame.draw.rect(surface, (255, 255, 255), rect, 3)
 
             # REALTIME LEVEL + PEAK
@@ -195,7 +221,7 @@ class TrackSwitcherUI:
             except Exception:
                 name = f"Track {tid}"
 
-            name_color = (255, 255, 255) if active_track == tid else (0, 0, 0)
+            name_color = (255, 255, 255) if active_tid == tid else (0, 0, 0)
             text_surface = self.font.render(name, True, name_color)
             text_rect = text_surface.get_rect(
                 center=(rect.x + self.button_width // 2, rect.y + 12)
@@ -268,6 +294,12 @@ class TrackSwitcherUI:
             tm.set_active_track(tid)
             self.event_bus.emit("track_selected", index)
             self._emit_audible_state()
+
+            # Fáza 4 – informujeme TrackControlManager o výbere stopy
+            if self.track_control_manager is not None:
+                # index je 0-based, TrackSelectionController tiež
+                self.track_control_manager.select_track(index)
+
             return {"selected_track": index}
 
         return None
