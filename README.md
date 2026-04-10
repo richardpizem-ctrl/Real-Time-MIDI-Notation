@@ -15,7 +15,9 @@ It converts incoming MIDI events into **live notation**, including:
 - grid, timeline, and playhead  
 - full Yamaha 16‑track standard  
 
-This project is designed for:
+This project aims to evolve into a **full real‑time engraving engine**, similar in capability to MuseScore or LilyPond, but optimized for **live MIDI input**.
+
+It is designed for:
 
 - MIDI visualizers  
 - DAW companion tools  
@@ -25,7 +27,8 @@ This project is designed for:
 - MIDI debugging and development  
 
 **Keywords (SEO):**  
-`midi`, `real-time midi`, `midi notation`, `midi visualizer`, `midi renderer`, `music notation`, `pygame`, `python midi`, `multi-track midi`, `midi to sheet music`
+`midi`, `real-time midi`, `midi notation`, `midi visualizer`, `midi renderer`,  
+`music notation`, `pygame`, `python midi`, `multi-track midi`, `midi to sheet music`
 
 ---
 
@@ -162,5 +165,5 @@ This is the foundation of a **full real‑time notation engine**.
 ---
 
 # 📎 **Tags (recommended for GitHub Topics)**  
-`midi` • `real-time` • `music` • `visualization` • `notation` • `pygame` • `python` • `multi-track` • `midi-visualizer` • `midi-notation`
-
+`midi` • `real-time` • `music` • `visualization` • `notation` •  
+`pygame` • `python` • `multi-track` • `midi-visualizer` • `midi-notation`
