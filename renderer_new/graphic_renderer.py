@@ -4,10 +4,11 @@ from typing import List, Dict, Any, Tuple, Optional
 
 
 class GraphicNotationRenderer:
-    def __init__(self, width, height, track_manager):
+    def __init__(self, width, height, track_manager, track_control=None):
         self.width = width
         self.height = height
         self.track_manager = track_manager
+        self.track_control = track_control  # Fáza 4 – voliteľný TrackControlManager
 
         try:
             self.surface = pygame.Surface((width, height))
@@ -456,10 +457,18 @@ class GraphicNotationRenderer:
         track_id: int,
         active_track_id: Optional[int]
     ) -> Tuple[int, int, int]:
-        try:
-            base_color = self.track_manager.get_color(track_id)
-        except Exception:
-            base_color = (120, 180, 220)
+        # track_id je 1-based, TrackControlManager používa 0-based
+        if self.track_control is not None:
+            try:
+                hex_color = self.track_control.get_color(track_id - 1)
+                base_color = self._hex_to_rgb(hex_color)
+            except Exception:
+                base_color = (120, 180, 220)
+        else:
+            try:
+                base_color = self.track_manager.get_color(track_id)
+            except Exception:
+                base_color = (120, 180, 220)
 
         if active_track_id is not None and track_id == active_track_id:
             r = min(255, int(base_color[0] * 1.1))
@@ -492,8 +501,12 @@ class GraphicNotationRenderer:
             self._draw_playhead()
             return self.surface
 
+        # Aktívna stopa – preferuj TrackControlManager, inak track_manager
         try:
-            active_track_id = self.track_manager.get_active_track()
+            if self.track_control is not None:
+                active_track_id = self.track_control.get_active_track() + 1  # 0-based → 1-based
+            else:
+                active_track_id = self.track_manager.get_active_track()
         except Exception:
             active_track_id = None
 
@@ -508,17 +521,28 @@ class GraphicNotationRenderer:
         activity_accumulator = {i: 0.0 for i in range(1, 17)}
 
         for (timestamp, track_id), chord_notes in grouped.items():
+            # efektívna aktivita (mute/solo) – stále z track_manager
             try:
                 if not self.track_manager.is_effectively_active(track_id):
                     continue
             except Exception:
                 pass
 
-            try:
-                if not self.track_manager.is_visible(track_id):
-                    continue
-            except Exception:
-                pass
+            # viditeľnosť – preferuj TrackControlManager
+            visible = True
+            if self.track_control is not None:
+                try:
+                    visible = self.track_control.is_visible(track_id - 1)
+                except Exception:
+                    pass
+            else:
+                try:
+                    visible = self.track_manager.is_visible(track_id)
+                except Exception:
+                    pass
+
+            if not visible:
+                continue
 
             base_color = self._get_track_color(track_id, active_track_id)
 
