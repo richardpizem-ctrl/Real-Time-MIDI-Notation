@@ -4,11 +4,13 @@ from typing import Optional, Tuple
 
 class TrackInspector:
     """
-    Jednoduchý vizuálny panel pre stopy.
+    Track Inspector panel – teraz už aj s interakciou.
 
     - číta stav z track_manager a track_control
-    - nič nemení, žiadne kliky, žiadne eventy (čisto vizuálne)
-    - pripravené na neskoršie rozšírenie o interakciu
+    - umožňuje kliknúť na:
+        • riadok → nastaviť aktívnu stopu
+        • oko → toggle visibility
+        • volume bar → zmeniť hlasitosť
     """
 
     def __init__(
@@ -50,7 +52,6 @@ class TrackInspector:
         return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
 
     def _get_track_color(self, track_id: int) -> Tuple[int, int, int]:
-        # preferuj TrackControlManager
         if self.track_control is not None:
             try:
                 hex_color = self.track_control.get_color(track_id - 1)
@@ -58,7 +59,6 @@ class TrackInspector:
             except Exception:
                 pass
 
-        # fallback na track_manager
         try:
             return self.track_manager.get_color(track_id)
         except Exception:
@@ -74,7 +74,6 @@ class TrackInspector:
         return f"Track {track_id}"
 
     def _get_track_visible(self, track_id: int) -> bool:
-        # preferuj TrackControlManager
         if self.track_control is not None:
             try:
                 return bool(self.track_control.is_visible(track_id - 1))
@@ -102,29 +101,78 @@ class TrackInspector:
             return None
 
     # ---------------------------------------------------------
+    # INTERAKCIA
+    # ---------------------------------------------------------
+    def handle_event(self, event):
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            return
+
+        mx, my = event.pos
+
+        # klik mimo panelu
+        if not (self.x <= mx <= self.x + self.width and
+                self.y <= my <= self.y + self.height):
+            return
+
+        # klik na riadok
+        for track_id in range(1, self.num_tracks + 1):
+            row_top = self.y + self.header_height + (track_id - 1) * self.row_height
+            row_rect = pygame.Rect(self.x, row_top, self.width, self.row_height)
+
+            if row_rect.collidepoint(mx, my):
+
+                # 1) klik na oko (visibility)
+                vis_rect = pygame.Rect(
+                    row_rect.x + self.padding,
+                    row_rect.y + (self.row_height - 10) // 2,
+                    10,
+                    10,
+                )
+                if vis_rect.collidepoint(mx, my):
+                    try:
+                        current = self.track_control.is_visible(track_id - 1)
+                        self.track_control.set_visible(track_id - 1, not current)
+                    except Exception:
+                        pass
+                    return
+
+                # 2) klik na volume bar
+                bar_x = self.x + self.width - self.padding - self.volume_bar_width
+                bar_y = row_rect.y + 4
+                bar_rect = pygame.Rect(bar_x, bar_y, self.volume_bar_width, self.row_height - 8)
+
+                if bar_rect.collidepoint(mx, my):
+                    rel = (mx - bar_x) / self.volume_bar_width
+                    rel = max(0.0, min(1.0, rel))
+                    try:
+                        self.track_manager.set_volume(track_id, rel)
+                    except Exception:
+                        pass
+                    return
+
+                # 3) klik na riadok → nastaviť aktívnu stopu
+                try:
+                    self.track_control.set_active_track(track_id - 1)
+                except Exception:
+                    pass
+
+                return
+
+    # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface: pygame.Surface):
-        """
-        Vykreslí track inspector panel do daného surface.
-        """
         if surface is None:
             return
 
-        # panel background
         panel_rect = pygame.Rect(self.x, self.y, self.width, self.height)
         pygame.draw.rect(surface, (18, 18, 18), panel_rect)
         pygame.draw.rect(surface, (70, 70, 70), panel_rect, 1)
 
-        # header
         if self.font is not None:
             header_text = self.font.render("TRACK INSPECTOR", True, (230, 230, 230))
-            surface.blit(
-                header_text,
-                (self.x + self.padding, self.y + 3),
-            )
+            surface.blit(header_text, (self.x + self.padding, self.y + 3))
 
-        # separator line
         pygame.draw.line(
             surface,
             (70, 70, 70),
@@ -135,28 +183,16 @@ class TrackInspector:
 
         active_track_id = self._get_active_track_id()
 
-        # rows
         for track_id in range(1, self.num_tracks + 1):
             row_top = self.y + self.header_height + (track_id - 1) * self.row_height
             if row_top + self.row_height > self.y + self.height:
                 break
 
-            row_rect = pygame.Rect(
-                self.x + 1,
-                row_top,
-                self.width - 2,
-                self.row_height,
-            )
+            row_rect = pygame.Rect(self.x + 1, row_top, self.width - 2, self.row_height)
 
-            # background per row
-            if track_id == active_track_id:
-                bg_color = (40, 40, 60)
-            else:
-                bg_color = (28, 28, 28)
-
+            bg_color = (40, 40, 60) if track_id == active_track_id else (28, 28, 28)
             pygame.draw.rect(surface, bg_color, row_rect)
 
-            # visibility
             visible = self._get_track_visible(track_id)
             vis_color = (140, 220, 140) if visible else (120, 120, 120)
             vis_rect = pygame.Rect(
@@ -168,7 +204,6 @@ class TrackInspector:
             pygame.draw.rect(surface, vis_color, vis_rect)
             pygame.draw.rect(surface, (0, 0, 0), vis_rect, 1)
 
-            # color box
             base_color = self._get_track_color(track_id)
             color_rect = pygame.Rect(
                 vis_rect.right + 6,
@@ -179,7 +214,6 @@ class TrackInspector:
             pygame.draw.rect(surface, base_color, color_rect)
             pygame.draw.rect(surface, (0, 0, 0), color_rect, 1)
 
-            # track name
             if self.font is not None:
                 name = self._get_track_name(track_id)
                 name_surf = self.font.render(
@@ -187,32 +221,17 @@ class TrackInspector:
                     True,
                     (230, 230, 230) if visible else (140, 140, 140),
                 )
-                surface.blit(
-                    name_surf,
-                    (color_rect.right + 6, row_rect.y + 3),
-                )
+                surface.blit(name_surf, (color_rect.right + 6, row_rect.y + 3))
 
-            # volume bar (ak existuje)
             vol = self._get_track_volume(track_id)
             if vol is not None:
                 bar_x = self.x + self.width - self.padding - self.volume_bar_width
                 bar_y = row_rect.y + 4
                 bar_h = self.row_height - 8
 
-                # background
-                pygame.draw.rect(
-                    surface,
-                    (35, 35, 35),
-                    (bar_x, bar_y, self.volume_bar_width, bar_h),
-                )
-                pygame.draw.rect(
-                    surface,
-                    (0, 0, 0),
-                    (bar_x, bar_y, self.volume_bar_width, bar_h),
-                    1,
-                )
+                pygame.draw.rect(surface, (35, 35, 35), (bar_x, bar_y, self.volume_bar_width, bar_h))
+                pygame.draw.rect(surface, (0, 0, 0), (bar_x, bar_y, self.volume_bar_width, bar_h), 1)
 
-                # fill
                 fill_w = int(self.volume_bar_width * vol)
                 pygame.draw.rect(
                     surface,
@@ -220,5 +239,4 @@ class TrackInspector:
                     (bar_x + 1, bar_y + 1, max(0, fill_w - 2), bar_h - 2),
                 )
 
-        # outer border highlight
         pygame.draw.rect(surface, (90, 90, 90), panel_rect, 1)
