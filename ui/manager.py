@@ -7,6 +7,7 @@ from .track_switcher_ui import TrackSwitcherUI
 from .track_selector_ui import TrackSelectorUI
 from .canvas_ui import CanvasUI
 from .transport_ui import TransportUI
+from .track_inspector import TrackInspector
 
 from .track_control_manager import TrackControlManager
 from renderer.graphic_renderer import GraphicNotationRenderer
@@ -43,7 +44,7 @@ class UIManager:
             y=55,
             width=width,
             height=60,
-            track_colors=None,  # už nepoužívame
+            track_colors=None,
             event_bus=track_system.event_bus,
             track_control_manager=self.track_control
         )
@@ -68,7 +69,19 @@ class UIManager:
         # ---------------------------------------------------------
         # RENDERER (číta farby, viditeľnosť, aktívnu stopu z TrackControlManager)
         # ---------------------------------------------------------
-        self.renderer = GraphicNotationRenderer(width, 200, track_system)
+        self.renderer = GraphicNotationRenderer(width, 200, track_system, self.track_control)
+
+        # ---------------------------------------------------------
+        # TRACK INSPECTOR PANEL
+        # ---------------------------------------------------------
+        self.track_inspector = TrackInspector(
+            track_manager=self.track_system,
+            track_control=self.track_control,
+            x=0,
+            y=1180,
+            width=260,
+            height=400
+        )
 
         # CANVAS / EXPORT
         self.canvas_ui = None
@@ -88,11 +101,11 @@ class UIManager:
             "staff": (0, 570),
             "visualizer": (0, 770),
             "renderer": (0, 970),
+            "track_inspector": (0, 1180),
         }
 
         self.export_button_rect = pygame.Rect(self.width - 120, 10, 110, 35)
         self.export_font = pygame.font.SysFont("Arial", 20)
-
     # ---------------------------------------------------------
     # LAYOUT / CANVAS
     # ---------------------------------------------------------
@@ -147,7 +160,7 @@ class UIManager:
             try:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
-                    pass  # TrackControlManager už rieši aktívnu stopu
+                    pass
             except Exception as e:
                 print(f"❌ TrackSwitcherUI error: {e}")
 
@@ -196,13 +209,11 @@ class UIManager:
         if note is None:
             return
 
-        # Viditeľnosť z TrackControlManager
         if not self.track_control.is_visible(track_id):
             return
 
         velocity = event.get("velocity", 100)
 
-        # Farba z TrackControlManager
         try:
             color_hex = self.track_control.get_color(track_id)
             track_color = tuple(int(color_hex[i:i+2], 16) for i in (1, 3, 5))
@@ -369,6 +380,13 @@ class UIManager:
         try:
             x, y = self.layout["renderer"]
             self.renderer.draw(surface.subsurface((x, y, self.width, 200)))
+        except Exception:
+            pass
+
+        # TRACK INSPECTOR
+        try:
+            x, y = self.layout["track_inspector"]
+            self.track_inspector.draw(surface.subsurface((x, y, 260, 400)))
         except Exception:
             pass
 
