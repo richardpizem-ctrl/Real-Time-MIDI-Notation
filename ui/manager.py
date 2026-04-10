@@ -24,13 +24,11 @@ class UIManager:
         pygame.font.init()
 
         # ---------------------------------------------------------
-        # FÁZA 4 – CENTRÁLNY TRACK CONTROL MANAGER
+        # TRACK CONTROL MANAGER (CENTRÁLNY)
         # ---------------------------------------------------------
         self.track_control = TrackControlManager(track_count=16)
 
-        # ---------------------------------------------------------
-        # REGISTRÁCIA EVENTOV Z TrackControlManager (NOVÉ)
-        # ---------------------------------------------------------
+        # Eventy z TrackControlManager
         self.track_control.on("track_selected", self._on_track_selected)
         self.track_control.on("visibility_changed", self._on_visibility_changed)
         self.track_control.on("color_changed", self._on_color_changed)
@@ -44,7 +42,7 @@ class UIManager:
         self.current_time_ms = 0
 
         # ---------------------------------------------------------
-        # TRACK SWITCHER (prepojený s TrackControlManager)
+        # TRACK SWITCHER (prepínač stôp)
         # ---------------------------------------------------------
         self.track_switcher = TrackSwitcherUI(
             x=0,
@@ -57,7 +55,7 @@ class UIManager:
         )
 
         # ---------------------------------------------------------
-        # TRACK SELECTOR (prepojený s TrackControlManager)
+        # TRACK SELECTOR (výber aktívnej stopy)
         # ---------------------------------------------------------
         self.track_selector = TrackSelectorUI(
             track_control_manager=self.track_control,
@@ -66,7 +64,7 @@ class UIManager:
         )
 
         # ---------------------------------------------------------
-        # UI PANELS
+        # UI PANELY
         # ---------------------------------------------------------
         self.piano = PianoUI(width, 180)
         self.piano_roll = PianoRollUI(width, 180)
@@ -74,12 +72,12 @@ class UIManager:
         self.visualizer = NoteVisualizerUI(width, 200)
 
         # ---------------------------------------------------------
-        # RENDERER (číta farby, viditeľnosť, aktívnu stopu z TrackControlManager)
+        # RENDERER (nový, stabilný)
         # ---------------------------------------------------------
         self.renderer = GraphicNotationRenderer(width, 200, track_system, self.track_control)
 
         # ---------------------------------------------------------
-        # TRACK INSPECTOR PANEL
+        # TRACK INSPECTOR
         # ---------------------------------------------------------
         self.track_inspector = TrackInspector(
             track_manager=self.track_system,
@@ -90,11 +88,11 @@ class UIManager:
             height=400
         )
 
-        # CANVAS / EXPORT
+        # Canvas
         self.canvas_ui = None
         self.canvas = None
 
-        # Quantization state
+        # Quantization
         self.quantize_division = 1.0
         self.swing_amount = 0.0
 
@@ -169,8 +167,8 @@ class UIManager:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
                     pass
-            except Exception as e:
-                print(f"❌ TrackSwitcherUI error: {e}")
+            except Exception:
+                pass
 
             # Track Selector
             try:
@@ -178,9 +176,7 @@ class UIManager:
             except Exception:
                 pass
 
-            # ---------------------------------------------------------
-            # TRACK INSPECTOR INTERAKCIA (NOVÉ)
-            # ---------------------------------------------------------
+            # Track Inspector
             try:
                 self.track_inspector.handle_event(event)
             except Exception:
@@ -330,10 +326,9 @@ class UIManager:
             self.transport.set_time(time_str)
 
     # ---------------------------------------------------------
-    # EVENT CALLBACKS (NOVÉ)
+    # TRACK CONTROL CALLBACKS
     # ---------------------------------------------------------
     def _on_track_selected(self, data):
-        """UI reaguje na zmenu aktívnej stopy."""
         track = data.get("track", 0)
 
         try:
@@ -352,7 +347,6 @@ class UIManager:
             pass
 
     def _on_visibility_changed(self, data):
-        """UI reaguje na zmenu viditeľnosti stopy."""
         track = data.get("track", 0)
         visible = data.get("visible", True)
 
@@ -367,7 +361,6 @@ class UIManager:
             pass
 
     def _on_color_changed(self, data):
-        """UI reaguje na zmenu farby stopy."""
         track = data.get("track", 0)
         color = data.get("color", "#FFFFFF")
 
