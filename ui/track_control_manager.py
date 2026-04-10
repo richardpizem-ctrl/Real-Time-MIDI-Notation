@@ -18,21 +18,60 @@ class TrackControlManager:
         self.selection = TrackSelectionController(track_count)
         self.colors = TrackColorMap()
 
-    # -----------------------------
-    # API pre UI (Track Switcher)
-    # -----------------------------
+        # ---------------------------------------------------------
+        # EVENT HOOKS (NOVÉ)
+        # ---------------------------------------------------------
+        # Každý listener je funkcia, ktorú UI alebo renderer zaregistruje.
+        self._listeners = {
+            "track_selected": [],
+            "visibility_changed": [],
+            "color_changed": [],
+        }
+
+    # ---------------------------------------------------------
+    # EVENT REGISTRÁCIA
+    # ---------------------------------------------------------
+    def on(self, event_name: str, callback):
+        """UI alebo renderer môže zaregistrovať callback."""
+        if event_name in self._listeners:
+            self._listeners[event_name].append(callback)
+
+    def _emit(self, event_name: str, data):
+        """Interné volanie eventov."""
+        if event_name in self._listeners:
+            for callback in self._listeners[event_name]:
+                try:
+                    callback(data)
+                except Exception:
+                    pass
+    # ---------------------------------------------------------
+    # API pre UI (Track Switcher / Inspector / Selector)
+    # ---------------------------------------------------------
 
     def select_track(self, track: int):
-        """Nastaví aktívnu stopu."""
+        """Nastaví aktívnu stopu a notifikuje UI."""
         self.selection.select(track)
+        self._emit("track_selected", {"track": track})
 
     def toggle_visibility(self, track: int):
-        """Prepne viditeľnosť danej stopy."""
+        """Prepne viditeľnosť danej stopy a notifikuje UI."""
         self.visibility.toggle(track)
+        self._emit("visibility_changed", {
+            "track": track,
+            "visible": self.visibility.is_visible(track)
+        })
 
-    # -----------------------------
+    def set_color(self, track: int, color_hex: str):
+        """Nastaví farbu stopy a notifikuje UI."""
+        self.colors.set_color(track, color_hex)
+        self._emit("color_changed", {
+            "track": track,
+            "color": color_hex
+        })
+
+    # ---------------------------------------------------------
     # API pre Renderer
-    # -----------------------------
+    # ---------------------------------------------------------
 
     def is_visible(self, track: int) -> bool:
         """Vráti, či je stopa viditeľná."""
