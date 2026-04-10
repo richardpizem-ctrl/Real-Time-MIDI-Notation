@@ -4,8 +4,11 @@ from .piano_roll_ui import PianoRollUI
 from .staff_ui import StaffUI
 from .note_visualizer_ui import NoteVisualizerUI
 from .track_switcher_ui import TrackSwitcherUI
+from .track_selector_ui import TrackSelectorUI
 from .canvas_ui import CanvasUI
 from .transport_ui import TransportUI
+
+from .track_control_manager import TrackControlManager
 from renderer.graphic_renderer import GraphicNotationRenderer
 from renderer.exporter import export_to_png
 
@@ -19,47 +22,53 @@ class UIManager:
 
         pygame.font.init()
 
+        # ---------------------------------------------------------
+        # FÁZA 4 – CENTRÁLNY TRACK CONTROL MANAGER
+        # ---------------------------------------------------------
+        self.track_control = TrackControlManager(track_count=16)
+
+        # ---------------------------------------------------------
         # TRANSPORT
+        # ---------------------------------------------------------
         self.transport = TransportUI(width, 50)
         self.is_playing = False
         self.play_start_time = 0
         self.current_time_ms = 0
 
-        # TRACK SWITCHER
+        # ---------------------------------------------------------
+        # TRACK SWITCHER (prepojený s TrackControlManager)
+        # ---------------------------------------------------------
         self.track_switcher = TrackSwitcherUI(
             x=0,
             y=55,
             width=width,
             height=60,
-            track_colors=track_system.track_colors,
-            event_bus=track_system.event_bus
+            track_colors=None,  # už nepoužívame
+            event_bus=track_system.event_bus,
+            track_control_manager=self.track_control
         )
 
-        # TRACK VISIBILITY
-        self.track_visibility = {i: True for i in range(16)}
+        # ---------------------------------------------------------
+        # TRACK SELECTOR (prepojený s TrackControlManager)
+        # ---------------------------------------------------------
+        self.track_selector = TrackSelectorUI(
+            track_control_manager=self.track_control,
+            width=width,
+            height=60
+        )
 
-        track_system.event_bus.subscribe("track_toggle", self._on_track_toggle)
-        track_system.event_bus.subscribe("track_selected", self._on_track_selected)
-        track_system.event_bus.subscribe("track_mute", self._on_track_mute)
-        track_system.event_bus.subscribe("track_solo", self._on_track_solo)
-
+        # ---------------------------------------------------------
         # UI PANELS
+        # ---------------------------------------------------------
         self.piano = PianoUI(width, 180)
         self.piano_roll = PianoRollUI(width, 180)
         self.staff = StaffUI(width, 200)
         self.visualizer = NoteVisualizerUI(width, 200)
 
-        self.active_track_id = 0  # 0-based index pre UI / renderer
-
-        # RENDERER
+        # ---------------------------------------------------------
+        # RENDERER (číta farby, viditeľnosť, aktívnu stopu z TrackControlManager)
+        # ---------------------------------------------------------
         self.renderer = GraphicNotationRenderer(width, 200, track_system)
-        self._rebuild_track_visibility()
-
-        if self.notation_processor is not None:
-            try:
-                self.notation_processor.bind_renderer(self.renderer)
-            except Exception as e:
-                print(f"❌ NotationProcessor bind_renderer error: {e}")
 
         # CANVAS / EXPORT
         self.canvas_ui = None
@@ -73,65 +82,16 @@ class UIManager:
         self.layout = {
             "transport": (0, 0),
             "track_switcher": (0, 55),
-            "piano": (0, 130),
-            "piano_roll": (0, 320),
-            "staff": (0, 510),
-            "visualizer": (0, 710),
-            "renderer": (0, 920),
+            "track_selector": (0, 120),
+            "piano": (0, 190),
+            "piano_roll": (0, 380),
+            "staff": (0, 570),
+            "visualizer": (0, 770),
+            "renderer": (0, 970),
         }
 
         self.export_button_rect = pygame.Rect(self.width - 120, 10, 110, 35)
         self.export_font = pygame.font.SysFont("Arial", 20)
-
-    # ---------------------------------------------------------
-    # TRACK VISIBILITY / SOLO / MUTE
-    # ---------------------------------------------------------
-    def _rebuild_track_visibility(self):
-        for i in range(16):
-            tid = i + 1
-            try:
-                if hasattr(self.track_system, "track_manager") and hasattr(
-                    self.track_system.track_manager, "is_effectively_active"
-                ):
-                    audible = self.track_system.track_manager.is_effectively_active(tid)
-                else:
-                    audible = True
-            except Exception:
-                audible = True
-            self.track_visibility[i] = audible
-
-        try:
-            self.renderer.set_track_visibility(self.track_visibility)
-        except Exception:
-            pass
-
-    def _on_track_toggle(self, track_id, state):
-        self.track_visibility[track_id] = state
-        try:
-            self.renderer.set_track_visibility(self.track_visibility)
-        except Exception:
-            pass
-
-    def _on_track_selected(self, track_id):
-        self.active_track_id = track_id
-        try:
-            self.track_system.track_manager.handle_track_selected(track_id + 1)
-        except Exception as e:
-            print(f"❌ TrackManager active track update error: {e}")
-
-    def _on_track_mute(self, track_id, state):
-        try:
-            self.track_system.track_manager.set_mute(track_id + 1, state)
-        except Exception as e:
-            print(f"❌ TrackManager mute update error: {e}")
-        self._rebuild_track_visibility()
-
-    def _on_track_solo(self, track_id, state):
-        try:
-            self.track_system.track_manager.set_solo(track_id + 1, state)
-        except Exception as e:
-            print(f"❌ TrackManager solo update error: {e}")
-        self._rebuild_track_visibility()
 
     # ---------------------------------------------------------
     # LAYOUT / CANVAS
@@ -183,12 +143,19 @@ class UIManager:
                     export_to_png(self.canvas, "export.png")
                     print("[EXPORT] export.png uložený")
 
+            # Track Switcher
             try:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
-                    self.active_track_id = result["selected_track"]
+                    pass  # TrackControlManager už rieši aktívnu stopu
             except Exception as e:
                 print(f"❌ TrackSwitcherUI error: {e}")
+
+            # Track Selector
+            try:
+                self.track_selector.handle_click(event.pos)
+            except Exception:
+                pass
 
         # Quantization shortcuts
         if event.type == pygame.KEYDOWN:
@@ -229,20 +196,19 @@ class UIManager:
         if note is None:
             return
 
-        if not self.track_visibility.get(track_id, True):
+        # Viditeľnosť z TrackControlManager
+        if not self.track_control.is_visible(track_id):
             return
 
         velocity = event.get("velocity", 100)
 
-        track_color = None
-        if self.track_system is not None:
-            try:
-                track_color = self.track_system.get_color(track_id)
-            except Exception:
-                pass
-
-        if track_color is not None:
+        # Farba z TrackControlManager
+        try:
+            color_hex = self.track_control.get_color(track_id)
+            track_color = tuple(int(color_hex[i:i+2], 16) for i in (1, 3, 5))
             event["track_color"] = track_color
+        except Exception:
+            track_color = None
 
         try:
             self.piano.highlight_key(note, track_color)
@@ -286,7 +252,7 @@ class UIManager:
 
         track_id = event.get("track_id", 0)
 
-        if not self.track_visibility.get(track_id, True):
+        if not self.track_control.is_visible(track_id):
             return
 
         try:
@@ -354,7 +320,17 @@ class UIManager:
             x, y = self.layout["track_switcher"]
             self.track_switcher.draw(
                 surface.subsurface((x, y, self.width, 60)),
-                active_track=self.active_track_id
+                active_track=self.track_control.get_active_track()
+            )
+        except Exception:
+            pass
+
+        # TRACK SELECTOR
+        try:
+            x, y = self.layout["track_selector"]
+            self.track_selector.draw(
+                surface.subsurface((x, y, self.width, 60)),
+                active_track=self.track_control.get_active_track()
             )
         except Exception:
             pass
