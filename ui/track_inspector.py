@@ -44,6 +44,24 @@ class TrackInspector:
         except Exception:
             self.font = None
 
+        # Lokálny stav pre eventy z UIManager
+        self.active_track = 0
+
+    # ---------------------------------------------------------
+    # PUBLIC API (volané z UIManager event callbackov)
+    # ---------------------------------------------------------
+    def set_active_track(self, track_index: int):
+        """UI reaguje na zmenu aktívnej stopy."""
+        self.active_track = track_index
+
+    def update_visibility(self, track_index: int, visible: bool):
+        """Rezervované pre budúce rozšírenie."""
+        pass
+
+    def update_color(self, track_index: int, color_hex: str):
+        """Farba sa berie priamo z TrackControlManager."""
+        pass
+
     # ---------------------------------------------------------
     # HELPERS
     # ---------------------------------------------------------
@@ -131,7 +149,7 @@ class TrackInspector:
                 if vis_rect.collidepoint(mx, my):
                     try:
                         current = self.track_control.is_visible(track_id - 1)
-                        self.track_control.set_visible(track_id - 1, not current)
+                        self.track_control.toggle_visibility(track_id - 1)
                     except Exception:
                         pass
                     return
@@ -152,7 +170,7 @@ class TrackInspector:
 
                 # 3) klik na riadok → nastaviť aktívnu stopu
                 try:
-                    self.track_control.set_active_track(track_id - 1)
+                    self.track_control.select_track(track_id - 1)
                 except Exception:
                     pass
 
