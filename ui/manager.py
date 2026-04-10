@@ -170,6 +170,14 @@ class UIManager:
             except Exception:
                 pass
 
+            # ---------------------------------------------------------
+            # TRACK INSPECTOR INTERAKCIA (NOVÉ)
+            # ---------------------------------------------------------
+            try:
+                self.track_inspector.handle_event(event)
+            except Exception:
+                pass
+
         # Quantization shortcuts
         if event.type == pygame.KEYDOWN:
             updated = False
