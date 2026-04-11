@@ -18,10 +18,7 @@ class TrackControlManager:
         self.selection = TrackSelectionController(track_count)
         self.colors = TrackColorMap()
 
-        # ---------------------------------------------------------
-        # EVENT HOOKS (NOVÉ)
-        # ---------------------------------------------------------
-        # Každý listener je funkcia, ktorú UI alebo renderer zaregistruje.
+        # Event hooky
         self._listeners = {
             "track_selected": [],
             "visibility_changed": [],
@@ -32,55 +29,76 @@ class TrackControlManager:
     # EVENT REGISTRÁCIA
     # ---------------------------------------------------------
     def on(self, event_name: str, callback):
-        """UI alebo renderer môže zaregistrovať callback."""
         if event_name in self._listeners:
             self._listeners[event_name].append(callback)
 
     def _emit(self, event_name: str, data):
-        """Interné volanie eventov."""
         if event_name in self._listeners:
             for callback in self._listeners[event_name]:
                 try:
                     callback(data)
                 except Exception:
                     pass
+
+    # ---------------------------------------------------------
+    # INTERNÉ POMOCNÉ FUNKCIE
+    # ---------------------------------------------------------
+    def _clamp_track(self, track: int) -> int:
+        """Zabezpečí, že index stopy je v rozsahu 0–track_count-1."""
+        try:
+            t = int(track)
+        except Exception:
+            return 0
+        return max(0, min(self.track_count - 1, t))
+
     # ---------------------------------------------------------
     # API pre UI (Track Switcher / Inspector / Selector)
     # ---------------------------------------------------------
-
     def select_track(self, track: int):
         """Nastaví aktívnu stopu a notifikuje UI."""
-        self.selection.select(track)
-        self._emit("track_selected", {"track": track})
+        t = self._clamp_track(track)
+        self.selection.select(t)
+        self._emit("track_selected", {"track": t})
+
+    def set_active_track(self, track: int):
+        """Alias pre select_track – UIManager používa túto metódu."""
+        self.select_track(track)
 
     def toggle_visibility(self, track: int):
         """Prepne viditeľnosť danej stopy a notifikuje UI."""
-        self.visibility.toggle(track)
+        t = self._clamp_track(track)
+        self.visibility.toggle(t)
         self._emit("visibility_changed", {
-            "track": track,
-            "visible": self.visibility.is_visible(track)
+            "track": t,
+            "visible": self.visibility.is_visible(t)
         })
 
     def set_color(self, track: int, color_hex: str):
         """Nastaví farbu stopy a notifikuje UI."""
-        self.colors.set_color(track, color_hex)
+        t = self._clamp_track(track)
+
+        # TrackColorMap nemá set_color → bezpečný fallback
+        if hasattr(self.colors, "set_color"):
+            try:
+                self.colors.set_color(t, color_hex)
+            except Exception:
+                pass
+
         self._emit("color_changed", {
-            "track": track,
+            "track": t,
             "color": color_hex
         })
 
     # ---------------------------------------------------------
     # API pre Renderer
     # ---------------------------------------------------------
-
     def is_visible(self, track: int) -> bool:
-        """Vráti, či je stopa viditeľná."""
-        return self.visibility.is_visible(track)
+        t = self._clamp_track(track)
+        return self.visibility.is_visible(t)
 
     def get_active_track(self) -> int:
-        """Vráti index aktívnej stopy."""
         return self.selection.get_active_track()
 
     def get_color(self, track: int) -> str:
-        """Vráti farbu danej stopy."""
-        return self.colors.get_color(track)
+        t = self._clamp_track(track)
+        return self.colors.get_color(t)
