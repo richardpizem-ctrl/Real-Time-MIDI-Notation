@@ -25,6 +25,33 @@ class TrackColorMap:
             "#FF334B",  # Track 16 - Red-Pink
         ]
 
+    # ---------------------------------------------------------
+    # PUBLIC API
+    # ---------------------------------------------------------
     def get_color(self, track: int) -> str:
-        """Vráti farbu pre danú stopu (0–15)."""
-        return self.colors[track]
+        """
+        Vráti farbu pre danú stopu (0–15).
+        Ak index nie je platný, vráti fallback farbu.
+        """
+        try:
+            if 0 <= track < len(self.colors):
+                return self.colors[track]
+        except Exception:
+            pass
+
+        return "#FFFFFF"  # fallback farba
+
+    # ---------------------------------------------------------
+    # NO-OP API (pre UIManager kompatibilitu)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        """TrackColorMap farby nemení – bezpečný no-op."""
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        """TrackColorMap nerieši viditeľnosť – bezpečný no-op."""
+        return
+
+    def set_active_track(self, track_index: int):
+        """TrackColorMap nerieši aktívnu stopu – bezpečný no-op."""
+        return
