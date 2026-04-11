@@ -1,21 +1,121 @@
-MIT License
+# 📜 Real-Time MIDI Notation — License (Ultimate Edition)
+
+This project is released under the **MIT License**, one of the most permissive and widely used open‑source licenses in the world.
+
+The MIT License allows:
+
+- ✔ free use  
+- ✔ free modification  
+- ✔ free distribution  
+- ✔ free commercial use  
+- ✔ free private use  
+
+…as long as the copyright notice and license text remain included.
+
+Below is the full, unmodified MIT License text, followed by extended notes for contributors and users.
+
+---
+
+# 🧾 MIT License
 
 Copyright (c) 2026 Richard
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
+Permission is hereby granted, free of charge, to any person obtaining a copy  
+of this software and associated documentation files (the "Software"), to deal  
+in the Software without restriction, including without limitation the rights  
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
+copies of the Software, and to permit persons to whom the Software is  
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
+The above copyright notice and this permission notice shall be included in all  
 copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
 SOFTWARE.
+
+---
+
+# 🧩 Extended License Notes (Non‑Legal Summary)
+
+The following notes **do not modify the MIT License**.  
+They exist only to help users understand what the license allows.
+
+---
+
+## ✔ What You *Can* Do
+
+Under the MIT License, you may:
+
+- use this project for personal, educational, or commercial purposes  
+- modify the source code  
+- distribute modified or unmodified versions  
+- include it in closed‑source or commercial software  
+- fork the project freely  
+- build your own tools on top of it  
+
+---
+
+## ✖ What You *Must* Do
+
+You must:
+
+- keep the copyright notice  
+- keep the MIT License text in all copies  
+- clearly state if you modified the software  
+
+---
+
+## ✖ What You *Cannot* Do
+
+The MIT License is extremely permissive, but you **cannot**:
+
+- remove the copyright notice  
+- claim the original author’s work as your own  
+- hold the author liable for damages  
+
+---
+
+# 🛡 Warranty & Liability Disclaimer (Plain English)
+
+The software is provided **as‑is**:
+
+- no warranty  
+- no guarantee of correctness  
+- no guarantee of fitness for any purpose  
+- no liability for damages, losses, or failures  
+
+This protects the author and contributors from legal risk.
+
+---
+
+# 🤝 Contributions
+
+By submitting code, documentation, or other contributions, you agree that:
+
+- your contributions are licensed under the MIT License  
+- you have the right to contribute the code  
+- you do not introduce copyrighted or proprietary material without permission  
+
+This ensures the project remains fully open‑source and legally clean.
+
+---
+
+# 🔐 Security & Responsible Disclosure
+
+Security vulnerabilities should be reported privately via:
+
+📧 **richardpizem@gmail.com**
+
+See **SECURITY.md** for full details.
+
+---
+
+# ❤️ Thank You
+
+Thank you for using, contributing to, or supporting **Real-Time MIDI Notation**.  
+Your participation helps build the world’s first open‑source real‑time Yamaha‑style notation engine.
