@@ -1,15 +1,16 @@
-# Contributing to Real-Time MIDI Notation
+# 🤝 Contributing to Real-Time MIDI Notation  
+A Complete Guide for Developers, Testers, Musicians & Researchers
 
-Thank you for your interest in contributing to **Real‑Time MIDI Notation**!  
-This project is a **world‑first prototype** of real‑time multi‑track Yamaha‑style notation, and global community involvement is essential for its growth.
+Thank you for your interest in contributing to **Real‑Time MIDI Notation** — the world’s first open‑source prototype of real‑time multi‑track Yamaha‑style notation.  
+Your participation helps shape a tool that has never existed before.
 
-We welcome **testers, developers, musicians, researchers, and anyone** who wants to help improve the project.
+We welcome **testers, developers, musicians, researchers, UI/UX designers, and anyone** who wants to help improve the project.
 
 ---
 
-## 🌍 Global Prototype Testing Appeal
+# 🌍 Global Prototype Testing Appeal
 
-This project is still in its **prototype phase**, and real‑time MIDI behavior varies across:
+Real‑time MIDI behavior varies dramatically across:
 
 - operating systems  
 - CPUs and GPUs  
@@ -19,10 +20,10 @@ This project is still in its **prototype phase**, and real‑time MIDI behavior 
 - Yamaha arranger keyboards  
 - DAW routing setups  
 
-To achieve professional‑grade stability, we need **worldwide testing**.
+To reach **professional‑grade stability**, we need **worldwide testing**.
 
 ### ✔️ If you study this project, please also test it  
-Every test helps improve accuracy, stability, and cross‑platform compatibility.
+Every test improves accuracy, stability, and cross‑platform compatibility.
 
 ### What to test
 - MIDI input latency  
@@ -37,7 +38,7 @@ Please report your results in the **Issues** tab.
 
 ---
 
-## 🐞 Reporting Issues
+# 🐞 Reporting Issues
 
 If you find a bug, inconsistency, or unexpected behavior:
 
@@ -54,7 +55,7 @@ Clear reports help us fix problems faster.
 
 ---
 
-## 🔧 Submitting Pull Requests
+# 🔧 Submitting Pull Requests
 
 We welcome all improvements — from small fixes to major features.
 
@@ -76,7 +77,57 @@ We welcome all improvements — from small fixes to major features.
 
 ---
 
-## 💡 Suggesting Features
+# 🧩 Architecture Overview (with module links)
+
+### 🔧 Core Engine
+- **Processor** → `src/processor.py`  
+- **Rhythm Analyzer** → `rhythm_analyzer.py`  
+- **MidiNoteMapper** → `midi_input/midi_note_mapper.py`  
+- **EventBus** → `event_bus.py`  
+
+### 🎚 Track System
+- **TrackSystem** → `core/track_system.py`  
+- **TrackManager** → `core/track_manager.py`  
+
+### 🎨 Rendering
+- **GraphicNotationRenderer** → `renderer/graphic_notation_renderer.py`  
+
+### 🖥 UI Layer
+- **UIManager** → `ui_manager.py`  
+- **TrackSwitcherUI** → `ui_components/track_switcher_ui.py`  
+
+---
+
+# 🧭 Contributor Task Levels (Beginner → Advanced)
+
+## 🟦 Beginner‑Friendly Tasks
+Perfect for newcomers:
+- Improve documentation  
+- Add comments to complex renderer functions  
+- Fix typos or formatting issues  
+- Add simple unit tests  
+- Improve UI labels or text clarity  
+
+## 🟩 Intermediate Tasks
+For contributors with some experience:
+- Implement anti‑aliasing  
+- Improve UI animations  
+- Optimize scroll/zoom performance  
+- Add layer toggles (grid, barlines, stems, beams)  
+- Improve track highlighting  
+
+## 🟥 Advanced Tasks
+For experienced developers:
+- Beam caching  
+- Chord group caching  
+- GIF/MP4 export  
+- Extreme MIDI stress testing  
+- Performance profiling (CPU/GPU)  
+- Memory footprint optimization  
+
+---
+
+# 💡 Suggesting Features
 
 If you have an idea that could improve the project:
 
@@ -92,11 +143,11 @@ We especially welcome ideas related to:
 - UI improvements  
 - performance optimizations  
 - advanced harmony analysis  
-- export formats (PDF/PNG/MusicXML)
+- export formats (PDF/PNG/MusicXML)  
 
 ---
 
-## 🤝 Community Values
+# 🤝 Community Values
 
 We aim to build a community that is:
 
@@ -110,7 +161,7 @@ Everyone is invited to participate.
 
 ---
 
-## 📬 Contact
+# 📬 Contact
 
 If you want to discuss ideas or need help, feel free to open an issue or contact the maintainer:
 
