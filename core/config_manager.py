@@ -5,12 +5,13 @@ from .logger import Logger
 
 class ConfigManager:
     """
-    Stabilný konfigurák:
+    Stabilný konfigurák (Fáza 4):
     - bezpečné načítanie JSON
     - bezpečné ukladanie (atomic write)
     - fallback pri chybných súboroch
     - validácia typov
     - reset na default
+    - ochrana pred poškodeným configom
     """
 
     def __init__(self, config_file="config.json", defaults=None):
@@ -26,13 +27,13 @@ class ConfigManager:
     # ---------------------------------------------------------
     def _ensure_file_exists(self):
         """Ak config neexistuje, vytvorí prázdny JSON súbor."""
-        if not os.path.exists(self.config_file):
-            try:
+        try:
+            if not os.path.exists(self.config_file):
                 with open(self.config_file, "w", encoding="utf-8") as f:
                     json.dump(self.defaults, f, indent=4)
                 Logger.info(f"Created new config file: {self.config_file}")
-            except Exception as e:
-                Logger.error(f"Failed to create config file: {e}")
+        except Exception as e:
+            Logger.error(f"Failed to create config file: {e}")
 
     # ---------------------------------------------------------
     # LOAD
@@ -79,6 +80,7 @@ class ConfigManager:
 
         except Exception as e:
             Logger.error(f"ConfigManager error saving config: {e}")
+
             # Cleanup temp file if needed
             try:
                 if os.path.exists(tmp_file):
@@ -101,9 +103,14 @@ class ConfigManager:
     def set(self, key, value):
         """Set a config value and save safely."""
         try:
-            # Basic validation: keys must be strings
             if not isinstance(key, str):
                 raise ValueError("Config keys must be strings.")
+
+            # Validate JSON serializability
+            try:
+                json.dumps(value)
+            except Exception:
+                raise ValueError("Config value must be JSON-serializable.")
 
             self.config[key] = value
             self.save()
@@ -122,3 +129,15 @@ class ConfigManager:
             Logger.info("Configuration reset to defaults.")
         except Exception as e:
             Logger.error(f"ConfigManager reset() error: {e}")
+
+    # ---------------------------------------------------------
+    # NO-OP API (pre UIManager kompatibilitu)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
