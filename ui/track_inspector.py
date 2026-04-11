@@ -39,6 +39,7 @@ class TrackInspector:
         self.color_box_size = 14
         self.volume_bar_width = 80
 
+        pygame.font.init()
         try:
             self.font = pygame.font.SysFont("Arial", 14)
         except Exception:
@@ -52,7 +53,7 @@ class TrackInspector:
     # ---------------------------------------------------------
     def set_active_track(self, track_index: int):
         """UI reaguje na zmenu aktívnej stopy (0-based index)."""
-        self.active_track = track_index
+        self.active_track = max(0, int(track_index))
 
     def update_visibility(self, track_index: int, visible: bool):
         """
@@ -60,7 +61,6 @@ class TrackInspector:
         Viditeľnosť je primárne riadená TrackControlManagerom,
         tu môžeme v budúcnosti doplniť lokálny cache alebo animácie.
         """
-        # Aktuálne sa viditeľnosť číta priamo z track_control / track_manager.
         pass
 
     def update_color(self, track_index: int, color_hex: str):
@@ -139,57 +139,54 @@ class TrackInspector:
 
         mx, my = event.pos
 
-        # klik mimo panelu
         if not (self.x <= mx <= self.x + self.width and
                 self.y <= my <= self.y + self.height):
             return
 
-        # klik na riadok
         for track_id in range(1, self.num_tracks + 1):
             row_top = self.y + self.header_height + (track_id - 1) * self.row_height
             row_rect = pygame.Rect(self.x, row_top, self.width, self.row_height)
 
-            if row_rect.collidepoint(mx, my):
+            if not row_rect.collidepoint(mx, my):
+                continue
 
-                # 1) klik na oko (visibility)
-                vis_rect = pygame.Rect(
-                    row_rect.x + self.padding,
-                    row_rect.y + (self.row_height - 10) // 2,
-                    10,
-                    10,
-                )
-                if vis_rect.collidepoint(mx, my):
-                    try:
-                        # track_id je 1-based, TrackControlManager používa 0-based
-                        if self.track_control is not None:
-                            self.track_control.toggle_visibility(track_id - 1)
-                    except Exception:
-                        pass
-                    return
-
-                # 2) klik na volume bar
-                bar_x = self.x + self.width - self.padding - self.volume_bar_width
-                bar_y = row_rect.y + 4
-                bar_rect = pygame.Rect(bar_x, bar_y, self.volume_bar_width, self.row_height - 8)
-
-                if bar_rect.collidepoint(mx, my):
-                    rel = (mx - bar_x) / self.volume_bar_width
-                    rel = max(0.0, min(1.0, rel))
-                    try:
-                        self.track_manager.set_volume(track_id, rel)
-                    except Exception:
-                        pass
-                    return
-
-                # 3) klik na riadok → nastaviť aktívnu stopu
+            # 1) klik na oko (visibility)
+            vis_rect = pygame.Rect(
+                row_rect.x + self.padding,
+                row_rect.y + (self.row_height - 10) // 2,
+                10,
+                10,
+            )
+            if vis_rect.collidepoint(mx, my):
                 try:
                     if self.track_control is not None:
-                        # 0-based index
-                        self.track_control.select_track(track_id - 1)
+                        self.track_control.toggle_visibility(track_id - 1)
                 except Exception:
                     pass
-
                 return
+
+            # 2) klik na volume bar
+            bar_x = self.x + self.width - self.padding - self.volume_bar_width
+            bar_y = row_rect.y + 4
+            bar_rect = pygame.Rect(bar_x, bar_y, self.volume_bar_width, self.row_height - 8)
+
+            if bar_rect.collidepoint(mx, my):
+                rel = (mx - bar_x) / self.volume_bar_width
+                rel = max(0.0, min(1.0, rel))
+                try:
+                    self.track_manager.set_volume(track_id, rel)
+                except Exception:
+                    pass
+                return
+
+            # 3) klik na riadok → nastaviť aktívnu stopu
+            try:
+                if self.track_control is not None:
+                    self.track_control.select_track(track_id - 1)
+            except Exception:
+                pass
+
+            return
 
     # ---------------------------------------------------------
     # DRAW
