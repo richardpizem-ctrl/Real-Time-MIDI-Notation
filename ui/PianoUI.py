@@ -1,5 +1,6 @@
 import pygame
 
+
 class PianoUI:
     WHITE_KEY_WIDTH = 22
     WHITE_KEY_HEIGHT = 140
@@ -26,6 +27,7 @@ class PianoUI:
     # CALCULATE KEY POSITIONS
     # ---------------------------------------------------------
     def _calculate_positions(self):
+        """Prepočíta pozície bielych a čiernych kláves podľa MIDI rozsahu."""
         white_order = [0, 2, 4, 5, 7, 9, 11]
         black_offsets = {
             1: 0.65,
@@ -64,6 +66,8 @@ class PianoUI:
     # ---------------------------------------------------------
     def highlight_key(self, midi_note, color=(255, 80, 80)):
         """Zvýrazní klávesu pri NOTE ON."""
+        if midi_note is None:
+            return
         self.active_keys[midi_note] = color
 
     def unhighlight_key(self, midi_note):
@@ -71,10 +75,23 @@ class PianoUI:
         if midi_note in self.active_keys:
             del self.active_keys[midi_note]
 
+    def clear(self):
+        """Vymaže všetky zvýraznené klávesy."""
+        self.active_keys.clear()
+
+    def reset(self):
+        """Reset UI (napr. pri zmene MIDI rozsahu)."""
+        self.clear()
+        self._calculate_positions()
+
     # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
+        """Vykreslí klaviatúru na daný surface."""
+        if surface is None:
+            return
+
         surface.fill((25, 25, 25))
 
         # WHITE KEYS
