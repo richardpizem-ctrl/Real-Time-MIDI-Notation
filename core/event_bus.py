@@ -8,7 +8,7 @@ from .logger import Logger
 
 class EventBus:
     """
-    Stabilný, thread-safe event bus pre celý projekt.
+    Stabilný, thread-safe event bus pre celý projekt (Fáza 4).
 
     Funkcie:
     - subscribe(event_type, callback)
@@ -33,10 +33,12 @@ class EventBus:
     def subscribe(self, event_type: str, callback: Callable[[Any], None]) -> None:
         """Zaregistruje callback pre daný typ udalosti."""
         if not isinstance(event_type, str):
-            raise ValueError("event_type must be a string")
+            Logger.error("subscribe() called with non-string event_type")
+            return
 
         if not callable(callback):
-            raise ValueError("callback must be callable")
+            Logger.error("subscribe() called with non-callable callback")
+            return
 
         with self._lock:
             if callback not in self._subscribers[event_type]:
@@ -49,12 +51,12 @@ class EventBus:
             return
 
         with self._lock:
-            if callback in self._subscribers[event_type]:
+            if callback in self._subscribers.get(event_type, []):
                 self._subscribers[event_type].remove(callback)
                 Logger.debug(f"Unsubscribed from event '{event_type}': {callback}")
 
-            if not self._subscribers[event_type]:
-                del self._subscribers[event_type]
+            if not self._subscribers.get(event_type):
+                self._subscribers.pop(event_type, None)
 
     # ---------------------------------------------------------
     # SYNCHRÓNNE PUBLIKOVANIE
@@ -93,3 +95,15 @@ class EventBus:
         thread.start()
 
         Logger.debug(f"Async publish scheduled for event '{event_type}'.")
+
+    # ---------------------------------------------------------
+    # NO-OP API (pre UIManager kompatibilitu)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
