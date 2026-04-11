@@ -29,8 +29,8 @@ class PlaybackEngine:
         self.canvas_ui = canvas_ui
 
         # Tempo / meter
-        self.bpm: float = bpm
-        self.beats_per_bar: int = beats_per_bar
+        self.bpm: float = max(1.0, float(bpm))
+        self.beats_per_bar: int = max(1, int(beats_per_bar))
 
         # Playback state
         self.playing: bool = False
@@ -48,7 +48,7 @@ class PlaybackEngine:
     # ---------------------------------------------------------
     def _sync_renderer_tempo(self):
         """Synchronizuje BPM a meter do rendereru."""
-        if self.renderer is None:
+        if not self.renderer:
             return
 
         try:
@@ -144,7 +144,8 @@ class PlaybackEngine:
         dt = now - self._last_time
         self._last_time = now
 
-        if dt < 0:
+        # Ochrana pred extrémnymi hodnotami (freeze, lag)
+        if dt < 0 or dt > 1.0:
             dt = 0.0
 
         if self.playing:
@@ -196,9 +197,14 @@ class PlaybackEngine:
                 continue
 
             if self.track_manager:
-                transformed = self.track_manager.apply_midi_transform(track_id, pitch_int, vel_int)
+                try:
+                    transformed = self.track_manager.apply_midi_transform(track_id, pitch_int, vel_int)
+                except Exception:
+                    transformed = None
+
                 if transformed is None:
                     continue
+
                 new_pitch, new_vel = transformed
             else:
                 new_pitch, new_vel = pitch_int, vel_int
@@ -246,3 +252,15 @@ class PlaybackEngine:
                 Logger.error(f"Renderer error: {e}")
 
         return surface
+
+    # ---------------------------------------------------------
+    # NO-OP API (pre UIManager kompatibilitu)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
