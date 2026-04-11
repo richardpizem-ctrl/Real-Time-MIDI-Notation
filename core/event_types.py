@@ -1,7 +1,7 @@
 """
 Centrálne definované typy udalostí pre celý projekt.
 
-Stabilizované:
+Stabilizované (Fáza 4):
 - jednotná štruktúra
 - žiadne duplicity
 - bezpečné, konzistentné názvy
