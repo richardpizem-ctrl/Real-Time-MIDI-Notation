@@ -10,18 +10,18 @@ from ..core.logger import Logger
 
 class MIDIListener:
     """
-    Stabilný MIDI listener:
+    Stabilný MIDI listener (Fáza 4):
     - bezpečné otváranie portu
     - auto-detect MIDI zariadenia
     - thread-safe štart/stop
     - žiadne duplikované porty
-    - žiadne pády pri chybách
+    - odolný voči chybám počas čítania
     """
 
     def __init__(self, event_bus, device_name=None, poll_interval=0.001):
         self.event_bus = event_bus
         self.device_name = device_name
-        self.poll_interval = poll_interval
+        self.poll_interval = max(0.0005, float(poll_interval))
 
         self.running = False
         self.thread = None
@@ -81,7 +81,7 @@ class MIDIListener:
             Logger.warning("MIDIListener: no MIDI input ports available.")
             return None
 
-        # ak device_name nie je zadaný → auto-detect
+        # auto-detect
         if self.device_name is None:
             selected = available[0]
             Logger.info(f"MIDIListener: auto-selected '{selected}'")
@@ -118,6 +118,7 @@ class MIDIListener:
         """Hlavný loop – číta MIDI správy a posiela ich do EventBusu."""
         self.port = self._open_port()
         if not self.port:
+            Logger.error("MIDIListener: no port opened, stopping listener.")
             self.running = False
             return
 
@@ -139,3 +140,15 @@ class MIDIListener:
                     time.sleep(0.1)
 
                 time.sleep(self.poll_interval)
+
+    # ---------------------------------------------------------
+    # NO-OP API (pre UIManager kompatibilitu)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
