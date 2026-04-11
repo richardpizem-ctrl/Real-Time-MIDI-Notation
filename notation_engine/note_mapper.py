@@ -12,12 +12,14 @@ class NoteMapper:
         Prevod MIDI čísla (0–127) na názov noty.
         Napr. 60 -> C4, 61 -> C#4, 62 -> D4
 
-        Stabilizované:
+        Stabilizované (Fáza 4):
         - ochrana pred None
         - ochrana pred nevalidnými typmi
         - ochrana pred rozsahom mimo 0–127
         - bezpečný výpočet oktávy
+        - odolné voči floatom, stringom, NaN
         """
+
         # None → nič nevraciame
         if midi_number is None:
             return None
