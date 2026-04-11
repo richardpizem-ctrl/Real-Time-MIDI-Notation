@@ -1,7 +1,7 @@
 """
 Drum Notation – profesionálny mapping bicích pre Real-Time-MIDI-Notation.
 
-Stabilizované:
+Stabilizované (Fáza 4):
 - bezpečné spracovanie pitchov a velocity
 - fallback pri chybách
 - jednotné štruktúry pre renderer
@@ -19,8 +19,8 @@ from typing import List, Dict, Any, Optional
 @dataclass
 class DrumSymbolSpec:
     name: str
-    notehead: str          # "normal", "x", "diamond", "triangle", "circle"
-    stem: str              # "up", "down", "none"
+    notehead: str
+    stem: str
     is_cymbal: bool = False
     is_hat: bool = False
     is_kick: bool = False
@@ -217,9 +217,9 @@ def assign_layer_offsets_to_group(
 
     try:
         if all(isinstance(n, dict) and "y" in n for n in group):
-            sorted_group = sorted(group, key=lambda n: n["y"])
+            sorted_group = sorted(group, key=lambda n: float(n.get("y", 0)))
         else:
-            sorted_group = sorted(group, key=lambda n: n.get("pitch", 0))
+            sorted_group = sorted(group, key=lambda n: float(n.get("pitch", 0)))
     except Exception:
         sorted_group = group
 
@@ -256,3 +256,16 @@ def annotate_drum_timeline(timeline: List[Dict[str, Any]]) -> List[Dict[str, Any
         assign_layer_offsets_to_group(g)
 
     return annotated
+
+
+# ---------------------------------------------------------
+# NO-OP API (pre UIManager kompatibilitu)
+# ---------------------------------------------------------
+def update_color(track_index: int, color_hex: str):
+    return
+
+def update_visibility(track_index: int, visible: bool):
+    return
+
+def set_active_track(track_index: int):
+    return
