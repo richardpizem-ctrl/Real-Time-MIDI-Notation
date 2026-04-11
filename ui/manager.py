@@ -93,7 +93,7 @@ class UIManager:
             height=400,
         )
 
-        # Canvas
+        # Canvas (Tk)
         self.canvas_ui = None
         self.canvas = None
 
@@ -172,9 +172,9 @@ class UIManager:
             try:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
-                    # prepojenie späť do TrackControlManager
                     selected = result["selected_track"]
                     try:
+                        # TrackControlManager pracuje s 0-based indexom
                         self.track_control.set_active_track(selected)
                     except Exception:
                         pass
@@ -232,28 +232,41 @@ class UIManager:
         if note is None:
             return
 
-        if not self.track_control.is_visible(track_id):
-            return
+        # TrackControlManager používa 0-based index
+        idx = max(0, int(track_id))
+
+        try:
+            if not self.track_control.is_visible(idx):
+                return
+        except Exception:
+            pass
 
         velocity = event.get("velocity", 100)
 
         # farba stopy z TrackControlManager
+        track_color = None
         try:
-            color_hex = self.track_control.get_color(track_id)
+            color_hex = self.track_control.get_color(idx)
             track_color = tuple(int(color_hex[i:i + 2], 16) for i in (1, 3, 5))
             event["track_color"] = track_color
         except Exception:
-            track_color = None
+            pass
 
         # PIANO
         try:
-            self.piano.highlight_key(note, track_color)
+            if track_color is not None:
+                self.piano.highlight_key(note, track_color)
+            else:
+                self.piano.highlight_key(note)
         except Exception:
             pass
 
         # PIANO ROLL
         try:
-            self.piano_roll.highlight_key(note, track_color)
+            if track_color is not None:
+                self.piano_roll.highlight_key(note, track_color)
+            else:
+                self.piano_roll.highlight_key(note)
         except Exception:
             pass
 
@@ -291,9 +304,13 @@ class UIManager:
             return
 
         track_id = event.get("track_id", 0)
+        idx = max(0, int(track_id))
 
-        if not self.track_control.is_visible(track_id):
-            return
+        try:
+            if not self.track_control.is_visible(idx):
+                return
+        except Exception:
+            pass
 
         # PIANO
         try:
