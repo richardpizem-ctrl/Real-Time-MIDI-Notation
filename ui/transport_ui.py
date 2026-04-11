@@ -28,6 +28,18 @@ class TransportUI:
         self.is_playing = False
 
     # ---------------------------------------------------------
+    # PUBLIC API (pre UIManager kompatibilitu)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
+
+    # ---------------------------------------------------------
     # EVENT HANDLING
     # ---------------------------------------------------------
     def handle_event(self, event):
@@ -64,10 +76,15 @@ class TransportUI:
     # SETTERS
     # ---------------------------------------------------------
     def set_bpm(self, bpm):
+        try:
+            bpm = int(bpm)
+        except Exception:
+            return
         self.bpm = max(20, min(300, bpm))
 
     def set_time(self, text):
-        self.time_text = text
+        if isinstance(text, str):
+            self.time_text = text
 
     # ---------------------------------------------------------
     # DRAW
