@@ -66,6 +66,39 @@ class GraphicNotationRenderer:
         if mode in ("classic", "heatmap", "glow"):
             self.color_mode = mode
 
+    def set_bpm(self, bpm: float):
+        try:
+            b = float(bpm)
+        except Exception:
+            return
+        if b > 0:
+            self.bpm = b
+
+    def set_playback_time(self, t: float):
+        try:
+            self.playback_time = float(t)
+        except Exception:
+            pass
+
+    def update_visibility(self, track_index: int, visible: bool):
+        """
+        Volané z UIManager._on_visibility_changed.
+        Viditeľnosť je primárne riadená TrackControlManagerom (track_control),
+        renderer ju len číta (is_visible / is_effectively_active).
+        Táto metóda existuje kvôli API konzistencii – netreba tu nič cacheovať.
+        """
+        # No-op – stav sa číta priamo z track_control / track_manager.
+        return
+
+    def update_color(self, track_index: int, color_hex: str):
+        """
+        Volané z UIManager._on_color_changed.
+        Farby stôp renderer číta priamo z TrackControlManager.get_color()
+        alebo track_manager.get_color(), takže netreba lokálny cache.
+        """
+        # No-op – farby sa čítajú dynamicky pri kreslení.
+        return
+
     # ---------------------------------------------------------
     # TIME UPDATE
     # ---------------------------------------------------------
@@ -243,6 +276,7 @@ class GraphicNotationRenderer:
 
         outline = int(1 + factor * 2)
         pygame.draw.ellipse(surface, (0, 0, 0), rect, outline)
+
     # ---------------------------------------------------------
     # LIGATURE / SIMPLE BEAM
     # ---------------------------------------------------------
