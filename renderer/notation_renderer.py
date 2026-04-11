@@ -1,3 +1,18 @@
+"""
+notation_renderer.py – Legacy Text Renderer (FÁZA 4)
+
+Poskytuje:
+- bezpečné pridávanie nôt
+- textovú vizualizáciu vrátane bubnových značiek
+- filter funkciu
+- clear() bufferu
+- FPS limit (ak pygame existuje)
+- ochranu pred None, nevalidnými dátami a chybami pri výpise
+"""
+
+from typing import Callable, Optional, Dict, Any
+
+
 class NotationRenderer:
     """
     Jednoduchý textový renderer.
@@ -6,10 +21,10 @@ class NotationRenderer:
     """
 
     def __init__(self):
-        self.notes = []
-        self.filter_fn = None  # voliteľný filter funkciou
+        self.notes: list[Dict[str, Any]] = []
+        self.filter_fn: Optional[Callable] = None
 
-        # pygame clock je voliteľný (len ak je pygame dostupný)
+        # pygame clock je voliteľný
         try:
             import pygame
             self.clock = pygame.time.Clock()
@@ -17,62 +32,54 @@ class NotationRenderer:
             self.clock = None
 
     # ---------------------------------------------------------
-    # API – pridanie noty
+    # ADD NOTE
     # ---------------------------------------------------------
-    def add_note(self, note):
+    def add_note(self, note: Dict[str, Any]) -> None:
         """
         Pridá hotovú notu do renderovacieho bufferu a vypíše ju.
         Očakáva dict s kľúčmi:
-        - pitch
-        - duration
-        - channel
-        - bar
-        - beat
+        - pitch, duration, channel, bar, beat
         - drum (voliteľné)
         - drum_layer_offset (voliteľné)
         """
         if not isinstance(note, dict):
-            print("⚠️ NotationRenderer.add_note: neplatný objekt:", note)
+            print("[NotationRenderer] ⚠️ add_note: neplatný objekt:", note)
             return
 
         try:
             self.notes.append(note.copy())
         except Exception:
-            print("⚠️ NotationRenderer.add_note: chyba pri kopírovaní objektu")
+            print("[NotationRenderer] ⚠️ add_note: chyba pri kopírovaní objektu")
             return
 
         self.render()
 
     # ---------------------------------------------------------
-    # CLEAR – vymazanie bufferu
+    # CLEAR
     # ---------------------------------------------------------
-    def clear(self):
+    def clear(self) -> None:
         """Vymaže všetky uložené noty."""
         self.notes.clear()
         print("\n🧹 NotationRenderer: buffer vymazaný.\n")
 
     # ---------------------------------------------------------
-    # FILTER – nastaví filter funkciu
+    # FILTER
     # ---------------------------------------------------------
-    def set_filter(self, fn):
+    def set_filter(self, fn: Optional[Callable]) -> None:
         """
         Nastaví filter funkciu.
         fn musí byť funkcia, ktorá dostane notu a vráti True/False.
-        Príklady:
-            renderer.set_filter(lambda n: n.get("channel") == 9)
-            renderer.set_filter(lambda n: n.get("pitch") > 60)
-            renderer.set_filter(lambda n: "drum" in n)
         """
         if fn is None or callable(fn):
             self.filter_fn = fn
-            print("🔎 Filter nastavený.")
+            print("[NotationRenderer] 🔎 Filter nastavený.")
         else:
-            print("⚠️ set_filter: filter musí byť funkcia alebo None.")
+            print("[NotationRenderer] ⚠️ set_filter: filter musí byť funkcia alebo None.")
 
     # ---------------------------------------------------------
-    # Textový výpis
+    # RENDER
     # ---------------------------------------------------------
-    def render(self):
+    def render(self) -> None:
         """Textová vizualizácia nôt vrátane bubnových značiek."""
         import time
         timestamp = time.strftime("%H:%M:%S")
@@ -87,7 +94,7 @@ class NotationRenderer:
                     if not self.filter_fn(n):
                         continue
                 except Exception:
-                    print("⚠️ Filter chyba pri spracovaní noty.")
+                    print("[NotationRenderer] ⚠️ Filter chyba pri spracovaní noty.")
                     continue
 
             # ZÁKLADNÉ INFO
@@ -105,7 +112,7 @@ class NotationRenderer:
             # DRUM INFO
             drum_info = ""
             try:
-                if "drum" in n and isinstance(n["drum"], dict):
+                if isinstance(n.get("drum"), dict):
                     d = n["drum"]
                     drum_info = (
                         f"   [DRUM: {d.get('name')}, "
