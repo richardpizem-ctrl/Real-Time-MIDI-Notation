@@ -1,10 +1,11 @@
 import pygame
+from typing import Optional, Tuple
 from .track_control_manager import TrackControlManager
 
 
 class TrackSelectorUI:
     """
-    Jednoduchý horizontálny prepínač stôp.
+    Horizontálny prepínač stôp.
     - zobrazuje farby stôp
     - umožňuje kliknutím vybrať aktívnu stopu
     - highlight aktívnej stopy
@@ -12,17 +13,22 @@ class TrackSelectorUI:
     """
 
     def __init__(self, track_control_manager: TrackControlManager, width: int, height: int):
+        pygame.font.init()
+
         self.track_control = track_control_manager
         self.width = width
         self.height = height
 
         self.track_count = 16
-        self.button_width = width // self.track_count
+        self.button_width = max(1, width // self.track_count)
         self.button_height = height
 
-        self.font = pygame.font.Font(None, 18)
+        try:
+            self.font = pygame.font.Font(None, 18)
+        except Exception:
+            self.font = None
 
-        # Lokálny stav pre highlight (UIManager volá set_active_track)
+        # Lokálny highlight (UIManager volá set_active_track)
         self.active_track = 0  # 0-based index
 
     # ---------------------------------------------------------
@@ -30,10 +36,13 @@ class TrackSelectorUI:
     # ---------------------------------------------------------
     def set_active_track(self, track_index: int):
         """UI reaguje na zmenu aktívnej stopy (0-based index)."""
-        self.active_track = track_index
+        try:
+            self.active_track = max(0, min(self.track_count - 1, int(track_index)))
+        except Exception:
+            self.active_track = 0
 
     def update_visibility(self, track_index: int, visible: bool):
-        """Rezervované pre budúce rozšírenie (napr. ikona oka)."""
+        """Rezervované pre budúce rozšírenie."""
         pass
 
     def update_color(self, track_index: int, color_hex: str):
@@ -44,9 +53,8 @@ class TrackSelectorUI:
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface, active_track=None):
-        # UIManager môže poslať aktívnu stopu
         if active_track is not None:
-            self.active_track = active_track
+            self.set_active_track(active_track)
 
         for i in range(self.track_count):
             rect = pygame.Rect(
@@ -75,12 +83,13 @@ class TrackSelectorUI:
                 pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
             # Label (číslo stopy)
-            label = f"{i+1}"
-            text = self.font.render(label, True, (0, 0, 0))
-            text_rect = text.get_rect(
-                center=(rect.x + self.button_width // 2, rect.y + self.button_height // 2)
-            )
-            surface.blit(text, text_rect)
+            if self.font is not None:
+                label = f"{i+1}"
+                text = self.font.render(label, True, (0, 0, 0))
+                text_rect = text.get_rect(
+                    center=(rect.x + self.button_width // 2, rect.y + self.button_height // 2)
+                )
+                surface.blit(text, text_rect)
 
     # ---------------------------------------------------------
     # EVENTS
@@ -89,12 +98,11 @@ class TrackSelectorUI:
         x, y = pos
 
         # Klik mimo panelu
-        if not (0 <= x <= self.width):
-            return
-        if not (0 <= y <= self.height):
+        if not (0 <= x <= self.width and 0 <= y <= self.height):
             return
 
-        index = x // self.button_width
+        index = int(x // self.button_width)
+        index = max(0, min(self.track_count - 1, index))
 
         # Informujeme TrackControlManager (0-based index)
         try:
