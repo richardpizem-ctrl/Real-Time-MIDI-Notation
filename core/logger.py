@@ -6,11 +6,12 @@ import threading
 
 class Logger:
     """
-    Stabilizovaný thread‑safe logger:
+    Stabilizovaný thread‑safe logger (Fáza 4):
     - bezpečné timestampy
     - thread‑safe výstup
     - jednotný formát logov
     - ochrana proti nevalidným správam
+    - ochrana proti extrémne dlhým správam
     - podpora INFO / WARNING / ERROR / DEBUG
     """
 
@@ -38,6 +39,10 @@ class Logger:
             except Exception:
                 msg = "<invalid log message>"
 
+            # Ochrana pred extrémne dlhými správami
+            if len(msg) > 5000:
+                msg = msg[:5000] + "... [truncated]"
+
             try:
                 print(f"[{level}] {cls._timestamp()} - {msg}")
             except Exception:
@@ -62,3 +67,15 @@ class Logger:
     @classmethod
     def debug(cls, message):
         cls._safe_print("DEBUG", message)
+
+    # ---------------------------------------------------------
+    # NO-OP API (pre UIManager kompatibilitu)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
