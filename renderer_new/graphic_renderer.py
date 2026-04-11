@@ -1,28 +1,50 @@
-import pygame
-import time
+"""
+graphic_renderer.py – GraphicNotationRenderer (FÁZA 4)
+
+- Bezpečný, odolný renderer pre multi-track grafickú notáciu
+- Žiadne pády pri chýbajúcom pygame, fonte, track_manageri alebo track_control
+- Bezpečné výpočty času, pozícií, farieb a skupín akordov
+- Pripravené na integráciu s UIManager, TrackControlManager a TrackManager
+"""
+
 from typing import List, Dict, Any, Tuple, Optional
+
+import time
+
+try:
+    import pygame
+except Exception:
+    pygame = None
 
 
 class GraphicNotationRenderer:
-    def __init__(self, width, height, track_manager, track_control=None):
-        self.width = width
-        self.height = height
+    def __init__(self, width: int, height: int, track_manager, track_control=None):
+        self.width = int(width)
+        self.height = int(height)
         self.track_manager = track_manager
         self.track_control = track_control  # optional TrackControlManager
 
-        try:
-            self.surface = pygame.Surface((width, height))
-        except Exception:
+        # Surface
+        if pygame is not None:
+            try:
+                self.surface = pygame.Surface((self.width, self.height))
+            except Exception:
+                self.surface = None
+        else:
             self.surface = None
 
-        try:
-            self.font = pygame.font.SysFont("Arial", 18)
-        except Exception:
+        # Font
+        if pygame is not None:
+            try:
+                self.font = pygame.font.SysFont("Arial", 18)
+            except Exception:
+                self.font = None
+        else:
             self.font = None
 
         # Staff cache
         self.staff_cache = None
-        self.staff_cache_width = width
+        self.staff_cache_width = self.width
         self.staff_cache_height = 140
 
         # Layout
@@ -47,7 +69,7 @@ class GraphicNotationRenderer:
         self.beats_per_bar = 4
 
         # Playhead
-        self.playhead_x = width // 2
+        self.playhead_x = self.width // 2
 
         # Color mode
         self.color_mode = "heatmap"
@@ -56,17 +78,20 @@ class GraphicNotationRenderer:
     # TRACK LANE OFFSET
     # ---------------------------------------------------------
     def _track_lane_offset(self, track_id: int) -> float:
-        """Each track has its own vertical lane offset."""
-        return (track_id - 1) * self.track_lane_height
+        try:
+            tid = int(track_id)
+        except Exception:
+            tid = 1
+        return (tid - 1) * self.track_lane_height
 
     # ---------------------------------------------------------
     # PUBLIC API
     # ---------------------------------------------------------
-    def set_color_mode(self, mode: str):
+    def set_color_mode(self, mode: str) -> None:
         if mode in ("classic", "heatmap", "glow"):
             self.color_mode = mode
 
-    def set_bpm(self, bpm: float):
+    def set_bpm(self, bpm: float) -> None:
         try:
             b = float(bpm)
         except Exception:
@@ -74,35 +99,31 @@ class GraphicNotationRenderer:
         if b > 0:
             self.bpm = b
 
-    def set_playback_time(self, t: float):
+    def set_playback_time(self, t: float) -> None:
         try:
             self.playback_time = float(t)
         except Exception:
             pass
 
-    def update_visibility(self, track_index: int, visible: bool):
+    def update_visibility(self, track_index: int, visible: bool) -> None:
         """
         Volané z UIManager._on_visibility_changed.
-        Viditeľnosť je primárne riadená TrackControlManagerom (track_control),
-        renderer ju len číta (is_visible / is_effectively_active).
-        Táto metóda existuje kvôli API konzistencii – netreba tu nič cacheovať.
+        Viditeľnosť je riadená TrackControlManagerom / TrackManagerom.
+        Renderer stav len číta – žiadny lokálny cache.
         """
-        # No-op – stav sa číta priamo z track_control / track_manager.
         return
 
-    def update_color(self, track_index: int, color_hex: str):
+    def update_color(self, track_index: int, color_hex: str) -> None:
         """
         Volané z UIManager._on_color_changed.
-        Farby stôp renderer číta priamo z TrackControlManager.get_color()
-        alebo track_manager.get_color(), takže netreba lokálny cache.
+        Farby renderer číta dynamicky z TrackControlManager / TrackManager.
         """
-        # No-op – farby sa čítajú dynamicky pri kreslení.
         return
 
     # ---------------------------------------------------------
     # TIME UPDATE
     # ---------------------------------------------------------
-    def _update_time(self):
+    def _update_time(self) -> None:
         now = time.time()
         dt = now - self.last_frame_time
         self.last_frame_time = now
@@ -117,6 +138,11 @@ class GraphicNotationRenderer:
     # TIME → X
     # ---------------------------------------------------------
     def _time_to_x(self, t: float) -> float:
+        try:
+            tt = float(t)
+        except Exception:
+            tt = self.playback_time
+
         if self.bpm <= 0:
             pixels_per_second = 80.0 * self.zoom
         else:
@@ -124,7 +150,7 @@ class GraphicNotationRenderer:
             pixels_per_beat = 80.0 * self.zoom
             pixels_per_second = pixels_per_beat / seconds_per_beat
 
-        dt = t - self.playback_time
+        dt = tt - self.playback_time
         x = self.playhead_x + dt * pixels_per_second - self.scroll_offset
         return x
 
@@ -132,21 +158,28 @@ class GraphicNotationRenderer:
     # PITCH → Y
     # ---------------------------------------------------------
     def _pitch_to_y(self, midi: int, track_id: int) -> float:
+        try:
+            midi_int = int(midi)
+        except Exception:
+            midi_int = 60
+
         reference_pitch = 60  # C4
         staff_center = self.margin_top + 2 * self.staff_line_spacing
         semitone_step = self.staff_line_spacing / 2.0
 
-        dy = (reference_pitch - midi) * semitone_step
+        dy = (reference_pitch - midi_int) * semitone_step
         y = staff_center + dy
 
-        # Multi-track offset
         y += self._track_lane_offset(track_id)
         return y
 
     # ---------------------------------------------------------
     # STAFF LINES (cached)
     # ---------------------------------------------------------
-    def _render_staff_lines(self) -> pygame.Surface:
+    def _render_staff_lines(self):
+        if pygame is None:
+            return None
+
         if (
             self.staff_cache is not None
             and self.staff_cache.get_width() == self.staff_cache_width
@@ -154,21 +187,28 @@ class GraphicNotationRenderer:
         ):
             return self.staff_cache
 
-        staff_surface = pygame.Surface(
-            (self.staff_cache_width, self.staff_cache_height),
-            pygame.SRCALPHA
-        )
+        try:
+            staff_surface = pygame.Surface(
+                (self.staff_cache_width, self.staff_cache_height),
+                pygame.SRCALPHA
+            )
+        except Exception:
+            return None
+
         staff_surface.fill((0, 0, 0, 0))
 
         for i in range(5):
             y = self.margin_top + i * self.staff_line_spacing
-            pygame.draw.line(
-                staff_surface,
-                (200, 200, 200),
-                (self.margin_left, int(y)),
-                (self.staff_cache_width - 20, int(y)),
-                2,
-            )
+            try:
+                pygame.draw.line(
+                    staff_surface,
+                    (200, 200, 200),
+                    (self.margin_left, int(y)),
+                    (self.staff_cache_width - 20, int(y)),
+                    2,
+                )
+            except Exception:
+                continue
 
         self.staff_cache = staff_surface
         return self.staff_cache
@@ -176,11 +216,18 @@ class GraphicNotationRenderer:
     # ---------------------------------------------------------
     # COLOR HELPERS
     # ---------------------------------------------------------
-    def _hex_to_rgb(self, h: str):
+    def _hex_to_rgb(self, h: str) -> Tuple[int, int, int]:
+        if not isinstance(h, str):
+            return (120, 180, 220)
         h = h.lstrip("#")
-        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        if len(h) != 6:
+            return (120, 180, 220)
+        try:
+            return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        except Exception:
+            return (120, 180, 220)
 
-    def _rgb_to_hex(self, r: int, g: int, b: int):
+    def _rgb_to_hex(self, r: int, g: int, b: int) -> str:
         return f"#{r:02x}{g:02x}{b:02x}"
 
     def _lerp(self, a: float, b: float, t: float) -> float:
@@ -192,6 +239,7 @@ class GraphicNotationRenderer:
         c2: Tuple[int, int, int],
         t: float
     ) -> Tuple[int, int, int]:
+        t = max(0.0, min(1.0, float(t)))
         r = int(self._lerp(c1[0], c2[0], t))
         g = int(self._lerp(c1[1], c2[1], t))
         b = int(self._lerp(c1[2], c2[2], t))
@@ -261,60 +309,91 @@ class GraphicNotationRenderer:
         base_color: Tuple[int, int, int],
         velocity: int,
         flash: float = 0.0
-    ):
+    ) -> None:
+        if pygame is None or surface is None:
+            return
+
         factor = self._velocity_factor(velocity)
         color = self._velocity_to_color(base_color, velocity)
 
-        if flash > 0.01:
-            color = self._mix_colors(color, (255, 255, 255), min(0.8, flash))
+        try:
+            f = float(flash)
+        except Exception:
+            f = 0.0
+
+        if f > 0.01:
+            color = self._mix_colors(color, (255, 255, 255), min(0.8, f))
 
         w = int(16 * (0.8 + 0.4 * factor))
         h = int(12 * (0.8 + 0.4 * factor))
 
         rect = pygame.Rect(int(x), int(y), w, h)
-        pygame.draw.ellipse(surface, color, rect)
-
-        outline = int(1 + factor * 2)
-        pygame.draw.ellipse(surface, (0, 0, 0), rect, outline)
+        try:
+            pygame.draw.ellipse(surface, color, rect)
+            outline = int(1 + factor * 2)
+            pygame.draw.ellipse(surface, (0, 0, 0), rect, outline)
+        except Exception:
+            pass
 
     # ---------------------------------------------------------
     # LIGATURE / SIMPLE BEAM
     # ---------------------------------------------------------
-    def _draw_ligature(self, x1, x2, y, color):
-        pygame.draw.line(
-            self.surface,
-            color,
-            (int(x1), int(y)),
-            (int(x2), int(y)),
-            4
-        )
+    def _draw_ligature(self, x1, x2, y, color) -> None:
+        if pygame is None or self.surface is None:
+            return
+        try:
+            pygame.draw.line(
+                self.surface,
+                color,
+                (int(x1), int(y)),
+                (int(x2), int(y)),
+                4
+            )
+        except Exception:
+            pass
 
     # ---------------------------------------------------------
     # BEAM DRAWING
     # ---------------------------------------------------------
-    def _draw_beam(self, x1, y1, x2, y2, color, levels=1):
-        for level in range(levels):
+    def _draw_beam(self, x1, y1, x2, y2, color, levels=1) -> None:
+        if pygame is None or self.surface is None:
+            return
+        try:
+            lv = max(1, int(levels))
+        except Exception:
+            lv = 1
+
+        for level in range(lv):
             offset = level * 4
-            pygame.draw.line(
-                self.surface,
-                color,
-                (int(x1), int(y1 - offset)),
-                (int(x2), int(y2 - offset)),
-                3
-            )
+            try:
+                pygame.draw.line(
+                    self.surface,
+                    color,
+                    (int(x1), int(y1 - offset)),
+                    (int(x2), int(y2 - offset)),
+                    3
+                )
+            except Exception:
+                continue
 
     # ---------------------------------------------------------
     # CHORD GROUPING
     # ---------------------------------------------------------
     def _group_notes(self, notes: List[Dict[str, Any]]):
-        groups = {}
+        groups: Dict[Tuple[float, int], List[Dict[str, Any]]] = {}
         time_quantum = 0.02
+
+        if not isinstance(notes, (list, tuple)):
+            return groups
 
         for note in notes:
             if not isinstance(note, dict):
                 continue
 
-            midi = note.get("pitch") or note.get("note")
+            midi = note.get("pitch")
+            if midi is None:
+                midi = note.get("note")
+
             track_id = note.get("track_id")
             timestamp = note.get("timestamp", 0.0)
 
@@ -326,8 +405,13 @@ class GraphicNotationRenderer:
             except Exception:
                 t = 0.0
 
+            try:
+                tid = int(track_id)
+            except Exception:
+                continue
+
             quantized_time = round(t / time_quantum) * time_quantum
-            key = (quantized_time, int(track_id))
+            key = (quantized_time, tid)
             groups.setdefault(key, []).append(note)
 
         return groups
@@ -335,8 +419,10 @@ class GraphicNotationRenderer:
     # ---------------------------------------------------------
     # BARLINES / GRID / RULER
     # ---------------------------------------------------------
-    def _draw_barlines(self):
-        if self.bpm <= 0:
+    def _draw_barlines(self) -> None:
+        if pygame is None or self.surface is None:
+            return
+        if self.bpm <= 0 or self.beats_per_bar <= 0:
             return
 
         seconds_per_beat = 60.0 / self.bpm
@@ -353,16 +439,21 @@ class GraphicNotationRenderer:
             x = self._time_to_x(bar_time)
 
             if 0 <= x <= self.width:
-                pygame.draw.line(
-                    self.surface,
-                    (255, 255, 180),
-                    (int(x), 0),
-                    (int(x), self.height),
-                    3
-                )
+                try:
+                    pygame.draw.line(
+                        self.surface,
+                        (255, 255, 180),
+                        (int(x), 0),
+                        (int(x), self.height),
+                        3
+                    )
+                except Exception:
+                    continue
 
-    def _draw_timeline_ruler(self):
-        if self.bpm <= 0 or self.font is None:
+    def _draw_timeline_ruler(self) -> None:
+        if pygame is None or self.surface is None:
+            return
+        if self.bpm <= 0 or self.beats_per_bar <= 0 or self.font is None:
             return
 
         seconds_per_beat = 60.0 / self.bpm
@@ -379,11 +470,16 @@ class GraphicNotationRenderer:
             x = self._time_to_x(bar_time)
 
             if 0 <= x <= self.width:
-                label = self.font.render(str(bar + 1), True, (230, 230, 230))
-                self.surface.blit(label, (int(x) + 4, 0))
+                try:
+                    label = self.font.render(str(bar + 1), True, (230, 230, 230))
+                    self.surface.blit(label, (int(x) + 4, 0))
+                except Exception:
+                    continue
 
-    def _draw_grid_lines(self):
-        if self.bpm <= 0:
+    def _draw_grid_lines(self) -> None:
+        if pygame is None or self.surface is None:
+            return
+        if self.bpm <= 0 or self.beats_per_bar <= 0:
             return
 
         seconds_per_beat = 60.0 / self.bpm
@@ -403,13 +499,31 @@ class GraphicNotationRenderer:
                 x = self._time_to_x(t)
 
                 if 0 <= x <= self.width:
-                    pygame.draw.line(self.surface, (70, 70, 70), (int(x), 0), (int(x), self.height), 1)
+                    try:
+                        pygame.draw.line(
+                            self.surface,
+                            (70, 70, 70),
+                            (int(x), 0),
+                            (int(x), self.height),
+                            1
+                        )
+                    except Exception:
+                        pass
 
                 # 8th
                 t8 = t + seconds_per_beat / 2
                 x8 = self._time_to_x(t8)
                 if 0 <= x8 <= self.width:
-                    pygame.draw.line(self.surface, (50, 50, 50), (int(x8), 0), (int(x8), self.height), 1)
+                    try:
+                        pygame.draw.line(
+                            self.surface,
+                            (50, 50, 50),
+                            (int(x8), 0),
+                            (int(x8), self.height),
+                            1
+                        )
+                    except Exception:
+                        pass
 
                 # 16th
                 t16a = t + seconds_per_beat / 4
@@ -417,10 +531,21 @@ class GraphicNotationRenderer:
                 for t16 in (t16a, t16b):
                     x16 = self._time_to_x(t16)
                     if 0 <= x16 <= self.width:
-                        pygame.draw.line(self.surface, (40, 40, 40), (int(x16), 0), (int(x16), self.height), 1)
+                        try:
+                            pygame.draw.line(
+                                self.surface,
+                                (40, 40, 40),
+                                (int(x16), 0),
+                                (int(x16), self.height),
+                                1
+                            )
+                        except Exception:
+                            pass
 
-    def _draw_measure_numbers(self):
-        if self.bpm <= 0 or self.font is None:
+    def _draw_measure_numbers(self) -> None:
+        if pygame is None or self.surface is None:
+            return
+        if self.bpm <= 0 or self.beats_per_bar <= 0 or self.font is None:
             return
 
         seconds_per_beat = 60.0 / self.bpm
@@ -437,36 +562,50 @@ class GraphicNotationRenderer:
             x = self._time_to_x(bar_time)
 
             if 0 <= x <= self.width:
-                label = self.font.render(str(bar + 1), True, (220, 220, 220))
-                self.surface.blit(label, (int(x) + 4, self.margin_top - 18))
+                try:
+                    label = self.font.render(str(bar + 1), True, (220, 220, 220))
+                    self.surface.blit(label, (int(x) + 4, self.margin_top - 18))
+                except Exception:
+                    continue
 
     # ---------------------------------------------------------
     # PLAYHEAD
     # ---------------------------------------------------------
-    def _draw_playhead(self):
-        pygame.draw.line(
-            self.surface,
-            (255, 80, 80),
-            (self.playhead_x, 0),
-            (self.playhead_x, self.height),
-            3
-        )
+    def _draw_playhead(self) -> None:
+        if pygame is None or self.surface is None:
+            return
+        try:
+            pygame.draw.line(
+                self.surface,
+                (255, 80, 80),
+                (int(self.playhead_x), 0),
+                (int(self.playhead_x), self.height),
+                3
+            )
+        except Exception:
+            pass
 
     # ---------------------------------------------------------
     # TRACK COLOR
     # ---------------------------------------------------------
     def _get_track_color(self, track_id: int, active_track_id: Optional[int]):
+        base_color = (120, 180, 220)
+
+        # TrackControlManager (indexované od 0)
         if self.track_control is not None:
             try:
                 hex_color = self.track_control.get_color(track_id - 1)
                 base_color = self._hex_to_rgb(hex_color)
             except Exception:
-                base_color = (120, 180, 220)
+                pass
         else:
+            # TrackManager (môže vracať RGB tuple)
             try:
-                base_color = self.track_manager.get_color(track_id)
+                c = self.track_manager.get_color(track_id)
+                if isinstance(c, (list, tuple)) and len(c) == 3:
+                    base_color = (int(c[0]), int(c[1]), int(c[2]))
             except Exception:
-                base_color = (120, 180, 220)
+                pass
 
         if active_track_id is not None and track_id == active_track_id:
             r = min(255, int(base_color[0] * 1.1))
@@ -480,11 +619,20 @@ class GraphicNotationRenderer:
     # MAIN DRAW
     # ---------------------------------------------------------
     def draw(self, notes):
+        if pygame is None:
+            return None
+
         if self.surface is None:
-            self.surface = pygame.Surface((self.width, self.height))
+            try:
+                self.surface = pygame.Surface((self.width, self.height))
+            except Exception:
+                return None
 
         self._update_time()
-        self.surface.fill((25, 25, 25))
+        try:
+            self.surface.fill((25, 25, 25))
+        except Exception:
+            pass
 
         # Background layers
         self._draw_timeline_ruler()
@@ -492,7 +640,11 @@ class GraphicNotationRenderer:
         self._draw_measure_numbers()
 
         staff = self._render_staff_lines()
-        self.surface.blit(staff, (0, 0))
+        if staff is not None:
+            try:
+                self.surface.blit(staff, (0, 0))
+            except Exception:
+                pass
 
         self._draw_barlines()
 
@@ -501,11 +653,14 @@ class GraphicNotationRenderer:
             return self.surface
 
         # Active track
+        active_track_id: Optional[int]
         try:
             if self.track_control is not None:
-                active_track_id = self.track_control.get_active_track() + 1
+                at = self.track_control.get_active_track()
+                active_track_id = int(at) + 1
             else:
-                active_track_id = self.track_manager.get_active_track()
+                at = self.track_manager.get_active_track()
+                active_track_id = int(at)
         except Exception:
             active_track_id = None
 
@@ -513,19 +668,22 @@ class GraphicNotationRenderer:
 
         seconds_per_beat = 60.0 / self.bpm if self.bpm > 0 else None
 
-        chord_positions = {}
+        chord_positions: Dict[int, List[Tuple[float, float, float, float, Tuple[int, int, int]]]] = {}
         activity_accumulator = {i: 0.0 for i in range(1, 17)}
 
         # ---------------------------------------------------------
         # DRAW CHORDS
         # ---------------------------------------------------------
         for (timestamp, track_id), chord_notes in grouped.items():
+            # Track effectively active?
             try:
-                if not self.track_manager.is_effectively_active(track_id):
-                    continue
+                if hasattr(self.track_manager, "is_effectively_active"):
+                    if not self.track_manager.is_effectively_active(track_id):
+                        continue
             except Exception:
                 pass
 
+            # Visibility
             visible = True
             if self.track_control is not None:
                 try:
@@ -534,7 +692,8 @@ class GraphicNotationRenderer:
                     pass
             else:
                 try:
-                    visible = self.track_manager.is_visible(track_id)
+                    if hasattr(self.track_manager, "is_visible"):
+                        visible = self.track_manager.is_visible(track_id)
                 except Exception:
                     pass
 
@@ -543,6 +702,7 @@ class GraphicNotationRenderer:
 
             base_color = self._get_track_color(track_id, active_track_id)
 
+            # Volume
             try:
                 vol = float(self.track_manager.get_volume(track_id))
                 vol = max(0.0, min(1.0, vol))
@@ -568,7 +728,10 @@ class GraphicNotationRenderer:
             max_y = float("-inf")
 
             for idx, note in enumerate(chord_sorted):
-                midi = note.get("pitch") or note.get("note")
+                midi = note.get("pitch")
+                if midi is None:
+                    midi = note.get("note")
+
                 velocity = note.get("velocity", 100)
 
                 if midi is None:
@@ -584,26 +747,34 @@ class GraphicNotationRenderer:
 
                 flash = note.get("_flash", 1.0)
                 self._draw_note(self.surface, x, y, track_color, velocity, flash)
-                note["_flash"] = flash * 0.85
+
+                try:
+                    note["_flash"] = float(flash) * 0.85
+                except Exception:
+                    note["_flash"] = 0.0
 
                 if track_id in activity_accumulator:
-                    activity_accumulator[track_id] += velocity / 127.0
+                    try:
+                        activity_accumulator[track_id] += float(velocity) / 127.0
+                    except Exception:
+                        pass
 
                 min_y = min(min_y, y)
                 max_y = max(max_y, y)
 
             if min_y != float("inf"):
                 chord_positions.setdefault(track_id, []).append(
-                    (timestamp, base_x, min_y, max_y, track_color)
+                    (float(timestamp), base_x, min_y, max_y, track_color)
                 )
 
         # ---------------------------------------------------------
         # UPDATE TRACK ACTIVITY
         # ---------------------------------------------------------
         for tid, val in activity_accumulator.items():
-            level = min(1.0, val)
+            level = min(1.0, max(0.0, val))
             try:
-                self.track_manager.update_activity(tid, level)
+                if hasattr(self.track_manager, "update_activity"):
+                    self.track_manager.update_activity(tid, level)
             except Exception:
                 pass
 
@@ -611,7 +782,7 @@ class GraphicNotationRenderer:
         # STEMS
         # ---------------------------------------------------------
         if seconds_per_beat is not None:
-            beam_candidates = {}
+            beam_candidates: Dict[int, set] = {}
 
             for track_id, chords in chord_positions.items():
                 if len(chords) < 2:
@@ -647,13 +818,16 @@ class GraphicNotationRenderer:
                     end_y = start_y - stem_len if stem_up else start_y + stem_len
                     end_y = max(self.margin_top - 30, min(self.height - 20, end_y))
 
-                    pygame.draw.line(
-                        self.surface,
-                        color,
-                        (int(base_x), int(start_y)),
-                        (int(base_x), int(end_y)),
-                        3
-                    )
+                    try:
+                        pygame.draw.line(
+                            self.surface,
+                            color,
+                            (int(base_x), int(start_y)),
+                            (int(base_x), int(end_y)),
+                            3
+                        )
+                    except Exception:
+                        pass
 
         # ---------------------------------------------------------
         # BEAMS
