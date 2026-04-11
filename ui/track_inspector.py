@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 class TrackInspector:
     """
-    Track Inspector panel – teraz už aj s interakciou.
+    Track Inspector panel – interaktívny panel pre správu stôp.
 
     - číta stav z track_manager a track_control
     - umožňuje kliknúť na:
@@ -44,22 +44,31 @@ class TrackInspector:
         except Exception:
             self.font = None
 
-        # Lokálny stav pre eventy z UIManager
+        # Lokálny stav pre eventy z UIManager (ak by bolo treba)
         self.active_track = 0
 
     # ---------------------------------------------------------
     # PUBLIC API (volané z UIManager event callbackov)
     # ---------------------------------------------------------
     def set_active_track(self, track_index: int):
-        """UI reaguje na zmenu aktívnej stopy."""
+        """UI reaguje na zmenu aktívnej stopy (0-based index)."""
         self.active_track = track_index
 
     def update_visibility(self, track_index: int, visible: bool):
-        """Rezervované pre budúce rozšírenie."""
+        """
+        Volané z UIManager._on_visibility_changed.
+        Viditeľnosť je primárne riadená TrackControlManagerom,
+        tu môžeme v budúcnosti doplniť lokálny cache alebo animácie.
+        """
+        # Aktuálne sa viditeľnosť číta priamo z track_control / track_manager.
         pass
 
     def update_color(self, track_index: int, color_hex: str):
-        """Farba sa berie priamo z TrackControlManager."""
+        """
+        Volané z UIManager._on_color_changed.
+        Farba sa berie priamo z TrackControlManager / track_manager,
+        takže tu netreba nič cacheovať.
+        """
         pass
 
     # ---------------------------------------------------------
@@ -70,6 +79,7 @@ class TrackInspector:
         return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
 
     def _get_track_color(self, track_id: int) -> Tuple[int, int, int]:
+        # track_id je 1-based
         if self.track_control is not None:
             try:
                 hex_color = self.track_control.get_color(track_id - 1)
@@ -92,6 +102,7 @@ class TrackInspector:
         return f"Track {track_id}"
 
     def _get_track_visible(self, track_id: int) -> bool:
+        # track_id je 1-based
         if self.track_control is not None:
             try:
                 return bool(self.track_control.is_visible(track_id - 1))
@@ -106,6 +117,7 @@ class TrackInspector:
     def _get_active_track_id(self) -> Optional[int]:
         try:
             if self.track_control is not None:
+                # TrackControlManager používa 0-based index
                 return int(self.track_control.get_active_track()) + 1
             return int(self.track_manager.get_active_track())
         except Exception:
@@ -148,8 +160,9 @@ class TrackInspector:
                 )
                 if vis_rect.collidepoint(mx, my):
                     try:
-                        current = self.track_control.is_visible(track_id - 1)
-                        self.track_control.toggle_visibility(track_id - 1)
+                        # track_id je 1-based, TrackControlManager používa 0-based
+                        if self.track_control is not None:
+                            self.track_control.toggle_visibility(track_id - 1)
                     except Exception:
                         pass
                     return
@@ -170,7 +183,9 @@ class TrackInspector:
 
                 # 3) klik na riadok → nastaviť aktívnu stopu
                 try:
-                    self.track_control.select_track(track_id - 1)
+                    if self.track_control is not None:
+                        # 0-based index
+                        self.track_control.select_track(track_id - 1)
                 except Exception:
                     pass
 
@@ -247,8 +262,17 @@ class TrackInspector:
                 bar_y = row_rect.y + 4
                 bar_h = self.row_height - 8
 
-                pygame.draw.rect(surface, (35, 35, 35), (bar_x, bar_y, self.volume_bar_width, bar_h))
-                pygame.draw.rect(surface, (0, 0, 0), (bar_x, bar_y, self.volume_bar_width, bar_h), 1)
+                pygame.draw.rect(
+                    surface,
+                    (35, 35, 35),
+                    (bar_x, bar_y, self.volume_bar_width, bar_h),
+                )
+                pygame.draw.rect(
+                    surface,
+                    (0, 0, 0),
+                    (bar_x, bar_y, self.volume_bar_width, bar_h),
+                    1,
+                )
 
                 fill_w = int(self.volume_bar_width * vol)
                 pygame.draw.rect(
