@@ -10,11 +10,13 @@ class MessageParser:
         """
         Convert raw mido message into a structured dict.
 
-        Stabilizované:
+        Stabilizované (Fáza 4):
         - ochrana pred None
         - ochrana pred nevalidnými typmi
         - bezpečné čítanie atribútov
         - fallback pri chýbajúcich hodnotách
+        - clampovanie kanála
+        - clampovanie velocity
         - pridanie timestampu
         """
 
@@ -24,12 +26,12 @@ class MessageParser:
 
         # msg musí mať aspoň atribút 'type'
         msg_type = getattr(msg, "type", None)
-        if msg_type is None:
-            Logger.warning(f"MessageParser: missing msg.type in {msg}")
+        if not isinstance(msg_type, str):
+            Logger.warning(f"MessageParser: missing or invalid msg.type in {msg}")
             return None
 
         try:
-            # Normalizácia kanála (Mido používa 0–15, projekt používa 1–16)
+            # Normalizácia kanála (0–15)
             channel = getattr(msg, "channel", 0)
             try:
                 channel = int(channel)
@@ -46,10 +48,22 @@ class MessageParser:
                 note = getattr(msg, "note", None)
                 velocity = getattr(msg, "velocity", 0)
 
+                try:
+                    note = int(note) if note is not None else None
+                except Exception:
+                    note = None
+
+                try:
+                    velocity = int(velocity)
+                except Exception:
+                    velocity = 0
+
+                velocity = max(0, min(127, velocity))
+
                 return {
                     "type": "note_on",
-                    "note": int(note) if note is not None else None,
-                    "velocity": int(velocity),
+                    "note": note,
+                    "velocity": velocity,
                     "channel": channel,
                     "timestamp": timestamp,
                 }
@@ -61,10 +75,22 @@ class MessageParser:
                 note = getattr(msg, "note", None)
                 velocity = getattr(msg, "velocity", 0)
 
+                try:
+                    note = int(note) if note is not None else None
+                except Exception:
+                    note = None
+
+                try:
+                    velocity = int(velocity)
+                except Exception:
+                    velocity = 0
+
+                velocity = max(0, min(127, velocity))
+
                 return {
                     "type": "note_off",
-                    "note": int(note) if note is not None else None,
-                    "velocity": int(velocity),
+                    "note": note,
+                    "velocity": velocity,
                     "channel": channel,
                     "timestamp": timestamp,
                 }
@@ -76,10 +102,23 @@ class MessageParser:
                 control = getattr(msg, "control", None)
                 value = getattr(msg, "value", None)
 
+                try:
+                    control = int(control) if control is not None else None
+                except Exception:
+                    control = None
+
+                try:
+                    value = int(value) if value is not None else None
+                except Exception:
+                    value = None
+
+                if value is not None:
+                    value = max(0, min(127, value))
+
                 return {
                     "type": "control_change",
-                    "control": int(control) if control is not None else None,
-                    "value": int(value) if value is not None else None,
+                    "control": control,
+                    "value": value,
                     "channel": channel,
                     "timestamp": timestamp,
                 }
@@ -94,3 +133,15 @@ class MessageParser:
         except Exception as e:
             Logger.error(f"MessageParser error: {e}")
             return None
+
+    # ---------------------------------------------------------
+    # NO-OP API (pre UIManager kompatibilitu)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
