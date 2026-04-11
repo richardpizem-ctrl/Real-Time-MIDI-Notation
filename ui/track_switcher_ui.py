@@ -14,6 +14,8 @@ class TrackSwitcherUI:
         event_bus,
         track_control_manager: TrackControlManager | None = None,
     ):
+        pygame.font.init()
+
         self.x = x
         self.y = y
         self.width = width
@@ -25,14 +27,18 @@ class TrackSwitcherUI:
         self.track_control_manager = track_control_manager
 
         self.track_count = 16
-        self.button_width = width // self.track_count
+        self.button_width = max(1, width // self.track_count)
         self.button_height = height
 
         # Peak hold vizuál
         self.peak_hold = [0.0] * self.track_count
 
-        self.font = pygame.font.Font(None, 14)
-        self.small_font = pygame.font.Font(None, 12)
+        try:
+            self.font = pygame.font.Font(None, 14)
+            self.small_font = pygame.font.Font(None, 12)
+        except Exception:
+            self.font = None
+            self.small_font = None
 
     # ---------------------------------------------------------
     # UPDATE PEAK HOLD
@@ -42,7 +48,10 @@ class TrackSwitcherUI:
 
         for i in range(self.track_count):
             tid = i + 1
-            level = tm.get_activity(tid)
+            try:
+                level = tm.get_activity(tid)
+            except Exception:
+                level = 0.0
 
             if level > self.peak_hold[i]:
                 self.peak_hold[i] = level
@@ -53,7 +62,10 @@ class TrackSwitcherUI:
     # SOLO / AUDIBLE LOGIC
     # ---------------------------------------------------------
     def _any_solo(self):
-        return any(self.event_bus.track_manager.solo.values())
+        try:
+            return any(self.event_bus.track_manager.solo.values())
+        except Exception:
+            return False
 
     def _emit_audible_state(self):
         tm = self.event_bus.track_manager
@@ -61,7 +73,10 @@ class TrackSwitcherUI:
 
         for i in range(self.track_count):
             tid = i + 1
-            audible = tm.is_effectively_active(tid)
+            try:
+                audible = tm.is_effectively_active(tid)
+            except Exception:
+                audible = True
             self.event_bus.emit("track_audible_state", i, audible, any_solo)
 
     # ---------------------------------------------------------
@@ -82,6 +97,11 @@ class TrackSwitcherUI:
         pygame.draw.rect(surface, (255, 255, 255), peak_rect)
 
     def _draw_volume(self, surface, rect, vol):
+        try:
+            vol = max(0.0, min(1.0, float(vol)))
+        except Exception:
+            vol = 0.0
+
         vol_h = int(vol * 30)
         vol_rect = pygame.Rect(
             rect.x + 6,
@@ -90,24 +110,36 @@ class TrackSwitcherUI:
             vol_h,
         )
         pygame.draw.rect(surface, (180, 180, 255), vol_rect)
-        txt = self.small_font.render("V", True, (0, 0, 0))
-        surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 60))
+
+        if self.small_font:
+            txt = self.small_font.render("V", True, (0, 0, 0))
+            surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 60))
 
     def _draw_pan(self, surface, rect, pan_val):
+        try:
+            pan_val = max(-1.0, min(1.0, float(pan_val)))
+        except Exception:
+            pan_val = 0.0
+
         pan_x = rect.x + self.button_width // 2
         pan_y = rect.y + self.button_height - 70
+
         pygame.draw.circle(surface, (50, 50, 50), (pan_x, pan_y), 6)
+
         angle = pan_val * math.pi
         line_x = pan_x + int(6 * math.sin(angle))
         line_y = pan_y - int(6 * math.cos(angle))
         pygame.draw.line(surface, (255, 255, 255), (pan_x, pan_y), (line_x, line_y), 2)
-        txt = self.small_font.render("P", True, (0, 0, 0))
-        surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 75))
+
+        if self.small_font:
+            txt = self.small_font.render("P", True, (0, 0, 0))
+            surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 75))
 
     def _draw_button(self, surface, rect, active, color_on, color_off, label):
         pygame.draw.rect(surface, color_on if active else color_off, rect)
-        txt = self.small_font.render(label, True, (0, 0, 0))
-        surface.blit(txt, (rect.x + 2, rect.y + 1))
+        if self.small_font:
+            txt = self.small_font.render(label, True, (0, 0, 0))
+            surface.blit(txt, (rect.x + 2, rect.y + 1))
 
     # ---------------------------------------------------------
     # DRAW
@@ -118,7 +150,7 @@ class TrackSwitcherUI:
 
         self.update_peak_hold()
 
-        # Ak máme TrackControlManager, aktívnu stopu berieme z neho
+        # Aktívna stopa z TrackControlManagera
         if self.track_control_manager is not None:
             active_tid = self.track_control_manager.get_active_track() + 1
         else:
@@ -127,11 +159,19 @@ class TrackSwitcherUI:
         for i in range(self.track_count):
             tid = i + 1
 
-            # Farba stopy – ak máme TrackControlManager, berieme z neho
-            if self.track_control_manager is not None:
-                base_color = self.track_control_manager.get_color(i)
-            else:
-                base_color = self.track_colors[i % len(self.track_colors)]
+            # Farba stopy
+            try:
+                if self.track_control_manager is not None:
+                    hex_color = self.track_control_manager.get_color(i)
+                else:
+                    hex_color = self.track_colors[i % len(self.track_colors)]
+
+                r = int(hex_color[1:3], 16)
+                g = int(hex_color[3:5], 16)
+                b = int(hex_color[5:7], 16)
+                base_color = (r, g, b)
+            except Exception:
+                base_color = (120, 120, 120)
 
             rect = pygame.Rect(
                 self.x + i * self.button_width,
@@ -141,12 +181,15 @@ class TrackSwitcherUI:
             )
 
             # COLOR LOGIC
-            if tm.is_muted(tid):
-                color = (120, 120, 120)
-            elif any_solo:
-                color = (255, 255, 120) if tm.is_solo(tid) else (80, 80, 80)
-            else:
-                color = (255, 255, 120) if tm.is_solo(tid) else base_color
+            try:
+                if tm.is_muted(tid):
+                    color = (120, 120, 120)
+                elif any_solo:
+                    color = (255, 255, 120) if tm.is_solo(tid) else (80, 80, 80)
+                else:
+                    color = (255, 255, 120) if tm.is_solo(tid) else base_color
+            except Exception:
+                color = base_color
 
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
@@ -220,22 +263,27 @@ class TrackSwitcherUI:
                 name = f"Track {tid}"
 
             name_color = (255, 255, 255) if active_tid == tid else (0, 0, 0)
-            text_surface = self.font.render(name, True, name_color)
-            text_rect = text_surface.get_rect(
-                center=(rect.x + self.button_width // 2, rect.y + 12)
-            )
-            surface.blit(text_surface, text_rect)
+
+            if self.font:
+                text_surface = self.font.render(name, True, name_color)
+                text_rect = text_surface.get_rect(
+                    center=(rect.x + self.button_width // 2, rect.y + 12)
+                )
+                surface.blit(text_surface, text_rect)
 
     # ---------------------------------------------------------
-    # PUBLIC API PRE UIManager / eventy
+    # PUBLIC API PRE UIManager
     # ---------------------------------------------------------
     def set_active_track(self, track_index: int):
+        """UIManager volá pri zmene aktívnej stopy – no-op."""
         pass
 
     def update_visibility(self, track_index: int, visible: bool):
+        """UIManager volá pri zmene viditeľnosti – no-op."""
         pass
 
     def update_color(self, track_index: int, color_hex: str):
+        """UIManager volá pri zmene farby – no-op."""
         pass
 
     # ---------------------------------------------------------
@@ -252,7 +300,8 @@ class TrackSwitcherUI:
             if not (self.y <= my <= self.y + self.button_height):
                 return None
 
-            index = (mx - self.x) // self.button_width
+            index = int((mx - self.x) // self.button_width)
+            index = max(0, min(self.track_count - 1, index))
             tid = index + 1
             local_y = my - self.y
 
@@ -301,13 +350,20 @@ class TrackSwitcherUI:
                 return {"solo": index}
 
             # SELECT TRACK
-            tm.set_active_track(tid)
+            try:
+                tm.set_active_track(tid)
+            except Exception:
+                pass
+
             self.event_bus.emit("track_selected", index)
             self._emit_audible_state()
 
             # Fáza 4 – informujeme TrackControlManager o výbere stopy
             if self.track_control_manager is not None:
-                self.track_control_manager.select_track(index)
+                try:
+                    self.track_control_manager.select_track(index)
+                except Exception:
+                    pass
 
             return {"selected_track": index}
 
