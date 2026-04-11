@@ -1,7 +1,7 @@
 """
 Key Detector – stabilná detekcia tóniny podľa Krumhansl-Schmuckler profilu.
 
-Stabilizované:
+Stabilizované (Fáza 4):
 - ochrana pred None a nevalidnými pitchmi
 - bezpečné výpočty korelácie
 - fallback pri chybách
@@ -24,6 +24,8 @@ NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 def rotate(lst, n):
     """Bezpečná rotácia listu."""
     try:
+        if not lst:
+            return lst
         n = int(n) % len(lst)
         return lst[n:] + lst[:n]
     except Exception:
@@ -33,6 +35,9 @@ def rotate(lst, n):
 def correlation(a, b):
     """Pearsonova korelácia – stabilná verzia."""
     try:
+        if not a or not b or len(a) != len(b):
+            return 0.0
+
         mean_a = sum(a) / len(a)
         mean_b = sum(b) / len(b)
 
@@ -60,7 +65,6 @@ def detect_key(pitches: Iterable[int]) -> Optional[str]:
     if pitches is None:
         return None
 
-    # Histogram pitch-classov
     histogram = [0] * 12
 
     try:
@@ -73,10 +77,9 @@ def detect_key(pitches: Iterable[int]) -> Optional[str]:
     if sum(histogram) == 0:
         return None
 
-    best_key = None
-    best_score = -999.0
+    best_key: Optional[str] = None
+    best_score: float = -999.0
 
-    # Pre každý možný root (0–11)
     for i in range(12):
         try:
             major_rot = rotate(MAJOR_PROFILE, i)
@@ -85,12 +88,10 @@ def detect_key(pitches: Iterable[int]) -> Optional[str]:
             score_major = correlation(histogram, major_rot)
             score_minor = correlation(histogram, minor_rot)
 
-            # Major
             if score_major > best_score:
                 best_score = score_major
                 best_key = NOTE_NAMES[i]
 
-            # Minor
             if score_minor > best_score:
                 best_score = score_minor
                 best_key = NOTE_NAMES[i] + "m"
