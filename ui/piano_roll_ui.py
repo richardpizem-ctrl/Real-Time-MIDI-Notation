@@ -1,6 +1,7 @@
 import pygame
 import time
 
+
 class PianoRollUI:
     WHITE_KEY_WIDTH = 20
     WHITE_KEY_HEIGHT = 120
@@ -27,6 +28,18 @@ class PianoRollUI:
             self.font = None
 
         self._calculate_key_positions()
+
+    # ---------------------------------------------------------
+    # PUBLIC API (pre UIManager – bezpečné no-op metódy)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
 
     # ---------------------------------------------------------
     # CALCULATE KEY POSITIONS
@@ -69,6 +82,12 @@ class PianoRollUI:
     # ---------------------------------------------------------
     def highlight_key(self, midi_note, color=(255, 80, 80)):
         """Highlight a key with fade-out animation."""
+        if midi_note is None:
+            return
+
+        if not isinstance(color, (tuple, list)) or len(color) != 3:
+            color = (255, 80, 80)
+
         self.active_keys[midi_note] = (color, time.time())
 
     def unhighlight_key(self, midi_note):
@@ -79,6 +98,9 @@ class PianoRollUI:
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
+        if surface is None:
+            return
+
         surface.fill((30, 30, 30))
         now = time.time()
 
