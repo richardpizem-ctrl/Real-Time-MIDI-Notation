@@ -1,4 +1,6 @@
 import pygame
+import time
+
 
 class StaffUI:
     STAFF_LINE_COLOR = (220, 220, 220)
@@ -26,6 +28,18 @@ class StaffUI:
         self.scroll_speed = 2
 
     # ---------------------------------------------------------
+    # PUBLIC API (pre UIManager – bezpečné no-op metódy)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
+
+    # ---------------------------------------------------------
     # NOTE MANAGEMENT
     # ---------------------------------------------------------
     def add_note(self, event):
@@ -36,20 +50,32 @@ class StaffUI:
             time
             track_color (optional)
         """
-        note_id = f"{event['track_id']}_{event['note']}_{event['time']}"
+        track = event.get("track_id", 0)
+        midi = event.get("note")
+        t = event.get("time", time.time())
+
+        if midi is None:
+            return
+
+        # unikátne ID (aj pri rovnakom čase)
+        note_id = f"{track}_{midi}_{t}_{len(self.note_order)}"
 
         if note_id in self.notes:
-            return  # nikdy neprepisujeme existujúcu notu
+            return
 
         self.note_order.append(note_id)
 
         # X pozícia podľa poradia
         x = len(self.note_order) * self.note_spacing + 100
 
-        midi_note = event["note"]
-        y = self._midi_to_staff_y(midi_note)
+        # Y pozícia podľa MIDI
+        y = self._midi_to_staff_y(midi)
+        y = max(0, min(self.height - 10, y))
 
+        # farba
         color = event.get("track_color", self.NOTE_COLOR)
+        if not isinstance(color, (tuple, list)) or len(color) != 3:
+            color = self.NOTE_COLOR
 
         self.notes[note_id] = {
             "x": x,
@@ -62,11 +88,24 @@ class StaffUI:
         self.scroll_x = max(0, self.scroll_x + self.scroll_speed)
 
     def remove_note(self, event):
-        note_id = f"{event['track_id']}_{event['note']}_{event['time']}"
-        if note_id in self.notes:
-            del self.notes[note_id]
-        if note_id in self.note_order:
-            self.note_order.remove(note_id)
+        track = event.get("track_id", 0)
+        midi = event.get("note")
+        t = event.get("time", None)
+
+        if midi is None or t is None:
+            return
+
+        # pôvodné ID
+        prefix = f"{track}_{midi}_{t}"
+
+        # nájdeme všetky ID začínajúce prefixom
+        to_remove = [nid for nid in self.note_order if nid.startswith(prefix)]
+
+        for nid in to_remove:
+            if nid in self.notes:
+                del self.notes[nid]
+            if nid in self.note_order:
+                self.note_order.remove(nid)
 
     def highlight_note(self, note_id, color=None):
         if note_id in self.notes:
@@ -87,7 +126,11 @@ class StaffUI:
         C4 (60) je stred osnovy.
         Každý MIDI krok = ~3 pixely.
         """
-        offset = midi_note - 60
+        try:
+            offset = int(midi_note) - 60
+        except Exception:
+            offset = 0
+
         return self.STAFF_TOP + 2 * self.STAFF_SPACING - offset * 3
 
     # ---------------------------------------------------------
@@ -122,21 +165,17 @@ class StaffUI:
             color = note["color"]
             y = note["y"]
 
-            # telo noty
             pygame.draw.circle(surface, color, (shifted_x, y), self.NOTE_RADIUS)
-
-            # outline
             pygame.draw.circle(surface, self.NOTE_OUTLINE, (shifted_x, y), self.NOTE_RADIUS, 2)
 
     # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
-        # pozadie
+        if surface is None:
+            return
+
         surface.fill((25, 25, 25))
 
-        # osnova
         self.draw_staff(surface)
-
-        # noty
         self.draw_notes(surface)
