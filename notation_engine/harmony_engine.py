@@ -25,15 +25,14 @@ class HarmonyRole:
 
 class HarmonyEngine:
     """
-    Stabilizovaný harmonický engine.
+    Stabilizovaný harmonický engine (Fáza 4).
     """
 
     def __init__(self):
-        # Intervaly v poltónoch voči rootu akordu
         self.chord_intervals = {
             HarmonyRole.ROOT: {0},
-            HarmonyRole.CHORD_TONE: {3, 4, 7, 10, 11},  # m3, M3, 5, b7, M7
-            HarmonyRole.TENSION: {1, 2, 5, 6, 8, 9},    # b9, 9, 11, #11, b13, 13
+            HarmonyRole.CHORD_TONE: {3, 4, 7, 10, 11},
+            HarmonyRole.TENSION: {1, 2, 5, 6, 8, 9},
         }
 
     # ---------------------------------------------------------
@@ -48,9 +47,6 @@ class HarmonyEngine:
 
     @staticmethod
     def _build_scale(key_root: int, is_major: bool = True) -> List[int]:
-        """
-        Jednoduchá diatonická stupnica (major/minor) v 12-tónovom cykle.
-        """
         try:
             key_root = int(key_root) % 12
         except Exception:
@@ -61,7 +57,10 @@ class HarmonyEngine:
         else:
             pattern = [0, 2, 3, 5, 7, 8, 10]
 
-        return [(key_root + step) % 12 for step in pattern]
+        try:
+            return [(key_root + step) % 12 for step in pattern]
+        except Exception:
+            return []
 
     # ---------------------------------------------------------
     # MAIN ANALYSIS
@@ -73,16 +72,7 @@ class HarmonyEngine:
         is_major: bool = True,
         chord_root: Optional[int] = None,
     ) -> Dict[int, str]:
-        """
-        Vstup:
-            pitches   - MIDI pitch hodnoty
-            key_root  - root stupnice (0–11)
-            is_major  - True = dur, False = mol
-            chord_root- root akordu (0–11)
 
-        Výstup:
-            dict: pitch -> HarmonyRole.*
-        """
         roles: Dict[int, str] = {}
 
         if not isinstance(pitches, list):
@@ -110,30 +100,32 @@ class HarmonyEngine:
 
             # 1) ROOT akordu
             if chord_root_norm is not None:
-                interval = (norm - chord_root_norm) % 12
+                try:
+                    interval = (norm - chord_root_norm) % 12
+                except Exception:
+                    roles[p] = HarmonyRole.OUTSIDE
+                    continue
 
                 if interval in self.chord_intervals[HarmonyRole.ROOT]:
                     roles[p] = HarmonyRole.ROOT
                     continue
 
-                # 2) CHORD TONES
                 if interval in self.chord_intervals[HarmonyRole.CHORD_TONE]:
                     roles[p] = HarmonyRole.CHORD_TONE
                     continue
 
-                # 3) TENSIONS
                 if interval in self.chord_intervals[HarmonyRole.TENSION]:
                     roles[p] = HarmonyRole.TENSION
                     continue
 
             # 4) SCALE TONE vs OUTSIDE
             if scale_pitches:
-                if norm in scale_pitches:
-                    roles[p] = HarmonyRole.SCALE_TONE
-                else:
-                    roles[p] = HarmonyRole.OUTSIDE
+                roles[p] = (
+                    HarmonyRole.SCALE_TONE
+                    if norm in scale_pitches
+                    else HarmonyRole.OUTSIDE
+                )
             else:
-                # Bez informácie o stupnici a akorde nevieme posúdiť → default
                 roles[p] = HarmonyRole.OUTSIDE
 
         return roles
@@ -149,15 +141,7 @@ class HarmonyEngine:
         chord_root: Optional[int] = None,
         pitch_attr: str = "pitch",
     ) -> Dict[object, str]:
-        """
-        Alternatíva, ak pracuješ s objektmi nôt (napr. timeline items).
 
-        notes      - zoznam objektov, ktoré majú atribút pitch_attr
-        pitch_attr - názov atribútu s MIDI pitch hodnotou
-
-        Výstup:
-            dict: note_obj -> HarmonyRole.*
-        """
         if not isinstance(notes, list):
             return {}
 
@@ -188,3 +172,16 @@ class HarmonyEngine:
                 result[n] = HarmonyRole.OUTSIDE
 
         return result
+
+
+# ---------------------------------------------------------
+# NO-OP API (pre UIManager kompatibilitu)
+# ---------------------------------------------------------
+def update_color(track_index: int, color_hex: str):
+    return
+
+def update_visibility(track_index: int, visible: bool):
+    return
+
+def set_active_track(track_index: int):
+    return
