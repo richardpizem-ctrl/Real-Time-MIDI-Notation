@@ -13,8 +13,8 @@ class EventRouter:
     ):
         """
         event_bus          = centrálny EventBus
-        ui_manager         = UIManager (obsahuje piano, staff, vizualizér, renderer)
-        notation_processor = NotationProcessor (timeline, harmónia, rytmus)
+        ui_manager         = UIManager (vizuálne komponenty)
+        notation_processor = NotationProcessor (harmónia, rytmus, timeline)
         track_system       = TrackSystem (16 MIDI stôp)
         """
         self.event_bus = event_bus
@@ -48,14 +48,28 @@ class EventRouter:
             velocity = midi_event.get("velocity", 0)
             channel = midi_event.get("channel", 0)
 
-            if event_type is None:
-                Logger.warning(f"Missing event_type in midi_event: {midi_event}")
+            if not isinstance(event_type, str):
+                Logger.warning(f"Missing or invalid event_type: {midi_event}")
                 return
+
+            # Normalize values
+            try:
+                velocity = int(velocity)
+            except Exception:
+                velocity = 0
+
+            try:
+                channel = int(channel)
+            except Exception:
+                channel = 0
+
+            if channel < 0 or channel > 15:
+                channel = 0
 
             event = None
 
             # ---------------------------------------------------------
-            # PREPOJENIE TRACK SYSTEMU
+            # TRACK SYSTEM PREPOJENIE
             # ---------------------------------------------------------
             if self.track_system and event_type in ("note_on", "note_off"):
                 try:
@@ -71,9 +85,7 @@ class EventRouter:
                         event_type=event_type,
                     )
                 except Exception as e:
-                    Logger.error(
-                        f"TrackSystem build_note_event_for_active_track error: {e}"
-                    )
+                    Logger.error(f"TrackSystem build_note_event_for_active_track error: {e}")
                     event = None
 
                 if isinstance(event, dict):
@@ -88,6 +100,8 @@ class EventRouter:
             # NOTE ON / NOTE OFF
             # ---------------------------------------------------------
             if event_type in ("note_on", "note_off"):
+
+                # EventBus
                 if self.event_bus:
                     try:
                         self.event_bus.publish("note_event", midi_event)
@@ -95,7 +109,7 @@ class EventRouter:
                         Logger.error(f"EventBus publish note_event error: {e}")
 
                 # UIManager
-                if self.ui and event:
+                if self.ui and isinstance(event, dict):
                     try:
                         if event_type == "note_on" and velocity > 0:
                             self.ui.on_note_on(event)
@@ -117,9 +131,7 @@ class EventRouter:
                             }
                         )
                     except Exception as e:
-                        Logger.error(
-                            f"NotationProcessor process_midi_event error: {e}"
-                        )
+                        Logger.error(f"NotationProcessor process_midi_event error: {e}")
 
             # ---------------------------------------------------------
             # CONTROL CHANGE
@@ -132,10 +144,22 @@ class EventRouter:
                         Logger.error(f"EventBus publish control_event error: {e}")
 
             # ---------------------------------------------------------
-            # UNKNOWN
+            # UNKNOWN EVENT TYPE
             # ---------------------------------------------------------
             else:
                 Logger.warning(f"Unknown MIDI event type: {event_type}")
 
         except Exception as e:
             Logger.error(f"EventRouter error: {e}")
+
+    # ---------------------------------------------------------
+    # NO-OP API (pre UIManager kompatibilitu)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
