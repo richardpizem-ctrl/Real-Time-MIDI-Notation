@@ -2,8 +2,8 @@ import tkinter as tk
 
 
 class CanvasUI:
-    GRID_STEP_TIME = 100        # logical time units between grid lines
-    ROW_HEIGHT = 16             # height of one pitch row
+    GRID_STEP_TIME = 100
+    ROW_HEIGHT = 16
     MIN_ZOOM = 0.25
     MAX_ZOOM = 4.0
 
@@ -75,13 +75,28 @@ class CanvasUI:
         self._schedule_redraw()
 
     # ---------------------------------------------------------
-    # PUBLIC API
+    # PUBLIC API (pre UIManager – bezpečné no-op metódy)
     # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        """CanvasUI nepoužíva farby stôp – bezpečný no-op."""
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        """CanvasUI nemá koncept viditeľnosti stôp – bezpečný no-op."""
+        return
+
+    def set_active_track(self, track_index: int):
+        """CanvasUI nepracuje s aktívnou stopou – bezpečný no-op."""
+        return
+
     def get_canvas(self):
         return self.canvas
 
     def set_playhead_time(self, time_ms, pixels_per_second=100):
-        self.playhead_time = (time_ms / 1000.0) * pixels_per_second
+        try:
+            self.playhead_time = (time_ms / 1000.0) * pixels_per_second
+        except Exception:
+            return
         self._center_playhead_if_needed()
 
     def set_tool(self, tool_name):
@@ -96,11 +111,19 @@ class CanvasUI:
     # QUANTIZATION
     # ---------------------------------------------------------
     def set_quantization(self, division: float):
-        self.quantize_division = max(0.03125, min(4.0, division))
+        try:
+            d = float(division)
+        except Exception:
+            return
+        self.quantize_division = max(0.03125, min(4.0, d))
         self.snap_step = self.GRID_STEP_TIME * self.quantize_division
 
     def set_swing(self, amount: float):
-        self.swing_amount = max(0.0, min(0.5, amount))
+        try:
+            a = float(amount)
+        except Exception:
+            return
+        self.swing_amount = max(0.0, min(0.5, a))
 
     # ---------------------------------------------------------
     # REDRAW LOOP
@@ -257,8 +280,9 @@ class CanvasUI:
 
         # Legend
         self._draw_legend(width, height)
+
     # ---------------------------------------------------------
-    # LEGEND (pokračovanie)
+    # LEGEND
     # ---------------------------------------------------------
     def _draw_legend(self, width, height):
         legend_height = 22
@@ -395,137 +419,4 @@ class CanvasUI:
     # ---------------------------------------------------------
     def _note_at(self, x, y):
         t = self._screen_x_to_time(x)
-        row = self._screen_y_to_row(y)
-
-        for note in self.notes:
-            if note["row"] != row:
-                continue
-            if note["x"] <= t <= note["x"] + note["width"]:
-                return note
-        return None
-
-    def _update_note_velocity_from_y(self, note, y_screen):
-        row_y = self._row_to_screen_y(note["row"])
-        row_bottom = row_y + self.ROW_HEIGHT
-        y_clamped = max(row_y, min(row_bottom, y_screen))
-        ratio = (row_bottom - y_clamped) / float(self.ROW_HEIGHT)
-        velocity = int(ratio * self.velocity_max)
-        velocity = max(self.velocity_min, min(self.velocity_max, velocity))
-        note["velocity"] = velocity
-        note["flash"] = 1.0
-
-    def _on_right_mouse_down(self, event):
-        note = self._note_at(event.x, event.y)
-        if note is not None:
-            if "velocity" not in note:
-                note["velocity"] = 100
-            self._velocity_target_note = note
-            self._update_note_velocity_from_y(note, event.y)
-
-    def _on_right_mouse_drag(self, event):
-        if self._velocity_target_note is not None:
-            self._update_note_velocity_from_y(self._velocity_target_note, event.y)
-
-    def _on_right_mouse_up(self, event):
-        self._velocity_target_note = None
-
-    # ---------------------------------------------------------
-    # DRAW TOOL
-    # ---------------------------------------------------------
-    def _start_draw_note(self, event):
-        if event.y <= self.timeline_height:
-            return
-
-        t = self._screen_x_to_time(event.x)
-        t = self._snap_time(t)
-        row = self._screen_y_to_row(event.y)
-
-        self.current_note = {
-            "x": t,
-            "width": self.snap_step,
-            "row": row,
-            "selected": False,
-            "velocity": 100,
-            "flash": 1.0,
-        }
-
-    def _update_draw_note(self, event):
-        if self.current_note is None:
-            return
-
-        t_end = self._screen_x_to_time(event.x)
-        t_end = self._snap_time(t_end)
-        width = max(self.snap_step, t_end - self.current_note["x"])
-        self.current_note["width"] = width
-
-    # ---------------------------------------------------------
-    # ERASE TOOL
-    # ---------------------------------------------------------
-    def _erase_at(self, event):
-        t = self._screen_x_to_time(event.x)
-        row = self._screen_y_to_row(event.y)
-
-        hit = None
-        for note in self.notes:
-            if note["row"] != row:
-                continue
-            if note["x"] <= t <= note["x"] + note["width"]:
-                hit = note
-                break
-
-        if hit is not None:
-            self.notes.remove(hit)
-
-    # ---------------------------------------------------------
-    # SELECTION TOOL
-    # ---------------------------------------------------------
-    def _start_selection(self, event):
-        self.selecting = True
-        self.selection_start = (event.x, event.y)
-        self.selection_end = (event.x, event.y)
-
-    def _finalize_selection(self):
-        if not self.selection_start or not self.selection_end:
-            return
-
-        x1, y1 = self.selection_start
-        x2, y2 = self.selection_end
-
-        xmin, xmax = sorted([x1, x2])
-        ymin, ymax = sorted([y1, y2])
-
-        for note in self.notes:
-            nx = self._time_to_screen_x(note["x"])
-            ny = self._row_to_screen_y(note["row"])
-
-            if xmin <= nx <= xmax and ymin <= ny <= ymax:
-                note["selected"] = True
-            else:
-                note["selected"] = False
-
-    # ---------------------------------------------------------
-    # MOUSE WHEEL (ZOOM)
-    # ---------------------------------------------------------
-    def _on_mouse_wheel(self, event):
-        delta = 1 if event.delta > 0 else -1
-        old_zoom = self.zoom
-
-        self.zoom += delta * 0.1
-        self.zoom = max(self.MIN_ZOOM, min(self.MAX_ZOOM, self.zoom))
-
-        mx = event.x
-        t = self._screen_x_to_time(mx)
-
-        self.offset_x = mx - t * self.zoom
-
-    # ---------------------------------------------------------
-    # PLAYHEAD CENTERING
-    # ---------------------------------------------------------
-    def _center_playhead_if_needed(self):
-        px = self._time_to_screen_x(self.playhead_time)
-        width = self.canvas.winfo_width()
-
-        if px < width * 0.25:
-            self.offset_x += (width * 0.25 - px)
-        elif px > width * 0.75:
-            self.offset_x -= (px - width * 0.75)
+        row = self
