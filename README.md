@@ -1,11 +1,11 @@
 # 🎼 Real-Time MIDI Notation  
 ### **Real‑time multi‑track MIDI visualization & notation engine (Python, Pygame)**  
-*A high‑performance renderer for real‑time MIDI events with 16‑track support, advanced beams, velocity shading, and modular UI.*
+A high‑performance renderer for real‑time MIDI events with 16‑track support, advanced beams, velocity shading, and a fully modular UI.
 
 ---
 
-## 🔍 **What is Real-Time MIDI Notation? (SEO Overview)**  
-Real-Time MIDI Notation is a **real‑time multi‑track MIDI renderer** built in Python.  
+# 🔍 What is Real-Time MIDI Notation?  
+**Real-Time MIDI Notation** is a **real‑time multi‑track MIDI renderer** written in Python.  
 It converts incoming MIDI events into **live notation**, including:
 
 - real‑time note placement  
@@ -14,27 +14,35 @@ It converts incoming MIDI events into **live notation**, including:
 - beams, stems, barlines  
 - grid, timeline, and playhead  
 - full Yamaha 16‑track standard  
+- real‑time activity meters  
+- zoom + scroll  
 
-This project aims to evolve into a **full real‑time engraving engine**, similar in capability to MuseScore or LilyPond, but optimized for **live MIDI input**.
+This project aims to evolve into a **full real‑time engraving engine**, similar to MuseScore or LilyPond, but optimized for **live MIDI input**.
 
-It is designed for:
+---
+
+# 🎯 Who Is This For?
 
 - MIDI visualizers  
 - DAW companion tools  
 - real‑time notation engines  
 - music education software  
 - live performance analysis  
+- Yamaha arranger keyboard users  
 - MIDI debugging and development  
-
-**Keywords (SEO):**  
-`midi`, `real-time midi`, `midi notation`, `midi visualizer`, `midi renderer`,  
-`music notation`, `pygame`, `python midi`, `multi-track midi`, `midi to sheet music`
 
 ---
 
-# ✅ **COMPLETED MODULES AND FEATURES**
+# 🔎 SEO Keywords  
+`midi`, `real-time midi`, `midi notation`, `midi visualizer`, `midi renderer`,  
+`music notation`, `pygame`, `python midi`, `multi-track midi`, `midi to sheet music`,  
+`yamaha`, `arranger keyboard`, `live midi`, `midi processing`, `real-time visualization`
 
-## 🎨 **GraphicNotationRenderer (core graphic engine)**  
+---
+
+# ✅ Completed Modules & Features
+
+## 🎨 GraphicNotationRenderer (core graphic engine)
 - real‑time layout engine  
 - time → X mapping  
 - pitch → Y mapping  
@@ -44,8 +52,8 @@ It is designed for:
 - velocity shading (color + size)  
 - chord grouping  
 - 8th/16th beam detection  
-- dynamic stems (length based on pitch)  
-- full 16‑track support (Yamaha standard)  
+- dynamic stems  
+- full Yamaha 16‑track support  
 - track visibility + volume shading  
 - real‑time activity meter  
 - zoom + scroll  
@@ -53,7 +61,7 @@ It is designed for:
 
 ---
 
-## 📝 **NotationRenderer (text/debug renderer)**  
+## 📝 NotationRenderer (text/debug renderer)
 - textual MIDI visualization  
 - drum notation support  
 - drum stave offset  
@@ -65,7 +73,7 @@ It is designed for:
 
 ---
 
-## 🧠 **Processor**  
+## 🧠 Processor
 - note mapping  
 - rhythmic analysis  
 - BPM detection  
@@ -74,7 +82,7 @@ It is designed for:
 
 ---
 
-## 🎚 **TrackManager**  
+## 🎚 TrackManager
 - 16 tracks (Yamaha standard)  
 - per‑track colors  
 - volume, visibility, activity  
@@ -83,59 +91,84 @@ It is designed for:
 
 ---
 
-# 🏗 **PROJECT ARCHITECTURE**
+# 🏗 Architecture Overview
+
+```
 MIDI Input  
-↓  
+   ↓  
 Processor (timing, rhythm, velocity)  
-↓  
+   ↓  
 GraphicNotationRenderer  
-↓  
+   ↓  
 UI Layer (Piano, Roll, Staff, Visualizer)  
-↓  
+   ↓  
 TrackManager (16-track control)  
-↓  
+   ↓  
 Debug Layer (NotationRenderer)
+```
 
 Modular. Extensible. Professional.
 
 ---
 
-# 🚀 **CURRENT STATUS**
+# 📦 Code Structure (with module links)
 
-- GraphicNotationRenderer → **complete & stable**  
-- NotationRenderer → **extended & stable**  
-- Processor → **functional**  
-- Rhythm Analyzer → **basic version complete**  
-- TrackManager → **fully integrated**  
-- README → **SEO‑optimized**  
-- Pipeline → **MIDI → Processor → Renderer → UI works end‑to‑end**
+### Core Engine
+- `src/processor.py`  
+- `rhythm_analyzer.py`  
+- `midi_input/midi_note_mapper.py`  
+- `event_bus.py`  
+
+### Track System
+- `core/track_system.py`  
+- `core/track_manager.py`  
+
+### Rendering
+- `renderer/graphic_notation_renderer.py`  
+
+### UI Layer
+- `ui_manager.py`  
+- `ui_components/track_switcher_ui.py`  
 
 ---
 
-# 🗺 **ROADMAP**
+# 🚀 Current Status
 
-## 🔜 **Next steps**
+| Area | Progress | Visual |
+|------|----------|--------|
+| GraphicNotationRenderer | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
+| NotationRenderer | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
+| Processor | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
+| Rhythm Analyzer | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
+| TrackManager | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
+| Pipeline (MIDI → Renderer → UI) | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
+
+---
+
+# 🗺 Roadmap (Short Version)
+
+## 🔜 Next steps
 - UI Track Switcher (16‑track control)  
 - minor UI improvements  
 - documentation: “How the renderer works”  
 
 ---
 
-## 🎯 **Version 1.2 – UI Improvements**
+## 🎯 Version 1.2 – UI Improvements
 - activity meter  
 - improved layout  
 - track color integration  
 
 ---
 
-## 🎯 **Version 1.3 – Export**
+## 🎯 Version 1.3 – Export
 - PNG export  
 - SVG export  
 - screenshot engine  
 
 ---
 
-## 🎯 **Version 2.0 – Advanced Layout Engine**
+## 🎯 Version 2.0 – Advanced Layout Engine
 - multi‑voice notation  
 - polyphony  
 - advanced beams  
@@ -144,13 +177,13 @@ Modular. Extensible. Professional.
 
 ---
 
-## 🎯 **Version 3.0 – Professional Engraving**
+## 🎯 Version 3.0 – Professional Engraving
 - MuseScore / LilyPond‑level engraving  
 - full notation engine  
 
 ---
 
-# 🧩 **SUMMARY**
+# 🧩 Summary
 
 Real-Time MIDI Notation is now:
 
@@ -164,7 +197,7 @@ This is the foundation of a **full real‑time notation engine**.
 
 ---
 
-# 📎 **Tags (recommended for GitHub Topics)**  
+# 📎 Recommended GitHub Topics  
 `midi` • `real-time` • `real-time-midi` • `midi-visualizer` • `midi-notation` •  
 `midi-processing` • `music-notation` • `music-visualization` • `multi-track` •  
 `python` • `pygame` • `yamaha` • `arranger-keyboard` • `midi-tools` •  
