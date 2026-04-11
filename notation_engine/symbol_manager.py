@@ -4,7 +4,7 @@ class SymbolManager:
     """
     SymbolManager vytvára vizuálne a logické symboly pre noty.
 
-    Stabilizované:
+    Stabilizované (Fáza 4):
     - ochrana pred None
     - ochrana pred nevalidnými Note objektmi
     - bezpečné čítanie pitch/duration/position
@@ -41,8 +41,19 @@ class SymbolManager:
         - bezpečné čítanie pitch/duration/position
         """
 
+        # -----------------------------
+        # VALIDÁCIA VSTUPU
+        # -----------------------------
         if note is None or rhythm is None:
-            return None
+            return {
+                "pitch": 60,
+                "duration_ticks": 0,
+                "rhythm": "unknown",
+                "measure": 0,
+                "beat": 1.0,
+                "color": "#FFFFFF",
+                "label": "invalid-note",
+            }
 
         # -----------------------------
         # PITCH
