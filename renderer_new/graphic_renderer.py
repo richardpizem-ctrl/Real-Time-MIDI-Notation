@@ -1,4 +1,3 @@
-"""
 graphic_renderer.py – GraphicNotationRenderer (FÁZA 4)
 
 - Bezpečný, odolný renderer pre multi-track grafickú notáciu
@@ -41,6 +40,20 @@ class GraphicNotationRenderer:
                 self.font = None
         else:
             self.font = None
+
+        # Timeline (hore nad notami)
+        self.timeline_height = 80
+        self.timeline_controller = None
+        if pygame is not None:
+            try:
+                from .timeline_controller import TimelineController
+                self.timeline_controller = TimelineController(
+                    width=self.width,
+                    height=self.timeline_height,
+                    bpm=120.0,
+                )
+            except Exception:
+                self.timeline_controller = None
 
         # Staff cache
         self.staff_cache = None
@@ -164,7 +177,7 @@ class GraphicNotationRenderer:
             midi_int = 60
 
         reference_pitch = 60  # C4
-        staff_center = self.margin_top + 2 * self.staff_line_spacing
+        staff_center = self.timeline_height + self.margin_top + 2 * self.staff_line_spacing
         semitone_step = self.staff_line_spacing / 2.0
 
         dy = (reference_pitch - midi_int) * semitone_step
@@ -443,7 +456,7 @@ class GraphicNotationRenderer:
                     pygame.draw.line(
                         self.surface,
                         (255, 255, 180),
-                        (int(x), 0),
+                        (int(x), self.timeline_height),
                         (int(x), self.height),
                         3
                     )
@@ -472,7 +485,7 @@ class GraphicNotationRenderer:
             if 0 <= x <= self.width:
                 try:
                     label = self.font.render(str(bar + 1), True, (230, 230, 230))
-                    self.surface.blit(label, (int(x) + 4, 0))
+                    self.surface.blit(label, (int(x) + 4, self.timeline_height))
                 except Exception:
                     continue
 
@@ -503,7 +516,7 @@ class GraphicNotationRenderer:
                         pygame.draw.line(
                             self.surface,
                             (70, 70, 70),
-                            (int(x), 0),
+                            (int(x), self.timeline_height),
                             (int(x), self.height),
                             1
                         )
@@ -518,7 +531,7 @@ class GraphicNotationRenderer:
                         pygame.draw.line(
                             self.surface,
                             (50, 50, 50),
-                            (int(x8), 0),
+                            (int(x8), self.timeline_height),
                             (int(x8), self.height),
                             1
                         )
@@ -535,7 +548,7 @@ class GraphicNotationRenderer:
                             pygame.draw.line(
                                 self.surface,
                                 (40, 40, 40),
-                                (int(x16), 0),
+                                (int(x16), self.timeline_height),
                                 (int(x16), self.height),
                                 1
                             )
@@ -564,7 +577,10 @@ class GraphicNotationRenderer:
             if 0 <= x <= self.width:
                 try:
                     label = self.font.render(str(bar + 1), True, (220, 220, 220))
-                    self.surface.blit(label, (int(x) + 4, self.margin_top - 18))
+                    self.surface.blit(
+                        label,
+                        (int(x) + 4, self.timeline_height + self.margin_top - 18)
+                    )
                 except Exception:
                     continue
 
@@ -578,7 +594,7 @@ class GraphicNotationRenderer:
             pygame.draw.line(
                 self.surface,
                 (255, 80, 80),
-                (int(self.playhead_x), 0),
+                (int(self.playhead_x), self.timeline_height),
                 (int(self.playhead_x), self.height),
                 3
             )
@@ -629,12 +645,23 @@ class GraphicNotationRenderer:
                 return None
 
         self._update_time()
+
+        # Timeline hore
         try:
             self.surface.fill((25, 25, 25))
         except Exception:
             pass
 
-        # Background layers
+        if self.timeline_controller is not None:
+            try:
+                self.timeline_controller.update(self.playback_time)
+                ts = self.timeline_controller.render()
+                if ts is not None:
+                    self.surface.blit(ts, (0, 0))
+            except Exception:
+                pass
+
+        # Background layers (pod timeline)
         self._draw_timeline_ruler()
         self._draw_grid_lines()
         self._draw_measure_numbers()
@@ -642,7 +669,7 @@ class GraphicNotationRenderer:
         staff = self._render_staff_lines()
         if staff is not None:
             try:
-                self.surface.blit(staff, (0, 0))
+                self.surface.blit(staff, (0, self.timeline_height))
             except Exception:
                 pass
 
@@ -801,7 +828,7 @@ class GraphicNotationRenderer:
 
             for track_id, chords in chord_positions.items():
                 for (timestamp, base_x, min_y, max_y, color) in chords:
-                    staff_mid = self.margin_top + 2 * self.staff_line_spacing
+                    staff_mid = self.timeline_height + self.margin_top + 2 * self.staff_line_spacing
                     chord_mid = (min_y + max_y) / 2.0
 
                     stem_up = chord_mid > staff_mid
@@ -816,7 +843,7 @@ class GraphicNotationRenderer:
 
                     start_y = anchor_y + 6
                     end_y = start_y - stem_len if stem_up else start_y + stem_len
-                    end_y = max(self.margin_top - 30, min(self.height - 20, end_y))
+                    end_y = max(self.timeline_height + self.margin_top - 30, min(self.height - 20, end_y))
 
                     try:
                         pygame.draw.line(
