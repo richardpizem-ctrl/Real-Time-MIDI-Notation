@@ -1,5 +1,19 @@
+"""
+performance_tracker.py – Real-time performance tracker (FÁZA 4)
+
+Poskytuje:
+- bezpečné meranie FPS, frame time, render time
+- MIDI latency tracking
+- event throughput (events per second)
+- pipeline latency (event, UI, total)
+- CPU usage cez psutil (ak je dostupný)
+- ochranu pred None a nevalidnými hodnotami
+- fallback pri chybách
+"""
+
 import time
 import collections
+from typing import Optional, Dict, Any
 
 try:
     import psutil
@@ -9,38 +23,32 @@ except ImportError:
 
 class PerformanceTracker:
     """
-    Real‑time performance tracker for the entire pipeline.
-
-    Stabilizované:
-    - ochrana pred None
-    - bezpečné výpočty FPS, render time, MIDI latency
-    - fallback pri chybách
-    - CPU usage cez psutil (ak je dostupný)
+    Real-time performance tracker for the entire pipeline.
     """
 
-    def __init__(self, history_size=300):
+    def __init__(self, history_size: int = 300):
         try:
-            history_size = int(history_size)
+            history_size = max(1, int(history_size))
         except Exception:
             history_size = 300
 
         # FRAME TIME (FPS)
         self.frame_times = collections.deque(maxlen=history_size)
-        self.last_frame_start = None
+        self.last_frame_start: Optional[float] = None
 
         # RENDER TIME
         self.render_times = collections.deque(maxlen=history_size)
-        self.last_render_start = None
+        self.last_render_start: Optional[float] = None
 
         # MIDI LATENCY
         self.midi_latencies = collections.deque(maxlen=history_size)
-        self.last_midi_event_time = None
+        self.last_midi_event_time: Optional[float] = None
 
         # EVENT THROUGHPUT
         self.event_intervals = collections.deque(maxlen=history_size)
-        self.last_event_time = None
+        self.last_event_time: Optional[float] = None
 
-        # PIPELINE METRIKY
+        # PIPELINE METRICS
         self.event_processing_times = collections.deque(maxlen=history_size)
         self.ui_processing_times = collections.deque(maxlen=history_size)
         self.pipeline_latencies = collections.deque(maxlen=history_size)
@@ -58,10 +66,10 @@ class PerformanceTracker:
     # FRAME / FPS
     # ---------------------------------------------------------
 
-    def frame_start(self):
+    def frame_start(self) -> None:
         self.last_frame_start = time.time()
 
-    def frame_end(self):
+    def frame_end(self) -> None:
         if self.last_frame_start is None:
             return
         try:
@@ -71,7 +79,7 @@ class PerformanceTracker:
             pass
         self.last_frame_start = None
 
-    def get_fps(self):
+    def get_fps(self) -> float:
         if not self.frame_times:
             return 0.0
         try:
@@ -80,7 +88,7 @@ class PerformanceTracker:
         except Exception:
             return 0.0
 
-    def get_avg_frame_time_ms(self):
+    def get_avg_frame_time_ms(self) -> float:
         if not self.frame_times:
             return 0.0
         try:
@@ -92,10 +100,10 @@ class PerformanceTracker:
     # RENDER TIME
     # ---------------------------------------------------------
 
-    def render_start(self):
+    def render_start(self) -> None:
         self.last_render_start = time.time()
 
-    def render_end(self):
+    def render_end(self) -> None:
         if self.last_render_start is None:
             return
         try:
@@ -105,7 +113,7 @@ class PerformanceTracker:
             pass
         self.last_render_start = None
 
-    def get_avg_render_time_ms(self):
+    def get_avg_render_time_ms(self) -> float:
         if not self.render_times:
             return 0.0
         try:
@@ -117,10 +125,10 @@ class PerformanceTracker:
     # MIDI LATENCY
     # ---------------------------------------------------------
 
-    def midi_event_received(self):
+    def midi_event_received(self) -> None:
         self.last_midi_event_time = time.time()
 
-    def midi_event_rendered(self):
+    def midi_event_rendered(self) -> None:
         if self.last_midi_event_time is None:
             return
         try:
@@ -130,7 +138,7 @@ class PerformanceTracker:
             pass
         self.last_midi_event_time = None
 
-    def get_avg_midi_latency_ms(self):
+    def get_avg_midi_latency_ms(self) -> float:
         if not self.midi_latencies:
             return 0.0
         try:
@@ -142,7 +150,7 @@ class PerformanceTracker:
     # EVENT THROUGHPUT
     # ---------------------------------------------------------
 
-    def event_processed(self):
+    def event_processed(self) -> None:
         now = time.time()
         try:
             if self.last_event_time is not None:
@@ -153,7 +161,7 @@ class PerformanceTracker:
             pass
         self.last_event_time = now
 
-    def get_events_per_second(self):
+    def get_events_per_second(self) -> float:
         if not self.event_intervals:
             return 0.0
         try:
@@ -163,16 +171,16 @@ class PerformanceTracker:
             return 0.0
 
     # ---------------------------------------------------------
-    # PIPELINE METRIKY
+    # PIPELINE METRICS
     # ---------------------------------------------------------
 
-    def record_event_latency(self, pipeline_ms):
+    def record_event_latency(self, pipeline_ms: float) -> None:
         try:
             self.pipeline_latencies.append(float(pipeline_ms))
         except Exception:
             pass
 
-    def record_pipeline_step(self, event_ms, ui_ms, pipeline_ms):
+    def record_pipeline_step(self, event_ms: float, ui_ms: float, pipeline_ms: float) -> None:
         try:
             self.event_processing_times.append(float(event_ms))
             self.ui_processing_times.append(float(ui_ms))
@@ -180,7 +188,7 @@ class PerformanceTracker:
         except Exception:
             pass
 
-    def get_avg_pipeline_latency_ms(self):
+    def get_avg_pipeline_latency_ms(self) -> float:
         if not self.pipeline_latencies:
             return 0.0
         try:
@@ -188,7 +196,7 @@ class PerformanceTracker:
         except Exception:
             return 0.0
 
-    def get_avg_event_processing_ms(self):
+    def get_avg_event_processing_ms(self) -> float:
         if not self.event_processing_times:
             return 0.0
         try:
@@ -196,7 +204,7 @@ class PerformanceTracker:
         except Exception:
             return 0.0
 
-    def get_avg_ui_processing_ms(self):
+    def get_avg_ui_processing_ms(self) -> float:
         if not self.ui_processing_times:
             return 0.0
         try:
@@ -208,7 +216,7 @@ class PerformanceTracker:
     # CPU LOAD
     # ---------------------------------------------------------
 
-    def get_cpu_usage_percent(self):
+    def get_cpu_usage_percent(self) -> Optional[float]:
         if self.process is None:
             return None
         try:
@@ -220,7 +228,7 @@ class PerformanceTracker:
     # SUMMARY
     # ---------------------------------------------------------
 
-    def get_summary(self):
+    def get_summary(self) -> Dict[str, Any]:
         try:
             return {
                 "fps": self.get_fps(),
