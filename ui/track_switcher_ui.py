@@ -1,6 +1,5 @@
 import pygame
 import math
-
 from .track_control_manager import TrackControlManager
 
 
@@ -121,7 +120,6 @@ class TrackSwitcherUI:
 
         # Ak máme TrackControlManager, aktívnu stopu berieme z neho
         if self.track_control_manager is not None:
-            # TrackControlManager používa 0-based index, tu máme 1-based tid
             active_tid = self.track_control_manager.get_active_track() + 1
         else:
             active_tid = active_track
@@ -232,27 +230,12 @@ class TrackSwitcherUI:
     # PUBLIC API PRE UIManager / eventy
     # ---------------------------------------------------------
     def set_active_track(self, track_index: int):
-        """
-        Volané z UIManager._on_track_selected.
-        Momentálne nepotrebuje vlastný stav, aktívnu stopu číta z TrackControlManageru v draw().
-        """
-        # Rezervované pre prípadné budúce rozšírenie (napr. lokálny cache).
         pass
 
     def update_visibility(self, track_index: int, visible: bool):
-        """
-        Volané z UIManager._on_visibility_changed.
-        Aktuálne vizuál viditeľnosti rieši Renderer + TrackInspector,
-        TrackSwitcherUI môže byť neskôr rozšírený (napr. o ikonu oka).
-        """
         pass
 
     def update_color(self, track_index: int, color_hex: str):
-        """
-        Volané z UIManager._on_color_changed.
-        Farba sa pri kreslení vždy berie z TrackControlManager.get_color(),
-        takže tu netreba nič cacheovať.
-        """
         pass
 
     # ---------------------------------------------------------
@@ -324,7 +307,6 @@ class TrackSwitcherUI:
 
             # Fáza 4 – informujeme TrackControlManager o výbere stopy
             if self.track_control_manager is not None:
-                # index je 0-based, TrackSelectionController tiež
                 self.track_control_manager.select_track(index)
 
             return {"selected_track": index}
