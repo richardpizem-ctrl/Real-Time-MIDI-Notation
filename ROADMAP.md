@@ -1,12 +1,12 @@
 # 🎼 Real-Time MIDI Notation — MEGA ROADMAP (Ultimate Edition)
 
-Toto je kompletná, rozšírená, profesionálna roadmapa kombinujúca:
-- farebné progress bary (emoji)
-- ASCII progress bary
-- sekciu pre prispievateľov
-- odkazy na moduly v kóde
-- GitHub‑friendly formátovanie
-- rozšírené popisy pre komunitu
+This is the complete, extended, professional roadmap combining:
+- colored emoji progress bars  
+- ASCII progress bars  
+- contributor-friendly task structure  
+- direct links to code modules  
+- GitHub‑friendly formatting  
+- expanded descriptions for the community  
 
 ---
 
@@ -35,12 +35,12 @@ Toto je kompletná, rozšírená, profesionálna roadmapa kombinujúca:
 
 | Area | Progress | Emoji Bar | ASCII Bar | Description |
 |------|----------|-----------|-----------|-------------|
-| **Core Engine** | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 | [##########] | Kompletná stabilná pipeline. |
-| **GraphicNotationRenderer** | **95%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟨 | [#########-] | Stabilizovaný renderer, Yamaha 16‑track, beams, stems, grid, playhead. |
-| **UI Layer** | **90%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟨🟥 | [########--] | TrackSwitcherUI + UIManager plne funkčné. |
-| **Realtime Pipeline** | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 | [##########] | DAW‑level obojsmerná komunikácia. |
-| **Tests & Stability** | **80%** | 🟩🟩🟩🟩🟩🟩🟨🟥🟥🟥 | [########--] | Chýbajú extrémne scenáre. |
-| **Documentation** | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 | [##########] | Kompletné templaty, README, policies. |
+| **Core Engine** | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 | [##########] | Fully stable pipeline. |
+| **GraphicNotationRenderer** | **95%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟨 | [#########-] | Stabilized renderer, Yamaha 16‑track, beams, stems, grid, playhead. |
+| **UI Layer** | **90%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟨🟥 | [########--] | TrackSwitcherUI + UIManager fully integrated. |
+| **Realtime Pipeline** | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 | [##########] | DAW‑level bidirectional communication. |
+| **Tests & Stability** | **80%** | 🟩🟩🟩🟩🟩🟩🟨🟥🟥🟥 | [########--] | Missing extreme scenario tests. |
+| **Documentation** | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 | [##########] | Complete templates, README, policies. |
 
 ---
 
@@ -54,87 +54,88 @@ Toto je kompletná, rozšírená, profesionálna roadmapa kombinujúca:
 # 🛣 Roadmap to v1.0.0 (Expanded)
 
 ## 🎯 PHASE 1 — Final Visual Polish (95% → 97%)
-🎨 *Zameranie: profesionálny vzhľad.*
+🎨 *Focus: professional visual refinement.*
 
-- [ ] Anti‑aliasing pre noty, čiary, UI
-- [ ] Jemné animácie (mute/solo/rec)
-- [ ] Zjednotenie hrúbky čiar
-- [ ] Active track glow
-- [ ] Yamaha farebná paleta
-- [ ] Vylepšený kontrast textu
-- [ ] Highlight aktívnych taktov
+- [ ] Anti‑aliasing for notes, lines, UI  
+- [ ] Subtle UI animations (mute/solo/rec)  
+- [ ] Unified line thickness  
+- [ ] Active track glow  
+- [ ] Yamaha color palette  
+- [ ] Improved text contrast  
+- [ ] Highlight active measures  
 
 ---
 
 ## 🎯 PHASE 2 — Stability & Performance (97% → 98%)
-⚙️ *Zameranie: extrémne scenáre.*
+⚙️ *Focus: extreme scenarios and optimization.*
 
-- [ ] Beam caching
-- [ ] Chord group caching
-- [ ] BPM testy (20–600 BPM)
-- [ ] Velocity stress test
-- [ ] Scroll/zoom optimalizácia
-- [ ] Memory footprint audit
-- [ ] CPU/GPU benchmarky
+- [ ] Beam caching  
+- [ ] Chord group caching  
+- [ ] BPM stress tests (20–600 BPM)  
+- [ ] Velocity stress tests  
+- [ ] Scroll/zoom optimization  
+- [ ] Memory footprint audit  
+- [ ] CPU/GPU benchmarking  
 
 ---
 
 ## 🎯 PHASE 3 — Functional Enhancements (98% → 99%)
-🧩 *Zameranie: nové funkcie.*
+🧩 *Focus: new user features.*
 
-- [ ] Export frame → PNG
-- [ ] Export playback → GIF/MP4
-- [ ] Zoom slider
-- [ ] Layer toggles (grid, barlines, stems, beams)
-- [ ] MIDI event inspector
-- [ ] Track color customization
+- [ ] Export current frame → PNG  
+- [ ] Export playback → GIF/MP4  
+- [ ] Zoom slider  
+- [ ] Layer toggles (grid, barlines, stems, beams)  
+- [ ] MIDI event inspector  
+- [ ] Track color customization  
 
 ---
 
 ## 🎯 PHASE 4 — Release Polish (99% → 100%)
-📦 *Zameranie: finálny release.*
+📦 *Focus: final release preparation.*
 
-- [ ] Screenshoty a GIFy pre README
-- [ ] Release notes v1.0.0
-- [ ] 10‑min sanity test
-- [ ] 16‑track stress test
-- [ ] Extrémne MIDI testy
-- [ ] Final code cleanup
-- [ ] Tagovanie v1.0.0 + GitHub Release
+- [ ] README screenshots & GIFs  
+- [ ] v1.0.0 release notes  
+- [ ] 10‑minute stability test  
+- [ ] 16‑track stress test  
+- [ ] Extreme MIDI tests  
+- [ ] Final code cleanup  
+- [ ] Tag v1.0.0 + GitHub Release  
 
 ---
 
 # 🧩 Contributor Guide (Beginner → Advanced)
 
 ### 🟦 Beginner‑friendly
-- Dokumentácia
-- Komentáre v kóde
-- Jednoduché testy
-- UI text fixes
+- Improve documentation  
+- Add comments to complex renderer functions  
+- Add simple unit tests  
+- Fix UI text issues  
 
 ### 🟩 Intermediate
-- Anti‑aliasing
-- UI animácie
-- Scroll/zoom optimalizácia
-- Layer toggles
+- Implement anti‑aliasing  
+- Improve UI animations  
+- Optimize scroll/zoom  
+- Add layer toggles  
 
 ### 🟥 Advanced
-- Beam caching
-- Chord caching
-- GIF/MP4 export
-- Extrémne MIDI testy
+- Beam caching  
+- Chord caching  
+- GIF/MP4 export  
+- Extreme MIDI stress testing  
 
 ---
 
 # 🏁 Final Goal  
-## **Real-Time MIDI Notation v1.0.0 — profesionálny open‑source nástroj pre real‑time Yamaha‑style MIDI vizualizáciu**
+## **Real-Time MIDI Notation v1.0.0 — a professional open‑source tool for real‑time Yamaha‑style MIDI visualization**
 
-Po dokončení roadmapy bude projekt:
-- stabilný  
-- vizuálne čistý  
-- plne real‑time  
-- pripravený pre komunitu  
-- vhodný pre profesionálne použitie  
+After completing this roadmap, the project will be:
+
+- stable  
+- visually polished  
+- fully real‑time  
+- community‑ready  
+- suitable for professional use  
 
 ---
 
