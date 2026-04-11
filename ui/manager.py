@@ -51,7 +51,7 @@ class UIManager:
             height=60,
             track_colors=None,
             event_bus=track_system.event_bus,
-            track_control_manager=self.track_control
+            track_control_manager=self.track_control,
         )
 
         # ---------------------------------------------------------
@@ -60,7 +60,7 @@ class UIManager:
         self.track_selector = TrackSelectorUI(
             track_control_manager=self.track_control,
             width=width,
-            height=60
+            height=60,
         )
 
         # ---------------------------------------------------------
@@ -74,7 +74,12 @@ class UIManager:
         # ---------------------------------------------------------
         # RENDERER (nový, stabilný)
         # ---------------------------------------------------------
-        self.renderer = GraphicNotationRenderer(width, 200, track_system, self.track_control)
+        self.renderer = GraphicNotationRenderer(
+            width,
+            200,
+            track_system,
+            self.track_control,
+        )
 
         # ---------------------------------------------------------
         # TRACK INSPECTOR
@@ -85,7 +90,7 @@ class UIManager:
             x=0,
             y=1180,
             width=260,
-            height=400
+            height=400,
         )
 
         # Canvas
@@ -155,8 +160,9 @@ class UIManager:
                 self.play_start_time = pygame.time.get_ticks()
                 self.transport.set_time("00:00.0")
 
-        # Export + Track switcher
+        # Export + Track switcher + Track selector + Track inspector
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # EXPORT
             if self.export_button_rect.collidepoint(event.pos):
                 if self.canvas is not None:
                     export_to_png(self.canvas, "export.png")
@@ -166,7 +172,12 @@ class UIManager:
             try:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
-                    pass
+                    # prepojenie späť do TrackControlManager
+                    selected = result["selected_track"]
+                    try:
+                        self.track_control.set_active_track(selected)
+                    except Exception:
+                        pass
             except Exception:
                 pass
 
@@ -226,33 +237,39 @@ class UIManager:
 
         velocity = event.get("velocity", 100)
 
+        # farba stopy z TrackControlManager
         try:
             color_hex = self.track_control.get_color(track_id)
-            track_color = tuple(int(color_hex[i:i+2], 16) for i in (1, 3, 5))
+            track_color = tuple(int(color_hex[i:i + 2], 16) for i in (1, 3, 5))
             event["track_color"] = track_color
         except Exception:
             track_color = None
 
+        # PIANO
         try:
             self.piano.highlight_key(note, track_color)
         except Exception:
             pass
 
+        # PIANO ROLL
         try:
             self.piano_roll.highlight_key(note, track_color)
         except Exception:
             pass
 
+        # VISUALIZER
         try:
             self.visualizer.on_note(event)
         except Exception:
             pass
 
+        # STAFF
         try:
             self.staff.add_note(event)
         except Exception:
             pass
 
+        # Notation processor
         if self.notation_processor is not None:
             try:
                 self.notation_processor.process_midi_event({
@@ -278,26 +295,31 @@ class UIManager:
         if not self.track_control.is_visible(track_id):
             return
 
+        # PIANO
         try:
             self.piano.unhighlight_key(note)
         except Exception:
             pass
 
+        # PIANO ROLL
         try:
             self.piano_roll.unhighlight_key(note)
         except Exception:
             pass
 
+        # VISUALIZER
         try:
             self.visualizer.on_note_off(event)
         except Exception:
             pass
 
+        # STAFF
         try:
             self.staff.remove_note(event)
         except Exception:
             pass
 
+        # Notation processor
         if self.notation_processor is not None:
             try:
                 self.notation_processor.process_midi_event({
@@ -331,16 +353,19 @@ class UIManager:
     def _on_track_selected(self, data):
         track = data.get("track", 0)
 
+        # Track Selector
         try:
             self.track_selector.set_active_track(track)
         except Exception:
             pass
 
+        # Track Switcher
         try:
             self.track_switcher.set_active_track(track)
         except Exception:
             pass
 
+        # Track Inspector
         try:
             self.track_inspector.set_active_track(track)
         except Exception:
@@ -350,11 +375,13 @@ class UIManager:
         track = data.get("track", 0)
         visible = data.get("visible", True)
 
+        # Track Switcher
         try:
             self.track_switcher.update_visibility(track, visible)
         except Exception:
             pass
 
+        # Renderer
         try:
             self.renderer.update_visibility(track, visible)
         except Exception:
@@ -364,16 +391,19 @@ class UIManager:
         track = data.get("track", 0)
         color = data.get("color", "#FFFFFF")
 
+        # Track Switcher
         try:
             self.track_switcher.update_color(track, color)
         except Exception:
             pass
 
+        # Renderer
         try:
             self.renderer.update_color(track, color)
         except Exception:
             pass
 
+        # Track Inspector
         try:
             self.track_inspector.update_color(track, color)
         except Exception:
@@ -397,7 +427,7 @@ class UIManager:
             x, y = self.layout["track_switcher"]
             self.track_switcher.draw(
                 surface.subsurface((x, y, self.width, 60)),
-                active_track=self.track_control.get_active_track()
+                active_track=self.track_control.get_active_track(),
             )
         except Exception:
             pass
@@ -407,7 +437,7 @@ class UIManager:
             x, y = self.layout["track_selector"]
             self.track_selector.draw(
                 surface.subsurface((x, y, self.width, 60)),
-                active_track=self.track_control.get_active_track()
+                active_track=self.track_control.get_active_track(),
             )
         except Exception:
             pass
