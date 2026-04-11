@@ -13,7 +13,7 @@ class NoteVisualizerUI:
         self.width = width
         self.height = height
 
-        # aktívne pulzy: note_id -> {color, timestamp}
+        # aktívne pulzy: midi -> {color, timestamp}
         self.active_notes = {}
 
         # BPM pulz
@@ -27,11 +27,27 @@ class NoteVisualizerUI:
             self.font = None
 
     # ---------------------------------------------------------
+    # PUBLIC API (pre UIManager – bezpečné no-op metódy)
+    # ---------------------------------------------------------
+    def update_color(self, track_index: int, color_hex: str):
+        return
+
+    def update_visibility(self, track_index: int, visible: bool):
+        return
+
+    def set_active_track(self, track_index: int):
+        return
+
+    # ---------------------------------------------------------
     # BPM PULSE
     # ---------------------------------------------------------
     def update_bpm_pulse(self, bpm, timestamp):
         """Aktualizuje BPM pulz (volané z UIManager)."""
-        self.bpm = bpm
+        try:
+            self.bpm = max(1, int(bpm))
+        except Exception:
+            self.bpm = 120
+
         self.last_pulse_time = timestamp
 
     # ---------------------------------------------------------
@@ -45,9 +61,12 @@ class NoteVisualizerUI:
             time
         """
         midi = event.get("note")
-        color = event.get("track_color", (255, 80, 80))
         if midi is None:
             return
+
+        color = event.get("track_color", (255, 80, 80))
+        if not isinstance(color, (tuple, list)) or len(color) != 3:
+            color = (255, 80, 80)
 
         self.active_notes[midi] = {
             "color": color,
@@ -63,6 +82,9 @@ class NoteVisualizerUI:
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
+        if surface is None:
+            return
+
         surface.fill((20, 20, 20))
         now = time.time()
 
@@ -73,12 +95,13 @@ class NoteVisualizerUI:
 
         # pozadie pulzu
         bg_intensity = int(beat_strength * 40)
-        pygame.draw.rect(surface, (bg_intensity, bg_intensity, bg_intensity), (0, 0, self.width, self.height))
+        pygame.draw.rect(surface, (bg_intensity, bg_intensity, bg_intensity),
+                         (0, 0, self.width, self.height))
 
         # NOTE PULZY
         for midi, data in list(self.active_notes.items()):
-            color = data["color"]
-            t = data["timestamp"]
+            color = data.get("color", (255, 80, 80))
+            t = data.get("timestamp", now)
 
             fade = max(0.0, 1.0 - (now - t) * 1.2)
 
@@ -88,6 +111,8 @@ class NoteVisualizerUI:
 
             # pozícia podľa MIDI výšky
             y = int(self.height - (midi - 36) * 2.2)
+            y = max(0, min(self.height, y))
+
             x = int((midi * 37) % self.width)
 
             radius = int(20 + fade * 40)
@@ -101,4 +126,6 @@ class NoteVisualizerUI:
             pygame.draw.circle(surface, pulsed_color, (x, y), radius)
 
         # oddelovacia čiara
-        pygame.draw.line(surface, (80, 80, 80), (0, self.height - 2), (self.width, self.height - 2), 2)
+        pygame.draw.line(surface, (80, 80, 80),
+                         (0, self.height - 2),
+                         (self.width, self.height - 2), 2)
