@@ -84,16 +84,16 @@ It is designed for:
 ---
 
 # 🏗 **PROJECT ARCHITECTURE**
-MIDI Input
-↓
-Processor (timing, rhythm, velocity)
-↓
-GraphicNotationRenderer
-↓
-UI Layer (Piano, Roll, Staff, Visualizer)
-↓
-TrackManager (16-track control)
-↓
+MIDI Input  
+↓  
+Processor (timing, rhythm, velocity)  
+↓  
+GraphicNotationRenderer  
+↓  
+UI Layer (Piano, Roll, Staff, Visualizer)  
+↓  
+TrackManager (16-track control)  
+↓  
 Debug Layer (NotationRenderer)
 
 Modular. Extensible. Professional.
@@ -165,5 +165,7 @@ This is the foundation of a **full real‑time notation engine**.
 ---
 
 # 📎 **Tags (recommended for GitHub Topics)**  
-`midi` • `real-time` • `music` • `visualization` • `notation` •  
-`pygame` • `python` • `multi-track` • `midi-visualizer` • `midi-notation`
+`midi` • `real-time` • `real-time-midi` • `midi-visualizer` • `midi-notation` •  
+`midi-processing` • `music-notation` • `music-visualization` • `multi-track` •  
+`python` • `pygame` • `yamaha` • `arranger-keyboard` • `midi-tools` •  
+`midi-renderer` • `live-notation` • `real-time-visualization`
