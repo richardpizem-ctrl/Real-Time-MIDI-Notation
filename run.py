@@ -42,7 +42,7 @@ from renderer.graphic_renderer import GraphicNotationRenderer
 
 
 # ---------------------------------------------------------
-# TEST HANDLERY
+# TEST HANDLERY (TEST ONLY)
 # ---------------------------------------------------------
 def on_note_recorded(data):
     Logger.info(f"[TEST] NOTE_RECORDED event received: {data}")
@@ -68,6 +68,7 @@ def main():
     # -----------------------------------------------------
     try:
         pygame.init()
+        pygame.display.set_caption("Real-Time MIDI Notation")
         screen = pygame.display.set_mode((1400, 1100))
         clock = pygame.time.Clock()
     except Exception as e:
@@ -163,7 +164,7 @@ def main():
             beats_per_bar=4
         )
 
-        playback.set_notes([])  # prázdne noty – neskôr nahradíš MIDI loaderom
+        playback.set_notes([])  # TODO: Replace with MIDI loader
     except Exception as e:
         Logger.error(f"Failed to initialize PlaybackEngine stack: {e}")
         return
@@ -172,30 +173,35 @@ def main():
     # 7. HLAVNÁ RENDER SLUČKA
     # -----------------------------------------------------
     running = True
-    while running:
-        try:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
+    try:
+        while running:
+            try:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
 
-                ui.handle_event(event)
+                    try:
+                        ui.handle_event(event)
+                    except Exception as e:
+                        Logger.error(f"UI event error: {e}")
 
-            stream_handler.poll()
-            playback_surface = playback.update()
+                stream_handler.poll()
+                playback_surface = playback.update()
 
-            ui.draw(screen)
+                ui.draw(screen)
 
-            if playback_surface is not None:
-                screen.blit(playback_surface, (0, 700))
+                if playback_surface is not None:
+                    screen.blit(playback_surface, (0, 700))
 
-            pygame.display.update()
-            clock.tick(60)
+                pygame.display.update()
+                clock.tick(60)
 
-        except Exception as e:
-            Logger.error(f"Main loop error: {e}")
+            except Exception as e:
+                Logger.error(f"Main loop error: {e}")
 
-    pygame.quit()
-    Logger.info("=== END ===")
+    finally:
+        pygame.quit()
+        Logger.info("=== END ===")
 
 
 if __name__ == "__main__":
