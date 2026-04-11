@@ -1,129 +1,170 @@
-# Real-Time MIDI Notation – Project Overview
+# 🎼 Real-Time MIDI Notation — Project Overview (Ultimate Edition)
 
-This document serves as a **guide, architecture description, and technical documentation** for the entire  
-**Real-Time MIDI Notation** project.
+This document serves as the **official architecture guide, technical overview, and system documentation** for the  
+**Real-Time MIDI Notation** project — a professional real‑time multi‑track MIDI visualization and notation engine.
 
-The goal of the project is to create a professional tool that:
+The goal of the project is to create a tool that:
 
 - receives MIDI in real time  
-- analyzes notes and rhythm  
-- renders musical notation in real time  
-- provides DAW‑style track control  
-- enables playback, visualization, and export  
+- analyzes notes, rhythm, timing, and velocity  
+- renders musical notation instantly  
+- provides DAW‑style 16‑track control  
+- enables playback, visualization, and future export  
+- supports Yamaha‑style arranger workflows  
 
 ---
 
 # 🧩 1. Project Architecture
 
-The project is divided into modules by function:
-core/
-renderer/
-ui/
-track_system/
-notation_processor/
-event_bus/
-midi_input/
-real_time_processing/
-docs/
-
-Each directory has a clear responsibility:
+The project is organized into modular directories, each with a clear responsibility:
 
 | Directory | Purpose |
 |----------|---------|
-| **core/** | Project logic: TrackManager, PlaybackEngine, Logger |
-| **renderer/** | GraphicNotationRenderer – real‑time note rendering |
-| **ui/** | CanvasUI, UIManager – visual interface |
-| **track_system/** | 16‑channel MIDI track system |
-| **notation_processor/** | MIDI → notes → rhythm → visualization |
-| **event_bus/** | Communication between modules |
-| **midi_input/** | MIDI input, EventRouter |
-| **real_time_processing/** | StreamHandler – realtime MIDI pipeline |
-| **docs/** | Project documentation |
+| **core/** | TrackManager, PlaybackEngine, Logger, timing logic |
+| **renderer/** | GraphicNotationRenderer — real‑time notation rendering |
+| **ui/** | CanvasUI, UIManager — visual interface and interaction |
+| **track_system/** | 16‑channel MIDI track system (Yamaha standard) |
+| **notation_processor/** | MIDI → notes → rhythm → visualization pipeline |
+| **event_bus/** | Publish/subscribe communication between modules |
+| **midi_input/** | MIDI input, EventRouter, device detection |
+| **real_time_processing/** | StreamHandler — real‑time MIDI pipeline |
+| **docs/** | Documentation and technical references |
+
+This modular structure ensures:
+
+- clean separation of concerns  
+- easy debugging  
+- scalable architecture  
+- future expansion (export, advanced notation, DAW integration)  
 
 ---
 
 # 🎼 2. Main Modules and Their Purpose
 
-## **TrackManager (core/track_manager.py)**
-- controls track visibility  
+## **TrackManager (`core/track_manager.py`)**
+- 16‑track Yamaha‑style system  
 - mute / solo / volume / pan  
 - record arm  
-- realtime activity (peak meter)  
-- applies DAW logic to MIDI events  
-
-## **GraphicNotationRenderer (renderer/graphic_renderer.py)**
-- renders notes in real time  
-- heatmap colors, glow effect, velocity visualization  
-- barlines, grid, playhead  
-- processes note groups (chords, beams)  
-
-## **CanvasUI (ui/canvas_ui.py)**
-- displays the playhead  
-- UI layer for the renderer  
-- receives timing from PlaybackEngine  
-
-## **PlaybackEngine (core/playback_engine.py)**
-- controls playback  
-- calculates time  
-- selects active notes  
-- sends them to the renderer  
-- synchronizes playhead with UI  
-- applies BPM and meter  
-
-## **UIManager (ui/ui_manager.py)**
-- main UI controller  
-- connects all UI components  
-- handles user input  
-
-## **TrackSystem (track_system/track_system.py)**
-- 16 MIDI channels  
-- track colors, names, attributes  
-
-## **NotationProcessor (notation_processor/notation_processor.py)**
-- analyzes MIDI  
-- generates notes, rhythm, visualization  
-
-## **EventBus (event_bus/event_bus.py)**
-- publish/subscribe system  
-- connects UI, MIDI input, processor, renderer  
-
-## **StreamHandler (real_time_processing/stream_handler.py)**
-- reads MIDI input in real time  
-- sends events to EventRouter  
-
-## **EventRouter (midi_input/event_router.py)**
-- MIDI → EventBus → UI → TrackSystem  
+- real‑time activity (peak meter)  
+- DAW‑style logic for routing MIDI events  
+- track color + visibility management  
 
 ---
 
-# 🔄 3. Realtime Pipeline
+## **GraphicNotationRenderer (`renderer/graphic_notation_renderer.py`)**
+- real‑time note rendering  
+- heatmap colors + velocity shading  
+- barlines, grid, timeline ruler  
+- real‑time playhead  
+- chord grouping  
+- beam detection (8th, 16th)  
+- dynamic stems  
+- zoom + scroll  
+- optimized staff caching  
+- fully stabilized  
 
-MIDI input  
-↓  
+---
+
+## **CanvasUI (`ui/canvas_ui.py`)**
+- main drawing surface  
+- playhead rendering  
+- scroll + zoom handling  
+- receives timing from PlaybackEngine  
+
+---
+
+## **PlaybackEngine (`core/playback_engine.py`)**
+- controls playback timing  
+- calculates current time position  
+- selects active notes  
+- synchronizes playhead with UI  
+- applies BPM and meter  
+- drives the entire render loop  
+
+---
+
+## **UIManager (`ui/ui_manager.py`)**
+- central UI controller  
+- manages UI components  
+- handles mouse + keyboard input  
+- integrates TrackSwitcherUI  
+- communicates with EventBus  
+
+---
+
+## **TrackSystem (`track_system/track_system.py`)**
+- 16 MIDI channels  
+- track attributes (color, name, visibility)  
+- channel → track mapping  
+
+---
+
+## **NotationProcessor (`notation_processor/notation_processor.py`)**
+- analyzes MIDI events  
+- generates note objects  
+- performs rhythmic analysis  
+- prepares data for the renderer  
+
+---
+
+## **EventBus (`event_bus/event_bus.py`)**
+- publish/subscribe system  
+- decouples modules  
+- ensures clean communication between:  
+  - MIDI input  
+  - UI  
+  - Processor  
+  - Renderer  
+  - TrackManager  
+
+---
+
+## **StreamHandler (`real_time_processing/stream_handler.py`)**
+- reads MIDI input in real time  
+- forwards events to EventRouter  
+- handles device detection  
+
+---
+
+## **EventRouter (`midi_input/event_router.py`)**
+- routes MIDI → EventBus → TrackSystem → UI  
+- ensures correct channel/track mapping  
+
+---
+
+# 🔄 3. Real-Time Pipeline
+
+```
+MIDI Input  
+   ↓  
 StreamHandler  
-↓  
+   ↓  
 EventRouter  
-↓  
+   ↓  
 EventBus  
-↓  
+   ↓  
 TrackSystem + NotationProcessor  
-↓  
+   ↓  
 PlaybackEngine  
-↓  
+   ↓  
 GraphicNotationRenderer  
-↓  
+   ↓  
 CanvasUI + UIManager  
-↓  
-Pygame window  
+   ↓  
+Pygame Window (final output)
+```
 
-Each step is separated to keep the project modular and extendable.
+Each step is isolated, modular, and replaceable — ideal for future expansion.
 
 ---
 
 # ▶️ 4. How to Run the Project
 
-Each step is separated to keep the project modular and extendable.  
+Run the application with:
+
+```
 python run.py
+```
 
 `run.py`:
 
@@ -131,19 +172,23 @@ python run.py
 - creates the UI  
 - starts the PlaybackEngine  
 - starts the main render loop  
+- connects MIDI input → processor → renderer → UI  
 
 ---
 
 # 🚀 5. Future Extensions
 
-- Toolbar (Play / Pause / Stop / Seek)  
-- MIDI loader (import .mid files)  
-- Peak meter visualization  
-- Metronome  
-- Export to PDF / PNG  
-- Recording mode  
-- Tempo automation  
-- Track inspector panel  
+Planned features include:
+
+- toolbar (Play / Pause / Stop / Seek)  
+- MIDI file loader (.mid import)  
+- peak meter visualization  
+- metronome  
+- export to PDF / PNG / SVG  
+- recording mode  
+- tempo automation  
+- track inspector panel  
+- advanced engraving (articulations, dynamics, slurs)  
 
 ---
 
@@ -151,33 +196,38 @@ python run.py
 
 All major modules are **finished and stable**:
 
-- CanvasUI – final  
-- GraphicNotationRenderer – final  
-- TrackManager – final  
-- PlaybackEngine – final  
-- run.py – final integration  
+- CanvasUI — ✔ final  
+- GraphicNotationRenderer — ✔ final  
+- TrackManager — ✔ final  
+- PlaybackEngine — ✔ final  
+- run.py — ✔ final integration  
 
-The project is ready for further expansion.
+The project is ready for large‑scale testing and expansion.
 
 ---
 
 # 🕹️ 7. User Guide
 
 ## ▶️ Launching the Application
-The project is launched with:
-python run.py
+Run:
 
-After launching, the main application window (pygame) opens.
+```
+python run.py
+```
+
+The main pygame window will open automatically.
 
 ---
 
 ## 🎹 MIDI Input
-- If you have a connected MIDI controller, StreamHandler detects it automatically.  
-- Every played note is immediately:
-  - sent to EventRouter  
-  - displayed in the UI  
-  - processed in NotationProcessor  
-  - rendered in GraphicNotationRenderer  
+When a MIDI device is connected:
+
+- StreamHandler detects it  
+- EventRouter routes events  
+- NotationProcessor analyzes them  
+- Renderer draws them in real time  
+
+Every note is processed instantly.
 
 ---
 
@@ -185,66 +235,65 @@ After launching, the main application window (pygame) opens.
 PlaybackEngine controls:
 
 - time  
-- playback  
 - playhead  
 - active notes  
-- tempo (BPM)  
-- meter (beats per bar)
+- BPM  
+- meter  
+- scroll speed  
 
-### Controls (temporary until toolbar is added):
-- playback starts automatically when MIDI arrives  
-- playhead moves according to BPM  
-- renderer draws notes in real time  
+Playback starts automatically when MIDI arrives.
 
 ---
 
-## 🎚️ Track System
-TrackSystem + TrackManager allow:
+## 🎚 Track System
+TrackSystem + TrackManager provide:
 
 - mute / solo  
 - volume  
 - pan  
 - record arm  
 - track colors  
-- activity (peak meter – coming soon)
+- activity meter (coming soon)  
 
-Each note has a track_id → renderer draws it using the track’s color.
+Each note has a `track_id` → renderer uses the track’s color.
 
 ---
 
-## 🖥️ UI (CanvasUI + UIManager)
-The UI consists of:
+## 🖥 UI (CanvasUI + UIManager)
+UI components:
 
-- the main window (pygame)  
-- CanvasUI (playhead + renderer)  
-- UIManager (other UI elements)
+- main pygame window  
+- CanvasUI (renderer surface)  
+- UIManager (interaction layer)  
 
 UIManager handles:
 
-- mouse clicks  
-- keyboard input  
+- mouse  
+- keyboard  
 - track interactions  
-- MIDI input visualization  
+- MIDI visualization  
 
 ---
 
 ## 🎨 Renderer
 GraphicNotationRenderer:
 
-- renders notes along the timeline  
+- draws notes along the timeline  
 - uses heatmap colors  
 - displays velocity  
 - draws barlines  
-- scrolls notes according to the playhead  
+- scrolls notes with the playhead  
+- groups chords and beams  
 
 ---
 
 ## 💾 Export (planned)
-In the future it will be possible to:
+Future export options:
 
-- export MIDI  
-- export images  
-- export PDF  
+- PNG  
+- SVG  
+- PDF  
+- MIDI  
 
 ---
 
