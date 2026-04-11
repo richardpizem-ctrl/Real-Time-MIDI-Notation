@@ -3,7 +3,10 @@ from typing import Optional, Dict, Tuple
 
 class Duration:
     def __init__(self, ticks: int, dotted: bool = False):
-        self.ticks = int(ticks)
+        try:
+            self.ticks = int(ticks)
+        except Exception:
+            self.ticks = 0
         self.dotted = bool(dotted)
 
     def __repr__(self):
@@ -12,8 +15,14 @@ class Duration:
 
 class MeasurePosition:
     def __init__(self, measure: int, beat: float):
-        self.measure = int(measure)
-        self.beat = float(beat)
+        try:
+            self.measure = int(measure)
+        except Exception:
+            self.measure = 0
+        try:
+            self.beat = float(beat)
+        except Exception:
+            self.beat = 1.0
 
     def __repr__(self):
         return f"MeasurePosition(measure={self.measure}, beat={self.beat})"
@@ -29,12 +38,29 @@ class Note:
         channel: int,
         position: MeasurePosition,
     ):
-        self.pitch = int(pitch)
-        self.velocity = int(velocity)
-        self.start_time = float(start_time)
-        self.duration = duration
-        self.channel = int(channel)
-        self.position = position
+        try:
+            self.pitch = int(pitch)
+        except Exception:
+            self.pitch = 60
+
+        try:
+            self.velocity = int(velocity)
+        except Exception:
+            self.velocity = 100
+
+        try:
+            self.start_time = float(start_time)
+        except Exception:
+            self.start_time = 0.0
+
+        self.duration = duration if isinstance(duration, Duration) else Duration(0)
+
+        try:
+            self.channel = int(channel)
+        except Exception:
+            self.channel = 0
+
+        self.position = position if isinstance(position, MeasurePosition) else MeasurePosition(0, 1.0)
 
     def __repr__(self):
         return (
@@ -58,20 +84,23 @@ class MidiNoteMapper:
     def __init__(self, ppq: int = 480, tempo_bpm: float = 120.0):
         self.active_notes: Dict[Tuple[int, int], Dict[str, float]] = {}
 
-        self.ppq = int(ppq)
-        self.tempo_bpm = float(tempo_bpm)
+        try:
+            self.ppq = int(ppq)
+        except Exception:
+            self.ppq = 480
 
-        # Position tracking
+        try:
+            self.tempo_bpm = float(tempo_bpm)
+        except Exception:
+            self.tempo_bpm = 120.0
+
         self.current_measure = 0
         self.current_beat = 1.0
 
-        # Callback
         self.on_note_created = None
 
-        # Quantization (1/16 note)
         self.quantize_resolution = 120
 
-        # Time signature (default 4/4)
         self.time_numerator = 4
         self.time_denominator = 4
 
@@ -81,6 +110,9 @@ class MidiNoteMapper:
     def set_timing(self, ppq: int, tempo_bpm: float):
         try:
             self.ppq = int(ppq)
+        except Exception:
+            pass
+        try:
             self.tempo_bpm = float(tempo_bpm)
         except Exception:
             pass
@@ -88,11 +120,19 @@ class MidiNoteMapper:
     def set_time_signature(self, numerator: int, denominator: int):
         try:
             self.time_numerator = int(numerator)
+        except Exception:
+            pass
+        try:
             self.time_denominator = int(denominator)
         except Exception:
             pass
 
     def _seconds_to_ticks(self, seconds: float) -> int:
+        try:
+            seconds = float(seconds)
+        except Exception:
+            return 0
+
         try:
             seconds_per_beat = 60.0 / self.tempo_bpm
             beats = seconds / seconds_per_beat
@@ -102,21 +142,38 @@ class MidiNoteMapper:
 
     def _quantize_ticks(self, ticks: int) -> int:
         try:
-            q = self.quantize_resolution
+            ticks = int(ticks)
+        except Exception:
+            return 0
+
+        try:
+            q = int(self.quantize_resolution)
+            if q <= 0:
+                return ticks
             return int(round(ticks / q) * q)
         except Exception:
             return ticks
 
     def _update_position(self, timestamp: float):
         try:
+            timestamp = float(timestamp)
+        except Exception:
+            self.current_measure = 0
+            self.current_beat = 1.0
+            return
+
+        try:
             seconds_per_beat = 60.0 / self.tempo_bpm
             beats = timestamp / seconds_per_beat
+
+            if self.time_numerator <= 0:
+                self.time_numerator = 4
 
             beat_in_measure = (beats % self.time_numerator) + 1
             measure = int(beats // self.time_numerator)
 
-            self.current_measure = measure
-            self.current_beat = beat_in_measure
+            self.current_measure = max(0, measure)
+            self.current_beat = max(1.0, float(beat_in_measure))
         except Exception:
             self.current_measure = 0
             self.current_beat = 1.0
@@ -128,7 +185,12 @@ class MidiNoteMapper:
         self._update_position(timestamp)
 
         try:
-            self.active_notes[(int(pitch), int(channel))] = {
+            key = (int(pitch), int(channel))
+        except Exception:
+            return
+
+        try:
+            self.active_notes[key] = {
                 "start_time": float(timestamp),
                 "velocity": int(velocity),
             }
@@ -138,7 +200,11 @@ class MidiNoteMapper:
     def handle_note_off(self, pitch: int, channel: int, timestamp: float):
         self._update_position(timestamp)
 
-        key = (int(pitch), int(channel))
+        try:
+            key = (int(pitch), int(channel))
+        except Exception:
+            return
+
         if key not in self.active_notes:
             return
 
@@ -151,13 +217,11 @@ class MidiNoteMapper:
 
         del self.active_notes[key]
 
-        # Duration
-        duration_seconds = max(timestamp - start_time, 0.0)
+        duration_seconds = max(float(timestamp) - start_time, 0.0)
         duration_ticks = self._seconds_to_ticks(duration_seconds)
         duration_ticks = self._quantize_ticks(duration_ticks)
         duration = Duration(ticks=duration_ticks)
 
-        # Quantized beat
         try:
             quantized_beat = round(self.current_beat * 4) / 4
         except Exception:
@@ -169,15 +233,14 @@ class MidiNoteMapper:
         )
 
         note = Note(
-            pitch=pitch,
+            pitch=key[0],
             velocity=velocity,
             start_time=start_time,
             duration=duration,
-            channel=channel,
+            channel=key[1],
             position=position,
         )
 
-        # Callback
         if callable(self.on_note_created):
             try:
                 self.on_note_created(note)
