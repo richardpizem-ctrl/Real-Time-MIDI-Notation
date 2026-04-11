@@ -42,7 +42,8 @@ class NotationProcessor:
     # PREPOJENIE EXTERNÉHO RENDERERA
     # ---------------------------------------------------------
     def bind_renderer(self, renderer):
-        self.renderer = renderer
+        if renderer is not None:
+            self.renderer = renderer
 
     # ---------------------------------------------------------
     # TIME DELTA
