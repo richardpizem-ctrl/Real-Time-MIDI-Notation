@@ -1,14 +1,24 @@
-# Real Time MIDI Notation – Code of Conduct
+# 🤝 Real-Time MIDI Notation — Code of Conduct (Ultimate Edition)
 
-The Real Time MIDI Notation project is built by a diverse global community of developers, musicians, designers, and contributors. Some are professionals, others are volunteers, and all of us collaborate toward a shared mission: building an open, accessible, and high‑quality real‑time notation engine.
+The **Real-Time MIDI Notation** project is built by a diverse global community of developers, musicians, designers, researchers, and contributors.  
+Some are professionals, others are volunteers — all united by a shared mission:
 
-Diversity is one of our greatest strengths. It also means that misunderstandings can happen. This Code of Conduct exists to ensure that every member of our community feels safe, respected, and welcome.
+### **To build an open, accessible, and high‑quality real‑time MIDI notation engine.**
 
-This document applies equally to founders, maintainers, contributors, newcomers, and anyone participating in project spaces.
+Diversity is one of our greatest strengths. It also means misunderstandings can happen.  
+This Code of Conduct ensures that every member of our community feels **safe, respected, and welcome**.
 
-This is not an exhaustive list of rules. Instead, it is a set of guiding principles intended to help us create a positive, productive, and inclusive environment.
+This document applies equally to:
 
-This Code of Conduct applies to all spaces managed by the Real Time MIDI Notation project, including (but not limited to):
+- founders  
+- maintainers  
+- contributors  
+- newcomers  
+- anyone participating in project spaces  
+
+It is not an exhaustive list of rules — it is a set of guiding principles for a positive, productive, and inclusive environment.
+
+This Code of Conduct applies to all spaces managed by the project, including:
 
 - GitHub issues and pull requests  
 - Discussions and comments  
@@ -17,17 +27,21 @@ This Code of Conduct applies to all spaces managed by the Real Time MIDI Notatio
 
 Violations outside these spaces may still affect a person’s ability to participate within them.
 
-If you believe someone is violating this Code of Conduct, please report it by emailing:  
-**richardpizem@gmail.com**
+If you believe someone is violating this Code of Conduct, please report it to:  
+📧 **richardpizem@gmail.com**
 
 ---
 
-## Our Standards
+# 🌟 Our Standards
 
-### **Be friendly and patient.**
+## ✔️ Be friendly and patient  
+Everyone learns at a different pace. Everyone has different backgrounds.  
+Patience builds a stronger community.
 
-### **Be welcoming.**  
-We strive to be a community that welcomes and supports people of all backgrounds and identities. This includes, but is not limited to, individuals of any:
+---
+
+## ✔️ Be welcoming  
+We strive to be a community that welcomes and supports people of all backgrounds and identities, including (but not limited to):
 
 - race or ethnicity  
 - culture or national origin  
@@ -39,36 +53,111 @@ We strive to be a community that welcomes and supports people of all backgrounds
 - political belief or religion  
 - mental or physical ability  
 
-### **Be considerate.**  
-Your work will be used by others, and you will depend on the work of others. Every decision you make affects users and contributors. Keep in mind that we are a global community — English may not be everyone’s first language.
+Everyone deserves respect.
 
-### **Be respectful.**  
-Disagreements happen, but they are never an excuse for disrespectful behavior. Frustration is natural, but personal attacks, insults, or hostile behavior are not acceptable. A respectful community is a productive community.
+---
 
-### **Be careful with your words.**  
-We are a community of professionals. Be kind to others. Do not insult or demean other participants. Harassment and exclusionary behavior are unacceptable. This includes, but is not limited to:
+## ✔️ Be considerate  
+Your work will be used by others, and you will depend on the work of others.  
+Every decision you make affects users and contributors.
+
+Remember:  
+**We are a global community — English may not be everyone’s first language.**
+
+---
+
+## ✔️ Be respectful  
+Disagreements happen. They are normal.  
+But disrespectful behavior is not acceptable.
+
+Unacceptable behavior includes:
+
+- personal attacks  
+- insults or demeaning comments  
+- harassment or intimidation  
+- dismissive or hostile language  
+- mocking or belittling others  
+- intentionally derailing conversations  
+
+A respectful community is a productive community.
+
+---
+
+## ✔️ Be careful with your words  
+We are a community of professionals.  
+Be kind. Be thoughtful. Be constructive.
+
+Harassment and exclusionary behavior are unacceptable. This includes:
 
 - violent threats or language  
 - discriminatory jokes or slurs  
 - posting sexually explicit or violent material  
-- posting or threatening to post others’ personal information (“doxing”)  
-- personal insults, especially those using racist or sexist terms  
+- doxing (posting others’ personal information)  
+- personal insults, especially racist or sexist  
 - unwelcome sexual attention  
 - advocating for or encouraging any of the above  
 - repeated harassment — if someone asks you to stop, stop  
 
-### **When disagreements arise, seek understanding.**  
-Technical and social disagreements are normal. What matters is how we resolve them. Remember that different people have different perspectives and experiences. Not understanding someone’s viewpoint does not make them wrong. Focus on learning, resolving issues, and improving the project.
+---
+
+## ✔️ When disagreements arise, seek understanding  
+Technical and social disagreements are normal.  
+What matters is **how** we resolve them.
+
+Remember:
+
+- different people have different perspectives  
+- not understanding someone’s viewpoint does not make them wrong  
+- assume good intentions  
+- focus on learning and improving the project  
+
+We grow stronger through collaboration.
 
 ---
 
-## Attribution
+# 🛡 Enforcement
 
-Portions of this Code of Conduct are adapted from the **Speak Up! Project** (archived) and other open‑source community guidelines.
+Project maintainers are responsible for:
+
+- clarifying standards  
+- enforcing this Code of Conduct  
+- taking appropriate action when violations occur  
+
+Maintainers have the right to:
+
+- remove comments  
+- close issues  
+- reject contributions  
+- temporarily or permanently ban contributors  
+
+These actions may be taken if a contributor engages in behavior that violates this Code of Conduct.
 
 ---
 
-## Questions?
+# 📬 Reporting Violations
 
-If you have questions or concerns, please contact the project maintainer at:  
-**richardpizem@gmail.com**
+If you witness or experience behavior that violates this Code of Conduct, please report it to:
+
+📧 **richardpizem@gmail.com**
+
+Reports will be handled respectfully and confidentially.
+
+---
+
+# 📜 Attribution
+
+Portions of this Code of Conduct are adapted from:
+
+- the **Speak Up! Project** (archived)  
+- the **Contributor Covenant**  
+- other open‑source community guidelines  
+
+---
+
+# ❓ Questions?
+
+If you have questions or concerns about this Code of Conduct, please contact the project maintainer:
+
+📧 **richardpizem@gmail.com**
+
+Thank you for helping make **Real-Time MIDI Notation** a safe, respectful, and welcoming community.
