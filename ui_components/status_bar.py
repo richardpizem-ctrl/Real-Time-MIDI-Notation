@@ -1,74 +1,111 @@
 import pygame
+from typing import Tuple, Optional
 from ..core.logger import Logger
 
 
-class DebugPanel:
-    def __init__(self, enabled=True, print_enabled=True):
+class StatusBar:
+    """
+    StatusBar (Status Bar)
+    ----------------------
+    FÁZA 4 – Stabilizovaná verzia
+
+    Účel:
+        - Zobrazuje stavové správy (status messages)
+        - Používa sa na informácie o pipeline, MIDI, trackoch, systéme
+        - Real‑time safe, neblokuje renderovaciu slučku
+
+    Vlastnosti:
+        - Jednoduchý textový UI prvok
+        - Bezpečné vykresľovanie
+        - Možnosť zapnúť/vypnúť
+        - Automatické skracovanie textu pri pretečení
+    """
+
+    def __init__(
+        self,
+        width: int,
+        height: int = 24,
+        font_size: int = 18,
+        enabled: bool = True,
+        bg_color: Tuple[int, int, int] = (30, 30, 30),
+        text_color: Tuple[int, int, int] = (220, 220, 220)
+    ) -> None:
+
         self.enabled = enabled
-        self.print_enabled = print_enabled
-        Logger.info("DebugPanel initialized.")
+        self.width = width
+        self.height = height
+        self.bg_color = bg_color
+        self.text_color = text_color
+
+        pygame.font.init()
+        self.font = pygame.font.SysFont("Consolas", font_size)
+
+        self.current_message: str = ""
+        self.surface = pygame.Surface((self.width, self.height))
+
+        Logger.info("StatusBar initialized.")
 
     # ---------------------------------------------------------
     # ENABLE / DISABLE
     # ---------------------------------------------------------
-    def toggle(self):
+    def toggle(self) -> None:
+        """Prepína viditeľnosť status baru (toggle visibility)."""
         self.enabled = not self.enabled
-        Logger.info(f"DebugPanel toggled: {self.enabled}")
+        Logger.info(f"StatusBar toggled: {self.enabled}")
 
     # ---------------------------------------------------------
-    # MIDI EVENT LOGGING
+    # SET MESSAGE
     # ---------------------------------------------------------
-    def log_midi_event(self, event):
+    def set_message(self, message: str) -> None:
+        """Nastaví novú správu (set status message)."""
+        try:
+            safe_message = self._safe_format(message)
+            self.current_message = safe_message
+            Logger.info(f"StatusBar message set: {safe_message}")
+
+        except Exception as e:
+            Logger.error(f"StatusBar set_message error: {e}")
+
+    # ---------------------------------------------------------
+    # RENDER
+    # ---------------------------------------------------------
+    def render(self) -> Optional[pygame.Surface]:
+        """Vykreslí status bar a vráti surface (render status bar)."""
         if not self.enabled:
-            return
+            return None
 
         try:
-            safe_event = self._safe_format(event)
+            self.surface.fill(self.bg_color)
 
-            if self.print_enabled:
-                print(f"[MIDI EVENT] {safe_event}")
+            text_surface = self.font.render(
+                self._truncate(self.current_message),
+                True,
+                self.text_color
+            )
 
-            Logger.info(f"Debug MIDI event: {safe_event}")
-
-        except Exception as e:
-            Logger.error(f"DebugPanel MIDI error: {e}")
-
-    # ---------------------------------------------------------
-    # PIPELINE LOGGING
-    # ---------------------------------------------------------
-    def log_pipeline(self, stage, data):
-        if not self.enabled:
-            return
-
-        try:
-            safe_data = self._safe_format(data)
-
-            if self.print_enabled:
-                print(f"[PIPELINE] {stage}: {safe_data}")
-
-            Logger.info(f"Debug pipeline {stage}: {safe_data}")
+            self.surface.blit(text_surface, (6, 3))
+            return self.surface
 
         except Exception as e:
-            Logger.error(f"DebugPanel pipeline error: {e}")
-
-    # ---------------------------------------------------------
-    # ERROR LOGGING
-    # ---------------------------------------------------------
-    def log_error(self, message):
-        try:
-            if self.print_enabled:
-                print(f"[ERROR] {message}")
-
-            Logger.error(f"DebugPanel error: {message}")
-
-        except Exception as e:
-            Logger.error(f"DebugPanel logging failure: {e}")
+            Logger.error(f"StatusBar render error: {e}")
+            return None
 
     # ---------------------------------------------------------
     # SAFE FORMATTER
     # ---------------------------------------------------------
-    def _safe_format(self, obj):
+    def _safe_format(self, obj) -> str:
+        """Bezpečne konvertuje objekt na text (safe string conversion)."""
         try:
             return str(obj)
         except Exception:
-            return "<unprintable object>"
+            return "<unprintable>"
+
+    # ---------------------------------------------------------
+    # TRUNCATE LONG TEXT
+    # ---------------------------------------------------------
+    def _truncate(self, text: str) -> str:
+        """Skráti text, ak je príliš dlhý (truncate long text)."""
+        max_chars = int(self.width / 10)  # približný odhad šírky
+        if len(text) > max_chars:
+            return text[:max_chars - 3] + "..."
+        return text
