@@ -19,16 +19,36 @@ class RhythmAnalyzerConfig:
         min_pattern_bars=2,
         max_pattern_length_beats=4.0,
     ):
-        self.bpm = float(bpm)
-        self.ppq = int(ppq)
-        self.quant_grid = float(quant_grid)
+        try:
+            self.bpm = float(bpm)
+        except Exception:
+            self.bpm = 120.0
+
+        try:
+            self.ppq = int(ppq)
+        except Exception:
+            self.ppq = 480
+
+        try:
+            self.quant_grid = float(quant_grid)
+        except Exception:
+            self.quant_grid = 0.25
+
         self.swing_threshold = float(swing_threshold)
         self.timing_loose_threshold = float(timing_loose_threshold)
         self.timing_laidback_threshold = float(timing_laidback_threshold)
         self.velocity_accent_threshold = float(velocity_accent_threshold)
         self.velocity_ghost_threshold = float(velocity_ghost_threshold)
-        self.min_pattern_bars = int(min_pattern_bars)
-        self.max_pattern_length_beats = float(max_pattern_length_beats)
+
+        try:
+            self.min_pattern_bars = int(min_pattern_bars)
+        except Exception:
+            self.min_pattern_bars = 2
+
+        try:
+            self.max_pattern_length_beats = float(max_pattern_length_beats)
+        except Exception:
+            self.max_pattern_length_beats = 4.0
 
 
 class RhythmAnalyzer:
@@ -92,19 +112,21 @@ class RhythmAnalyzer:
             if not isinstance(note, dict):
                 continue
 
-            start = note.get("start", 0.0)
-            duration = note.get("duration", grid)
-            velocity = note.get("velocity", 80)
-
             try:
-                start = float(start)
+                start = float(note.get("start", 0.0))
             except Exception:
                 start = 0.0
 
             try:
-                duration = float(duration)
+                duration = float(note.get("duration", grid))
             except Exception:
                 duration = grid
+
+            velocity = note.get("velocity", 80)
+            try:
+                velocity = int(velocity)
+            except Exception:
+                velocity = 80
 
             q_start = round(start / grid) * grid
             q_duration = round(duration / grid) * grid
@@ -119,7 +141,7 @@ class RhythmAnalyzer:
         return quantized
 
     # -------------------------------------------------
-    # 2) Timing deviation analyzer (microtiming)
+    # 2) Timing deviation analyzer
     # -------------------------------------------------
 
     def _analyze_timing_deviation(self, timeline, quantized):
@@ -129,16 +151,13 @@ class RhythmAnalyzer:
             if not isinstance(orig, dict) or not isinstance(q, dict):
                 continue
 
-            start = orig.get("start", 0.0)
-            q_start = q.get("q_start", start)
-
             try:
-                start = float(start)
+                start = float(orig.get("start", 0.0))
             except Exception:
                 start = 0.0
 
             try:
-                q_start = float(q_start)
+                q_start = float(q.get("q_start", start))
             except Exception:
                 q_start = start
 
@@ -179,9 +198,8 @@ class RhythmAnalyzer:
         for n in timeline:
             if not isinstance(n, dict):
                 continue
-            v = n.get("velocity", 80)
             try:
-                v = int(v)
+                v = int(n.get("velocity", 80))
             except Exception:
                 v = 80
             velocities.append(v)
@@ -208,9 +226,8 @@ class RhythmAnalyzer:
             if not isinstance(n, dict):
                 continue
 
-            v = n.get("velocity", 80)
             try:
-                v = int(v)
+                v = int(n.get("velocity", 80))
             except Exception:
                 v = 80
 
@@ -242,7 +259,7 @@ class RhythmAnalyzer:
         }
 
     # -------------------------------------------------
-    # 4) Swing / shuffle detection
+    # 4) Swing detection
     # -------------------------------------------------
 
     def _detect_swing(self, timeline, quantized):
