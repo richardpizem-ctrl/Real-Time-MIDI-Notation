@@ -3,6 +3,14 @@ from .track_control_manager import TrackControlManager
 
 
 class TrackSelectorUI:
+    """
+    Jednoduchý horizontálny prepínač stôp.
+    - zobrazuje farby stôp
+    - umožňuje kliknutím vybrať aktívnu stopu
+    - highlight aktívnej stopy
+    - farby a viditeľnosť číta z TrackControlManager
+    """
+
     def __init__(self, track_control_manager: TrackControlManager, width: int, height: int):
         self.track_control = track_control_manager
         self.width = width
@@ -15,13 +23,13 @@ class TrackSelectorUI:
         self.font = pygame.font.Font(None, 18)
 
         # Lokálny stav pre highlight (UIManager volá set_active_track)
-        self.active_track = 0
+        self.active_track = 0  # 0-based index
 
     # ---------------------------------------------------------
     # PUBLIC API (volané z UIManager event callbackov)
     # ---------------------------------------------------------
     def set_active_track(self, track_index: int):
-        """UI reaguje na zmenu aktívnej stopy."""
+        """UI reaguje na zmenu aktívnej stopy (0-based index)."""
         self.active_track = track_index
 
     def update_visibility(self, track_index: int, visible: bool):
@@ -36,7 +44,7 @@ class TrackSelectorUI:
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface, active_track=None):
-        # Ak UIManager poslal aktívnu stopu, použijeme ju
+        # UIManager môže poslať aktívnu stopu
         if active_track is not None:
             self.active_track = active_track
 
@@ -49,11 +57,14 @@ class TrackSelectorUI:
             )
 
             # Farba stopy z TrackControlManager
-            color_hex = self.track_control.get_color(i)
-            r = int(color_hex[1:3], 16)
-            g = int(color_hex[3:5], 16)
-            b = int(color_hex[5:7], 16)
-            base_color = (r, g, b)
+            try:
+                color_hex = self.track_control.get_color(i)
+                r = int(color_hex[1:3], 16)
+                g = int(color_hex[3:5], 16)
+                b = int(color_hex[5:7], 16)
+                base_color = (r, g, b)
+            except Exception:
+                base_color = (120, 120, 120)
 
             pygame.draw.rect(surface, base_color, rect)
 
@@ -63,10 +74,12 @@ class TrackSelectorUI:
             else:
                 pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
-            # Label
+            # Label (číslo stopy)
             label = f"{i+1}"
             text = self.font.render(label, True, (0, 0, 0))
-            text_rect = text.get_rect(center=(rect.x + self.button_width // 2, rect.y + self.button_height // 2))
+            text_rect = text.get_rect(
+                center=(rect.x + self.button_width // 2, rect.y + self.button_height // 2)
+            )
             surface.blit(text, text_rect)
 
     # ---------------------------------------------------------
@@ -75,6 +88,7 @@ class TrackSelectorUI:
     def handle_click(self, pos):
         x, y = pos
 
+        # Klik mimo panelu
         if not (0 <= x <= self.width):
             return
         if not (0 <= y <= self.height):
@@ -82,8 +96,11 @@ class TrackSelectorUI:
 
         index = x // self.button_width
 
-        # Informujeme TrackControlManager
-        self.track_control.select_track(index)
+        # Informujeme TrackControlManager (0-based index)
+        try:
+            self.track_control.select_track(index)
+        except Exception:
+            pass
 
         # Lokálny highlight
         self.active_track = index
