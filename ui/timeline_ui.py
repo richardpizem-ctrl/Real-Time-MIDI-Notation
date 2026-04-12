@@ -5,7 +5,7 @@ import math
 class TimelineUI:
     """
     Timeline UI – DAW‑štýlová časová os.
-    Teraz obsahuje:
+    Obsahuje:
     - pozadie
     - taktové čiary
     - beat grid
@@ -13,6 +13,7 @@ class TimelineUI:
     - zoom (Ctrl + wheel)
     - scroll (Shift + wheel)
     - zoom na kurzor
+    - loop region (klik + ťah)
     """
 
     def __init__(self, x, y, width, height, event_bus, renderer):
@@ -39,6 +40,14 @@ class TimelineUI:
         # Playback head
         self.playhead_x = 0
 
+        # Loop region
+        self.loop_start = None
+        self.loop_end = None
+        self.loop_dragging = False
+        self.loop_resizing_left = False
+        self.loop_resizing_right = False
+        self.loop_drag_offset = 0
+
         # Font
         try:
             self.font = pygame.font.Font(None, 16)
@@ -50,6 +59,9 @@ class TimelineUI:
     # ---------------------------------------------------------
     def _beat_to_x(self, beat_index):
         return int(self.x + (beat_index * self.pixels_per_beat * self.zoom) - self.scroll_x)
+
+    def _x_to_beat(self, x):
+        return (x + self.scroll_x - self.x) / (self.pixels_per_beat * self.zoom)
 
     def _bar_to_x(self, bar_index):
         return self._beat_to_x(bar_index * self.beats_per_bar)
@@ -94,12 +106,40 @@ class TimelineUI:
         pygame.draw.line(surface, (255, 0, 0), (self.playhead_x, self.y), (self.playhead_x, self.y + self.height), 2)
 
     # ---------------------------------------------------------
+    # LOOP REGION DRAW
+    # ---------------------------------------------------------
+    def _draw_loop_region(self, surface):
+        if self.loop_start is None or self.loop_end is None:
+            return
+
+        x1 = self._beat_to_x(self.loop_start)
+        x2 = self._beat_to_x(self.loop_end)
+
+        if x2 < x1:
+            x1, x2 = x2, x1
+
+        rect = pygame.Rect(x1, self.y, x2 - x1, self.height)
+
+        # Polopriesvitný overlay
+        overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        overlay.fill((0, 120, 255, 60))
+        surface.blit(overlay, (rect.x, rect.y))
+
+        # Hrany loop regionu
+        pygame.draw.rect(surface, (0, 150, 255), rect, 2)
+
+        # Drag handles
+        pygame.draw.rect(surface, (0, 180, 255), (x1 - 3, self.y, 6, self.height))
+        pygame.draw.rect(surface, (0, 180, 255), (x2 - 3, self.y, 6, self.height))
+
+    # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
         self._draw_background(surface)
         self._draw_beats(surface)
         self._draw_bars(surface)
+        self._draw_loop_region(surface)
         self._draw_playhead(surface)
 
     # ---------------------------------------------------------
@@ -108,21 +148,17 @@ class TimelineUI:
     def _apply_zoom(self, mouse_x, delta):
         old_zoom = self.zoom
 
-        # Zoom in/out
         if delta > 0:
             self.zoom *= 1.1
         else:
             self.zoom /= 1.1
 
-        # Clamp
         self.zoom = max(self.min_zoom, min(self.max_zoom, self.zoom))
 
-        # Zoom na kurzor
         rel_x = mouse_x - self.x
         scale = self.zoom / old_zoom
         self.scroll_x = int((self.scroll_x + rel_x) * scale - rel_x)
 
-        # Scroll clamp
         self.scroll_x = max(0, min(self.scroll_x, 100000))
 
     def _apply_scroll(self, delta):
@@ -146,36 +182,84 @@ class TimelineUI:
             ctrl = mods & pygame.KMOD_CTRL
             shift = mods & pygame.KMOD_SHIFT
 
-            # Ctrl + wheel → ZOOM
             if ctrl:
                 self._apply_zoom(mx, event.y)
                 return {"zoom": self.zoom}
 
-            # Shift + wheel → SCROLL
             if shift:
                 self._apply_scroll(-event.y)
                 return {"scroll": self.scroll_x}
 
-            # Default wheel → scroll jemne
             self._apply_scroll(-event.y * 5)
             return {"scroll": self.scroll_x}
 
-        # Click → seek
+        # -----------------------------------------------------
+        # LOOP REGION – CLICK / DRAG
+        # -----------------------------------------------------
         if event.type == pygame.MOUSEBUTTONDOWN:
             if not (self.x <= mx <= self.x + self.width):
                 return None
             if not (self.y <= my <= self.y + self.height):
                 return None
 
-            rel_x = mx - self.x + self.scroll_x
-            beat = rel_x / (self.pixels_per_beat * self.zoom)
+            beat = self._x_to_beat(mx)
 
-            try:
-                self.renderer.set_playhead_beat(beat)
-            except Exception:
-                pass
+            # Ak existuje loop region → kontrola drag/resize
+            if self.loop_start is not None and self.loop_end is not None:
+                x1 = self._beat_to_x(self.loop_start)
+                x2 = self._beat_to_x(self.loop_end)
 
-            self.event_bus.emit("timeline_seek", beat)
-            return {"seek": beat}
+                # Resize left
+                if abs(mx - x1) < 6:
+                    self.loop_resizing_left = True
+                    return {"loop_resize_left": True}
+
+                # Resize right
+                if abs(mx - x2) < 6:
+                    self.loop_resizing_right = True
+                    return {"loop_resize_right": True}
+
+                # Drag whole region
+                if x1 < mx < x2:
+                    self.loop_dragging = True
+                    self.loop_drag_offset = beat - self.loop_start
+                    return {"loop_drag": True}
+
+            # Inak → začíname nový loop region
+            self.loop_start = beat
+            self.loop_end = beat
+            self.loop_resizing_right = True
+            return {"loop_start": beat}
+
+        # Mouse drag
+        if event.type == pygame.MOUSEMOTION:
+            if self.loop_resizing_left:
+                self.loop_start = self._x_to_beat(mx)
+                return {"loop_resize_left": self.loop_start}
+
+            if self.loop_resizing_right:
+                self.loop_end = self._x_to_beat(mx)
+                return {"loop_resize_right": self.loop_end}
+
+            if self.loop_dragging:
+                beat = self._x_to_beat(mx)
+                length = self.loop_end - self.loop_start
+                self.loop_start = beat - self.loop_drag_offset
+                self.loop_end = self.loop_start + length
+                return {"loop_drag_move": True}
+
+        # Mouse release
+        if event.type == pygame.MOUSEBUTTONUP:
+            if self.loop_start is not None and self.loop_end is not None:
+                try:
+                    self.renderer.set_loop(self.loop_start, self.loop_end)
+                except Exception:
+                    pass
+
+                self.event_bus.emit("loop_region", self.loop_start, self.loop_end)
+
+            self.loop_dragging = False
+            self.loop_resizing_left = False
+            self.loop_resizing_right = False
 
         return None
