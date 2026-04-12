@@ -93,6 +93,20 @@ class TrackSwitcherUI:
             )
             pygame.draw.line(surface, shade, (rect.x, rect.y + y), (rect.x + rect.width, rect.y + y))
 
+    def _draw_inner_highlight(self, surface, rect):
+        # jemný vnútorný lesk pri hornom okraji
+        highlight_height = 6
+        for i in range(highlight_height):
+            alpha = int(60 * (1 - i / highlight_height))
+            shade = (255, 255, 255, alpha)
+            pygame.draw.line(
+                surface,
+                shade,
+                (rect.x + 2, rect.y + 2 + i),
+                (rect.x + rect.width - 2, rect.y + 2 + i),
+                1,
+            )
+
     def _draw_separator(self, surface, rect, y_offset):
         pygame.draw.line(
             surface,
@@ -215,6 +229,9 @@ class TrackSwitcherUI:
 
             # GRADIENT
             self._draw_gradient(surface, rect, base_color)
+
+            # VNÚTORNÝ LESK
+            self._draw_inner_highlight(surface, rect)
 
             # OVERLAY
             try:
