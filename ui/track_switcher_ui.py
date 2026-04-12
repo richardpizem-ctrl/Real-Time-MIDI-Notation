@@ -94,6 +94,7 @@ class TrackSwitcherUI:
             pygame.draw.line(surface, shade, (rect.x, rect.y + y), (rect.x + rect.width, rect.y + y))
 
     def _draw_inner_highlight(self, surface, rect):
+        # jemný vnútorný lesk pri hornom okraji
         highlight_height = 6
         for i in range(highlight_height):
             alpha = int(60 * (1 - i / highlight_height))
@@ -115,16 +116,27 @@ class TrackSwitcherUI:
             1,
         )
 
+    def _draw_vertical_divider(self, surface, rect):
+        # jemný vertikálny divider medzi trackmi
+        pygame.draw.line(
+            surface,
+            (0, 0, 0, 25),
+            (rect.right, rect.y + 4),
+            (rect.right, rect.y + rect.height - 4),
+            1,
+        )
+
     def _draw_shadow(self, surface, rect):
-        shadow_height = 6
+        # jemnejší, hlbší tieň
+        shadow_height = 10
         for i in range(shadow_height):
-            alpha = int(40 * (1 - i / shadow_height))
+            alpha = int(45 * (1 - i / shadow_height))
             shade = (0, 0, 0, alpha)
             pygame.draw.line(
                 surface,
                 shade,
-                (rect.x, rect.y + rect.height + i),
-                (rect.x + rect.width, rect.y + rect.height + i),
+                (rect.x - 2, rect.y + rect.height + i),
+                (rect.x + rect.width + 2, rect.y + rect.height + i),
                 1,
             )
 
@@ -147,19 +159,34 @@ class TrackSwitcherUI:
                 border_radius=6 + i,
             )
 
+    def _draw_meter_background(self, surface, rect):
+        # tmavší podklad pre VU meter
+        bg_rect = pygame.Rect(rect.x + 4, rect.y + 2, self.button_width - 8, 20)
+        pygame.draw.rect(surface, (20, 20, 20), bg_rect, border_radius=4)
+
     def _draw_meter(self, surface, rect, level):
         if level <= 0:
             return
         meter_height = int(level * 20)
-        meter_rect = pygame.Rect(rect.x + 4, rect.y + 2, self.button_width - 8, meter_height)
+        meter_rect = pygame.Rect(rect.x + 4, rect.y + 2 + (20 - meter_height), self.button_width - 8, meter_height)
         pygame.draw.rect(surface, (0, 255, 0), meter_rect, border_radius=3)
 
     def _draw_peak(self, surface, rect, peak):
         if peak <= 0:
             return
-        peak_y = rect.y + 2 + int(peak * 20)
+        peak_y = rect.y + 2 + int((1 - peak) * 20)
         peak_rect = pygame.Rect(rect.x + 4, peak_y, self.button_width - 8, 2)
         pygame.draw.rect(surface, (255, 255, 255), peak_rect, border_radius=2)
+
+    def _draw_volume_background(self, surface, rect):
+        # rámik pre volume slider
+        frame_rect = pygame.Rect(
+            rect.x + 6,
+            rect.y + self.button_height - 55,
+            self.button_width - 12,
+            30,
+        )
+        pygame.draw.rect(surface, (15, 15, 25), frame_rect, border_radius=4)
 
     def _draw_volume(self, surface, rect, vol):
         try:
@@ -170,7 +197,7 @@ class TrackSwitcherUI:
         vol_h = int(vol * 30)
         vol_rect = pygame.Rect(
             rect.x + 6,
-            rect.y + self.button_height - 55,
+            rect.y + self.button_height - 55 + (30 - vol_h),
             self.button_width - 12,
             vol_h,
         )
@@ -179,6 +206,13 @@ class TrackSwitcherUI:
         if self.small_font:
             txt = self.small_font.render("V", True, (0, 0, 0))
             surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 60))
+
+    def _draw_pan_background(self, surface, rect):
+        # rámik pre pan knob
+        pan_x = rect.x + self.button_width // 2
+        pan_y = rect.y + self.button_height - 70
+        bg_rect = pygame.Rect(pan_x - 10, pan_y - 10, 20, 20)
+        pygame.draw.rect(surface, (20, 20, 20), bg_rect, border_radius=6)
 
     def _draw_pan(self, surface, rect, pan_val):
         try:
@@ -201,10 +235,25 @@ class TrackSwitcherUI:
             surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 75))
 
     def _draw_button(self, surface, rect, active, color_on, color_off, label):
-        pygame.draw.rect(surface, color_on if active else color_off, rect, border_radius=4)
+        # jemný glow pri aktívnom stave
+        if active:
+            glow_rect = rect.inflate(4, 4)
+            pygame.draw.rect(surface, (255, 255, 255, 40), glow_rect, border_radius=6)
+        pygame.draw.rect(surface, color_on if active else color_off, rect, border_radius=6)
         if self.small_font:
             txt = self.small_font.render(label, True, (0, 0, 0))
             surface.blit(txt, (rect.x + 2, rect.y + 1))
+
+    def _draw_name_separator(self, surface, rect):
+        # jemná linka pod názvom stopy
+        y = rect.y + 20
+        pygame.draw.line(
+            surface,
+            (0, 0, 0, 30),
+            (rect.x + 4, y),
+            (rect.x + rect.width - 4, y),
+            1,
+        )
 
     # ---------------------------------------------------------
     # DRAW
@@ -221,6 +270,8 @@ class TrackSwitcherUI:
             active_tid = active_track
 
         mx, my = pygame.mouse.get_pos()
+        tooltip_text = None
+        tooltip_pos = None
 
         for i in range(self.track_count):
             tid = i + 1
@@ -269,19 +320,23 @@ class TrackSwitcherUI:
             if rect.collidepoint(mx, my):
                 self._draw_outer_glow(surface, rect, intensity=40)
 
-            # OUTER GLOW – ACTIVE TRACK
+            # OUTER GLOW – ACTIVE TRACK + jemný biely rámik
             if active_tid == tid:
                 self._draw_outer_glow(surface, rect, intensity=70)
+                pygame.draw.rect(surface, (255, 255, 255), rect.inflate(-2, -2), 1, border_radius=6)
 
-            # METER + PEAK
+            # METER BACKGROUND + METER + PEAK
+            self._draw_meter_background(surface, rect)
             self._draw_meter(surface, rect, tm.get_activity(tid))
             self._draw_peak(surface, rect, self.peak_hold[i])
 
-            # PAN
+            # PAN BACKGROUND + PAN
+            self._draw_pan_background(surface, rect)
             self._draw_pan(surface, rect, tm.get_pan(tid))
             self._draw_separator(surface, rect, self.button_height - 65)
 
-            # VOLUME
+            # VOLUME BACKGROUND + VOLUME
+            self._draw_volume_background(surface, rect)
             self._draw_volume(surface, rect, tm.get_volume(tid))
             self._draw_separator(surface, rect, self.button_height - 25)
 
@@ -299,6 +354,21 @@ class TrackSwitcherUI:
             solo_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 10, self.button_width - 8, 10)
             self._draw_button(surface, solo_rect, tm.is_solo(tid), (255, 255, 80), (100, 100, 40), "S")
 
+            # TOOLTIP DETEKCIA
+            if rect.collidepoint(mx, my):
+                local_y = my - rect.y
+                if self.button_height - 85 <= local_y < self.button_height - 75:
+                    tooltip_text = "Record"
+                elif self.button_height - 75 <= local_y < self.button_height - 65:
+                    tooltip_text = "Pan"
+                elif self.button_height - 55 <= local_y < self.button_height - 25:
+                    tooltip_text = "Volume"
+                elif self.button_height - 20 <= local_y < self.button_height - 10:
+                    tooltip_text = "Mute"
+                elif local_y >= self.button_height - 10:
+                    tooltip_text = "Solo"
+                tooltip_pos = (mx + 8, my - 18)
+
             # NAME
             try:
                 name = tm.get_name(tid)
@@ -312,8 +382,23 @@ class TrackSwitcherUI:
                 text_rect = text_surface.get_rect(center=(rect.x + self.button_width // 2, rect.y + 12))
                 surface.blit(text_surface, text_rect)
 
+            # NAME SEPARATOR
+            self._draw_name_separator(surface, rect)
+
+            # VERTIKÁLNY DIVIDER (okrem posledného tracku)
+            if i < self.track_count - 1:
+                self._draw_vertical_divider(surface, rect)
+
             # TIEŇ
             self._draw_shadow(surface, rect)
+
+        # TOOLTIP RENDER
+        if tooltip_text and self.small_font:
+            tip_surf = self.small_font.render(tooltip_text, True, (0, 0, 0))
+            bg_rect = tip_surf.get_rect(topleft=tooltip_pos).inflate(6, 4)
+            pygame.draw.rect(surface, (240, 240, 240), bg_rect, border_radius=4)
+            pygame.draw.rect(surface, (0, 0, 0), bg_rect, 1, border_radius=4)
+            surface.blit(tip_surf, (bg_rect.x + 3, bg_rect.y + 2))
 
     # ---------------------------------------------------------
     # PUBLIC API PRE UIManager
