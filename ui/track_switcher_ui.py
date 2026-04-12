@@ -103,7 +103,6 @@ class TrackSwitcherUI:
         )
 
     def _draw_shadow(self, surface, rect):
-        # jemný tieň pod trackom
         shadow_height = 6
         for i in range(shadow_height):
             alpha = int(40 * (1 - i / shadow_height))
@@ -121,14 +120,14 @@ class TrackSwitcherUI:
             return
         meter_height = int(level * 20)
         meter_rect = pygame.Rect(rect.x + 4, rect.y + 2, self.button_width - 8, meter_height)
-        pygame.draw.rect(surface, (0, 255, 0), meter_rect)
+        pygame.draw.rect(surface, (0, 255, 0), meter_rect, border_radius=3)
 
     def _draw_peak(self, surface, rect, peak):
         if peak <= 0:
             return
         peak_y = rect.y + 2 + int(peak * 20)
         peak_rect = pygame.Rect(rect.x + 4, peak_y, self.button_width - 8, 2)
-        pygame.draw.rect(surface, (255, 255, 255), peak_rect)
+        pygame.draw.rect(surface, (255, 255, 255), peak_rect, border_radius=2)
 
     def _draw_volume(self, surface, rect, vol):
         try:
@@ -143,7 +142,7 @@ class TrackSwitcherUI:
             self.button_width - 12,
             vol_h,
         )
-        pygame.draw.rect(surface, (180, 180, 255), vol_rect)
+        pygame.draw.rect(surface, (180, 180, 255), vol_rect, border_radius=3)
 
         if self.small_font:
             txt = self.small_font.render("V", True, (0, 0, 0))
@@ -170,7 +169,7 @@ class TrackSwitcherUI:
             surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 75))
 
     def _draw_button(self, surface, rect, active, color_on, color_off, label):
-        pygame.draw.rect(surface, color_on if active else color_off, rect)
+        pygame.draw.rect(surface, color_on if active else color_off, rect, border_radius=4)
         if self.small_font:
             txt = self.small_font.render(label, True, (0, 0, 0))
             surface.blit(txt, (rect.x + 2, rect.y + 1))
@@ -228,16 +227,16 @@ class TrackSwitcherUI:
             except Exception:
                 overlay = base_color
 
-            pygame.draw.rect(surface, overlay, rect, 0)
-            pygame.draw.rect(surface, (0, 0, 0), rect, 2)
+            pygame.draw.rect(surface, overlay, rect, border_radius=6)
+            pygame.draw.rect(surface, (0, 0, 0), rect, 2, border_radius=6)
 
             # HOVER
             if rect.collidepoint(mx, my):
-                pygame.draw.rect(surface, (255, 255, 255), rect, 1)
+                pygame.draw.rect(surface, (255, 255, 255), rect, 1, border_radius=6)
 
             # ACTIVE TRACK
             if active_tid == tid:
-                pygame.draw.rect(surface, (255, 255, 255), rect, 3)
+                pygame.draw.rect(surface, (255, 255, 255), rect, 3, border_radius=6)
 
             # METER + PEAK
             self._draw_meter(surface, rect, tm.get_activity(tid))
@@ -278,7 +277,7 @@ class TrackSwitcherUI:
                 text_rect = text_surface.get_rect(center=(rect.x + self.button_width // 2, rect.y + 12))
                 surface.blit(text_surface, text_rect)
 
-            # TIEŇ POD TRACKOM
+            # TIEŇ
             self._draw_shadow(surface, rect)
 
     # ---------------------------------------------------------
