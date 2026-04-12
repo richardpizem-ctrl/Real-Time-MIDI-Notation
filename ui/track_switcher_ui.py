@@ -94,7 +94,6 @@ class TrackSwitcherUI:
             pygame.draw.line(surface, shade, (rect.x, rect.y + y), (rect.x + rect.width, rect.y + y))
 
     def _draw_separator(self, surface, rect, y_offset):
-        # ultra jemná tieňová čiara
         pygame.draw.line(
             surface,
             (0, 0, 0, 20),
@@ -102,6 +101,20 @@ class TrackSwitcherUI:
             (rect.x + rect.width - 2, rect.y + y_offset),
             1,
         )
+
+    def _draw_shadow(self, surface, rect):
+        # jemný tieň pod trackom
+        shadow_height = 6
+        for i in range(shadow_height):
+            alpha = int(40 * (1 - i / shadow_height))
+            shade = (0, 0, 0, alpha)
+            pygame.draw.line(
+                surface,
+                shade,
+                (rect.x, rect.y + rect.height + i),
+                (rect.x + rect.width, rect.y + rect.height + i),
+                1,
+            )
 
     def _draw_meter(self, surface, rect, level):
         if level <= 0:
@@ -201,10 +214,10 @@ class TrackSwitcherUI:
                 self.button_height,
             )
 
-            # GRADIENT POZADIA
+            # GRADIENT
             self._draw_gradient(surface, rect, base_color)
 
-            # COLOR LOGIC OVERLAY
+            # OVERLAY
             try:
                 if tm.is_muted(tid):
                     overlay = (120, 120, 120)
@@ -218,9 +231,11 @@ class TrackSwitcherUI:
             pygame.draw.rect(surface, overlay, rect, 0)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
+            # HOVER
             if rect.collidepoint(mx, my):
                 pygame.draw.rect(surface, (255, 255, 255), rect, 1)
 
+            # ACTIVE TRACK
             if active_tid == tid:
                 pygame.draw.rect(surface, (255, 255, 255), rect, 3)
 
@@ -262,6 +277,9 @@ class TrackSwitcherUI:
                 text_surface = self.font.render(name, True, name_color)
                 text_rect = text_surface.get_rect(center=(rect.x + self.button_width // 2, rect.y + 12))
                 surface.blit(text_surface, text_rect)
+
+            # TIEŇ POD TRACKOM
+            self._draw_shadow(surface, rect)
 
     # ---------------------------------------------------------
     # PUBLIC API PRE UIManager
