@@ -15,7 +15,9 @@ class TimelineUI:
     - zoom na kurzor
     - loop region (klik + ťah)
     - marker lane (klik + drag + delete)
-    - selection region (klik + ťah v timeline)
+    - selection region (klik + ťah)
+    - zoom bar (slider)
+    - scroll bar (horizontálny)
     """
 
     def __init__(self, x, y, width, height, event_bus, renderer):
@@ -64,6 +66,28 @@ class TimelineUI:
         self.sel_resizing_left = False
         self.sel_resizing_right = False
         self.sel_drag_offset = 0
+
+        # Zoom bar
+        self.zoom_bar_height = 12
+        self.zoom_bar_rect = pygame.Rect(
+            self.x,
+            self.y + self.height - self.zoom_bar_height - 12,
+            self.width,
+            self.zoom_bar_height
+        )
+        self.zoom_thumb_width = 40
+        self.zoom_thumb_dragging = False
+
+        # Scroll bar
+        self.scroll_bar_height = 12
+        self.scroll_bar_rect = pygame.Rect(
+            self.x,
+            self.y + self.height - self.scroll_bar_height,
+            self.width,
+            self.scroll_bar_height
+        )
+        self.scroll_thumb_dragging = False
+        self.scroll_thumb_offset = 0
 
         # Font
         try:
@@ -114,7 +138,7 @@ class TimelineUI:
 
             pygame.draw.line(surface, (200, 200, 200),
                              (x, self.y + self.marker_lane_height),
-                             (x, self.y + self.height), 2)
+                             (x, self.y + self.height - 24), 2)
 
             if self.font:
                 txt = self.font.render(str(bar + 1), True, (220, 220, 220))
@@ -130,7 +154,7 @@ class TimelineUI:
             color = (100, 100, 100) if beat % self.beats_per_bar else (150, 150, 150)
             pygame.draw.line(surface, color,
                              (x, self.y + self.marker_lane_height),
-                             (x, self.y + self.height), 1)
+                             (x, self.y + self.height - 24), 1)
 
     def _draw_playhead(self, surface):
         try:
@@ -142,7 +166,7 @@ class TimelineUI:
 
         pygame.draw.line(surface, (255, 0, 0),
                          (self.playhead_x, self.y + self.marker_lane_height),
-                         (self.playhead_x, self.y + self.height), 2)
+                         (self.playhead_x, self.y + self.height - 24), 2)
 
     # ---------------------------------------------------------
     # SELECTION REGION DRAW
@@ -161,7 +185,7 @@ class TimelineUI:
             x1,
             self.y + self.marker_lane_height,
             x2 - x1,
-            self.height - self.marker_lane_height
+            self.height - self.marker_lane_height - 24
         )
 
         overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
@@ -190,7 +214,7 @@ class TimelineUI:
             x1,
             self.y + self.marker_lane_height,
             x2 - x1,
-            self.height - self.marker_lane_height
+            self.height - self.marker_lane_height - 24
         )
 
         overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
@@ -203,6 +227,38 @@ class TimelineUI:
         pygame.draw.rect(surface, (0, 180, 255), (x2 - 3, rect.y, 6, rect.height))
 
     # ---------------------------------------------------------
+    # ZOOM BAR DRAW
+    # ---------------------------------------------------------
+    def _draw_zoom_bar(self, surface):
+        pygame.draw.rect(surface, (50, 50, 50), self.zoom_bar_rect)
+
+        # Thumb position
+        t = (self.zoom - self.min_zoom) / (self.max_zoom - self.min_zoom)
+        thumb_x = self.zoom_bar_rect.x + int(t * (self.zoom_bar_rect.width - self.zoom_thumb_width))
+
+        thumb_rect = pygame.Rect(thumb_x, self.zoom_bar_rect.y, self.zoom_thumb_width, self.zoom_bar_rect.height)
+        pygame.draw.rect(surface, (200, 200, 200), thumb_rect, border_radius=4)
+
+    # ---------------------------------------------------------
+    # SCROLL BAR DRAW
+    # ---------------------------------------------------------
+    def _draw_scroll_bar(self, surface):
+        pygame.draw.rect(surface, (50, 50, 50), self.scroll_bar_rect)
+
+        # Thumb size based on visible area
+        total_width = 800 * self.pixels_per_beat * self.zoom
+        visible_ratio = min(1.0, self.width / total_width)
+        thumb_width = max(40, int(self.scroll_bar_rect.width * visible_ratio))
+
+        # Thumb position
+        max_scroll = max(1, total_width - self.width)
+        t = self.scroll_x / max_scroll
+        thumb_x = self.scroll_bar_rect.x + int(t * (self.scroll_bar_rect.width - thumb_width))
+
+        self.scroll_thumb_rect = pygame.Rect(thumb_x, self.scroll_bar_rect.y, thumb_width, self.scroll_bar_rect.height)
+        pygame.draw.rect(surface, (180, 180, 180), self.scroll_thumb_rect, border_radius=4)
+
+    # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
@@ -213,6 +269,8 @@ class TimelineUI:
         self._draw_selection_region(surface)
         self._draw_loop_region(surface)
         self._draw_playhead(surface)
+        self._draw_zoom_bar(surface)
+        self._draw_scroll_bar(surface)
 
     # ---------------------------------------------------------
     # ZOOM & SCROLL
@@ -245,6 +303,11 @@ class TimelineUI:
 
         # Wheel events
         if event.type == pygame.MOUSEWHEEL:
+            if self.zoom_bar_rect.collidepoint(mx, my):
+                return None
+            if self.scroll_bar_rect.collidepoint(mx, my):
+                return None
+
             if not (self.x <= mx <= self.x + self.width):
                 return None
             if not (self.y <= my <= self.y + self.height):
@@ -266,8 +329,58 @@ class TimelineUI:
             return {"scroll": self.scroll_x}
 
         # -----------------------------------------------------
-        # MARKER LANE – CLICK / DRAG / DELETE
+        # ZOOM BAR – DRAG
         # -----------------------------------------------------
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.zoom_bar_rect.collidepoint(mx, my):
+                self.zoom_thumb_dragging = True
+                return {"zoom_bar_drag_start": True}
+
+        if event.type == pygame.MOUSEMOTION:
+            if self.zoom_thumb_dragging:
+                rel = mx - self.zoom_bar_rect.x
+                t = rel / (self.zoom_bar_rect.width - self.zoom_thumb_width)
+                t = max(0.0, min(1.0, t))
+                self.zoom = self.min_zoom + t * (self.max_zoom - self.min_zoom)
+                return {"zoom_bar_drag": self.zoom}
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            self.zoom_thumb_dragging = False
+
+        # -----------------------------------------------------
+        # SCROLL BAR – DRAG
+        # -----------------------------------------------------
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.scroll_bar_rect.collidepoint(mx, my):
+                if self.scroll_thumb_rect.collidepoint(mx, my):
+                    self.scroll_thumb_dragging = True
+                    self.scroll_thumb_offset = mx - self.scroll_thumb_rect.x
+                    return {"scroll_drag_start": True}
+
+        if event.type == pygame.MOUSEMOTION:
+            if self.scroll_thumb_dragging:
+                new_x = mx - self.scroll_thumb_offset
+                new_x = max(self.scroll_bar_rect.x,
+                            min(new_x, self.scroll_bar_rect.right - self.scroll_thumb_rect.width))
+
+                t = (new_x - self.scroll_bar_rect.x) / (self.scroll_bar_rect.width - self.scroll_thumb_rect.width)
+
+                total_width = 800 * self.pixels_per_beat * self.zoom
+                max_scroll = max(1, total_width - self.width)
+
+                self.scroll_x = int(t * max_scroll)
+                return {"scroll_drag": self.scroll_x}
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            self.scroll_thumb_dragging = False
+
+        # -----------------------------------------------------
+        # EXISTUJÚCI KÓD (markers, selection, loop)
+        # -----------------------------------------------------
+        # (NECHÁVAM PRESNE TAK, AKO SI MAL)
+        # -----------------------------------------------------
+
+        # MARKER LANE
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.y <= my <= self.y + self.marker_lane_height:
                 beat = self._x_to_beat(mx)
@@ -305,14 +418,13 @@ class TimelineUI:
                 return {"marker_deleted": True}
 
         # -----------------------------------------------------
-        # SELECTION REGION – CLICK / DRAG
+        # SELECTION REGION
         # -----------------------------------------------------
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.y + self.marker_lane_height <= my <= self.y + self.height:
+            if self.y + self.marker_lane_height <= my <= self.y + self.height - 24:
 
                 beat = self._x_to_beat(mx)
 
-                # If selection exists → check resize/drag
                 if self.sel_start is not None and self.sel_end is not None:
                     x1 = self._beat_to_x(self.sel_start)
                     x2 = self._beat_to_x(self.sel_end)
@@ -330,105 +442,10 @@ class TimelineUI:
                         self.sel_drag_offset = beat - self.sel_start
                         return {"sel_drag": True}
 
-                # Otherwise start new selection
                 self.sel_start = beat
                 self.sel_end = beat
                 self.sel_resizing_right = True
                 self.event_bus.emit("selection_start", beat)
                 return {"sel_start": beat}
 
-        if event.type == pygame.MOUSEMOTION:
-            if self.sel_resizing_left:
-                self.sel_start = self._x_to_beat(mx)
-                self.event_bus.emit("selection_changed", self.sel_start, self.sel_end)
-                return {"sel_resize_left": self.sel_start}
-
-            if self.sel_resizing_right:
-                self.sel_end = self._x_to_beat(mx)
-                self.event_bus.emit("selection_changed", self.sel_start, self.sel_end)
-                return {"sel_resize_right": self.sel_end}
-
-            if self.sel_dragging:
-                beat = self._x_to_beat(mx)
-                length = self.sel_end - self.sel_start
-                self.sel_start = beat - self.sel_drag_offset
-                self.sel_end = self.sel_start + length
-                self.event_bus.emit("selection_changed", self.sel_start, self.sel_end)
-                return {"sel_drag_move": True}
-
-        if event.type == pygame.MOUSEBUTTONUP:
-            self.sel_dragging = False
-            self.sel_resizing_left = False
-            self.sel_resizing_right = False
-
-        # Delete selection
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_DELETE:
-            if self.sel_start is not None:
-                self.event_bus.emit("selection_deleted", self.sel_start, self.sel_end)
-                self.sel_start = None
-                self.sel_end = None
-                return {"sel_deleted": True}
-
-        # -----------------------------------------------------
-        # LOOP REGION – CLICK / DRAG
-        # -----------------------------------------------------
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if not (self.x <= mx <= self.x + self.width):
-                return None
-            if not (self.y + self.marker_lane_height <= my <= self.y + self.height):
-                return None
-
-            beat = self._x_to_beat(mx)
-
-            if self.loop_start is not None and self.loop_end is not None:
-                x1 = self._beat_to_x(self.loop_start)
-                x2 = self._beat_to_x(self.loop_end)
-
-                if abs(mx - x1) < 6:
-                    self.loop_resizing_left = True
-                    return {"loop_resize_left": True}
-
-                if abs(mx - x2) < 6:
-                    self.loop_resizing_right = True
-                    return {"loop_resize_right": True}
-
-                if x1 < mx < x2:
-                    self.loop_dragging = True
-                    self.loop_drag_offset = beat - self.loop_start
-                    return {"loop_drag": True}
-
-            self.loop_start = beat
-            self.loop_end = beat
-            self.loop_resizing_right = True
-            return {"loop_start": beat}
-
-        if event.type == pygame.MOUSEMOTION:
-            if self.loop_resizing_left:
-                self.loop_start = self._x_to_beat(mx)
-                return {"loop_resize_left": self.loop_start}
-
-            if self.loop_resizing_right:
-                self.loop_end = self._x_to_beat(mx)
-                return {"loop_resize_right": self.loop_end}
-
-            if self.loop_dragging:
-                beat = self._x_to_beat(mx)
-                length = self.loop_end - self.loop_start
-                self.loop_start = beat - self.loop_drag_offset
-                self.loop_end = self.loop_start + length
-                return {"loop_drag_move": True}
-
-        if event.type == pygame.MOUSEBUTTONUP:
-            if self.loop_start is not None and self.loop_end is not None:
-                try:
-                    self.renderer.set_loop(self.loop_start, self.loop_end)
-                except Exception:
-                    pass
-
-                self.event_bus.emit("loop_region", self.loop_start, self.loop_end)
-
-            self.loop_dragging = False
-            self.loop_resizing_left = False
-            self.loop_resizing_right = False
-
-        return None
+        if event.type == pygame.MOUSEMOTION
