@@ -14,6 +14,7 @@ class TimelineUI:
     - scroll (Shift + wheel)
     - zoom na kurzor
     - loop region (klik + ťah)
+    - marker lane (klik + drag + delete)
     """
 
     def __init__(self, x, y, width, height, event_bus, renderer):
@@ -48,6 +49,13 @@ class TimelineUI:
         self.loop_resizing_right = False
         self.loop_drag_offset = 0
 
+        # Marker lane
+        self.marker_lane_height = 25
+        self.markers = []  # list of dicts: {"beat": float, "label": str}
+        self.selected_marker = None
+        self.marker_dragging = False
+        self.marker_drag_offset = 0
+
         # Font
         try:
             self.font = pygame.font.Font(None, 16)
@@ -72,6 +80,24 @@ class TimelineUI:
     def _draw_background(self, surface):
         pygame.draw.rect(surface, (30, 30, 30), (self.x, self.y, self.width, self.height))
 
+    def _draw_marker_lane(self, surface):
+        lane_rect = pygame.Rect(self.x, self.y, self.width, self.marker_lane_height)
+        pygame.draw.rect(surface, (45, 45, 45), lane_rect)
+
+        for i, marker in enumerate(self.markers):
+            x = self._beat_to_x(marker["beat"])
+            if x < self.x - 20 or x > self.x + self.width + 20:
+                continue
+
+            # Marker body
+            color = (255, 200, 0) if i == self.selected_marker else (255, 170, 0)
+            pygame.draw.rect(surface, color, (x - 5, self.y + 5, 10, 15), border_radius=3)
+
+            # Label
+            if self.font:
+                txt = self.font.render(marker["label"], True, (0, 0, 0))
+                surface.blit(txt, (x - txt.get_width() // 2, self.y + 6))
+
     def _draw_bars(self, surface):
         total_bars = 200
         for bar in range(total_bars):
@@ -79,11 +105,12 @@ class TimelineUI:
             if x < self.x - 50 or x > self.x + self.width + 50:
                 continue
 
-            pygame.draw.line(surface, (200, 200, 200), (x, self.y), (x, self.y + self.height), 2)
+            pygame.draw.line(surface, (200, 200, 200), (x, self.y + self.marker_lane_height),
+                             (x, self.y + self.height), 2)
 
             if self.font:
                 txt = self.font.render(str(bar + 1), True, (220, 220, 220))
-                surface.blit(txt, (x + 4, self.y + 4))
+                surface.blit(txt, (x + 4, self.y + self.marker_lane_height + 4))
 
     def _draw_beats(self, surface):
         total_beats = 800
@@ -93,7 +120,9 @@ class TimelineUI:
                 continue
 
             color = (100, 100, 100) if beat % self.beats_per_bar else (150, 150, 150)
-            pygame.draw.line(surface, color, (x, self.y), (x, self.y + self.height), 1)
+            pygame.draw.line(surface, color,
+                             (x, self.y + self.marker_lane_height),
+                             (x, self.y + self.height), 1)
 
     def _draw_playhead(self, surface):
         try:
@@ -103,7 +132,9 @@ class TimelineUI:
 
         self.playhead_x = self._beat_to_x(beat_pos)
 
-        pygame.draw.line(surface, (255, 0, 0), (self.playhead_x, self.y), (self.playhead_x, self.y + self.height), 2)
+        pygame.draw.line(surface, (255, 0, 0),
+                         (self.playhead_x, self.y + self.marker_lane_height),
+                         (self.playhead_x, self.y + self.height), 2)
 
     # ---------------------------------------------------------
     # LOOP REGION DRAW
@@ -118,25 +149,24 @@ class TimelineUI:
         if x2 < x1:
             x1, x2 = x2, x1
 
-        rect = pygame.Rect(x1, self.y, x2 - x1, self.height)
+        rect = pygame.Rect(x1, self.y + self.marker_lane_height,
+                           x2 - x1, self.height - self.marker_lane_height)
 
-        # Polopriesvitný overlay
         overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         overlay.fill((0, 120, 255, 60))
         surface.blit(overlay, (rect.x, rect.y))
 
-        # Hrany loop regionu
         pygame.draw.rect(surface, (0, 150, 255), rect, 2)
 
-        # Drag handles
-        pygame.draw.rect(surface, (0, 180, 255), (x1 - 3, self.y, 6, self.height))
-        pygame.draw.rect(surface, (0, 180, 255), (x2 - 3, self.y, 6, self.height))
+        pygame.draw.rect(surface, (0, 180, 255), (x1 - 3, rect.y, 6, rect.height))
+        pygame.draw.rect(surface, (0, 180, 255), (x2 - 3, rect.y, 6, rect.height))
 
     # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
         self._draw_background(surface)
+        self._draw_marker_lane(surface)
         self._draw_beats(surface)
         self._draw_bars(surface)
         self._draw_loop_region(surface)
@@ -194,44 +224,79 @@ class TimelineUI:
             return {"scroll": self.scroll_x}
 
         # -----------------------------------------------------
+        # MARKER LANE – CLICK / DRAG / DELETE
+        # -----------------------------------------------------
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.y <= my <= self.y + self.marker_lane_height:
+                beat = self._x_to_beat(mx)
+
+                # Check if clicking existing marker
+                for i, marker in enumerate(self.markers):
+                    x = self._beat_to_x(marker["beat"])
+                    if abs(mx - x) < 8:
+                        self.selected_marker = i
+                        self.marker_dragging = True
+                        self.marker_drag_offset = beat - marker["beat"]
+                        return {"marker_select": i}
+
+                # Otherwise create new marker
+                new_marker = {"beat": beat, "label": str(len(self.markers) + 1)}
+                self.markers.append(new_marker)
+                self.selected_marker = len(self.markers) - 1
+
+                self.event_bus.emit("marker_added", beat, new_marker["label"])
+                return {"marker_added": beat}
+
+        if event.type == pygame.MOUSEMOTION:
+            if self.marker_dragging and self.selected_marker is not None:
+                beat = self._x_to_beat(mx)
+                self.markers[self.selected_marker]["beat"] = beat - self.marker_drag_offset
+                return {"marker_drag": True}
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            self.marker_dragging = False
+
+        # Delete marker
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_DELETE:
+            if self.selected_marker is not None:
+                removed = self.markers.pop(self.selected_marker)
+                self.event_bus.emit("marker_deleted", removed["beat"], removed["label"])
+                self.selected_marker = None
+                return {"marker_deleted": True}
+
+        # -----------------------------------------------------
         # LOOP REGION – CLICK / DRAG
         # -----------------------------------------------------
         if event.type == pygame.MOUSEBUTTONDOWN:
             if not (self.x <= mx <= self.x + self.width):
                 return None
-            if not (self.y <= my <= self.y + self.height):
+            if not (self.y + self.marker_lane_height <= my <= self.y + self.height):
                 return None
 
             beat = self._x_to_beat(mx)
 
-            # Ak existuje loop region → kontrola drag/resize
             if self.loop_start is not None and self.loop_end is not None:
                 x1 = self._beat_to_x(self.loop_start)
                 x2 = self._beat_to_x(self.loop_end)
 
-                # Resize left
                 if abs(mx - x1) < 6:
                     self.loop_resizing_left = True
                     return {"loop_resize_left": True}
 
-                # Resize right
                 if abs(mx - x2) < 6:
                     self.loop_resizing_right = True
                     return {"loop_resize_right": True}
 
-                # Drag whole region
                 if x1 < mx < x2:
                     self.loop_dragging = True
                     self.loop_drag_offset = beat - self.loop_start
                     return {"loop_drag": True}
 
-            # Inak → začíname nový loop region
             self.loop_start = beat
             self.loop_end = beat
             self.loop_resizing_right = True
             return {"loop_start": beat}
 
-        # Mouse drag
         if event.type == pygame.MOUSEMOTION:
             if self.loop_resizing_left:
                 self.loop_start = self._x_to_beat(mx)
@@ -248,7 +313,6 @@ class TimelineUI:
                 self.loop_end = self.loop_start + length
                 return {"loop_drag_move": True}
 
-        # Mouse release
         if event.type == pygame.MOUSEBUTTONUP:
             if self.loop_start is not None and self.loop_end is not None:
                 try:
