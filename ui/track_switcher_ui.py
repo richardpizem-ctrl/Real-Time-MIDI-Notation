@@ -156,6 +156,9 @@ class TrackSwitcherUI:
         else:
             active_tid = active_track
 
+        # Mouse position for hover
+        mx, my = pygame.mouse.get_pos()
+
         for i in range(self.track_count):
             tid = i + 1
 
@@ -194,7 +197,11 @@ class TrackSwitcherUI:
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
-            # ACTIVE TRACK BORDER
+            # HOVER EFFECT
+            if rect.collidepoint(mx, my):
+                pygame.draw.rect(surface, (255, 255, 255), rect, 1)
+
+            # ACTIVE TRACK BORDER (glow-like)
             if active_tid == tid:
                 pygame.draw.rect(surface, (255, 255, 255), rect, 3)
 
@@ -275,15 +282,12 @@ class TrackSwitcherUI:
     # PUBLIC API PRE UIManager
     # ---------------------------------------------------------
     def set_active_track(self, track_index: int):
-        """UIManager volá pri zmene aktívnej stopy – no-op."""
         pass
 
     def update_visibility(self, track_index: int, visible: bool):
-        """UIManager volá pri zmene viditeľnosti – no-op."""
         pass
 
     def update_color(self, track_index: int, color_hex: str):
-        """UIManager volá pri zmene farby – no-op."""
         pass
 
     # ---------------------------------------------------------
@@ -358,7 +362,6 @@ class TrackSwitcherUI:
             self.event_bus.emit("track_selected", index)
             self._emit_audible_state()
 
-            # Fáza 4 – informujeme TrackControlManager o výbere stopy
             if self.track_control_manager is not None:
                 try:
                     self.track_control_manager.select_track(index)
