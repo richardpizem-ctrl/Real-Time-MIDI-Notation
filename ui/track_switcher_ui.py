@@ -4,6 +4,27 @@ from .track_control_manager import TrackControlManager
 
 
 class TrackSwitcherUI:
+    TRACK_COUNT = 16
+    METER_HEIGHT = 20
+    VOLUME_HEIGHT = 30
+    NAME_HEIGHT = 20
+    SHADOW_HEIGHT = 10
+    GLOW_LAYERS = 6
+
+    COLOR_METER_BG = (20, 20, 20)
+    COLOR_VOLUME_BG = (15, 15, 25)
+    COLOR_PAN_BG = (20, 20, 20)
+    COLOR_METER = (0, 255, 0)
+    COLOR_PEAK = (255, 255, 255)
+    COLOR_VOLUME = (180, 180, 255)
+    COLOR_NAME_SEPARATOR = (0, 0, 0, 30)
+    COLOR_SEPARATOR = (0, 0, 0, 20)
+    COLOR_DIVIDER = (0, 0, 0, 25)
+    COLOR_SHADOW = (0, 0, 0)
+    COLOR_OUTER_GLOW = (255, 255, 255)
+    COLOR_TOOLTIP_BG = (240, 240, 240)
+    COLOR_TOOLTIP_BORDER = (0, 0, 0)
+
     def __init__(
         self,
         x,
@@ -26,7 +47,7 @@ class TrackSwitcherUI:
         # Centrálne riadenie stôp (Fáza 4)
         self.track_control_manager = track_control_manager
 
-        self.track_count = 16
+        self.track_count = self.TRACK_COUNT
         self.button_width = max(1, width // self.track_count)
         self.button_height = height
 
@@ -84,8 +105,9 @@ class TrackSwitcherUI:
     # ---------------------------------------------------------
     def _draw_gradient(self, surface, rect, base_color):
         r, g, b = base_color
-        for y in range(rect.height):
-            factor = y / rect.height
+        height = rect.height
+        for y in range(height):
+            factor = y / height
             shade = (
                 int(r * (1 - factor * 0.3)),
                 int(g * (1 - factor * 0.3)),
@@ -94,7 +116,6 @@ class TrackSwitcherUI:
             pygame.draw.line(surface, shade, (rect.x, rect.y + y), (rect.x + rect.width, rect.y + y))
 
     def _draw_inner_highlight(self, surface, rect):
-        # jemný vnútorný lesk pri hornom okraji
         highlight_height = 6
         for i in range(highlight_height):
             alpha = int(60 * (1 - i / highlight_height))
@@ -110,28 +131,25 @@ class TrackSwitcherUI:
     def _draw_separator(self, surface, rect, y_offset):
         pygame.draw.line(
             surface,
-            (0, 0, 0, 20),
+            self.COLOR_SEPARATOR,
             (rect.x + 2, rect.y + y_offset),
             (rect.x + rect.width - 2, rect.y + y_offset),
             1,
         )
 
     def _draw_vertical_divider(self, surface, rect):
-        # jemný vertikálny divider medzi trackmi
         pygame.draw.line(
             surface,
-            (0, 0, 0, 25),
+            self.COLOR_DIVIDER,
             (rect.right, rect.y + 4),
             (rect.right, rect.y + rect.height - 4),
             1,
         )
 
     def _draw_shadow(self, surface, rect):
-        # jemnejší, hlbší tieň
-        shadow_height = 10
-        for i in range(shadow_height):
-            alpha = int(45 * (1 - i / shadow_height))
-            shade = (0, 0, 0, alpha)
+        for i in range(self.SHADOW_HEIGHT):
+            alpha = int(45 * (1 - i / self.SHADOW_HEIGHT))
+            shade = (*self.COLOR_SHADOW[:3], alpha)
             pygame.draw.line(
                 surface,
                 shade,
@@ -141,11 +159,9 @@ class TrackSwitcherUI:
             )
 
     def _draw_outer_glow(self, surface, rect, intensity=60):
-        # jemný vonkajší glow
-        glow_layers = 6
-        for i in range(glow_layers):
-            alpha = int(intensity * (1 - i / glow_layers))
-            color = (255, 255, 255, alpha)
+        for i in range(self.GLOW_LAYERS):
+            alpha = int(intensity * (1 - i / self.GLOW_LAYERS))
+            color = (*self.COLOR_OUTER_GLOW[:3], alpha)
             pygame.draw.rect(
                 surface,
                 color,
@@ -160,33 +176,36 @@ class TrackSwitcherUI:
             )
 
     def _draw_meter_background(self, surface, rect):
-        # tmavší podklad pre VU meter
-        bg_rect = pygame.Rect(rect.x + 4, rect.y + 2, self.button_width - 8, 20)
-        pygame.draw.rect(surface, (20, 20, 20), bg_rect, border_radius=4)
+        bg_rect = pygame.Rect(rect.x + 4, rect.y + 2, self.button_width - 8, self.METER_HEIGHT)
+        pygame.draw.rect(surface, self.COLOR_METER_BG, bg_rect, border_radius=4)
 
     def _draw_meter(self, surface, rect, level):
         if level <= 0:
             return
-        meter_height = int(level * 20)
-        meter_rect = pygame.Rect(rect.x + 4, rect.y + 2 + (20 - meter_height), self.button_width - 8, meter_height)
-        pygame.draw.rect(surface, (0, 255, 0), meter_rect, border_radius=3)
+        meter_height = int(level * self.METER_HEIGHT)
+        meter_rect = pygame.Rect(
+            rect.x + 4,
+            rect.y + 2 + (self.METER_HEIGHT - meter_height),
+            self.button_width - 8,
+            meter_height,
+        )
+        pygame.draw.rect(surface, self.COLOR_METER, meter_rect, border_radius=3)
 
     def _draw_peak(self, surface, rect, peak):
         if peak <= 0:
             return
-        peak_y = rect.y + 2 + int((1 - peak) * 20)
+        peak_y = rect.y + 2 + int((1 - peak) * self.METER_HEIGHT)
         peak_rect = pygame.Rect(rect.x + 4, peak_y, self.button_width - 8, 2)
-        pygame.draw.rect(surface, (255, 255, 255), peak_rect, border_radius=2)
+        pygame.draw.rect(surface, self.COLOR_PEAK, peak_rect, border_radius=2)
 
     def _draw_volume_background(self, surface, rect):
-        # rámik pre volume slider
         frame_rect = pygame.Rect(
             rect.x + 6,
             rect.y + self.button_height - 55,
             self.button_width - 12,
-            30,
+            self.VOLUME_HEIGHT,
         )
-        pygame.draw.rect(surface, (15, 15, 25), frame_rect, border_radius=4)
+        pygame.draw.rect(surface, self.COLOR_VOLUME_BG, frame_rect, border_radius=4)
 
     def _draw_volume(self, surface, rect, vol):
         try:
@@ -194,25 +213,24 @@ class TrackSwitcherUI:
         except Exception:
             vol = 0.0
 
-        vol_h = int(vol * 30)
+        vol_h = int(vol * self.VOLUME_HEIGHT)
         vol_rect = pygame.Rect(
             rect.x + 6,
-            rect.y + self.button_height - 55 + (30 - vol_h),
+            rect.y + self.button_height - 55 + (self.VOLUME_HEIGHT - vol_h),
             self.button_width - 12,
             vol_h,
         )
-        pygame.draw.rect(surface, (180, 180, 255), vol_rect, border_radius=3)
+        pygame.draw.rect(surface, self.COLOR_VOLUME, vol_rect, border_radius=3)
 
         if self.small_font:
             txt = self.small_font.render("V", True, (0, 0, 0))
             surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 60))
 
     def _draw_pan_background(self, surface, rect):
-        # rámik pre pan knob
         pan_x = rect.x + self.button_width // 2
         pan_y = rect.y + self.button_height - 70
         bg_rect = pygame.Rect(pan_x - 10, pan_y - 10, 20, 20)
-        pygame.draw.rect(surface, (20, 20, 20), bg_rect, border_radius=6)
+        pygame.draw.rect(surface, self.COLOR_PAN_BG, bg_rect, border_radius=6)
 
     def _draw_pan(self, surface, rect, pan_val):
         try:
@@ -235,7 +253,6 @@ class TrackSwitcherUI:
             surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 75))
 
     def _draw_button(self, surface, rect, active, color_on, color_off, label):
-        # jemný glow pri aktívnom stave
         if active:
             glow_rect = rect.inflate(4, 4)
             pygame.draw.rect(surface, (255, 255, 255, 40), glow_rect, border_radius=6)
@@ -245,11 +262,10 @@ class TrackSwitcherUI:
             surface.blit(txt, (rect.x + 2, rect.y + 1))
 
     def _draw_name_separator(self, surface, rect):
-        # jemná linka pod názvom stopy
-        y = rect.y + 20
+        y = rect.y + self.NAME_HEIGHT
         pygame.draw.line(
             surface,
-            (0, 0, 0, 30),
+            self.COLOR_NAME_SEPARATOR,
             (rect.x + 4, y),
             (rect.x + rect.width - 4, y),
             1,
@@ -296,10 +312,8 @@ class TrackSwitcherUI:
                 self.button_height,
             )
 
-            # GRADIENT
+            # GRADIENT + VNÚTORNÝ LESK
             self._draw_gradient(surface, rect, base_color)
-
-            # VNÚTORNÝ LESK
             self._draw_inner_highlight(surface, rect)
 
             # OVERLAY
@@ -326,33 +340,39 @@ class TrackSwitcherUI:
                 pygame.draw.rect(surface, (255, 255, 255), rect.inflate(-2, -2), 1, border_radius=6)
 
             # METER BACKGROUND + METER + PEAK
+            activity = tm.get_activity(tid)
             self._draw_meter_background(surface, rect)
-            self._draw_meter(surface, rect, tm.get_activity(tid))
+            self._draw_meter(surface, rect, activity)
             self._draw_peak(surface, rect, self.peak_hold[i])
 
             # PAN BACKGROUND + PAN
+            pan_val = tm.get_pan(tid)
             self._draw_pan_background(surface, rect)
-            self._draw_pan(surface, rect, tm.get_pan(tid))
+            self._draw_pan(surface, rect, pan_val)
             self._draw_separator(surface, rect, self.button_height - 65)
 
             # VOLUME BACKGROUND + VOLUME
+            volume = tm.get_volume(tid)
             self._draw_volume_background(surface, rect)
-            self._draw_volume(surface, rect, tm.get_volume(tid))
+            self._draw_volume(surface, rect, volume)
             self._draw_separator(surface, rect, self.button_height - 25)
 
             # RECORD ARM
             rec_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 85, self.button_width - 8, 10)
-            self._draw_button(surface, rec_rect, tm.is_record_armed(tid), (255, 0, 0), (80, 0, 0), "R")
+            rec_active = tm.is_record_armed(tid)
+            self._draw_button(surface, rec_rect, rec_active, (255, 0, 0), (80, 0, 0), "R")
             self._draw_separator(surface, rect, self.button_height - 75)
 
             # MUTE
             mute_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 20, self.button_width - 8, 10)
-            self._draw_button(surface, mute_rect, tm.is_muted(tid), (255, 80, 80), (100, 40, 40), "M")
+            mute_active = tm.is_muted(tid)
+            self._draw_button(surface, mute_rect, mute_active, (255, 80, 80), (100, 40, 40), "M")
             self._draw_separator(surface, rect, self.button_height - 10)
 
             # SOLO
             solo_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 10, self.button_width - 8, 10)
-            self._draw_button(surface, solo_rect, tm.is_solo(tid), (255, 255, 80), (100, 100, 40), "S")
+            solo_active = tm.is_solo(tid)
+            self._draw_button(surface, solo_rect, solo_active, (255, 255, 80), (100, 100, 40), "S")
 
             # TOOLTIP DETEKCIA
             if rect.collidepoint(mx, my):
@@ -396,8 +416,8 @@ class TrackSwitcherUI:
         if tooltip_text and self.small_font:
             tip_surf = self.small_font.render(tooltip_text, True, (0, 0, 0))
             bg_rect = tip_surf.get_rect(topleft=tooltip_pos).inflate(6, 4)
-            pygame.draw.rect(surface, (240, 240, 240), bg_rect, border_radius=4)
-            pygame.draw.rect(surface, (0, 0, 0), bg_rect, 1, border_radius=4)
+            pygame.draw.rect(surface, self.COLOR_TOOLTIP_BG, bg_rect, border_radius=4)
+            pygame.draw.rect(surface, self.COLOR_TOOLTIP_BORDER, bg_rect, 1, border_radius=4)
             surface.blit(tip_surf, (bg_rect.x + 3, bg_rect.y + 2))
 
     # ---------------------------------------------------------
@@ -418,72 +438,78 @@ class TrackSwitcherUI:
     def handle_event(self, event):
         tm = self.event_bus.track_manager
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mx, my = pygame.mouse.get_pos()
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            return None
 
-            if not (self.x <= mx <= self.x + self.width):
-                return None
-            if not (self.y <= my <= self.y + self.button_height):
-                return None
+        mx, my = pygame.mouse.get_pos()
 
-            index = int((mx - self.x) // self.button_width)
-            index = max(0, min(self.track_count - 1, index))
-            tid = index + 1
-            local_y = my - self.y
+        if not (self.x <= mx <= self.x + self.width):
+            return None
+        if not (self.y <= my <= self.y + self.button_height):
+            return None
 
-            mods = pygame.key.get_mods()
-            shift = mods & pygame.KMOD_SHIFT
-            ctrl = mods & pygame.KMOD_CTRL
+        index = int((mx - self.x) // self.button_width)
+        index = max(0, min(self.track_count - 1, index))
+        tid = index + 1
+        local_y = my - self.y
 
-            if self.button_height - 85 <= local_y < self.button_height - 75:
-                tm.toggle_record_arm(tid)
-                self.event_bus.emit("track_record_arm", index, tm.is_record_armed(tid))
-                return {"record_arm": index}
+        mods = pygame.key.get_mods()
+        shift = mods & pygame.KMOD_SHIFT
+        ctrl = mods & pygame.KMOD_CTRL
 
-            if self.button_height - 75 <= local_y < self.button_height - 65:
-                rel = (mx - (self.x + index * self.button_width)) / self.button_width
-                tm.set_pan(tid, (rel - 0.5) * 2)
-                self.event_bus.emit("track_pan", index, tm.get_pan(tid))
-                return {"pan": index}
+        # RECORD ARM
+        if self.button_height - 85 <= local_y < self.button_height - 75:
+            tm.toggle_record_arm(tid)
+            self.event_bus.emit("track_record_arm", index, tm.is_record_armed(tid))
+            return {"record_arm": index}
 
-            if self.button_height - 55 <= local_y < self.button_height - 25:
-                rel = (local_y - (self.button_height - 55)) / 30
-                tm.set_volume(tid, rel)
-                self.event_bus.emit("track_volume", index, tm.get_volume(tid))
-                return {"volume": index}
+        # PAN
+        if self.button_height - 75 <= local_y < self.button_height - 65:
+            rel = (mx - (self.x + index * self.button_width)) / self.button_width
+            tm.set_pan(tid, (rel - 0.5) * 2)
+            self.event_bus.emit("track_pan", index, tm.get_pan(tid))
+            return {"pan": index}
 
-            if self.button_height - 20 <= local_y < self.button_height - 10:
-                if ctrl:
-                    tm.mute_exclusive(tid)
-                else:
-                    tm.set_mute(tid, not tm.is_muted(tid))
-                self.event_bus.emit("track_mute", index, tm.is_muted(tid))
-                self._emit_audible_state()
-                return {"mute": index}
+        # VOLUME
+        if self.button_height - 55 <= local_y < self.button_height - 25:
+            rel = (local_y - (self.button_height - 55)) / self.VOLUME_HEIGHT
+            tm.set_volume(tid, rel)
+            self.event_bus.emit("track_volume", index, tm.get_volume(tid))
+            return {"volume": index}
 
-            if local_y >= self.button_height - 10:
-                if shift:
-                    tm.solo_exclusive(tid)
-                else:
-                    tm.set_solo(tid, not tm.is_solo(tid))
-                self.event_bus.emit("track_solo", index, tm.is_solo(tid))
-                self._emit_audible_state()
-                return {"solo": index}
+        # MUTE
+        if self.button_height - 20 <= local_y < self.button_height - 10:
+            if ctrl:
+                tm.mute_exclusive(tid)
+            else:
+                tm.set_mute(tid, not tm.is_muted(tid))
+            self.event_bus.emit("track_mute", index, tm.is_muted(tid))
+            self._emit_audible_state()
+            return {"mute": index}
 
+        # SOLO
+        if local_y >= self.button_height - 10:
+            if shift:
+                tm.solo_exclusive(tid)
+            else:
+                tm.set_solo(tid, not tm.is_solo(tid))
+            self.event_bus.emit("track_solo", index, tm.is_solo(tid))
+            self._emit_audible_state()
+            return {"solo": index}
+
+        # SELECT TRACK
+        try:
+            tm.set_active_track(tid)
+        except Exception:
+            pass
+
+        self.event_bus.emit("track_selected", index)
+        self._emit_audible_state()
+
+        if self.track_control_manager is not None:
             try:
-                tm.set_active_track(tid)
+                self.track_control_manager.select_track(index)
             except Exception:
                 pass
 
-            self.event_bus.emit("track_selected", index)
-            self._emit_audible_state()
-
-            if self.track_control_manager is not None:
-                try:
-                    self.track_control_manager.select_track(index)
-                except Exception:
-                    pass
-
-            return {"selected_track": index}
-
-        return None
+        return {"selected_track": index}
