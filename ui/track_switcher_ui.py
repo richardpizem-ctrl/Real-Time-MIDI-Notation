@@ -93,6 +93,16 @@ class TrackSwitcherUI:
             )
             pygame.draw.line(surface, shade, (rect.x, rect.y + y), (rect.x + rect.width, rect.y + y))
 
+    def _draw_separator(self, surface, rect, y_offset):
+        # ultra jemná tieňová čiara
+        pygame.draw.line(
+            surface,
+            (0, 0, 0, 20),
+            (rect.x + 2, rect.y + y_offset),
+            (rect.x + rect.width - 2, rect.y + y_offset),
+            1,
+        )
+
     def _draw_meter(self, surface, rect, level):
         if level <= 0:
             return
@@ -214,20 +224,33 @@ class TrackSwitcherUI:
             if active_tid == tid:
                 pygame.draw.rect(surface, (255, 255, 255), rect, 3)
 
+            # METER + PEAK
             self._draw_meter(surface, rect, tm.get_activity(tid))
             self._draw_peak(surface, rect, self.peak_hold[i])
-            self._draw_volume(surface, rect, tm.get_volume(tid))
-            self._draw_pan(surface, rect, tm.get_pan(tid))
 
+            # PAN
+            self._draw_pan(surface, rect, tm.get_pan(tid))
+            self._draw_separator(surface, rect, self.button_height - 65)
+
+            # VOLUME
+            self._draw_volume(surface, rect, tm.get_volume(tid))
+            self._draw_separator(surface, rect, self.button_height - 25)
+
+            # RECORD ARM
             rec_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 85, self.button_width - 8, 10)
             self._draw_button(surface, rec_rect, tm.is_record_armed(tid), (255, 0, 0), (80, 0, 0), "R")
+            self._draw_separator(surface, rect, self.button_height - 75)
 
+            # MUTE
             mute_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 20, self.button_width - 8, 10)
             self._draw_button(surface, mute_rect, tm.is_muted(tid), (255, 80, 80), (100, 40, 40), "M")
+            self._draw_separator(surface, rect, self.button_height - 10)
 
+            # SOLO
             solo_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 10, self.button_width - 8, 10)
             self._draw_button(surface, solo_rect, tm.is_solo(tid), (255, 255, 80), (100, 100, 40), "S")
 
+            # NAME
             try:
                 name = tm.get_name(tid)
             except Exception:
