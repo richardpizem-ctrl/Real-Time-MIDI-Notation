@@ -82,6 +82,17 @@ class TrackSwitcherUI:
     # ---------------------------------------------------------
     # DRAW HELPERS
     # ---------------------------------------------------------
+    def _draw_gradient(self, surface, rect, base_color):
+        r, g, b = base_color
+        for y in range(rect.height):
+            factor = y / rect.height
+            shade = (
+                int(r * (1 - factor * 0.3)),
+                int(g * (1 - factor * 0.3)),
+                int(b * (1 - factor * 0.3)),
+            )
+            pygame.draw.line(surface, shade, (rect.x, rect.y + y), (rect.x + rect.width, rect.y + y))
+
     def _draw_meter(self, surface, rect, level):
         if level <= 0:
             return
@@ -150,19 +161,16 @@ class TrackSwitcherUI:
 
         self.update_peak_hold()
 
-        # Aktívna stopa z TrackControlManagera
         if self.track_control_manager is not None:
             active_tid = self.track_control_manager.get_active_track() + 1
         else:
             active_tid = active_track
 
-        # Mouse position for hover
         mx, my = pygame.mouse.get_pos()
 
         for i in range(self.track_count):
             tid = i + 1
 
-            # Farba stopy
             try:
                 if self.track_control_manager is not None:
                     hex_color = self.track_control_manager.get_color(i)
@@ -183,87 +191,43 @@ class TrackSwitcherUI:
                 self.button_height,
             )
 
-            # COLOR LOGIC
+            # GRADIENT POZADIA
+            self._draw_gradient(surface, rect, base_color)
+
+            # COLOR LOGIC OVERLAY
             try:
                 if tm.is_muted(tid):
-                    color = (120, 120, 120)
+                    overlay = (120, 120, 120)
                 elif any_solo:
-                    color = (255, 255, 120) if tm.is_solo(tid) else (80, 80, 80)
+                    overlay = (255, 255, 120) if tm.is_solo(tid) else (80, 80, 80)
                 else:
-                    color = (255, 255, 120) if tm.is_solo(tid) else base_color
+                    overlay = (255, 255, 120) if tm.is_solo(tid) else base_color
             except Exception:
-                color = base_color
+                overlay = base_color
 
-            pygame.draw.rect(surface, color, rect)
+            pygame.draw.rect(surface, overlay, rect, 0)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
-            # HOVER EFFECT
             if rect.collidepoint(mx, my):
                 pygame.draw.rect(surface, (255, 255, 255), rect, 1)
 
-            # ACTIVE TRACK BORDER (glow-like)
             if active_tid == tid:
                 pygame.draw.rect(surface, (255, 255, 255), rect, 3)
 
-            # REALTIME LEVEL + PEAK
             self._draw_meter(surface, rect, tm.get_activity(tid))
             self._draw_peak(surface, rect, self.peak_hold[i])
-
-            # VOLUME
             self._draw_volume(surface, rect, tm.get_volume(tid))
-
-            # PAN
             self._draw_pan(surface, rect, tm.get_pan(tid))
 
-            # RECORD ARM
-            rec_rect = pygame.Rect(
-                rect.x + 4,
-                rect.y + self.button_height - 85,
-                self.button_width - 8,
-                10,
-            )
-            self._draw_button(
-                surface,
-                rec_rect,
-                tm.is_record_armed(tid),
-                (255, 0, 0),
-                (80, 0, 0),
-                "R",
-            )
+            rec_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 85, self.button_width - 8, 10)
+            self._draw_button(surface, rec_rect, tm.is_record_armed(tid), (255, 0, 0), (80, 0, 0), "R")
 
-            # MUTE
-            mute_rect = pygame.Rect(
-                rect.x + 4,
-                rect.y + self.button_height - 20,
-                self.button_width - 8,
-                10,
-            )
-            self._draw_button(
-                surface,
-                mute_rect,
-                tm.is_muted(tid),
-                (255, 80, 80),
-                (100, 40, 40),
-                "M",
-            )
+            mute_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 20, self.button_width - 8, 10)
+            self._draw_button(surface, mute_rect, tm.is_muted(tid), (255, 80, 80), (100, 40, 40), "M")
 
-            # SOLO
-            solo_rect = pygame.Rect(
-                rect.x + 4,
-                rect.y + self.button_height - 10,
-                self.button_width - 8,
-                10,
-            )
-            self._draw_button(
-                surface,
-                solo_rect,
-                tm.is_solo(tid),
-                (255, 255, 80),
-                (100, 100, 40),
-                "S",
-            )
+            solo_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 10, self.button_width - 8, 10)
+            self._draw_button(surface, solo_rect, tm.is_solo(tid), (255, 255, 80), (100, 100, 40), "S")
 
-            # NAME
             try:
                 name = tm.get_name(tid)
             except Exception:
@@ -273,9 +237,7 @@ class TrackSwitcherUI:
 
             if self.font:
                 text_surface = self.font.render(name, True, name_color)
-                text_rect = text_surface.get_rect(
-                    center=(rect.x + self.button_width // 2, rect.y + 12)
-                )
+                text_rect = text_surface.get_rect(center=(rect.x + self.button_width // 2, rect.y + 12))
                 surface.blit(text_surface, text_rect)
 
     # ---------------------------------------------------------
@@ -313,27 +275,23 @@ class TrackSwitcherUI:
             shift = mods & pygame.KMOD_SHIFT
             ctrl = mods & pygame.KMOD_CTRL
 
-            # RECORD ARM
             if self.button_height - 85 <= local_y < self.button_height - 75:
                 tm.toggle_record_arm(tid)
                 self.event_bus.emit("track_record_arm", index, tm.is_record_armed(tid))
                 return {"record_arm": index}
 
-            # PAN
             if self.button_height - 75 <= local_y < self.button_height - 65:
                 rel = (mx - (self.x + index * self.button_width)) / self.button_width
                 tm.set_pan(tid, (rel - 0.5) * 2)
                 self.event_bus.emit("track_pan", index, tm.get_pan(tid))
                 return {"pan": index}
 
-            # VOLUME
             if self.button_height - 55 <= local_y < self.button_height - 25:
                 rel = (local_y - (self.button_height - 55)) / 30
                 tm.set_volume(tid, rel)
                 self.event_bus.emit("track_volume", index, tm.get_volume(tid))
                 return {"volume": index}
 
-            # MUTE (CTRL = exclusive)
             if self.button_height - 20 <= local_y < self.button_height - 10:
                 if ctrl:
                     tm.mute_exclusive(tid)
@@ -343,7 +301,6 @@ class TrackSwitcherUI:
                 self._emit_audible_state()
                 return {"mute": index}
 
-            # SOLO (SHIFT = exclusive)
             if local_y >= self.button_height - 10:
                 if shift:
                     tm.solo_exclusive(tid)
@@ -353,7 +310,6 @@ class TrackSwitcherUI:
                 self._emit_audible_state()
                 return {"solo": index}
 
-            # SELECT TRACK
             try:
                 tm.set_active_track(tid)
             except Exception:
