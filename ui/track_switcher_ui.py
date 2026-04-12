@@ -94,7 +94,6 @@ class TrackSwitcherUI:
             pygame.draw.line(surface, shade, (rect.x, rect.y + y), (rect.x + rect.width, rect.y + y))
 
     def _draw_inner_highlight(self, surface, rect):
-        # jemný vnútorný lesk pri hornom okraji
         highlight_height = 6
         for i in range(highlight_height):
             alpha = int(60 * (1 - i / highlight_height))
@@ -127,6 +126,25 @@ class TrackSwitcherUI:
                 (rect.x, rect.y + rect.height + i),
                 (rect.x + rect.width, rect.y + rect.height + i),
                 1,
+            )
+
+    def _draw_outer_glow(self, surface, rect, intensity=60):
+        # jemný vonkajší glow
+        glow_layers = 6
+        for i in range(glow_layers):
+            alpha = int(intensity * (1 - i / glow_layers))
+            color = (255, 255, 255, alpha)
+            pygame.draw.rect(
+                surface,
+                color,
+                pygame.Rect(
+                    rect.x - i,
+                    rect.y - i,
+                    rect.width + i * 2,
+                    rect.height + i * 2,
+                ),
+                width=2,
+                border_radius=6 + i,
             )
 
     def _draw_meter(self, surface, rect, level):
@@ -247,13 +265,13 @@ class TrackSwitcherUI:
             pygame.draw.rect(surface, overlay, rect, border_radius=6)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2, border_radius=6)
 
-            # HOVER
+            # OUTER GLOW – HOVER
             if rect.collidepoint(mx, my):
-                pygame.draw.rect(surface, (255, 255, 255), rect, 1, border_radius=6)
+                self._draw_outer_glow(surface, rect, intensity=40)
 
-            # ACTIVE TRACK
+            # OUTER GLOW – ACTIVE TRACK
             if active_tid == tid:
-                pygame.draw.rect(surface, (255, 255, 255), rect, 3, border_radius=6)
+                self._draw_outer_glow(surface, rect, intensity=70)
 
             # METER + PEAK
             self._draw_meter(surface, rect, tm.get_activity(tid))
