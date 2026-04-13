@@ -26,8 +26,8 @@ class TimelineLayoutEngine:
         beats_per_bar: int = 4
     ) -> None:
 
-        self.pixels_per_beat = pixels_per_beat
-        self.beats_per_bar = beats_per_bar
+        self.pixels_per_beat = max(1, int(pixels_per_beat))
+        self.beats_per_bar = max(1, int(beats_per_bar))
 
         self.zoom: float = 1.0
         self.offset_x: int = 0  # posun timeline doľava/doprava
@@ -40,7 +40,7 @@ class TimelineLayoutEngine:
     def set_zoom(self, zoom: float) -> None:
         """Nastaví zoom timeline (set timeline zoom)."""
         try:
-            self.zoom = max(0.1, min(zoom, 5.0))  # bezpečné limity
+            self.zoom = max(0.1, min(float(zoom), 5.0))  # bezpečné limity
         except Exception as e:
             Logger.error(f"TimelineLayoutEngine zoom error: {e}")
 
@@ -50,9 +50,23 @@ class TimelineLayoutEngine:
     def set_offset(self, offset_x: int) -> None:
         """Nastaví horizontálny posun timeline (set timeline offset)."""
         try:
-            self.offset_x = offset_x
+            self.offset_x = int(offset_x)
         except Exception as e:
             Logger.error(f"TimelineLayoutEngine offset error: {e}")
+
+    # ---------------------------------------------------------
+    # PIXELS PER BEAT CONTROL (pre TimelineController)
+    # ---------------------------------------------------------
+    def set_pixels_per_beat(self, ppb: int) -> None:
+        """Externé nastavenie základného PPB (napr. pri zmene zoomu)."""
+        try:
+            self.pixels_per_beat = max(1, int(ppb))
+        except Exception:
+            Logger.error("TimelineLayoutEngine set_pixels_per_beat error.")
+
+    def get_pixels_per_beat(self) -> int:
+        """Vráti aktuálne PPB vrátane zoomu."""
+        return int(self.pixels_per_beat * self.zoom)
 
     # ---------------------------------------------------------
     # PIXEL POSITION CALCULATION
@@ -65,7 +79,7 @@ class TimelineLayoutEngine:
         try:
             base_px = beat_index * self.pixels_per_beat
             zoomed_px = base_px * self.zoom
-            final_px = int(zoomed_px + self.offset_x)
+            final_px = int(zoomed_px - self.offset_x)
             return final_px
 
         except Exception as e:
@@ -80,11 +94,10 @@ class TimelineLayoutEngine:
         Prepočíta pixelovú pozíciu späť na beat index (reverse mapping).
         """
         try:
-            adjusted = (x - self.offset_x) / max(self.zoom, 0.0001)
+            adjusted = (x + self.offset_x) / max(self.zoom, 0.0001)
             beat = adjusted / self.pixels_per_beat
             return beat
 
         except Exception as e:
             Logger.error(f"TimelineLayoutEngine reverse compute error: {e}")
             return 0.0
-
