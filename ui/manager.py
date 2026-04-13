@@ -243,30 +243,60 @@ class UIManager:
     # ---------------------------------------------------------
     def _on_track_selected(self, data):
         track = data.get("track", 0)
-        try: self.track_selector.set_active_track(track)
-        except: pass
-        try: self.track_switcher.set_active_track(track)
-        except: pass
-        try: self.track_inspector.set_active_track(track)
-        except: pass
+        try:
+            self.track_selector.set_active_track(track)
+        except:
+            pass
+        try:
+            self.track_switcher.set_active_track(track)
+        except:
+            pass
+        try:
+            self.track_inspector.set_active_track(track)
+        except:
+            pass
 
     def _on_visibility_changed(self, data):
         track = data.get("track", 0)
         visible = data.get("visible", True)
-        try: self.track_switcher.update_visibility(track, visible)
-        except: pass
-        try: self.renderer.update_visibility(track, visible)
-        except: pass
+        try:
+            self.track_switcher.update_visibility(track, visible)
+        except:
+            pass
+        try:
+            self.renderer.update_visibility(track, visible)
+        except:
+            pass
 
     def _on_color_changed(self, data):
         track = data.get("track", 0)
         color = data.get("color", "#FFFFFF")
-        try: self.track_switcher.update_color(track, color)
-        except: pass
-        try: self.renderer.update_color(track, color)
-        except: pass
-        try: self.track_inspector.update_color(track, color)
-        except: pass
+        try:
+            self.track_switcher.update_color(track, color)
+        except:
+            pass
+        try:
+            self.renderer.update_color(track, color)
+        except:
+            pass
+        try:
+            self.track_inspector.update_color(track, color)
+        except:
+            pass
+
+    # ---------------------------------------------------------
+    # QUANTIZATION → CANVAS
+    # ---------------------------------------------------------
+    def _apply_quantization_to_canvas(self):
+        if self.canvas_ui is None:
+            return
+        try:
+            if hasattr(self.canvas_ui, "set_quantization"):
+                self.canvas_ui.set_quantization(self.quantize_division)
+            if hasattr(self.canvas_ui, "set_swing"):
+                self.canvas_ui.set_swing(self.swing_amount)
+        except:
+            pass
 
     # ---------------------------------------------------------
     # DRAW
@@ -356,7 +386,48 @@ class UIManager:
         except:
             pass
 
+        # ---------------------------------------------------------
+        # FAREBNÁ LEGENDA (ŽLTÁ / ZELENÁ / ČERVENÁ / MODRÁ)
+        # ---------------------------------------------------------
+        legend_x = 20
+        legend_y = self.height - 160
+        legend_font = pygame.font.SysFont("Arial", 18)
+
+        try:
+            pygame.draw.rect(surface, (25, 25, 25), (legend_x - 10, legend_y - 10, 260, 150))
+
+            title = legend_font.render("Dynamika / Chyby", True, (255, 255, 255))
+            surface.blit(title, (legend_x, legend_y))
+
+            pygame.draw.rect(surface, (255, 220, 0), (legend_x, legend_y + 30, 20, 20))
+            surface.blit(
+                legend_font.render("Slabá (1–50)", True, (255, 255, 255)),
+                (legend_x + 30, legend_y + 30),
+            )
+
+            pygame.draw.rect(surface, (0, 200, 0), (legend_x, legend_y + 60, 20, 20))
+            surface.blit(
+                legend_font.render("Stredná (51–90)", True, (255, 255, 255)),
+                (legend_x + 30, legend_y + 60),
+            )
+
+            pygame.draw.rect(surface, (255, 60, 60), (legend_x, legend_y + 90, 20, 20))
+            surface.blit(
+                legend_font.render("Silná (91–127)", True, (255, 255, 255)),
+                (legend_x + 30, legend_y + 90),
+            )
+
+            pygame.draw.rect(surface, (0, 120, 255), (legend_x, legend_y + 120, 20, 20))
+            surface.blit(
+                legend_font.render("Chyba (error)", True, (255, 255, 255)),
+                (legend_x + 30, legend_y + 120),
+            )
+        except:
+            pass
+
+        # ---------------------------------------------------------
         # EXPORT BUTTON
+        # ---------------------------------------------------------
         pygame.draw.rect(surface, (40, 40, 40), self.export_button_rect)
         text = self.export_font.render("EXPORT", True, (255, 255, 255))
         surface.blit(text, (self.width - 110, 17))
