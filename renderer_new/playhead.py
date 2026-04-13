@@ -32,13 +32,34 @@ class Playhead:
         self.height = height
         self.color = color
 
-        self.bpm = bpm
-        self.beats_per_bar = beats_per_bar
-        self.pixels_per_beat = pixels_per_beat
+        self.bpm = max(1.0, float(bpm))
+        self.beats_per_bar = max(1, int(beats_per_bar))
+        self.pixels_per_beat = max(1, int(pixels_per_beat))
 
         self.x = 0  # aktuálna pozícia playheadu v pixeloch
 
         Logger.info("Playhead initialized.")
+
+    # ---------------------------------------------------------
+    # SETTERS (pre PixelLayoutEngine / TransportUI / TimelineUI)
+    # ---------------------------------------------------------
+    def set_height(self, height: int) -> None:
+        try:
+            self.height = max(1, int(height))
+        except Exception:
+            Logger.error("Playhead set_height error.")
+
+    def set_bpm(self, bpm: float) -> None:
+        try:
+            self.bpm = max(1.0, float(bpm))
+        except Exception:
+            Logger.error("Playhead set_bpm error.")
+
+    def set_pixels_per_beat(self, ppb: int) -> None:
+        try:
+            self.pixels_per_beat = max(1, int(ppb))
+        except Exception:
+            Logger.error("Playhead set_pixels_per_beat error.")
 
     # ---------------------------------------------------------
     # UPDATE POSITION
@@ -48,6 +69,9 @@ class Playhead:
         Aktualizuje pozíciu playheadu podľa času (update playhead position).
         """
         try:
+            if time_seconds is None or time_seconds < 0:
+                return
+
             beats_per_second = self.bpm / 60.0
             total_beats = time_seconds * beats_per_second
 
@@ -65,6 +89,12 @@ class Playhead:
         Vykreslí playhead na daný surface (render playhead).
         """
         try:
+            # Glow efekt (jemný)
+            glow = pygame.Surface((6, self.height), pygame.SRCALPHA)
+            pygame.draw.rect(glow, (*self.color, 70), glow.get_rect(), border_radius=3)
+            surface.blit(glow, (self.x - 3, 0))
+
+            # Hlavná čiara
             pygame.draw.line(
                 surface,
                 self.color,
@@ -72,6 +102,6 @@ class Playhead:
                 (self.x, self.height),
                 2
             )
+
         except Exception as e:
             Logger.error(f"Playhead render error: {e}")
-
