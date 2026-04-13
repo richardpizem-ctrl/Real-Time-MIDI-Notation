@@ -65,6 +65,24 @@ class TimelineController:
         Logger.info("TimelineController initialized.")
 
     # ---------------------------------------------------------
+    # EXTERNAL LAYOUT UPDATES (PixelLayoutEngine)
+    # ---------------------------------------------------------
+    def set_bounds(self, width: int, height: int) -> None:
+        """Externé nastavenie veľkosti timeline (PixelLayoutEngine)."""
+        try:
+            self.width = max(1, int(width))
+            self.height = max(1, int(height))
+
+            self.surface = pygame.Surface((self.width, self.height))
+
+            # Aktualizovať grid + playhead výšku
+            self.grid.set_size(self.width, self.height)
+            self.playhead.set_height(self.height)
+
+        except Exception as e:
+            Logger.error(f"TimelineController set_bounds error: {e}")
+
+    # ---------------------------------------------------------
     # UPDATE TIMELINE STATE
     # ---------------------------------------------------------
     def update(self, time_seconds: float) -> None:
@@ -72,7 +90,15 @@ class TimelineController:
         Aktualizuje stav timeline (playhead, layout, atď.)
         """
         try:
+            # Playhead update
             self.playhead.update(time_seconds)
+
+            # Grid musí poznať zoom a offset
+            self.grid.set_zoom(self.layout.zoom)
+            self.grid.set_offset(self.layout.offset_x)
+
+            # Playhead musí poznať zoom (pixels_per_beat)
+            self.playhead.set_pixels_per_beat(self.layout.pixels_per_beat)
 
         except Exception as e:
             Logger.error(f"TimelineController update error: {e}")
@@ -104,8 +130,14 @@ class TimelineController:
     # ---------------------------------------------------------
     def set_zoom(self, zoom: float) -> None:
         """Externé nastavenie zoomu timeline."""
-        self.layout.set_zoom(zoom)
+        try:
+            self.layout.set_zoom(zoom)
+        except Exception:
+            Logger.error("TimelineController set_zoom error.")
 
     def set_offset(self, offset_x: int) -> None:
         """Externé nastavenie posunu timeline."""
-        self.layout.set_offset(offset_x)
+        try:
+            self.layout.set_offset(offset_x)
+        except Exception:
+            Logger.error("TimelineController set_offset error.")
