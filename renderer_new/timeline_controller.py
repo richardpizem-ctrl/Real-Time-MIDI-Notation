@@ -83,6 +83,32 @@ class TimelineController:
             Logger.error(f"TimelineController set_bounds error: {e}")
 
     # ---------------------------------------------------------
+    # EXTERNAL CONTROLS (zoom + scroll)
+    # ---------------------------------------------------------
+    def set_zoom(self, zoom: float) -> None:
+        """Externé nastavenie zoomu timeline."""
+        try:
+            self.layout.set_zoom(zoom)
+
+            # Grid + playhead musia poznať nové pixels_per_beat
+            self.grid.set_pixels_per_beat(self.layout.pixels_per_beat)
+            self.playhead.set_pixels_per_beat(self.layout.pixels_per_beat)
+
+        except Exception:
+            Logger.error("TimelineController set_zoom error.")
+
+    def set_scroll(self, offset_x: float) -> None:
+        """Externé nastavenie posunu timeline."""
+        try:
+            self.layout.set_offset(offset_x)
+
+            # Grid musí poznať offset
+            self.grid.set_offset(self.layout.offset_x)
+
+        except Exception:
+            Logger.error("TimelineController set_scroll error.")
+
+    # ---------------------------------------------------------
     # UPDATE TIMELINE STATE
     # ---------------------------------------------------------
     def update(self, time_seconds: float) -> None:
@@ -124,20 +150,3 @@ class TimelineController:
         except Exception as e:
             Logger.error(f"TimelineController render error: {e}")
             return None
-
-    # ---------------------------------------------------------
-    # EXTERNAL CONTROLS
-    # ---------------------------------------------------------
-    def set_zoom(self, zoom: float) -> None:
-        """Externé nastavenie zoomu timeline."""
-        try:
-            self.layout.set_zoom(zoom)
-        except Exception:
-            Logger.error("TimelineController set_zoom error.")
-
-    def set_offset(self, offset_x: int) -> None:
-        """Externé nastavenie posunu timeline."""
-        try:
-            self.layout.set_offset(offset_x)
-        except Exception:
-            Logger.error("TimelineController set_offset error.")
