@@ -42,7 +42,7 @@ class UIManager:
         self.current_time_ms = 0
 
         # ---------------------------------------------------------
-        # TRACK SWITCHER (prepínač stôp)
+        # TRACK SWITCHER
         # ---------------------------------------------------------
         self.track_switcher = TrackSwitcherUI(
             x=0,
@@ -55,7 +55,7 @@ class UIManager:
         )
 
         # ---------------------------------------------------------
-        # TRACK SELECTOR (výber aktívnej stopy)
+        # TRACK SELECTOR
         # ---------------------------------------------------------
         self.track_selector = TrackSelectorUI(
             track_control_manager=self.track_control,
@@ -174,7 +174,6 @@ class UIManager:
                 if isinstance(result, dict) and "selected_track" in result:
                     selected = result["selected_track"]
                     try:
-                        # TrackControlManager pracuje s 0-based indexom
                         self.track_control.set_active_track(selected)
                     except Exception:
                         pass
@@ -232,7 +231,6 @@ class UIManager:
         if note is None:
             return
 
-        # TrackControlManager používa 0-based index
         idx = max(0, int(track_id))
 
         try:
@@ -243,7 +241,7 @@ class UIManager:
 
         velocity = event.get("velocity", 100)
 
-        # farba stopy z TrackControlManager
+        # farba stopy
         track_color = None
         try:
             color_hex = self.track_control.get_color(idx)
@@ -370,19 +368,16 @@ class UIManager:
     def _on_track_selected(self, data):
         track = data.get("track", 0)
 
-        # Track Selector
         try:
             self.track_selector.set_active_track(track)
         except Exception:
             pass
 
-        # Track Switcher
         try:
             self.track_switcher.set_active_track(track)
         except Exception:
             pass
 
-        # Track Inspector
         try:
             self.track_inspector.set_active_track(track)
         except Exception:
@@ -392,13 +387,11 @@ class UIManager:
         track = data.get("track", 0)
         visible = data.get("visible", True)
 
-        # Track Switcher
         try:
             self.track_switcher.update_visibility(track, visible)
         except Exception:
             pass
 
-        # Renderer
         try:
             self.renderer.update_visibility(track, visible)
         except Exception:
@@ -408,19 +401,16 @@ class UIManager:
         track = data.get("track", 0)
         color = data.get("color", "#FFFFFF")
 
-        # Track Switcher
         try:
             self.track_switcher.update_color(track, color)
         except Exception:
             pass
 
-        # Renderer
         try:
             self.renderer.update_color(track, color)
         except Exception:
             pass
 
-        # Track Inspector
         try:
             self.track_inspector.update_color(track, color)
         except Exception:
