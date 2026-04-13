@@ -42,7 +42,17 @@ class UIManager:
         self.current_time_ms = 0
 
         # ---------------------------------------------------------
-        # TIMELINE
+        # RENDERER (musí byť vytvorený PRED TimelineUI)
+        # ---------------------------------------------------------
+        self.renderer = GraphicNotationRenderer(
+            width,
+            200,
+            track_system,
+            self.track_control,
+        )
+
+        # ---------------------------------------------------------
+        # TIMELINE (prepojené s renderer.timeline_controller)
         # ---------------------------------------------------------
         self.timeline = TimelineUI(
             x=0,
@@ -50,7 +60,7 @@ class UIManager:
             width=width,
             height=80,
             event_bus=track_system.event_bus,
-            renderer=None,
+            renderer=self.renderer,   # PREPOJENIE
         )
 
         # ---------------------------------------------------------
@@ -82,17 +92,6 @@ class UIManager:
         self.piano_roll = PianoRollUI(width, 180)
         self.staff = StaffUI(width, 200)
         self.visualizer = NoteVisualizerUI(width, 200)
-
-        # ---------------------------------------------------------
-        # RENDERER
-        # ---------------------------------------------------------
-        self.renderer = GraphicNotationRenderer(
-            width,
-            200,
-            track_system,
-            self.track_control,
-        )
-        self.timeline.renderer = self.renderer
 
         # ---------------------------------------------------------
         # TRACK INSPECTOR
