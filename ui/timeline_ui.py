@@ -53,6 +53,15 @@ class TimelineUI:
         self.handle_dragging = False
         self.handle_drag_offset = 0
 
+        # LOOP REGION
+        self.loop_active = False
+        self.loop_dragging = False
+        self.loop_resizing_left = False
+        self.loop_resizing_right = False
+        self.loop_start_beat = 0
+        self.loop_end_beat = 0
+        self.loop_drag_offset = 0
+
         # Font
         try:
             self.font = pygame.font.Font(None, 16)
@@ -65,7 +74,6 @@ class TimelineUI:
     # PREPOJENIE S PixelLayoutEngine
     # ---------------------------------------------------------
     def set_bounds(self, x, y, w, h):
-        """PixelLayoutEngine nastaví rozmery timeline."""
         self.x = x
         self.y = y
         self.width = w
@@ -75,7 +83,6 @@ class TimelineUI:
         self._recompute_bars()
 
     def _recompute_bars(self):
-        """Prepočíta pozície zoom a scroll barov podľa aktuálnej veľkosti."""
         self.zoom_bar_rect = pygame.Rect(
             self.x,
             self.y + self.height - 24,
@@ -94,8 +101,7 @@ class TimelineUI:
     # HANDLE COMPUTATION
     # ---------------------------------------------------------
     def _compute_handle_rect(self):
-        """Vypočíta pozíciu a veľkosť scrollbar handle podľa zoomu a scrollu."""
-        total_width = 200000  # virtuálna šírka timeline
+        total_width = 200000
         visible_ratio = self.width / (total_width * self.zoom)
         visible_ratio = max(0.02, min(1.0, visible_ratio))
 
@@ -111,27 +117,57 @@ class TimelineUI:
         return pygame.Rect(handle_x, self.scroll_bar_rect.y, handle_width, self.scroll_bar_rect.h)
 
     # ---------------------------------------------------------
+    # LOOP REGION RECT
+    # ---------------------------------------------------------
+    def _compute_loop_rect(self):
+        if not self.loop_active:
+            return None
+
+        layout = self.controller.layout
+        px1 = self.x + layout.beat_to_pixel(self.loop_start_beat) - self.scroll_x
+        px2 = self.x + layout.beat_to_pixel(self.loop_end_beat) - self.scroll_x
+
+        if px2 < px1:
+            px1, px2 = px2, px1
+
+        return pygame.Rect(px1, self.y, px2 - px1, 20)
+
+    # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
-        # 1. TimelineController vykreslí grid + playhead
+        # 1. Timeline grid
         timeline_surface = self.controller.render()
         if timeline_surface is not None:
             surface.blit(timeline_surface, (self.x, self.y))
 
-        # 2. RULER (taktové čísla + beat tick lines)
+        # 2. Ruler
         self._draw_ruler(surface)
 
-        # 3. UI overlay (zoom bar, scroll bar)
+        # 3. LOOP REGION
+        self._draw_loop(surface)
+
+        # 4. Bars
         self._draw_zoom_bar(surface)
         self._draw_scroll_bar(surface)
 
-        # 4. HANDLE
+        # 5. Handle
         handle = self._compute_handle_rect()
         pygame.draw.rect(surface, (120, 120, 130), handle)
 
     # ---------------------------------------------------------
-    # RULER DRAW (NOVÉ)
+    # LOOP DRAW
+    # ---------------------------------------------------------
+    def _draw_loop(self, surface):
+        rect = self._compute_loop_rect()
+        if not rect:
+            return
+
+        pygame.draw.rect(surface, (80, 120, 200, 80), rect)
+        pygame.draw.rect(surface, (160, 200, 255), rect, 2)
+
+    # ---------------------------------------------------------
+    # RULER DRAW
     # ---------------------------------------------------------
     def _draw_ruler(self, surface):
         if not self.font:
@@ -140,14 +176,11 @@ class TimelineUI:
         beats_per_bar = self.controller.beats_per_bar
         layout = self.controller.layout
 
-        # Ruler height (top 20 px)
         ruler_y = self.y
         ruler_h = 20
 
-        # Background
         pygame.draw.rect(surface, (35, 35, 40), (self.x, ruler_y, self.width, ruler_h))
 
-        # Visible beat range
         start_beat = layout.pixel_to_beat(self.scroll_x)
         end_beat = layout.pixel_to_beat(self.scroll_x + self.width)
 
@@ -160,15 +193,11 @@ class TimelineUI:
 
             px = self.x + layout.beat_to_pixel(beat) - self.scroll_x
 
-            # Taktová čiara
             if beat % beats_per_bar == 0:
                 pygame.draw.line(surface, (180, 180, 190), (px, ruler_y), (px, ruler_y + ruler_h), 2)
-
                 bar_number = beat // beats_per_bar + 1
                 text = self.font.render(str(bar_number), True, (220, 220, 230))
                 surface.blit(text, (px + 4, ruler_y + 2))
-
-            # Beat tick
             else:
                 pygame.draw.line(surface, (110, 110, 120), (px, ruler_y + 10), (px, ruler_y + ruler_h), 1)
 
@@ -239,82 +268,64 @@ class TimelineUI:
         return {"seek": time_sec}
 
     # ---------------------------------------------------------
-    # DRAG‑SCROLL (pravé tlačidlo)
+    # LOOP REGION LOGIC
     # ---------------------------------------------------------
-    def _start_drag(self, mouse_x):
-        self.dragging = True
-        self.drag_start_x = mouse_x
-        self.drag_initial_scroll = self.scroll_x
+    def _start_loop(self, mouse_x):
+        layout = self.controller.layout
+        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
 
-    def _update_drag(self, mouse_x):
-        if not self.dragging:
-            return
+        self.loop_active = True
+        self.loop_start_beat = beat
+        self.loop_end_beat = beat
 
-        dx = mouse_x - self.drag_start_x
-        self.scroll_x = max(0, min(self.drag_initial_scroll - dx, 100000))
+    def _update_loop(self, mouse_x):
+        layout = self.controller.layout
+        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+        self.loop_end_beat = beat
 
-        self.controller.layout.set_offset(self.scroll_x)
+    def _finalize_loop(self):
+        if self.loop_end_beat < self.loop_start_beat:
+            self.loop_start_beat, self.loop_end_beat = self.loop_end_beat, self.loop_start_beat
 
-        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
+        start_sec = self.controller.beat_to_seconds(self.loop_start_beat)
+        end_sec = self.controller.beat_to_seconds(self.loop_end_beat)
+
+        if hasattr(self.renderer, "set_loop_region"):
             try:
-                self.renderer.set_scroll_offset(self.scroll_x)
+                self.renderer.set_loop_region(start_sec, end_sec)
             except:
                 pass
 
-    def _end_drag(self):
-        self.dragging = False
-
-    # ---------------------------------------------------------
-    # HANDLE DRAG
-    # ---------------------------------------------------------
-    def _start_handle_drag(self, mouse_x):
-        self.handle_dragging = True
-        handle = self._compute_handle_rect()
-        self.handle_drag_offset = mouse_x - handle.x
-
-    def _update_handle_drag(self, mouse_x):
-        if not self.handle_dragging:
-            return
-
-        handle = self._compute_handle_rect()
-        new_x = mouse_x - self.handle_drag_offset
-
-        new_x = max(self.x, min(new_x, self.x + self.width - handle.w))
-
-        scroll_ratio = (new_x - self.x) / (self.width - handle.w)
-        total_width = 200000 * self.zoom
-        max_scroll = max(0, total_width - self.width)
-
-        self.scroll_x = int(scroll_ratio * max_scroll)
-
-        self.controller.layout.set_offset(self.scroll_x)
-
-        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
+        if hasattr(self.controller.layout, "set_loop"):
             try:
-                self.renderer.set_scroll_offset(self.scroll_x)
+                self.controller.layout.set_loop(self.loop_start_beat, self.loop_end_beat)
             except:
                 pass
-
-    def _end_handle_drag(self):
-        self.handle_dragging = False
-
-    # ---------------------------------------------------------
-    # ZOOM BAR DRAW
-    # ---------------------------------------------------------
-    def _draw_zoom_bar(self, surface):
-        pygame.draw.rect(surface, (60, 60, 65), self.zoom_bar_rect)
-
-    # ---------------------------------------------------------
-    # SCROLL BAR DRAW
-    # ---------------------------------------------------------
-    def _draw_scroll_bar(self, surface):
-        pygame.draw.rect(surface, (50, 50, 55), self.scroll_bar_rect)
 
     # ---------------------------------------------------------
     # EVENTS
     # ---------------------------------------------------------
     def handle_event(self, event):
         mx, my = pygame.mouse.get_pos()
+
+        # LOOP REGION START (left click in ruler)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.y <= my <= self.y + 20:
+                self._start_loop(mx)
+                return None
+
+        # LOOP REGION UPDATE
+        if event.type == pygame.MOUSEMOTION:
+            if self.loop_active and not self.handle_dragging and not self.dragging:
+                if pygame.mouse.get_pressed()[0]:
+                    self._update_loop(mx)
+                    return None
+
+        # LOOP REGION FINALIZE
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.loop_active:
+                self._finalize_loop()
+                return None
 
         # HANDLE DRAG START
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
