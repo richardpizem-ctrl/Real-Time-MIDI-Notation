@@ -78,15 +78,12 @@ class CanvasUI:
     # PUBLIC API (pre UIManager – bezpečné no-op metódy)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
-        """CanvasUI nepoužíva farby stôp – bezpečný no-op."""
         return
 
     def update_visibility(self, track_index: int, visible: bool):
-        """CanvasUI nemá koncept viditeľnosti stôp – bezpečný no-op."""
         return
 
     def set_active_track(self, track_index: int):
-        """CanvasUI nepracuje s aktívnou stopou – bezpečný no-op."""
         return
 
     def get_canvas(self):
@@ -318,105 +315,3 @@ class CanvasUI:
             fill="#666",
             font=("TkDefaultFont", 8)
         )
-
-    # ---------------------------------------------------------
-    # DRAW NOTE
-    # ---------------------------------------------------------
-    def _draw_note(self, note, preview=False):
-        x = self._time_to_screen_x(note["x"])
-        w = note["width"] * self.zoom
-        y = self._row_to_screen_y(note["row"])
-        h = self.ROW_HEIGHT - 2
-
-        velocity = note.get("velocity", 100)
-        fill = self._velocity_to_color(velocity)
-
-        if note.get("selected", False):
-            fill = "#ffcc66"
-
-        flash = note.get("flash", 0.0)
-        if flash > 0.01:
-            fill = self._mix_colors(fill, "#ffffff", min(0.8, flash))
-            note["flash"] = flash * 0.85
-        else:
-            note["flash"] = 0.0
-
-        outline = "#225588" if not preview else "#888888"
-
-        self.canvas.create_rectangle(x, y, x + w, y + h, fill=fill, outline=outline, width=1)
-        self.canvas.create_text(x + 4, y + h / 2, text="♩", anchor="w", fill="#102030")
-
-        velocity = max(self.velocity_min, min(self.velocity_max, velocity))
-        ratio = velocity / float(self.velocity_max)
-        bar_height = max(2, int((h - 4) * ratio))
-        bar_x1 = x + 2
-        bar_x2 = x + 6
-        bar_y2 = y + h - 2
-        bar_y1 = bar_y2 - bar_height
-
-        self.canvas.create_rectangle(bar_x1, bar_y1, bar_x2, bar_y2, fill="#228833", outline="")
-
-    # ---------------------------------------------------------
-    # MOUSE EVENTS
-    # ---------------------------------------------------------
-    def _on_mouse_down(self, event):
-        if event.y <= self.timeline_height:
-            self.playhead_time = self._screen_x_to_time(event.x)
-            self._center_playhead_if_needed()
-            return
-
-        if self.tool == "draw":
-            self._start_draw_note(event)
-        elif self.tool == "erase":
-            self._erase_at(event)
-        elif self.tool == "select":
-            self._start_selection(event)
-        else:
-            self.dragging_view = True
-            self.last_drag_x = event.x
-            self.last_drag_y = event.y
-
-    def _on_mouse_up(self, event):
-        if self.tool == "draw" and self.current_note is not None:
-            if self.current_note["width"] > 5:
-                self.notes.append(self.current_note)
-            self.current_note = None
-
-        if self.tool == "select" and self.selecting:
-            self._finalize_selection()
-            self.selecting = False
-            self.selection_start = None
-            self.selection_end = None
-
-        self.dragging_view = False
-
-    def _on_mouse_drag(self, event):
-        if self.tool == "draw":
-            self._update_draw_note(event)
-            return
-
-        if self.tool == "select" and self.selecting:
-            self.selection_end = (event.x, event.y)
-            return
-
-        if not self.dragging_view:
-            self.dragging_view = True
-            self.last_drag_x = event.x
-            self.last_drag_y = event.y
-            return
-
-        dx = event.x - self.last_drag_x
-        dy = event.y - self.last_drag_y
-
-        self.offset_x += dx
-        self.offset_y += dy
-
-        self.last_drag_x = event.x
-        self.last_drag_y = event.y
-
-    # ---------------------------------------------------------
-    # RIGHT MOUSE – VELOCITY EDIT
-    # ---------------------------------------------------------
-    def _note_at(self, x, y):
-        t = self._screen_x_to_time(x)
-        row = self
