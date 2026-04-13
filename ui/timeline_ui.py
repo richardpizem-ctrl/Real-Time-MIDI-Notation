@@ -44,6 +44,11 @@ class TimelineUI:
         self.zoom = 1.0
         self.scroll_x = 0
 
+        # DRAG SCROLL
+        self.dragging = False
+        self.drag_start_x = 0
+        self.drag_initial_scroll = 0
+
         # Font
         try:
             self.font = pygame.font.Font(None, 16)
@@ -110,15 +115,12 @@ class TimelineUI:
         # Prepojiť s controller
         self.controller.layout.set_zoom(self.zoom)
 
-        # ---------------------------------------------------------
         # PREPOJENIE ZOOM → GraphicNotationRenderer
-        # ---------------------------------------------------------
         if self.renderer and hasattr(self.renderer, "set_zoom"):
             try:
                 self.renderer.set_zoom(self.zoom)
             except:
                 pass
-        # ---------------------------------------------------------
 
         # Scroll korekcia
         rel_x = mouse_x - self.x
@@ -128,33 +130,27 @@ class TimelineUI:
 
         self.controller.layout.set_offset(self.scroll_x)
 
-        # ---------------------------------------------------------
         # PREPOJENIE OFFSET → GraphicNotationRenderer
-        # ---------------------------------------------------------
         if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
             try:
                 self.renderer.set_scroll_offset(self.scroll_x)
             except:
                 pass
-        # ---------------------------------------------------------
 
     def _apply_scroll(self, delta):
         self.scroll_x += delta * 40
         self.scroll_x = max(0, min(self.scroll_x, 100000))
         self.controller.layout.set_offset(self.scroll_x)
 
-        # ---------------------------------------------------------
         # PREPOJENIE OFFSET → GraphicNotationRenderer
-        # ---------------------------------------------------------
         if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
             try:
                 self.renderer.set_scroll_offset(self.scroll_x)
             except:
                 pass
-        # ---------------------------------------------------------
 
     # ---------------------------------------------------------
-    # CLICK‑TO‑SEEK (NOVÉ)
+    # CLICK‑TO‑SEEK
     # ---------------------------------------------------------
     def _apply_seek(self, mouse_x):
         """Kliknutie do timeline → posun playhead + renderer."""
@@ -178,6 +174,32 @@ class TimelineUI:
         return {"seek": time_sec}
 
     # ---------------------------------------------------------
+    # DRAG‑SCROLL (NOVÉ)
+    # ---------------------------------------------------------
+    def _start_drag(self, mouse_x):
+        self.dragging = True
+        self.drag_start_x = mouse_x
+        self.drag_initial_scroll = self.scroll_x
+
+    def _update_drag(self, mouse_x):
+        if not self.dragging:
+            return
+
+        dx = mouse_x - self.drag_start_x
+        self.scroll_x = max(0, min(self.drag_initial_scroll - dx, 100000))
+
+        self.controller.layout.set_offset(self.scroll_x)
+
+        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
+            try:
+                self.renderer.set_scroll_offset(self.scroll_x)
+            except:
+                pass
+
+    def _end_drag(self):
+        self.dragging = False
+
+    # ---------------------------------------------------------
     # ZOOM BAR DRAW
     # ---------------------------------------------------------
     def _draw_zoom_bar(self, surface):
@@ -199,6 +221,20 @@ class TimelineUI:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.x <= mx <= self.x + self.width and self.y <= my <= self.y + self.height:
                 return self._apply_seek(mx)
+
+        # DRAG‑SCROLL START (pravé tlačidlo)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            if self.x <= mx <= self.x + self.width and self.y <= my <= self.y + self.height:
+                self._start_drag(mx)
+
+        # DRAG‑SCROLL MOVE
+        if event.type == pygame.MOUSEMOTION:
+            if self.dragging:
+                self._update_drag(mx)
+
+        # DRAG‑SCROLL END
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 3:
+            self._end_drag()
 
         # Wheel events
         if event.type == pygame.MOUSEWHEEL:
