@@ -40,14 +40,18 @@ class TimelineUI:
                 Logger.info("TimelineUI: prepojené s renderer.timeline_controller")
         # ---------------------------------------------------------
 
-        # UI zoom/scroll (naviazané na controller.layout)
+        # UI zoom/scroll
         self.zoom = 1.0
         self.scroll_x = 0
 
-        # DRAG SCROLL
+        # DRAG SCROLL (pravé tlačidlo)
         self.dragging = False
         self.drag_start_x = 0
         self.drag_initial_scroll = 0
+
+        # HANDLE DRAG
+        self.handle_dragging = False
+        self.handle_drag_offset = 0
 
         # Font
         try:
@@ -87,6 +91,26 @@ class TimelineUI:
         )
 
     # ---------------------------------------------------------
+    # HANDLE COMPUTATION
+    # ---------------------------------------------------------
+    def _compute_handle_rect(self):
+        """Vypočíta pozíciu a veľkosť scrollbar handle podľa zoomu a scrollu."""
+        total_width = 200000  # virtuálna šírka timeline
+        visible_ratio = self.width / (total_width * self.zoom)
+        visible_ratio = max(0.02, min(1.0, visible_ratio))
+
+        handle_width = int(self.width * visible_ratio)
+
+        max_scroll = (total_width * self.zoom) - self.width
+        if max_scroll <= 0:
+            handle_x = self.x
+        else:
+            scroll_ratio = self.scroll_x / max_scroll
+            handle_x = int(self.x + scroll_ratio * (self.width - handle_width))
+
+        return pygame.Rect(handle_x, self.scroll_bar_rect.y, handle_width, self.scroll_bar_rect.h)
+
+    # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
@@ -98,6 +122,10 @@ class TimelineUI:
         # 2. UI overlay (zoom bar, scroll bar)
         self._draw_zoom_bar(surface)
         self._draw_scroll_bar(surface)
+
+        # 3. HANDLE
+        handle = self._compute_handle_rect()
+        pygame.draw.rect(surface, (120, 120, 130), handle)
 
     # ---------------------------------------------------------
     # ZOOM & SCROLL
@@ -158,13 +186,11 @@ class TimelineUI:
         beat = self.controller.layout.pixel_to_beat(local_x)
         time_sec = self.controller.beat_to_seconds(beat)
 
-        # Nastaviť playhead v controlleri
         try:
             self.controller.set_playhead_position(time_sec)
         except:
             pass
 
-        # Nastaviť čas v rendereri
         if self.renderer and hasattr(self.renderer, "set_playback_time"):
             try:
                 self.renderer.set_playback_time(time_sec)
@@ -174,7 +200,7 @@ class TimelineUI:
         return {"seek": time_sec}
 
     # ---------------------------------------------------------
-    # DRAG‑SCROLL (NOVÉ)
+    # DRAG‑SCROLL (pravé tlačidlo)
     # ---------------------------------------------------------
     def _start_drag(self, mouse_x):
         self.dragging = True
@@ -200,6 +226,40 @@ class TimelineUI:
         self.dragging = False
 
     # ---------------------------------------------------------
+    # HANDLE DRAG
+    # ---------------------------------------------------------
+    def _start_handle_drag(self, mouse_x):
+        self.handle_dragging = True
+        handle = self._compute_handle_rect()
+        self.handle_drag_offset = mouse_x - handle.x
+
+    def _update_handle_drag(self, mouse_x):
+        if not self.handle_dragging:
+            return
+
+        handle = self._compute_handle_rect()
+        new_x = mouse_x - self.handle_drag_offset
+
+        new_x = max(self.x, min(new_x, self.x + self.width - handle.w))
+
+        scroll_ratio = (new_x - self.x) / (self.width - handle.w)
+        total_width = 200000 * self.zoom
+        max_scroll = max(0, total_width - self.width)
+
+        self.scroll_x = int(scroll_ratio * max_scroll)
+
+        self.controller.layout.set_offset(self.scroll_x)
+
+        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
+            try:
+                self.renderer.set_scroll_offset(self.scroll_x)
+            except:
+                pass
+
+    def _end_handle_drag(self):
+        self.handle_dragging = False
+
+    # ---------------------------------------------------------
     # ZOOM BAR DRAW
     # ---------------------------------------------------------
     def _draw_zoom_bar(self, surface):
@@ -216,6 +276,23 @@ class TimelineUI:
     # ---------------------------------------------------------
     def handle_event(self, event):
         mx, my = pygame.mouse.get_pos()
+
+        # HANDLE DRAG START
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            handle = self._compute_handle_rect()
+            if handle.collidepoint(mx, my):
+                self._start_handle_drag(mx)
+                return None
+
+        # HANDLE DRAG MOVE
+        if event.type == pygame.MOUSEMOTION:
+            if self.handle_dragging:
+                self._update_handle_drag(mx)
+                return None
+
+        # HANDLE DRAG END
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self._end_handle_drag()
 
         # CLICK‑TO‑SEEK
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
