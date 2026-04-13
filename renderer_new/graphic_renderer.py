@@ -41,13 +41,20 @@ class GraphicNotationRenderer:
         # Timeline (hore nad notami)
         self.timeline_height = 80
         self.timeline_controller = None
+
+        # Tempo
+        self.bpm = 120.0
+        self.beats_per_bar = 4
+
         if pygame is not None:
             try:
                 from .timeline_controller import TimelineController
                 self.timeline_controller = TimelineController(
                     width=self.width,
                     height=self.timeline_height,
-                    bpm=120.0,
+                    bpm=self.bpm,
+                    beats_per_bar=self.beats_per_bar,
+                    pixels_per_beat=100,
                 )
             except Exception:
                 self.timeline_controller = None
@@ -73,10 +80,6 @@ class GraphicNotationRenderer:
         self.zoom = 1.0
         self.scroll_speed = 120.0
         self.scroll_offset = 0.0
-
-        # Tempo
-        self.bpm = 120.0
-        self.beats_per_bar = 4
 
         # Playhead
         self.playhead_x = self.width // 2
@@ -109,11 +112,36 @@ class GraphicNotationRenderer:
         if b > 0:
             self.bpm = b
 
+    def set_zoom(self, zoom: float) -> None:
+        """
+        Nastaví zoom pre grafickú notáciu aj timeline.
+        """
+        try:
+            z = max(0.1, min(float(zoom), 5.0))
+        except Exception:
+            return
+
+        self.zoom = z
+
+        # Prepojenie na TimelineController (ak existuje)
+        if self.timeline_controller is not None:
+            try:
+                self.timeline_controller.set_zoom(self.zoom)
+            except Exception:
+                pass
+
     def set_playback_time(self, t: float) -> None:
         try:
             self.playback_time = float(t)
         except Exception:
-            pass
+            return
+
+        # Synchronizácia timeline s playback time
+        if self.timeline_controller is not None:
+            try:
+                self.timeline_controller.update(self.playback_time)
+            except Exception:
+                pass
 
     def update_visibility(self, track_index: int, visible: bool) -> None:
         """
@@ -142,6 +170,14 @@ class GraphicNotationRenderer:
 
         self.playback_time += dt
         self.scroll_offset += self.scroll_speed * dt
+
+        # Timeline sync – čas + scroll
+        if self.timeline_controller is not None:
+            try:
+                self.timeline_controller.update(self.playback_time)
+                self.timeline_controller.set_scroll(self.scroll_offset)
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # TIME → X
