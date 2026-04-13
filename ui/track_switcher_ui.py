@@ -421,4 +421,13 @@ class TrackSwitcherUI:
             surface.blit(tip_surf, (bg_rect.x + 3, bg_rect.y + 2))
 
     # ---------------------------------------------------------
-    # PUBLIC API PRE UIManager (ZJEDNOTENÉ
+    # PUBLIC API PRE UIManager (ZJEDNOTENÉ, PROFESIONÁLNE)
+    # ---------------------------------------------------------
+
+    def handle_click(self, x, y):
+        """Spracuje kliknutie myšou a aktivuje príslušnú akciu."""
+        for i in range(self.track_count):
+            rect = pygame.Rect(self.x + i * self.button_width, self.y, self.button_width, self.button_height)
+            if rect.collidepoint(x, y):
+                tid = i + 1
+                return self._handle_track_click(tid, y - rect
