@@ -10,7 +10,7 @@ from .transport_ui import TransportUI
 from .track_inspector import TrackInspector
 
 from .track_control_manager import TrackControlManager
-from renderer.graphic_renderer import GraphicNotationRenderer
+from renderer_new.graphic_renderer import GraphicNotationRenderer
 from renderer.exporter import export_to_png
 
 
