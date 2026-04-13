@@ -49,6 +49,10 @@ class TimelineRenderer:
         # Surface pre timeline
         self.surface = pygame.Surface((self.width, self.height))
 
+        # Zoom + scroll (externé ovládanie)
+        self.zoom = 1.0
+        self.scroll_x = 0.0
+
         Logger.info("TimelineRenderer initialized.")
 
     # ---------------------------------------------------------
@@ -65,6 +69,19 @@ class TimelineRenderer:
 
         except Exception as e:
             Logger.error(f"TimelineRenderer set_bounds error: {e}")
+
+    # ---------------------------------------------------------
+    # ZOOM + SCROLL
+    # ---------------------------------------------------------
+    def set_zoom(self, zoom: float) -> None:
+        """Externé nastavenie zoomu timeline."""
+        self.zoom = max(0.1, min(zoom, 8.0))
+        self.controller.set_zoom(self.zoom)
+
+    def set_scroll(self, scroll_x: float) -> None:
+        """Externé nastavenie horizontálneho posunu timeline."""
+        self.scroll_x = max(0.0, scroll_x)
+        self.controller.set_scroll(self.scroll_x)
 
     # ---------------------------------------------------------
     # UPDATE PLAYBACK TIME
@@ -86,7 +103,7 @@ class TimelineRenderer:
         try:
             self.surface.fill(self.bg_color)
 
-            # TimelineController vykreslí grid + playhead
+            # TimelineController vykreslí grid + barlines + playhead
             timeline_surface = self.controller.render()
             if timeline_surface is not None:
                 self.surface.blit(timeline_surface, (0, 0))
