@@ -32,7 +32,7 @@ class TimelineUI:
         )
 
         # ---------------------------------------------------------
-        # PATCH: PREPOJENIE S GraphicNotationRenderer.timeline_controller
+        # PREPOJENIE S GraphicNotationRenderer.timeline_controller
         # ---------------------------------------------------------
         if self.renderer and hasattr(self.renderer, "timeline_controller"):
             if self.renderer.timeline_controller is not None:
@@ -110,6 +110,16 @@ class TimelineUI:
         # Prepojiť s controller
         self.controller.layout.set_zoom(self.zoom)
 
+        # ---------------------------------------------------------
+        # PREPOJENIE ZOOM → GraphicNotationRenderer
+        # ---------------------------------------------------------
+        if self.renderer and hasattr(self.renderer, "set_zoom"):
+            try:
+                self.renderer.set_zoom(self.zoom)
+            except:
+                pass
+        # ---------------------------------------------------------
+
         # Scroll korekcia
         rel_x = mouse_x - self.x
         scale = self.zoom / old_zoom
@@ -118,10 +128,30 @@ class TimelineUI:
 
         self.controller.layout.set_offset(self.scroll_x)
 
+        # ---------------------------------------------------------
+        # PREPOJENIE OFFSET → GraphicNotationRenderer
+        # ---------------------------------------------------------
+        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
+            try:
+                self.renderer.set_scroll_offset(self.scroll_x)
+            except:
+                pass
+        # ---------------------------------------------------------
+
     def _apply_scroll(self, delta):
         self.scroll_x += delta * 40
         self.scroll_x = max(0, min(self.scroll_x, 100000))
         self.controller.layout.set_offset(self.scroll_x)
+
+        # ---------------------------------------------------------
+        # PREPOJENIE OFFSET → GraphicNotationRenderer
+        # ---------------------------------------------------------
+        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
+            try:
+                self.renderer.set_scroll_offset(self.scroll_x)
+            except:
+                pass
+        # ---------------------------------------------------------
 
     # ---------------------------------------------------------
     # ZOOM BAR DRAW
