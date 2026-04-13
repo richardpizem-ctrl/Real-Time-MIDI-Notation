@@ -78,23 +78,33 @@ class TimelineGrid:
         Vykreslí beaty a takty na daný surface (render grid).
         """
         try:
+            # Prepočítané PPB podľa zoomu
             scaled_ppb = int(self.pixels_per_beat * self.zoom)
 
-            # Beat lines
-            for beat_index in range(0, 5000):  # dostatočne veľké číslo
+            # -----------------------------
+            # BEAT LINES
+            # -----------------------------
+            # Začíname od prvého beatu, ktorý je viditeľný
+            first_visible_beat = max(0, int(self.offset_x // scaled_ppb))
+
+            # Počet beatov, ktoré môžu byť viditeľné
+            max_beats = (self.width // scaled_ppb) + 10
+
+            for beat_index in range(first_visible_beat, first_visible_beat + max_beats):
                 x = beat_index * scaled_ppb - self.offset_x
-                if x > self.width:
-                    break
-                if x >= 0:
+                if 0 <= x <= self.width:
                     pygame.draw.line(surface, self.beat_color, (x, 0), (x, self.height))
 
-            # Bar lines
+            # -----------------------------
+            # BAR LINES (silnejšie čiary)
+            # -----------------------------
             bar_width = self.beats_per_bar * scaled_ppb
-            for bar_index in range(0, 2000):
+            first_visible_bar = max(0, int(self.offset_x // bar_width))
+            max_bars = (self.width // bar_width) + 10
+
+            for bar_index in range(first_visible_bar, first_visible_bar + max_bars):
                 x = bar_index * bar_width - self.offset_x
-                if x > self.width:
-                    break
-                if x >= 0:
+                if 0 <= x <= self.width:
                     pygame.draw.line(surface, self.bar_color, (x, 0), (x, self.height), 2)
 
         except Exception as e:
