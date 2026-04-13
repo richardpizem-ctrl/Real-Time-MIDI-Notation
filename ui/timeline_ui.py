@@ -154,6 +154,30 @@ class TimelineUI:
         # ---------------------------------------------------------
 
     # ---------------------------------------------------------
+    # CLICK‑TO‑SEEK (NOVÉ)
+    # ---------------------------------------------------------
+    def _apply_seek(self, mouse_x):
+        """Kliknutie do timeline → posun playhead + renderer."""
+        local_x = mouse_x - self.x
+        beat = self.controller.layout.pixel_to_beat(local_x)
+        time_sec = self.controller.beat_to_seconds(beat)
+
+        # Nastaviť playhead v controlleri
+        try:
+            self.controller.set_playhead_position(time_sec)
+        except:
+            pass
+
+        # Nastaviť čas v rendereri
+        if self.renderer and hasattr(self.renderer, "set_playback_time"):
+            try:
+                self.renderer.set_playback_time(time_sec)
+            except:
+                pass
+
+        return {"seek": time_sec}
+
+    # ---------------------------------------------------------
     # ZOOM BAR DRAW
     # ---------------------------------------------------------
     def _draw_zoom_bar(self, surface):
@@ -170,6 +194,11 @@ class TimelineUI:
     # ---------------------------------------------------------
     def handle_event(self, event):
         mx, my = pygame.mouse.get_pos()
+
+        # CLICK‑TO‑SEEK
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.x <= mx <= self.x + self.width and self.y <= my <= self.y + self.height:
+                return self._apply_seek(mx)
 
         # Wheel events
         if event.type == pygame.MOUSEWHEEL:
