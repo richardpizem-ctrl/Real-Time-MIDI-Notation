@@ -39,7 +39,36 @@ class TimelineGrid:
         self.beat_color = beat_color
         self.bar_color = bar_color
 
+        # Zoom & offset (doplnene pre TimelineLayoutEngine)
+        self.zoom = 1.0
+        self.offset_x = 0
+
         Logger.info("TimelineGrid initialized.")
+
+    # ---------------------------------------------------------
+    # EXTERNAL CONTROLS (PixelLayoutEngine / TimelineController)
+    # ---------------------------------------------------------
+    def set_size(self, width: int, height: int) -> None:
+        """Nastaví veľkosť gridu."""
+        try:
+            self.width = max(1, int(width))
+            self.height = max(1, int(height))
+        except Exception:
+            Logger.error("TimelineGrid set_size error.")
+
+    def set_zoom(self, zoom: float) -> None:
+        """Nastaví zoom (ovplyvňuje pixels_per_beat)."""
+        try:
+            self.zoom = max(0.1, float(zoom))
+        except Exception:
+            Logger.error("TimelineGrid set_zoom error.")
+
+    def set_offset(self, offset_x: int) -> None:
+        """Nastaví horizontálny posun timeline."""
+        try:
+            self.offset_x = int(offset_x)
+        except Exception:
+            Logger.error("TimelineGrid set_offset error.")
 
     # ---------------------------------------------------------
     # RENDER GRID
@@ -49,16 +78,24 @@ class TimelineGrid:
         Vykreslí beaty a takty na daný surface (render grid).
         """
         try:
-            # Beat = každých X pixelov
-            for x in range(0, self.width, self.pixels_per_beat):
-                pygame.draw.line(surface, self.beat_color, (x, 0), (x, self.height))
+            scaled_ppb = int(self.pixels_per_beat * self.zoom)
 
-            # Takt = každé beats_per_bar * pixels_per_beat
-            bar_width = self.beats_per_bar * self.pixels_per_beat
+            # Beat lines
+            for beat_index in range(0, 5000):  # dostatočne veľké číslo
+                x = beat_index * scaled_ppb - self.offset_x
+                if x > self.width:
+                    break
+                if x >= 0:
+                    pygame.draw.line(surface, self.beat_color, (x, 0), (x, self.height))
 
-            for x in range(0, self.width, bar_width):
-                pygame.draw.line(surface, self.bar_color, (x, 0), (x, self.height), 2)
+            # Bar lines
+            bar_width = self.beats_per_bar * scaled_ppb
+            for bar_index in range(0, 2000):
+                x = bar_index * bar_width - self.offset_x
+                if x > self.width:
+                    break
+                if x >= 0:
+                    pygame.draw.line(surface, self.bar_color, (x, 0), (x, self.height), 2)
 
         except Exception as e:
             Logger.error(f"TimelineGrid render error: {e}")
-
