@@ -28,7 +28,7 @@ class PixelLayoutEngine:
         │ PIANO / PIANO ROLL / STAFF / VISUALIZER      │
         │ (stacked, fixed heights)                     │
         ├──────────────────────────────────────────────┤
-        │ RENDERER (fills the rest)                    │
+        │ RENDERER (fills the rest, min 200 px)        │
         ├──────────────────────────────────────────────┤
         │ TRACK INSPECTOR (fixed width, right side)    │
         └──────────────────────────────────────────────┘
@@ -137,10 +137,10 @@ class PixelLayoutEngine:
         y += self.visualizer_height
 
         # -----------------------------------------------------
-        # RENDERER (fills remaining space)
+        # RENDERER (fills remaining space, min 200 px)
         # -----------------------------------------------------
         remaining = window_height - y - self.margin
-        renderer_h = max(120, remaining)
+        renderer_h = max(200, remaining)
 
         layout["renderer"] = Rect(
             x0, y, w_main, renderer_h
