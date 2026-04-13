@@ -431,3 +431,66 @@ class TrackSwitcherUI:
             if rect.collidepoint(x, y):
                 tid = i + 1
                 return self._handle_track_click(tid, y - rect
+    # ---------------------------------------------------------
+    # PUBLIC API PRE UIManager (ZJEDNOTENÉ, PROFESIONÁLNE)
+    # ---------------------------------------------------------
+
+    def _handle_track_click(self, tid, local_y):
+        """Interná logika pre kliknutie na konkrétny track."""
+        tm = self.event_bus.track_manager
+
+        # RECORD
+        if self.button_height - 85 <= local_y < self.button_height - 75:
+            tm.toggle_record_arm(tid)
+            self.event_bus.emit("track_record_toggle", tid)
+            return "record"
+
+        # PAN
+        if self.button_height - 75 <= local_y < self.button_height - 65:
+            # Pan sa nemení kliknutím, iba tooltip
+            return "pan"
+
+        # VOLUME
+        if self.button_height - 55 <= local_y < self.button_height - 25:
+            # Volume slider by sa mal riešiť dragom, nie klikom
+            return "volume"
+
+        # MUTE
+        if self.button_height - 20 <= local_y < self.button_height - 10:
+            tm.toggle_mute(tid)
+            self.event_bus.emit("track_mute_toggle", tid)
+            return "mute"
+
+        # SOLO
+        if local_y >= self.button_height - 10:
+            tm.toggle_solo(tid)
+            self.event_bus.emit("track_solo_toggle", tid)
+            return "solo"
+
+        # AKTÍVNA STOPA
+        if self.track_control_manager is not None:
+            self.track_control_manager.set_active_track(tid - 1)
+            self.event_bus.emit("track_selected", tid)
+            return "select"
+
+        return None
+
+    def handle_click(self, x, y):
+        """Spracuje kliknutie myšou a aktivuje príslušnú akciu."""
+        for i in range(self.track_count):
+            rect = pygame.Rect(self.x + i * self.button_width, self.y, self.button_width, self.button_height)
+            if rect.collidepoint(x, y):
+                tid = i + 1
+                local_y = y - rect.y
+                return self._handle_track_click(tid, local_y)
+        return None
+
+    def set_active_track(self, tid):
+        """Externé API pre UIManager."""
+        if self.track_control_manager is not None:
+            self.track_control_manager.set_active_track(tid - 1)
+
+    def refresh(self):
+        """Externé API – UIManager môže zavolať pri zmene stavu."""
+        self.update_peak_hold()
+        self._emit_audible_state()
