@@ -1,5 +1,4 @@
 import pygame
-import math
 
 
 class TimelineUI:
@@ -90,14 +89,14 @@ class TimelineUI:
             self.x,
             self.y + self.height - self.zoom_bar_height - self.scroll_bar_height - 2,
             self.width,
-            self.zoom_bar_height
+            self.zoom_bar_height,
         )
 
         self.scroll_bar_rect = pygame.Rect(
             self.x,
             self.y + self.height - self.scroll_bar_height,
             self.width,
-            self.scroll_bar_height
+            self.scroll_bar_height,
         )
 
     # ---------------------------------------------------------
@@ -125,17 +124,17 @@ class TimelineUI:
             r = int(top_color[0] * (1 - t) + bottom_color[0] * t)
             g = int(top_color[1] * (1 - t) + bottom_color[1] * t)
             b = int(top_color[2] * (1 - t) + bottom_color[2] * t)
-            pygame.draw.line(surface, (r, g, b),
-                             (self.x, self.y + i),
-                             (self.x + self.width, self.y + i))
+            pygame.draw.line(
+                surface,
+                (r, g, b),
+                (self.x, self.y + i),
+                (self.x + self.width, self.y + i),
+            )
 
-        pygame.draw.rect(surface, (70, 70, 75),
-                         (self.x, self.y, self.width, self.height), 1)
+        pygame.draw.rect(surface, (70, 70, 75), (self.x, self.y, self.width, self.height), 1)
 
         sep_y = self.y + self.height - self.scroll_bar_height - 1
-        pygame.draw.line(surface, (15, 15, 15),
-                         (self.x, sep_y),
-                         (self.x + self.width, sep_y))
+        pygame.draw.line(surface, (15, 15, 15), (self.x, sep_y), (self.x + self.width, sep_y))
 
     def _draw_marker_lane(self, surface):
         lane_rect = pygame.Rect(self.x, self.y, self.width, self.marker_lane_height)
@@ -151,9 +150,12 @@ class TimelineUI:
 
         pygame.draw.rect(surface, (45, 45, 50), lane_rect)
 
-        pygame.draw.line(surface, (80, 80, 90),
-                         (self.x, self.y + self.marker_lane_height - 1),
-                         (self.x + self.width, self.y + self.marker_lane_height - 1))
+        pygame.draw.line(
+            surface,
+            (80, 80, 90),
+            (self.x, self.y + self.marker_lane_height - 1),
+            (self.x + self.width, self.y + self.marker_lane_height - 1),
+        )
 
         for i, marker in enumerate(self.markers):
             x = self._beat_to_x(marker["beat"])
@@ -164,8 +166,12 @@ class TimelineUI:
             body_rect = pygame.Rect(x - 5, self.y + 5, 10, 15)
 
             glow_surf = pygame.Surface((body_rect.width + 8, body_rect.height + 8), pygame.SRCALPHA)
-            pygame.draw.rect(glow_surf, (base_color[0], base_color[1], base_color[2], 80),
-                             glow_surf.get_rect(), border_radius=6)
+            pygame.draw.rect(
+                glow_surf,
+                (base_color[0], base_color[1], base_color[2], 80),
+                glow_surf.get_rect(),
+                border_radius=6,
+            )
             surface.blit(glow_surf, (body_rect.x - 4, body_rect.y - 4))
 
             pygame.draw.rect(surface, base_color, body_rect, border_radius=3)
@@ -181,13 +187,21 @@ class TimelineUI:
             if x < self.x - 50 or x > self.x + self.width + 50:
                 continue
 
-            pygame.draw.line(surface, (210, 210, 215),
-                             (x, self.y + self.marker_lane_height),
-                             (x, self.y + self.height - 24), 2)
+            pygame.draw.line(
+                surface,
+                (210, 210, 215),
+                (x, self.y + self.marker_lane_height),
+                (x, self.y + self.height - 24),
+                2,
+            )
 
-            pygame.draw.line(surface, (80, 80, 85),
-                             (x + 1, self.y + self.marker_lane_height),
-                             (x + 1, self.y + self.height - 24), 1)
+            pygame.draw.line(
+                surface,
+                (80, 80, 85),
+                (x + 1, self.y + self.marker_lane_height),
+                (x + 1, self.y + self.height - 24),
+                1,
+            )
 
             if self.font:
                 txt = self.font.render(str(bar + 1), True, (230, 230, 235))
@@ -202,9 +216,13 @@ class TimelineUI:
 
             color = (120, 120, 125) if beat % self.beats_per_bar == 0 else (70, 70, 75)
 
-            pygame.draw.line(surface, color,
-                             (x, self.y + self.marker_lane_height),
-                             (x, self.y + self.height - 24), 1)
+            pygame.draw.line(
+                surface,
+                color,
+                (x, self.y + self.marker_lane_height),
+                (x, self.y + self.height - 24),
+                1,
+            )
 
     def _draw_playhead(self, surface):
         try:
@@ -219,9 +237,13 @@ class TimelineUI:
         pygame.draw.rect(glow_surf, (255, 60, 60, 90), glow_surf.get_rect(), border_radius=4)
         surface.blit(glow_surf, (self.playhead_x - 5, self.y + self.marker_lane_height))
 
-        pygame.draw.line(surface, (255, 80, 80),
-                         (self.playhead_x, self.y + self.marker_lane_height),
-                         (self.playhead_x, self.y + self.height - 24), 2)
+        pygame.draw.line(
+            surface,
+            (255, 80, 80),
+            (self.playhead_x, self.y + self.marker_lane_height),
+            (self.playhead_x, self.y + self.height - 24),
+            2,
+        )
 
     # ---------------------------------------------------------
     # SELECTION REGION DRAW
@@ -240,7 +262,7 @@ class TimelineUI:
             x1,
             self.y + self.marker_lane_height,
             x2 - x1,
-            self.height - self.marker_lane_height - 24
+            self.height - self.marker_lane_height - 24,
         )
 
         overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
@@ -269,7 +291,7 @@ class TimelineUI:
             x1,
             self.y + self.marker_lane_height,
             x2 - x1,
-            self.height - self.marker_lane_height - 24
+            self.height - self.marker_lane_height - 24,
         )
 
         overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
@@ -293,9 +315,12 @@ class TimelineUI:
             r = int(top[0] * (1 - t) + bottom[0] * t)
             g = int(top[1] * (1 - t) + bottom[1] * t)
             b = int(top[2] * (1 - t) + bottom[2] * t)
-            pygame.draw.line(surface, (r, g, b),
-                             (bg_rect.x, bg_rect.y + i),
-                             (bg_rect.x + bg_rect.width, bg_rect.y + i))
+            pygame.draw.line(
+                surface,
+                (r, g, b),
+                (bg_rect.x, bg_rect.y + i),
+                (bg_rect.x + bg_rect.width, bg_rect.y + i),
+            )
 
         pygame.draw.rect(surface, (20, 20, 22), bg_rect, 1)
 
@@ -313,8 +338,12 @@ class TimelineUI:
             g = int(thumb_top[1] * (1 - tt) + thumb_bottom[1] * tt)
             b = int(thumb_top[2] * (1 - tt) + thumb_bottom[2] * tt)
             pygame.draw.line(thumb_surf, (r, g, b), (0, i), (thumb_rect.width, i))
-        pygame.draw.rect(thumb_surf, (255, 255, 255, 40),
-                         (0, 0, thumb_rect.width, 2), border_radius=4)
+        pygame.draw.rect(
+            thumb_surf,
+            (255, 255, 255, 40),
+            (0, 0, thumb_rect.width, 2),
+            border_radius=4,
+        )
         surface.blit(thumb_surf, thumb_rect.topleft)
 
         pygame.draw.rect(surface, (230, 230, 235), thumb_rect, 1, border_radius=4)
@@ -332,9 +361,12 @@ class TimelineUI:
             r = int(top[0] * (1 - t) + bottom[0] * t)
             g = int(top[1] * (1 - t) + bottom[1] * t)
             b = int(top[2] * (1 - t) + bottom[2] * t)
-            pygame.draw.line(surface, (r, g, b),
-                             (bg_rect.x, bg_rect.y + i),
-                             (bg_rect.x + bg_rect.width, bg_rect.y + i))
+            pygame.draw.line(
+                surface,
+                (r, g, b),
+                (bg_rect.x, bg_rect.y + i),
+                (bg_rect.x + bg_rect.width, bg_rect.y + i),
+            )
 
         pygame.draw.rect(surface, (15, 15, 18), bg_rect, 1)
 
@@ -346,7 +378,12 @@ class TimelineUI:
         t = self.scroll_x / max_scroll
         thumb_x = self.scroll_bar_rect.x + int(t * (self.scroll_bar_rect.width - thumb_width))
 
-        self.scroll_thumb_rect = pygame.Rect(thumb_x, self.scroll_bar_rect.y, thumb_width, self.scroll_bar_rect.height)
+        self.scroll_thumb_rect = pygame.Rect(
+            thumb_x,
+            self.scroll_bar_rect.y,
+            thumb_width,
+            self.scroll_bar_rect.height,
+        )
 
         thumb_top = (190, 190, 195)
         thumb_bottom = (145, 145, 150)
@@ -357,11 +394,21 @@ class TimelineUI:
             g = int(thumb_top[1] * (1 - tt) + thumb_bottom[1] * tt)
             b = int(thumb_top[2] * (1 - tt) + thumb_bottom[2] * tt)
             pygame.draw.line(thumb_surf, (r, g, b), (0, i), (self.scroll_thumb_rect.width, i))
-        pygame.draw.rect(thumb_surf, (255, 255, 255, 40),
-                         (0, 0, self.scroll_thumb_rect.width, 2), border_radius=4)
+        pygame.draw.rect(
+            thumb_surf,
+            (255, 255, 255, 40),
+            (0, 0, self.scroll_thumb_rect.width, 2),
+            border_radius=4,
+        )
         surface.blit(thumb_surf, self.scroll_thumb_rect.topleft)
 
-        pygame.draw.rect(surface, (230, 230, 235), self.scroll_thumb_rect, 1, border_radius=4)
+        pygame.draw.rect(
+            surface,
+            (230, 230, 235),
+            self.scroll_thumb_rect,
+            1,
+            border_radius=4,
+        )
 
     # ---------------------------------------------------------
     # DRAW
@@ -465,8 +512,7 @@ class TimelineUI:
         if event.type == pygame.MOUSEMOTION:
             if self.scroll_thumb_dragging:
                 new_x = mx - self.scroll_thumb_offset
-                new_x = max(self.scroll_bar_rect.x,
-                            min(new_x, self.scroll_bar_rect.right - self.scroll_thumb_rect.width))
+                new_x = max(self.scroll_bar_rect.x, min(new_x, self.scroll_bar_rect.right - self.scroll_thumb_rect.width))
 
                 t = (new_x - self.scroll_bar_rect.x) / (self.scroll_bar_rect.width - self.scroll_thumb_rect.width)
 
@@ -523,7 +569,6 @@ class TimelineUI:
         # -----------------------------------------------------
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.y + self.marker_lane_height <= my <= self.y + self.height - 24:
-
                 beat = self._x_to_beat(mx)
 
                 if self.sel_start is not None and self.sel_end is not None:
