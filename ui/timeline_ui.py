@@ -163,8 +163,17 @@ class TimelineUI:
         if not rect:
             return
 
+        # Loop fill
         pygame.draw.rect(surface, (80, 120, 200, 80), rect)
+        # Border
         pygame.draw.rect(surface, (160, 200, 255), rect, 2)
+
+        # Resize handles
+        left = pygame.Rect(rect.x - 4, rect.y, 8, rect.h)
+        right = pygame.Rect(rect.right - 4, rect.y, 8, rect.h)
+
+        pygame.draw.rect(surface, (200, 220, 255), left)
+        pygame.draw.rect(surface, (200, 220, 255), right)
 
     # ---------------------------------------------------------
     # RULER DRAW
@@ -202,72 +211,6 @@ class TimelineUI:
                 pygame.draw.line(surface, (110, 110, 120), (px, ruler_y + 10), (px, ruler_y + ruler_h), 1)
 
     # ---------------------------------------------------------
-    # ZOOM & SCROLL
-    # ---------------------------------------------------------
-    def _apply_zoom(self, mouse_x, delta):
-        old_zoom = self.zoom
-
-        if delta > 0:
-            self.zoom *= 1.1
-        else:
-            self.zoom /= 1.1
-
-        self.zoom = max(0.25, min(4.0, self.zoom))
-
-        self.controller.layout.set_zoom(self.zoom)
-
-        if self.renderer and hasattr(self.renderer, "set_zoom"):
-            try:
-                self.renderer.set_zoom(self.zoom)
-            except:
-                pass
-
-        rel_x = mouse_x - self.x
-        scale = self.zoom / old_zoom
-        self.scroll_x = int((self.scroll_x + rel_x) * scale - rel_x)
-        self.scroll_x = max(0, min(self.scroll_x, 100000))
-
-        self.controller.layout.set_offset(self.scroll_x)
-
-        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
-            try:
-                self.renderer.set_scroll_offset(self.scroll_x)
-            except:
-                pass
-
-    def _apply_scroll(self, delta):
-        self.scroll_x += delta * 40
-        self.scroll_x = max(0, min(self.scroll_x, 100000))
-        self.controller.layout.set_offset(self.scroll_x)
-
-        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
-            try:
-                self.renderer.set_scroll_offset(self.scroll_x)
-            except:
-                pass
-
-    # ---------------------------------------------------------
-    # CLICK‑TO‑SEEK
-    # ---------------------------------------------------------
-    def _apply_seek(self, mouse_x):
-        local_x = mouse_x - self.x
-        beat = self.controller.layout.pixel_to_beat(local_x)
-        time_sec = self.controller.beat_to_seconds(beat)
-
-        try:
-            self.controller.set_playhead_position(time_sec)
-        except:
-            pass
-
-        if self.renderer and hasattr(self.renderer, "set_playback_time"):
-            try:
-                self.renderer.set_playback_time(time_sec)
-            except:
-                pass
-
-        return {"seek": time_sec}
-
-    # ---------------------------------------------------------
     # LOOP REGION LOGIC
     # ---------------------------------------------------------
     def _start_loop(self, mouse_x):
@@ -275,6 +218,10 @@ class TimelineUI:
         beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
 
         self.loop_active = True
+        self.loop_dragging = False
+        self.loop_resizing_left = False
+        self.loop_resizing_right = False
+
         self.loop_start_beat = beat
         self.loop_end_beat = beat
 
@@ -303,25 +250,133 @@ class TimelineUI:
                 pass
 
     # ---------------------------------------------------------
+    # LOOP DRAGGING
+    # ---------------------------------------------------------
+    def _start_loop_drag(self, mouse_x):
+        layout = self.controller.layout
+        rect = self._compute_loop_rect()
+
+        self.loop_dragging = True
+        self.loop_resizing_left = False
+        self.loop_resizing_right = False
+
+        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+        self.loop_drag_offset = beat - self.loop_start_beat
+
+    def _update_loop_drag(self, mouse_x):
+        layout = self.controller.layout
+        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+
+        new_start = beat - self.loop_drag_offset
+        length = self.loop_end_beat - self.loop_start_beat
+        new_end = new_start + length
+
+        if new_start < 0:
+            new_start = 0
+            new_end = length
+
+        self.loop_start_beat = new_start
+        self.loop_end_beat = new_end
+
+    # ---------------------------------------------------------
+    # LOOP RESIZE
+    # ---------------------------------------------------------
+    def _start_resize_left(self, mouse_x):
+        self.loop_resizing_left = True
+        self.loop_resizing_right = False
+        self.loop_dragging = False
+
+    def _start_resize_right(self, mouse_x):
+        self.loop_resizing_right = True
+        self.loop_resizing_left = False
+        self.loop_dragging = False
+
+    def _update_resize_left(self, mouse_x):
+        layout = self.controller.layout
+        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+
+        if beat < 0:
+            beat = 0
+
+        if beat > self.loop_end_beat:
+            beat = self.loop_end_beat
+
+        self.loop_start_beat = beat
+
+    def _update_resize_right(self, mouse_x):
+        layout = self.controller.layout
+        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+
+        if beat < self.loop_start_beat:
+            beat = self.loop_start_beat
+
+        self.loop_end_beat = beat
+
+    # ---------------------------------------------------------
     # EVENTS
     # ---------------------------------------------------------
     def handle_event(self, event):
         mx, my = pygame.mouse.get_pos()
 
-        # LOOP REGION START (left click in ruler)
+        # LOOP REGION INTERACTION
+        loop_rect = self._compute_loop_rect()
+        if loop_rect:
+            left_handle = pygame.Rect(loop_rect.x - 4, loop_rect.y, 8, loop_rect.h)
+            right_handle = pygame.Rect(loop_rect.right - 4, loop_rect.y, 8, loop_rect.h)
+
+            # LEFT RESIZE START
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if left_handle.collidepoint(mx, my):
+                    self._start_resize_left(mx)
+                    return None
+
+            # RIGHT RESIZE START
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if right_handle.collidepoint(mx, my):
+                    self._start_resize_right(mx)
+                    return None
+
+            # LOOP DRAG START
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if loop_rect.collidepoint(mx, my):
+                    self._start_loop_drag(mx)
+                    return None
+
+            # LOOP DRAG MOVE
+            if event.type == pygame.MOUSEMOTION:
+                if self.loop_dragging:
+                    self._update_loop_drag(mx)
+                    return None
+
+            # LOOP RESIZE MOVE
+            if event.type == pygame.MOUSEMOTION:
+                if self.loop_resizing_left:
+                    self._update_resize_left(mx)
+                    return None
+                if self.loop_resizing_right:
+                    self._update_resize_right(mx)
+                    return None
+
+            # LOOP END
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                if self.loop_dragging or self.loop_resizing_left or self.loop_resizing_right:
+                    self.loop_dragging = False
+                    self.loop_resizing_left = False
+                    self.loop_resizing_right = False
+                    self._finalize_loop()
+                    return None
+
+        # LOOP REGION CREATION
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.y <= my <= self.y + 20:
                 self._start_loop(mx)
                 return None
 
-        # LOOP REGION UPDATE
         if event.type == pygame.MOUSEMOTION:
-            if self.loop_active and not self.handle_dragging and not self.dragging:
-                if pygame.mouse.get_pressed()[0]:
-                    self._update_loop(mx)
-                    return None
+            if self.loop_active and pygame.mouse.get_pressed()[0]:
+                self._update_loop(mx)
+                return None
 
-        # LOOP REGION FINALIZE
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.loop_active:
                 self._finalize_loop()
