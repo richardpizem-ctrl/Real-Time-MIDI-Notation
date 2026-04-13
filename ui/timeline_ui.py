@@ -72,6 +72,11 @@ class TimelineUI:
         self._last_click_marker_index = None
         self._double_click_threshold_ms = 300
 
+        # LAYOUT HEIGHTS
+        self.ruler_height = 20
+        self.loop_height = 20
+        self.marker_lane_height = 24
+
         # Font
         try:
             self.font = pygame.font.Font(None, 16)
@@ -127,28 +132,14 @@ class TimelineUI:
         return pygame.Rect(handle_x, self.scroll_bar_rect.y, handle_width, self.scroll_bar_rect.h)
 
     # ---------------------------------------------------------
-    # LOOP REGION RECT
-    # ---------------------------------------------------------
-    def _compute_loop_rect(self):
-        if not self.loop_active:
-            return None
-
-        layout = self.controller.layout
-        px1 = self.x + layout.beat_to_pixel(self.loop_start_beat) - self.scroll_x
-        px2 = self.x + layout.beat_to_pixel(self.loop_end_beat) - self.scroll_x
-
-        if px2 < px1:
-            px1, px2 = px2, px1
-
-        return pygame.Rect(px1, self.y, px2 - px1, 20)
-
-    # ---------------------------------------------------------
     # MARKER RECT
     # ---------------------------------------------------------
     def _compute_marker_rect(self, marker):
         layout = self.controller.layout
         px = self.x + layout.beat_to_pixel(marker["beat"]) - self.scroll_x
-        return pygame.Rect(px - 6, self.y, 12, 20)
+
+        lane_y = self.y + self.ruler_height + self.loop_height
+        return pygame.Rect(px - 6, lane_y, 12, self.marker_lane_height)
 
     # ---------------------------------------------------------
     # DRAW
@@ -157,7 +148,8 @@ class TimelineUI:
         # 1. Timeline grid
         timeline_surface = self.controller.render()
         if timeline_surface is not None:
-            surface.blit(timeline_surface, (self.x, self.y))
+            grid_y = self.y + self.ruler_height + self.loop_height + self.marker_lane_height
+            surface.blit(timeline_surface, (self.x, grid_y))
 
         # 2. Ruler
         self._draw_ruler(surface)
@@ -165,16 +157,54 @@ class TimelineUI:
         # 3. Loop region
         self._draw_loop(surface)
 
-        # 4. Markers
+        # 4. Marker lane
+        self._draw_marker_lane(surface)
+
+        # 5. Markers
         self._draw_markers(surface)
 
-        # 5. Bars
+        # 6. Bars
         self._draw_zoom_bar(surface)
         self._draw_scroll_bar(surface)
 
-        # 6. Scroll handle
+        # 7. Scroll handle
         handle = self._compute_handle_rect()
         pygame.draw.rect(surface, (120, 120, 130), handle)
+
+    # ---------------------------------------------------------
+    # RULER DRAW
+    # ---------------------------------------------------------
+    def _draw_ruler(self, surface):
+        if not self.font:
+            return
+
+        layout = self.controller.layout
+        beats_per_bar = self.controller.beats_per_bar
+
+        ruler_y = self.y
+        ruler_h = self.ruler_height
+
+        pygame.draw.rect(surface, (35, 35, 40), (self.x, ruler_y, self.width, ruler_h))
+
+        start_beat = layout.pixel_to_beat(self.scroll_x)
+        end_beat = layout.pixel_to_beat(self.scroll_x + self.width)
+
+        start_beat = int(start_beat) - 2
+        end_beat = int(end_beat) + 2
+
+        for beat in range(start_beat, end_beat):
+            if beat < 0:
+                continue
+
+            px = self.x + layout.beat_to_pixel(beat) - self.scroll_x
+
+            if beat % beats_per_bar == 0:
+                pygame.draw.line(surface, (180, 180, 190), (px, ruler_y), (px, ruler_y + ruler_h), 2)
+                bar_number = beat // beats_per_bar + 1
+                text = self.font.render(str(bar_number), True, (220, 220, 230))
+                surface.blit(text, (px + 4, ruler_y + 2))
+            else:
+                pygame.draw.line(surface, (110, 110, 120), (px, ruler_y + 10), (px, ruler_y + ruler_h), 1)
 
     # ---------------------------------------------------------
     # LOOP DRAW
@@ -184,8 +214,18 @@ class TimelineUI:
         if not rect:
             return
 
+        rect.y = self.y + self.ruler_height
+        rect.h = self.loop_height
+
         pygame.draw.rect(surface, (80, 120, 200, 80), rect)
         pygame.draw.rect(surface, (160, 200, 255), rect, 2)
+
+    # ---------------------------------------------------------
+    # MARKER LANE DRAW
+    # ---------------------------------------------------------
+    def _draw_marker_lane(self, surface):
+        lane_y = self.y + self.ruler_height + self.loop_height
+        pygame.draw.rect(surface, (30, 30, 35), (self.x, lane_y, self.width, self.marker_lane_height))
 
     # ---------------------------------------------------------
     # MARKER DRAW
@@ -220,41 +260,6 @@ class TimelineUI:
             else:
                 text = self.font.render(marker["label"], True, (255, 230, 150))
                 surface.blit(text, (rect.centerx + 4, rect.y + 2))
-
-    # ---------------------------------------------------------
-    # RULER DRAW
-    # ---------------------------------------------------------
-    def _draw_ruler(self, surface):
-        if not self.font:
-            return
-
-        beats_per_bar = self.controller.beats_per_bar
-        layout = self.controller.layout
-
-        ruler_y = self.y
-        ruler_h = 20
-
-        pygame.draw.rect(surface, (35, 35, 40), (self.x, ruler_y, self.width, ruler_h))
-
-        start_beat = layout.pixel_to_beat(self.scroll_x)
-        end_beat = layout.pixel_to_beat(self.scroll_x + self.width)
-
-        start_beat = int(start_beat) - 2
-        end_beat = int(end_beat) + 2
-
-        for beat in range(start_beat, end_beat):
-            if beat < 0:
-                continue
-
-            px = self.x + layout.beat_to_pixel(beat) - self.scroll_x
-
-            if beat % beats_per_bar == 0:
-                pygame.draw.line(surface, (180, 180, 190), (px, ruler_y), (px, ruler_y + ruler_h), 2)
-                bar_number = beat // beats_per_bar + 1
-                text = self.font.render(str(bar_number), True, (220, 220, 230))
-                surface.blit(text, (px + 4, ruler_y + 2))
-            else:
-                pygame.draw.line(surface, (110, 110, 120), (px, ruler_y + 10), (px, ruler_y + ruler_h), 1)
 
     # ---------------------------------------------------------
     # SNAPPING HELPERS
@@ -404,17 +409,18 @@ class TimelineUI:
                 self._end_marker_drag()
                 return None
 
-        # ADD MARKER (SHIFT + LEFT CLICK in ruler)
+        # ADD MARKER (SHIFT + LEFT CLICK in marker lane)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mods = pygame.key.get_mods()
+            lane_y = self.y + self.ruler_height + self.loop_height
             if mods & pygame.KMOD_SHIFT:
-                if self.y <= my <= self.y + 20:
+                if lane_y <= my <= lane_y + self.marker_lane_height:
                     self._add_marker(mx)
                     return None
 
         # LOOP REGION START (left click in ruler)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.y <= my <= self.y + 20:
+            if self.y <= my <= self.y + self.ruler_height:
                 self._start_loop(mx)
                 return None
 
@@ -448,9 +454,10 @@ class TimelineUI:
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self._end_handle_drag()
 
-        # CLICK‑TO‑SEEK
+        # CLICK‑TO‑SEEK (grid area)
+        grid_y = self.y + self.ruler_height + self.loop_height + self.marker_lane_height
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.x <= mx <= self.x + self.width and self.y <= my <= self.y + self.height:
+            if self.x <= mx <= self.x + self.width and grid_y <= my <= self.y + self.height:
                 return self._apply_seek(mx)
 
         # DRAG‑SCROLL START (pravé tlačidlo)
@@ -491,7 +498,4 @@ class TimelineUI:
                 self._apply_scroll(-event.y)
                 return {"scroll": self.scroll_x}
 
-            self._apply_scroll(-event.y * 5)
-            return {"scroll": self.scroll_x}
-
-        return None
+            self
