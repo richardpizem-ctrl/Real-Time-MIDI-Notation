@@ -33,6 +33,41 @@ This project aims to evolve into a **full real‑time engraving engine**, simila
 
 ---
 
+# 🧩 Why This Project Matters  
+Real‑time notation is a **non‑trivial engineering challenge**.  
+Most notation engines (MuseScore, LilyPond, Dorico) are **offline engravers** — they expect complete musical context.
+
+This project solves:
+
+- **real‑time note grouping**  
+- **real‑time beam detection**  
+- **real‑time velocity dynamics**  
+- **real‑time multi‑track rendering**  
+- **real‑time layout without pre‑analysis**  
+
+This makes it ideal for:
+
+- research  
+- education  
+- live performance tools  
+- MIDI hardware development  
+
+---
+
+# 🎓 Academic Relevance  
+This engine is suitable for:
+
+- **music informatics research**  
+- **real‑time systems courses**  
+- **MIDI protocol analysis**  
+- **digital signal processing labs**  
+- **human–computer interaction studies**  
+- **music pedagogy and visualization**  
+
+A full **CITATION.cff** file will be added for academic referencing.
+
+---
+
 # 🔎 SEO Keywords  
 `midi`, `real-time midi`, `midi notation`, `midi visualizer`, `midi renderer`,  
 `music notation`, `pygame`, `python midi`, `multi-track midi`, `midi to sheet music`,  
@@ -92,26 +127,23 @@ This project aims to evolve into a **full real‑time engraving engine**, simila
 ---
 
 # 🏗 Architecture Overview
-
-```
-MIDI Input  
-   ↓  
-Processor (timing, rhythm, velocity)  
-   ↓  
-GraphicNotationRenderer  
-   ↓  
-UI Layer (Piano, Roll, Staff, Visualizer)  
-   ↓  
-TrackManager (16-track control)  
-   ↓  
+MIDI Input
+↓
+Processor (timing, rhythm, velocity)
+↓
+GraphicNotationRenderer
+↓
+UI Layer (Piano, Roll, Staff, Visualizer)
+↓
+TrackManager (16-track control)
+↓
 Debug Layer (NotationRenderer)
-```
 
 Modular. Extensible. Professional.
 
 ---
 
-# 📦 Code Structure (with module links)
+# 📦 Code Structure
 
 ### Core Engine
 - `src/processor.py`  
@@ -145,7 +177,7 @@ Modular. Extensible. Professional.
 
 ---
 
-# 🗺 Roadmap (Short Version)
+# 🗺 Roadmap
 
 ## 🔜 Next steps
 - UI Track Switcher (16‑track control)  
