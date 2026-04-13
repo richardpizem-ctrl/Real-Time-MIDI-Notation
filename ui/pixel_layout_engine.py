@@ -1,370 +1,166 @@
-import pygame
-from .piano_ui import PianoUI
-from .piano_roll_ui import PianoRollUI
-from .staff_ui import StaffUI
-from .note_visualizer_ui import NoteVisualizerUI
-from .track_switcher_ui import TrackSwitcherUI
-from .track_selector_ui import TrackSelectorUI
-from .canvas_ui import CanvasUI
-from .transport_ui import TransportUI
-from .track_inspector import TrackInspector
-from .timeline_ui import TimelineUI   # ← NOVÉ
+import dataclasses
 
-from .track_control_manager import TrackControlManager
-from renderer_new.graphic_renderer import GraphicNotationRenderer
-from renderer.exporter import export_to_png
+@dataclasses.dataclass
+class Rect:
+    x: int
+    y: int
+    w: int
+    h: int
 
 
-class UIManager:
-    def __init__(self, width, height, track_system, notation_processor):
-        self.width = width
-        self.height = height
-        self.track_system = track_system
-        self.notation_processor = notation_processor
+class PixelLayoutEngine:
+    """
+    PixelLayoutEngine
+    ------------------
+    Centrálne miesto pre výpočet layoutu UI podľa veľkosti okna.
 
-        pygame.font.init()
+    Základný layout (DAW štýl):
 
-        # ---------------------------------------------------------
-        # TRACK CONTROL MANAGER
-        # ---------------------------------------------------------
-        self.track_control = TrackControlManager(track_count=16)
-        self.track_control.on("track_selected", self._on_track_selected)
-        self.track_control.on("visibility_changed", self._on_visibility_changed)
-        self.track_control.on("color_changed", self._on_color_changed)
+        ┌──────────────────────────────────────────────┐
+        │ TRANSPORT (fixed height)                     │
+        ├──────────────────────────────────────────────┤
+        │ TIMELINE (dynamic height)                    │
+        ├──────────────────────────────────────────────┤
+        │ TRACK SWITCHER (fixed height)                │
+        ├──────────────────────────────────────────────┤
+        │ TRACK SELECTOR (fixed height)                │
+        ├──────────────────────────────────────────────┤
+        │ PIANO / PIANO ROLL / STAFF / VISUALIZER      │
+        │ (stacked, fixed heights)                     │
+        ├──────────────────────────────────────────────┤
+        │ RENDERER (fills the rest)                    │
+        ├──────────────────────────────────────────────┤
+        │ TRACK INSPECTOR (fixed width, right side)    │
+        └──────────────────────────────────────────────┘
+    """
 
-        # ---------------------------------------------------------
+    def __init__(
+        self,
+        transport_height: int = 50,
+        timeline_min_height: int = 80,
+        timeline_max_height: int = 160,
+        track_switcher_height: int = 60,
+        track_selector_height: int = 60,
+        piano_height: int = 180,
+        piano_roll_height: int = 180,
+        staff_height: int = 200,
+        visualizer_height: int = 200,
+        inspector_width: int = 260,
+        margin: int = 0,
+    ):
+        self.transport_height = transport_height
+        self.timeline_min_height = timeline_min_height
+        self.timeline_max_height = timeline_max_height
+        self.track_switcher_height = track_switcher_height
+        self.track_selector_height = track_selector_height
+        self.piano_height = piano_height
+        self.piano_roll_height = piano_roll_height
+        self.staff_height = staff_height
+        self.visualizer_height = visualizer_height
+        self.inspector_width = inspector_width
+        self.margin = margin
+
+    # ---------------------------------------------------------
+    # MAIN LAYOUT COMPUTATION
+    # ---------------------------------------------------------
+    def compute_layout(self, window_width: int, window_height: int):
+        """
+        Vráti dict s Rect pre každý UI panel.
+        """
+
+        x0 = self.margin
+        y = self.margin
+        w_main = window_width - self.inspector_width - self.margin * 2
+
+        layout = {}
+
+        # -----------------------------------------------------
         # TRANSPORT
-        # ---------------------------------------------------------
-        self.transport = TransportUI(width, 50)
-        self.is_playing = False
-        self.play_start_time = 0
-        self.current_time_ms = 0
+        # -----------------------------------------------------
+        layout["transport"] = Rect(
+            x0, y, w_main, self.transport_height
+        )
+        y += self.transport_height
 
-        # ---------------------------------------------------------
-        # TIMELINE UI (NOVÉ)
-        # ---------------------------------------------------------
-        self.timeline = TimelineUI(
-            x=0,
-            y=50,
-            width=width,
-            height=80,
-            event_bus=track_system.event_bus,
-            renderer=None,   # nastavíme neskôr
+        # -----------------------------------------------------
+        # TIMELINE (dynamic height)
+        # -----------------------------------------------------
+        timeline_h = max(
+            self.timeline_min_height,
+            min(self.timeline_max_height, int(window_height * 0.12))
         )
 
-        # ---------------------------------------------------------
+        layout["timeline"] = Rect(
+            x0, y, w_main, timeline_h
+        )
+        y += timeline_h
+
+        # -----------------------------------------------------
         # TRACK SWITCHER
-        # ---------------------------------------------------------
-        self.track_switcher = TrackSwitcherUI(
-            x=0,
-            y=130,
-            width=width,
-            height=60,
-            track_colors=None,
-            event_bus=track_system.event_bus,
-            track_control_manager=self.track_control,
+        # -----------------------------------------------------
+        layout["track_switcher"] = Rect(
+            x0, y, w_main, self.track_switcher_height
         )
+        y += self.track_switcher_height
 
-        # ---------------------------------------------------------
+        # -----------------------------------------------------
         # TRACK SELECTOR
-        # ---------------------------------------------------------
-        self.track_selector = TrackSelectorUI(
-            track_control_manager=self.track_control,
-            width=width,
-            height=60,
+        # -----------------------------------------------------
+        layout["track_selector"] = Rect(
+            x0, y, w_main, self.track_selector_height
         )
+        y += self.track_selector_height
 
-        # ---------------------------------------------------------
-        # UI PANELY
-        # ---------------------------------------------------------
-        self.piano = PianoUI(width, 180)
-        self.piano_roll = PianoRollUI(width, 180)
-        self.staff = StaffUI(width, 200)
-        self.visualizer = NoteVisualizerUI(width, 200)
-
-        # ---------------------------------------------------------
-        # RENDERER
-        # ---------------------------------------------------------
-        self.renderer = GraphicNotationRenderer(
-            width,
-            200,
-            track_system,
-            self.track_control,
-        )
-
-        # prepojenie timeline → renderer
-        self.timeline.renderer = self.renderer
-
-        # ---------------------------------------------------------
-        # TRACK INSPECTOR
-        # ---------------------------------------------------------
-        self.track_inspector = TrackInspector(
-            track_manager=self.track_system,
-            track_control=self.track_control,
-            x=0,
-            y=1380,
-            width=260,
-            height=400,
-        )
-
-        # Canvas (Tk)
-        self.canvas_ui = None
-        self.canvas = None
-
-        # Quantization
-        self.quantize_division = 1.0
-        self.swing_amount = 0.0
-
-        # ---------------------------------------------------------
-        # LAYOUT (aktualizovaný)
-        # ---------------------------------------------------------
-        self.layout = {
-            "transport": (0, 0),
-            "timeline": (0, 50),
-            "track_switcher": (0, 130),
-            "track_selector": (0, 195),
-            "piano": (0, 260),
-            "piano_roll": (0, 450),
-            "staff": (0, 640),
-            "visualizer": (0, 840),
-            "renderer": (0, 1040),
-            "track_inspector": (0, 1240),
-        }
-
-        self.export_button_rect = pygame.Rect(self.width - 120, 10, 110, 35)
-        self.export_font = pygame.font.SysFont("Arial", 20)
-
-    # ---------------------------------------------------------
-    # CANVAS
-    # ---------------------------------------------------------
-    def build_layout(self, parent):
-        self.canvas_ui = CanvasUI(parent)
-        self.canvas = self.canvas_ui.get_canvas()
-
-        if hasattr(self.canvas_ui, "set_quantization"):
-            self.canvas_ui.set_quantization(self.quantize_division)
-        if hasattr(self.canvas_ui, "set_swing"):
-            self.canvas_ui.set_swing(self.swing_amount)
-
-    # ---------------------------------------------------------
-    # EVENTS
-    # ---------------------------------------------------------
-    def handle_event(self, event):
-
-        # Transport
-        t = self.transport.handle_event(event)
-        if t:
-            action = t.get("action")
-            if action == "play":
-                self.is_playing = True
-                self.play_start_time = pygame.time.get_ticks() - self.current_time_ms
-            elif action == "stop":
-                self.is_playing = False
-                self.current_time_ms = 0
-                self.transport.set_time("00:00.0")
-            elif action == "rewind":
-                self.current_time_ms = 0
-                self.play_start_time = pygame.time.get_ticks()
-                self.transport.set_time("00:00.0")
-
-        # Timeline events (NOVÉ)
-        try:
-            self.timeline.handle_event(event)
-        except Exception:
-            pass
-
-        # Export + Track switcher + Track selector + Track inspector
-        if event.type == pygame.MOUSEBUTTONDOWN:
-
-            # EXPORT
-            if self.export_button_rect.collidepoint(event.pos):
-                if self.canvas is not None:
-                    export_to_png(self.canvas, "export.png")
-                    print("[EXPORT] export.png uložený")
-
-            # Track Switcher
-            try:
-                result = self.track_switcher.handle_event(event)
-                if isinstance(result, dict) and "selected_track" in result:
-                    self.track_control.set_active_track(result["selected_track"])
-            except Exception:
-                pass
-
-            # Track Selector
-            try:
-                self.track_selector.handle_click(event.pos)
-            except Exception:
-                pass
-
-            # Track Inspector
-            try:
-                self.track_inspector.handle_event(event)
-            except Exception:
-                pass
-
-        # Quantization shortcuts
-        if event.type == pygame.KEYDOWN:
-            updated = False
-            if event.key == pygame.K_1:
-                self.quantize_division = 1.0
-                updated = True
-            elif event.key == pygame.K_2:
-                self.quantize_division = 0.5
-                updated = True
-            elif event.key == pygame.K_3:
-                self.quantize_division = 0.25
-                updated = True
-            elif event.key == pygame.K_4:
-                self.quantize_division = 0.125
-                updated = True
-
-            if event.key == pygame.K_q:
-                self.swing_amount = 0.0
-                updated = True
-            elif event.key == pygame.K_w:
-                self.swing_amount = 0.3
-                updated = True
-
-            if updated:
-                self._apply_quantization_to_canvas()
-
-    # ---------------------------------------------------------
-    # TIME UPDATE
-    # ---------------------------------------------------------
-    def _update_time(self):
-        if self.is_playing:
-            self.current_time_ms = pygame.time.get_ticks() - self.play_start_time
-
-            total_ms = self.current_time_ms
-            seconds = (total_ms // 1000) % 60
-            minutes = (total_ms // 60000)
-            tenths = (total_ms % 1000) // 100
-
-            time_str = f"{minutes:02}:{seconds:02}.{tenths}"
-            self.transport.set_time(time_str)
-
-            # prepojenie playhead → renderer → timeline
-            try:
-                self.renderer.set_playback_time(total_ms / 1000.0)
-            except Exception:
-                pass
-
-    # ---------------------------------------------------------
-    # TRACK CONTROL CALLBACKS
-    # ---------------------------------------------------------
-    def _on_track_selected(self, data):
-        track = data.get("track", 0)
-        try: self.track_selector.set_active_track(track)
-        except: pass
-        try: self.track_switcher.set_active_track(track)
-        except: pass
-        try: self.track_inspector.set_active_track(track)
-        except: pass
-
-    def _on_visibility_changed(self, data):
-        track = data.get("track", 0)
-        visible = data.get("visible", True)
-        try: self.track_switcher.update_visibility(track, visible)
-        except: pass
-        try: self.renderer.update_visibility(track, visible)
-        except: pass
-
-    def _on_color_changed(self, data):
-        track = data.get("track", 0)
-        color = data.get("color", "#FFFFFF")
-        try: self.track_switcher.update_color(track, color)
-        except: pass
-        try: self.renderer.update_color(track, color)
-        except: pass
-        try: self.track_inspector.update_color(track, color)
-        except: pass
-
-    # ---------------------------------------------------------
-    # DRAW
-    # ---------------------------------------------------------
-    def draw(self, surface):
-        self._update_time()
-
-        # TRANSPORT
-        try:
-            x, y = self.layout["transport"]
-            self.transport.draw(surface.subsurface((x, y, self.width, 50)))
-        except:
-            pass
-
-        # TIMELINE (NOVÉ)
-        try:
-            x, y = self.layout["timeline"]
-            self.timeline.set_bounds(x, y, self.width, 80)
-            self.timeline.draw(surface.subsurface((x, y, self.width, 80)))
-        except:
-            pass
-
-        # TRACK SWITCHER
-        try:
-            x, y = self.layout["track_switcher"]
-            self.track_switcher.draw(
-                surface.subsurface((x, y, self.width, 60)),
-                active_track=self.track_control.get_active_track(),
-            )
-        except:
-            pass
-
-        # TRACK SELECTOR
-        try:
-            x, y = self.layout["track_selector"]
-            self.track_selector.draw(
-                surface.subsurface((x, y, self.width, 60)),
-                active_track=self.track_control.get_active_track(),
-            )
-        except:
-            pass
-
+        # -----------------------------------------------------
         # PIANO
-        try:
-            x, y = self.layout["piano"]
-            self.piano.draw(surface.subsurface((x, y, self.width, 180)))
-        except:
-            pass
+        # -----------------------------------------------------
+        layout["piano"] = Rect(
+            x0, y, w_main, self.piano_height
+        )
+        y += self.piano_height
 
+        # -----------------------------------------------------
         # PIANO ROLL
-        try:
-            x, y = self.layout["piano_roll"]
-            self.piano_roll.draw(surface.subsurface((x, y, self.width, 180)))
-        except:
-            pass
+        # -----------------------------------------------------
+        layout["piano_roll"] = Rect(
+            x0, y, w_main, self.piano_roll_height
+        )
+        y += self.piano_roll_height
 
+        # -----------------------------------------------------
         # STAFF
-        try:
-            x, y = self.layout["staff"]
-            self.staff.draw(surface.subsurface((x, y, self.width, 200)))
-        except:
-            pass
+        # -----------------------------------------------------
+        layout["staff"] = Rect(
+            x0, y, w_main, self.staff_height
+        )
+        y += self.staff_height
 
+        # -----------------------------------------------------
         # VISUALIZER
-        try:
-            x, y = self.layout["visualizer"]
-            timestamp = pygame.time.get_ticks() / 1000.0
-            self.visualizer.update_bpm_pulse(self.transport.bpm, timestamp)
-            self.visualizer.draw(surface.subsurface((x, y, self.width, 200)))
-        except:
-            pass
+        # -----------------------------------------------------
+        layout["visualizer"] = Rect(
+            x0, y, w_main, self.visualizer_height
+        )
+        y += self.visualizer_height
 
-        # RENDERER
-        try:
-            x, y = self.layout["renderer"]
-            self.renderer.draw(surface.subsurface((x, y, self.width, 200)))
-        except:
-            pass
+        # -----------------------------------------------------
+        # RENDERER (fills remaining space)
+        # -----------------------------------------------------
+        remaining = window_height - y - self.margin
+        renderer_h = max(120, remaining)
 
-        # TRACK INSPECTOR
-        try:
-            x, y = self.layout["track_inspector"]
-            self.track_inspector.draw(surface.subsurface((x, y, 260, 400)))
-        except:
-            pass
+        layout["renderer"] = Rect(
+            x0, y, w_main, renderer_h
+        )
 
-        # EXPORT BUTTON
-        pygame.draw.rect(surface, (40, 40, 40), self.export_button_rect)
-        text = self.export_font.render("EXPORT", True, (255, 255, 255))
-        surface.blit(text, (self.width - 110, 17))
+        # -----------------------------------------------------
+        # TRACK INSPECTOR (right side)
+        # -----------------------------------------------------
+        layout["track_inspector"] = Rect(
+            window_width - self.inspector_width - self.margin,
+            self.margin,
+            self.inspector_width,
+            window_height - self.margin * 2,
+        )
+
+        return layout
