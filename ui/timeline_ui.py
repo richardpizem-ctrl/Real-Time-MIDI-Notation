@@ -31,6 +31,15 @@ class TimelineUI:
             pixels_per_beat=100
         )
 
+        # ---------------------------------------------------------
+        # PATCH: PREPOJENIE S GraphicNotationRenderer.timeline_controller
+        # ---------------------------------------------------------
+        if self.renderer and hasattr(self.renderer, "timeline_controller"):
+            if self.renderer.timeline_controller is not None:
+                self.controller = self.renderer.timeline_controller
+                Logger.info("TimelineUI: prepojené s renderer.timeline_controller")
+        # ---------------------------------------------------------
+
         # UI zoom/scroll (naviazané na controller.layout)
         self.zoom = 1.0
         self.scroll_x = 0
