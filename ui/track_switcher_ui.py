@@ -44,14 +44,12 @@ class TrackSwitcherUI:
         self.track_colors = track_colors
         self.event_bus = event_bus
 
-        # Centrálne riadenie stôp (Fáza 4)
         self.track_control_manager = track_control_manager
 
         self.track_count = self.TRACK_COUNT
         self.button_width = max(1, width // self.track_count)
         self.button_height = height
 
-        # Peak hold vizuál
         self.peak_hold = [0.0] * self.track_count
 
         try:
@@ -312,11 +310,9 @@ class TrackSwitcherUI:
                 self.button_height,
             )
 
-            # GRADIENT + VNÚTORNÝ LESK
             self._draw_gradient(surface, rect, base_color)
             self._draw_inner_highlight(surface, rect)
 
-            # OVERLAY
             try:
                 if tm.is_muted(tid):
                     overlay = (120, 120, 120)
@@ -330,51 +326,42 @@ class TrackSwitcherUI:
             pygame.draw.rect(surface, overlay, rect, border_radius=6)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2, border_radius=6)
 
-            # OUTER GLOW – HOVER
             if rect.collidepoint(mx, my):
                 self._draw_outer_glow(surface, rect, intensity=40)
 
-            # OUTER GLOW – ACTIVE TRACK + jemný biely rámik
             if active_tid == tid:
                 self._draw_outer_glow(surface, rect, intensity=70)
                 pygame.draw.rect(surface, (255, 255, 255), rect.inflate(-2, -2), 1, border_radius=6)
 
-            # METER BACKGROUND + METER + PEAK
             activity = tm.get_activity(tid)
             self._draw_meter_background(surface, rect)
             self._draw_meter(surface, rect, activity)
             self._draw_peak(surface, rect, self.peak_hold[i])
 
-            # PAN BACKGROUND + PAN
             pan_val = tm.get_pan(tid)
             self._draw_pan_background(surface, rect)
             self._draw_pan(surface, rect, pan_val)
             self._draw_separator(surface, rect, self.button_height - 65)
 
-            # VOLUME BACKGROUND + VOLUME
             volume = tm.get_volume(tid)
             self._draw_volume_background(surface, rect)
             self._draw_volume(surface, rect, volume)
             self._draw_separator(surface, rect, self.button_height - 25)
 
-            # RECORD ARM
             rec_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 85, self.button_width - 8, 10)
             rec_active = tm.is_record_armed(tid)
             self._draw_button(surface, rec_rect, rec_active, (255, 0, 0), (80, 0, 0), "R")
             self._draw_separator(surface, rect, self.button_height - 75)
 
-            # MUTE
             mute_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 20, self.button_width - 8, 10)
             mute_active = tm.is_muted(tid)
             self._draw_button(surface, mute_rect, mute_active, (255, 80, 80), (100, 40, 40), "M")
             self._draw_separator(surface, rect, self.button_height - 10)
 
-            # SOLO
             solo_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 10, self.button_width - 8, 10)
             solo_active = tm.is_solo(tid)
             self._draw_button(surface, solo_rect, solo_active, (255, 255, 80), (100, 100, 40), "S")
 
-            # TOOLTIP DETEKCIA
             if rect.collidepoint(mx, my):
                 local_y = my - rect.y
                 if self.button_height - 85 <= local_y < self.button_height - 75:
@@ -389,7 +376,6 @@ class TrackSwitcherUI:
                     tooltip_text = "Solo"
                 tooltip_pos = (mx + 8, my - 18)
 
-            # NAME
             try:
                 name = tm.get_name(tid)
             except Exception:
@@ -402,17 +388,13 @@ class TrackSwitcherUI:
                 text_rect = text_surface.get_rect(center=(rect.x + self.button_width // 2, rect.y + 12))
                 surface.blit(text_surface, text_rect)
 
-            # NAME SEPARATOR
             self._draw_name_separator(surface, rect)
 
-            # VERTIKÁLNY DIVIDER (okrem posledného tracku)
             if i < self.track_count - 1:
                 self._draw_vertical_divider(surface, rect)
 
-            # TIEŇ
             self._draw_shadow(surface, rect)
 
-        # TOOLTIP RENDER
         if tooltip_text and self.small_font:
             tip_surf = self.small_font.render(tooltip_text, True, (0, 0, 0))
             bg_rect = tip_surf.get_rect(topleft=tooltip_pos).inflate(6, 4)
@@ -424,73 +406,29 @@ class TrackSwitcherUI:
     # PUBLIC API PRE UIManager (ZJEDNOTENÉ, PROFESIONÁLNE)
     # ---------------------------------------------------------
 
-    def handle_click(self, x, y):
-        """Spracuje kliknutie myšou a aktivuje príslušnú akciu."""
-        for i in range(self.track_count):
-            rect = pygame.Rect(self.x + i * self.button_width, self.y, self.button_width, self.button_height)
-            if rect.collidepoint(x, y):
-                tid = i + 1
-                return self._handle_track_click(tid, y - rect
-    # ---------------------------------------------------------
-    # PUBLIC API PRE UIManager (ZJEDNOTENÉ, PROFESIONÁLNE)
-    # ---------------------------------------------------------
-
     def _handle_track_click(self, tid, local_y):
-        """Interná logika pre kliknutie na konkrétny track."""
         tm = self.event_bus.track_manager
 
-        # RECORD
         if self.button_height - 85 <= local_y < self.button_height - 75:
             tm.toggle_record_arm(tid)
             self.event_bus.emit("track_record_toggle", tid)
             return "record"
 
-        # PAN
         if self.button_height - 75 <= local_y < self.button_height - 65:
-            # Pan sa nemení kliknutím, iba tooltip
             return "pan"
 
-        # VOLUME
         if self.button_height - 55 <= local_y < self.button_height - 25:
-            # Volume slider by sa mal riešiť dragom, nie klikom
             return "volume"
 
-        # MUTE
         if self.button_height - 20 <= local_y < self.button_height - 10:
             tm.toggle_mute(tid)
             self.event_bus.emit("track_mute_toggle", tid)
             return "mute"
 
-        # SOLO
         if local_y >= self.button_height - 10:
             tm.toggle_solo(tid)
             self.event_bus.emit("track_solo_toggle", tid)
             return "solo"
 
-        # AKTÍVNA STOPA
         if self.track_control_manager is not None:
-            self.track_control_manager.set_active_track(tid - 1)
-            self.event_bus.emit("track_selected", tid)
-            return "select"
-
-        return None
-
-    def handle_click(self, x, y):
-        """Spracuje kliknutie myšou a aktivuje príslušnú akciu."""
-        for i in range(self.track_count):
-            rect = pygame.Rect(self.x + i * self.button_width, self.y, self.button_width, self.button_height)
-            if rect.collidepoint(x, y):
-                tid = i + 1
-                local_y = y - rect.y
-                return self._handle_track_click(tid, local_y)
-        return None
-
-    def set_active_track(self, tid):
-        """Externé API pre UIManager."""
-        if self.track_control_manager is not None:
-            self.track_control_manager.set_active_track(tid - 1)
-
-    def refresh(self):
-        """Externé API – UIManager môže zavolať pri zmene stavu."""
-        self.update_peak_hold()
-        self._emit_audible_state()
+            self.track_control_manager.set_active_track(t
