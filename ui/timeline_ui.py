@@ -61,7 +61,7 @@ class TimelineUI:
 
         # MARKERS (DAW PRO)
         self.markers = []  # list of dicts: {"beat": float, "label": "M1"}
-        self.marker_dragging = None  # index of marker being dragged
+        self.marker_dragging = None
         self.marker_drag_offset = 0
         self.marker_rename_index = None
         self.marker_rename_text = ""
@@ -210,7 +210,6 @@ class TimelineUI:
 
             # Label or rename box
             if self.marker_rename_index == i:
-                # rename background
                 text = self.font.render(self.marker_rename_text, True, (0, 0, 0))
                 box_w = max(40, text.get_width() + 10)
                 box_h = text.get_height() + 6
@@ -258,105 +257,22 @@ class TimelineUI:
                 pygame.draw.line(surface, (110, 110, 120), (px, ruler_y + 10), (px, ruler_y + ruler_h), 1)
 
     # ---------------------------------------------------------
-    # ZOOM & SCROLL
+    # SNAPPING HELPERS
     # ---------------------------------------------------------
-    def _apply_zoom(self, mouse_x, delta):
-        old_zoom = self.zoom
+    def _snap_beat(self, beat):
+        mods = pygame.key.get_mods()
+        beats_per_bar = self.controller.beats_per_bar
 
-        if delta > 0:
-            self.zoom *= 1.1
-        else:
-            self.zoom /= 1.1
+        # SHIFT = disable snapping
+        if mods & pygame.KMOD_SHIFT:
+            return beat
 
-        self.zoom = max(0.25, min(4.0, self.zoom))
+        # CTRL = snap to bars
+        if mods & pygame.KMOD_CTRL:
+            return round(beat / beats_per_bar) * beats_per_bar
 
-        self.controller.layout.set_zoom(self.zoom)
-
-        if self.renderer and hasattr(self.renderer, "set_zoom"):
-            try:
-                self.renderer.set_zoom(self.zoom)
-            except:
-                pass
-
-        rel_x = mouse_x - self.x
-        scale = self.zoom / old_zoom
-        self.scroll_x = int((self.scroll_x + rel_x) * scale - rel_x)
-        self.scroll_x = max(0, min(self.scroll_x, 100000))
-
-        self.controller.layout.set_offset(self.scroll_x)
-
-        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
-            try:
-                self.renderer.set_scroll_offset(self.scroll_x)
-            except:
-                pass
-
-    def _apply_scroll(self, delta):
-        self.scroll_x += delta * 40
-        self.scroll_x = max(0, min(self.scroll_x, 100000))
-        self.controller.layout.set_offset(self.scroll_x)
-
-        if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
-            try:
-                self.renderer.set_scroll_offset(self.scroll_x)
-            except:
-                pass
-
-    # ---------------------------------------------------------
-    # CLICK‑TO‑SEEK
-    # ---------------------------------------------------------
-    def _apply_seek(self, mouse_x):
-        local_x = mouse_x - self.x
-        beat = self.controller.layout.pixel_to_beat(local_x)
-        time_sec = self.controller.beat_to_seconds(beat)
-
-        try:
-            self.controller.set_playhead_position(time_sec)
-        except:
-            pass
-
-        if self.renderer and hasattr(self.renderer, "set_playback_time"):
-            try:
-                self.renderer.set_playback_time(time_sec)
-            except:
-                pass
-
-        return {"seek": time_sec}
-
-    # ---------------------------------------------------------
-    # LOOP REGION LOGIC
-    # ---------------------------------------------------------
-    def _start_loop(self, mouse_x):
-        layout = self.controller.layout
-        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
-
-        self.loop_active = True
-        self.loop_start_beat = beat
-        self.loop_end_beat = beat
-
-    def _update_loop(self, mouse_x):
-        layout = self.controller.layout
-        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
-        self.loop_end_beat = beat
-
-    def _finalize_loop(self):
-        if self.loop_end_beat < self.loop_start_beat:
-            self.loop_start_beat, self.loop_end_beat = self.loop_end_beat, self.loop_start_beat
-
-        start_sec = self.controller.beat_to_seconds(self.loop_start_beat)
-        end_sec = self.controller.beat_to_seconds(self.loop_end_beat)
-
-        if hasattr(self.renderer, "set_loop_region"):
-            try:
-                self.renderer.set_loop_region(start_sec, end_sec)
-            except:
-                pass
-
-        if hasattr(self.controller.layout, "set_loop"):
-            try:
-                self.controller.layout.set_loop(self.loop_start_beat, self.loop_end_beat)
-            except:
-                pass
+        # default = snap to nearest beat
+        return round(beat)
 
     # ---------------------------------------------------------
     # MARKER LOGIC
@@ -364,6 +280,8 @@ class TimelineUI:
     def _add_marker(self, mouse_x):
         layout = self.controller.layout
         beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+
+        beat = self._snap_beat(beat)
 
         label = f"M{self.marker_next_id}"
         self.marker_next_id += 1
@@ -387,7 +305,9 @@ class TimelineUI:
 
         layout = self.controller.layout
         beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+
         new_beat = beat - self.marker_drag_offset
+        new_beat = self._snap_beat(new_beat)
 
         if new_beat < 0:
             new_beat = 0
