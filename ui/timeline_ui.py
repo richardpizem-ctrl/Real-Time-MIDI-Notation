@@ -119,13 +119,58 @@ class TimelineUI:
         if timeline_surface is not None:
             surface.blit(timeline_surface, (self.x, self.y))
 
-        # 2. UI overlay (zoom bar, scroll bar)
+        # 2. RULER (taktové čísla + beat tick lines)
+        self._draw_ruler(surface)
+
+        # 3. UI overlay (zoom bar, scroll bar)
         self._draw_zoom_bar(surface)
         self._draw_scroll_bar(surface)
 
-        # 3. HANDLE
+        # 4. HANDLE
         handle = self._compute_handle_rect()
         pygame.draw.rect(surface, (120, 120, 130), handle)
+
+    # ---------------------------------------------------------
+    # RULER DRAW (NOVÉ)
+    # ---------------------------------------------------------
+    def _draw_ruler(self, surface):
+        if not self.font:
+            return
+
+        beats_per_bar = self.controller.beats_per_bar
+        layout = self.controller.layout
+
+        # Ruler height (top 20 px)
+        ruler_y = self.y
+        ruler_h = 20
+
+        # Background
+        pygame.draw.rect(surface, (35, 35, 40), (self.x, ruler_y, self.width, ruler_h))
+
+        # Visible beat range
+        start_beat = layout.pixel_to_beat(self.scroll_x)
+        end_beat = layout.pixel_to_beat(self.scroll_x + self.width)
+
+        start_beat = int(start_beat) - 2
+        end_beat = int(end_beat) + 2
+
+        for beat in range(start_beat, end_beat):
+            if beat < 0:
+                continue
+
+            px = self.x + layout.beat_to_pixel(beat) - self.scroll_x
+
+            # Taktová čiara
+            if beat % beats_per_bar == 0:
+                pygame.draw.line(surface, (180, 180, 190), (px, ruler_y), (px, ruler_y + ruler_h), 2)
+
+                bar_number = beat // beats_per_bar + 1
+                text = self.font.render(str(bar_number), True, (220, 220, 230))
+                surface.blit(text, (px + 4, ruler_y + 2))
+
+            # Beat tick
+            else:
+                pygame.draw.line(surface, (110, 110, 120), (px, ruler_y + 10), (px, ruler_y + ruler_h), 1)
 
     # ---------------------------------------------------------
     # ZOOM & SCROLL
@@ -140,17 +185,14 @@ class TimelineUI:
 
         self.zoom = max(0.25, min(4.0, self.zoom))
 
-        # Prepojiť s controller
         self.controller.layout.set_zoom(self.zoom)
 
-        # PREPOJENIE ZOOM → GraphicNotationRenderer
         if self.renderer and hasattr(self.renderer, "set_zoom"):
             try:
                 self.renderer.set_zoom(self.zoom)
             except:
                 pass
 
-        # Scroll korekcia
         rel_x = mouse_x - self.x
         scale = self.zoom / old_zoom
         self.scroll_x = int((self.scroll_x + rel_x) * scale - rel_x)
@@ -158,7 +200,6 @@ class TimelineUI:
 
         self.controller.layout.set_offset(self.scroll_x)
 
-        # PREPOJENIE OFFSET → GraphicNotationRenderer
         if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
             try:
                 self.renderer.set_scroll_offset(self.scroll_x)
@@ -170,7 +211,6 @@ class TimelineUI:
         self.scroll_x = max(0, min(self.scroll_x, 100000))
         self.controller.layout.set_offset(self.scroll_x)
 
-        # PREPOJENIE OFFSET → GraphicNotationRenderer
         if self.renderer and hasattr(self.renderer, "set_scroll_offset"):
             try:
                 self.renderer.set_scroll_offset(self.scroll_x)
@@ -181,7 +221,6 @@ class TimelineUI:
     # CLICK‑TO‑SEEK
     # ---------------------------------------------------------
     def _apply_seek(self, mouse_x):
-        """Kliknutie do timeline → posun playhead + renderer."""
         local_x = mouse_x - self.x
         beat = self.controller.layout.pixel_to_beat(local_x)
         time_sec = self.controller.beat_to_seconds(beat)
