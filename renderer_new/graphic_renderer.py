@@ -290,11 +290,44 @@ class GraphicNotationRenderer:
         b = int(self._lerp(c1[2], c2[2], t))
         return (r, g, b)
 
+    # ---------------------------------------------------------
+    # FIXED DYNAMICS COLOR + ERROR COLOR
+    # ---------------------------------------------------------
+    def _velocity_to_fixed_color(self, velocity: int, is_error: bool) -> Tuple[int, int, int]:
+        """
+        Pevné farby podľa dynamiky + modrá pre chybnú notu.
+
+        Štandardné MIDI prahové hodnoty:
+            1–50   = slabá dynamika (žltá)
+            51–90  = stredná dynamika (zelená)
+            91–127 = silná dynamika (červená)
+        """
+        if is_error:
+            return (0, 120, 255)  # MODRÁ – chybná nota
+
+        try:
+            v = int(velocity)
+        except Exception:
+            v = 64
+
+        v = max(1, min(127, v))
+
+        if v <= 50:
+            return (255, 220, 0)     # ŽLTÁ – slabá
+        elif v <= 90:
+            return (0, 200, 0)       # ZELENÁ – stredná
+        else:
+            return (255, 60, 60)     # ČERVENÁ – silná
+
     def _velocity_to_color(
         self,
         base_color: Tuple[int, int, int],
         velocity: int
     ) -> Tuple[int, int, int]:
+        """
+        Pôvodný heatmap systém – môže zostať pre spätnú kompatibilitu,
+        ale _draw_note už používa _velocity_to_fixed_color.
+        """
         try:
             v = int(velocity)
         except Exception:
@@ -344,7 +377,7 @@ class GraphicNotationRenderer:
         return max(0.3, min(1.0, v / 127.0))
 
     # ---------------------------------------------------------
-    # DRAW NOTE
+    # DRAW NOTE (upravené – fixed farby + note_obj)
     # ---------------------------------------------------------
     def _draw_note(
         self,
@@ -353,14 +386,21 @@ class GraphicNotationRenderer:
         y: float,
         base_color: Tuple[int, int, int],
         velocity: int,
+        note_obj: Optional[Dict[str, Any]] = None,
         flash: float = 0.0
     ) -> None:
         if pygame is None or surface is None:
             return
 
-        factor = self._velocity_factor(velocity)
-        color = self._velocity_to_color(base_color, velocity)
+        # zisti, či je nota označená ako chybná
+        is_error = False
+        if isinstance(note_obj, dict):
+            is_error = bool(note_obj.get("error", False))
 
+        # farba podľa dynamiky / chyby
+        color = self._velocity_to_fixed_color(velocity, is_error)
+
+        # flash efekt
         try:
             f = float(flash)
         except Exception:
@@ -369,6 +409,8 @@ class GraphicNotationRenderer:
         if f > 0.01:
             color = self._mix_colors(color, (255, 255, 255), min(0.8, f))
 
+        # veľkosť podľa velocity
+        factor = self._velocity_factor(velocity)
         w = int(16 * (0.8 + 0.4 * factor))
         h = int(12 * (0.8 + 0.4 * factor))
 
@@ -517,7 +559,7 @@ class GraphicNotationRenderer:
             if 0 <= x <= self.width:
                 try:
                     label = self.font.render(str(bar + 1), True, (230, 230, 230))
-                    self.surface.blit(label, (int(x) + 4, self.timeline_height))
+                    self.surface.blit(label, (int(x) + 4), self.timeline_height)
                 except Exception:
                     continue
 
@@ -574,4 +616,15 @@ class GraphicNotationRenderer:
                 t16a = t + seconds_per_beat / 4
                 t16b = t + 3 * seconds_per_beat / 4
                 for t16 in (t16a, t16b):
-                    x16 = self._time_to_x
+                    x16 = self._time_to_x(t16)
+                    if 0 <= x16 <= self.width:
+                        try:
+                            pygame.draw.line(
+                                self.surface,
+                                (40, 40, 40),
+                                (int(x16), self.timeline_height),
+                                (int(x16), self.height),
+                                1
+                            )
+                        except Exception:
+                            pass
