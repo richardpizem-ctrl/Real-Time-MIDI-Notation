@@ -36,6 +36,10 @@ class Playhead:
         self.beats_per_bar = max(1, int(beats_per_bar))
         self.pixels_per_beat = max(1, int(pixels_per_beat))
 
+        # Zoom + offset (doplnene)
+        self.zoom = 1.0
+        self.offset_x = 0
+
         self.x = 0  # aktuálna pozícia playheadu v pixeloch
 
         Logger.info("Playhead initialized.")
@@ -61,6 +65,20 @@ class Playhead:
         except Exception:
             Logger.error("Playhead set_pixels_per_beat error.")
 
+    def set_zoom(self, zoom: float) -> None:
+        """Externé nastavenie zoomu (od TimelineController)."""
+        try:
+            self.zoom = max(0.1, float(zoom))
+        except Exception:
+            Logger.error("Playhead set_zoom error.")
+
+    def set_offset(self, offset_x: int) -> None:
+        """Externé nastavenie scroll offsetu."""
+        try:
+            self.offset_x = int(offset_x)
+        except Exception:
+            Logger.error("Playhead set_offset error.")
+
     # ---------------------------------------------------------
     # UPDATE POSITION
     # ---------------------------------------------------------
@@ -75,8 +93,12 @@ class Playhead:
             beats_per_second = self.bpm / 60.0
             total_beats = time_seconds * beats_per_second
 
-            # Prepočet na pixely
-            self.x = int(total_beats * self.pixels_per_beat)
+            # Prepočet na pixely (vrátane zoomu)
+            zoomed_ppb = self.pixels_per_beat * self.zoom
+            raw_x = total_beats * zoomed_ppb
+
+            # Aplikovať scroll offset
+            self.x = int(raw_x - self.offset_x)
 
         except Exception as e:
             Logger.error(f"Playhead update error: {e}")
