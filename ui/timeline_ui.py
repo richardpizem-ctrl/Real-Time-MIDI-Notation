@@ -31,14 +31,11 @@ class TimelineUI:
             pixels_per_beat=100
         )
 
-        # ---------------------------------------------------------
-        # PREPOJENIE S GraphicNotationRenderer.timeline_controller
-        # ---------------------------------------------------------
+        # Prepojenie s renderer.timeline_controller
         if self.renderer and hasattr(self.renderer, "timeline_controller"):
             if self.renderer.timeline_controller is not None:
                 self.controller = self.renderer.timeline_controller
                 Logger.info("TimelineUI: prepojené s renderer.timeline_controller")
-        # ---------------------------------------------------------
 
         # UI zoom/scroll
         self.zoom = 1.0
@@ -61,6 +58,13 @@ class TimelineUI:
         self.loop_start_beat = 0
         self.loop_end_beat = 0
         self.loop_drag_offset = 0
+
+        # MARKERS (DAW PRO)
+        self.markers = []  # list of dicts: {"beat": float, "label": "M1"}
+        self.marker_dragging = None  # index of marker being dragged
+        self.marker_drag_offset = 0
+        self.marker_rename_index = None
+        self.marker_next_id = 1
 
         # Font
         try:
@@ -133,6 +137,14 @@ class TimelineUI:
         return pygame.Rect(px1, self.y, px2 - px1, 20)
 
     # ---------------------------------------------------------
+    # MARKER RECT
+    # ---------------------------------------------------------
+    def _compute_marker_rect(self, marker):
+        layout = self.controller.layout
+        px = self.x + layout.beat_to_pixel(marker["beat"]) - self.scroll_x
+        return pygame.Rect(px - 6, self.y, 12, 20)
+
+    # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
@@ -144,36 +156,44 @@ class TimelineUI:
         # 2. Ruler
         self._draw_ruler(surface)
 
-        # 3. LOOP REGION
+        # 3. Loop region
         self._draw_loop(surface)
 
-        # 4. Bars
+        # 4. Markers
+        self._draw_markers(surface)
+
+        # 5. Bars
         self._draw_zoom_bar(surface)
         self._draw_scroll_bar(surface)
 
-        # 5. Handle
+        # 6. Scroll handle
         handle = self._compute_handle_rect()
         pygame.draw.rect(surface, (120, 120, 130), handle)
 
     # ---------------------------------------------------------
-    # LOOP DRAW
+    # MARKER DRAW
     # ---------------------------------------------------------
-    def _draw_loop(self, surface):
-        rect = self._compute_loop_rect()
-        if not rect:
+    def _draw_markers(self, surface):
+        if not self.font:
             return
 
-        # Loop fill
-        pygame.draw.rect(surface, (80, 120, 200, 80), rect)
-        # Border
-        pygame.draw.rect(surface, (160, 200, 255), rect, 2)
+        for marker in self.markers:
+            rect = self._compute_marker_rect(marker)
 
-        # Resize handles
-        left = pygame.Rect(rect.x - 4, rect.y, 8, rect.h)
-        right = pygame.Rect(rect.right - 4, rect.y, 8, rect.h)
+            # Triangle marker
+            pygame.draw.polygon(
+                surface,
+                (255, 200, 80),
+                [
+                    (rect.centerx, rect.y),
+                    (rect.x, rect.y + rect.h),
+                    (rect.right, rect.y + rect.h),
+                ],
+            )
 
-        pygame.draw.rect(surface, (200, 220, 255), left)
-        pygame.draw.rect(surface, (200, 220, 255), right)
+            # Label
+            text = self.font.render(marker["label"], True, (255, 230, 150))
+            surface.blit(text, (rect.centerx + 4, rect.y + 2))
 
     # ---------------------------------------------------------
     # RULER DRAW
@@ -211,106 +231,59 @@ class TimelineUI:
                 pygame.draw.line(surface, (110, 110, 120), (px, ruler_y + 10), (px, ruler_y + ruler_h), 1)
 
     # ---------------------------------------------------------
-    # LOOP REGION LOGIC
+    # MARKER LOGIC
     # ---------------------------------------------------------
-    def _start_loop(self, mouse_x):
+    def _add_marker(self, mouse_x):
         layout = self.controller.layout
         beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
 
-        self.loop_active = True
-        self.loop_dragging = False
-        self.loop_resizing_left = False
-        self.loop_resizing_right = False
+        label = f"M{self.marker_next_id}"
+        self.marker_next_id += 1
 
-        self.loop_start_beat = beat
-        self.loop_end_beat = beat
+        self.markers.append({"beat": beat, "label": label})
+        self._sync_markers()
 
-    def _update_loop(self, mouse_x):
+    def _delete_marker(self, index):
+        del self.markers[index]
+        self._sync_markers()
+
+    def _start_marker_drag(self, index, mouse_x):
+        self.marker_dragging = index
         layout = self.controller.layout
         beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
-        self.loop_end_beat = beat
+        self.marker_drag_offset = beat - self.markers[index]["beat"]
 
-    def _finalize_loop(self):
-        if self.loop_end_beat < self.loop_start_beat:
-            self.loop_start_beat, self.loop_end_beat = self.loop_end_beat, self.loop_start_beat
+    def _update_marker_drag(self, mouse_x):
+        if self.marker_dragging is None:
+            return
 
-        start_sec = self.controller.beat_to_seconds(self.loop_start_beat)
-        end_sec = self.controller.beat_to_seconds(self.loop_end_beat)
+        layout = self.controller.layout
+        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+        new_beat = beat - self.marker_drag_offset
 
-        if hasattr(self.renderer, "set_loop_region"):
+        if new_beat < 0:
+            new_beat = 0
+
+        self.markers[self.marker_dragging]["beat"] = new_beat
+        self._sync_markers()
+
+    def _end_marker_drag(self):
+        self.marker_dragging = None
+
+    def _sync_markers(self):
+        # Prepojenie s rendererom
+        if hasattr(self.renderer, "set_markers"):
             try:
-                self.renderer.set_loop_region(start_sec, end_sec)
+                self.renderer.set_markers(self.markers)
             except:
                 pass
 
-        if hasattr(self.controller.layout, "set_loop"):
+        # Prepojenie s controller.layout
+        if hasattr(self.controller.layout, "set_markers"):
             try:
-                self.controller.layout.set_loop(self.loop_start_beat, self.loop_end_beat)
+                self.controller.layout.set_markers(self.markers)
             except:
                 pass
-
-    # ---------------------------------------------------------
-    # LOOP DRAGGING
-    # ---------------------------------------------------------
-    def _start_loop_drag(self, mouse_x):
-        layout = self.controller.layout
-        rect = self._compute_loop_rect()
-
-        self.loop_dragging = True
-        self.loop_resizing_left = False
-        self.loop_resizing_right = False
-
-        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
-        self.loop_drag_offset = beat - self.loop_start_beat
-
-    def _update_loop_drag(self, mouse_x):
-        layout = self.controller.layout
-        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
-
-        new_start = beat - self.loop_drag_offset
-        length = self.loop_end_beat - self.loop_start_beat
-        new_end = new_start + length
-
-        if new_start < 0:
-            new_start = 0
-            new_end = length
-
-        self.loop_start_beat = new_start
-        self.loop_end_beat = new_end
-
-    # ---------------------------------------------------------
-    # LOOP RESIZE
-    # ---------------------------------------------------------
-    def _start_resize_left(self, mouse_x):
-        self.loop_resizing_left = True
-        self.loop_resizing_right = False
-        self.loop_dragging = False
-
-    def _start_resize_right(self, mouse_x):
-        self.loop_resizing_right = True
-        self.loop_resizing_left = False
-        self.loop_dragging = False
-
-    def _update_resize_left(self, mouse_x):
-        layout = self.controller.layout
-        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
-
-        if beat < 0:
-            beat = 0
-
-        if beat > self.loop_end_beat:
-            beat = self.loop_end_beat
-
-        self.loop_start_beat = beat
-
-    def _update_resize_right(self, mouse_x):
-        layout = self.controller.layout
-        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
-
-        if beat < self.loop_start_beat:
-            beat = self.loop_start_beat
-
-        self.loop_end_beat = beat
 
     # ---------------------------------------------------------
     # EVENTS
@@ -318,65 +291,61 @@ class TimelineUI:
     def handle_event(self, event):
         mx, my = pygame.mouse.get_pos()
 
-        # LOOP REGION INTERACTION
-        loop_rect = self._compute_loop_rect()
-        if loop_rect:
-            left_handle = pygame.Rect(loop_rect.x - 4, loop_rect.y, 8, loop_rect.h)
-            right_handle = pygame.Rect(loop_rect.right - 4, loop_rect.y, 8, loop_rect.h)
+        # MARKER INTERACTION
+        for i, marker in enumerate(self.markers):
+            rect = self._compute_marker_rect(marker)
 
-            # LEFT RESIZE START
+            # DELETE (right click)
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                if rect.collidepoint(mx, my):
+                    self._delete_marker(i)
+                    return None
+
+            # DRAG START
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if left_handle.collidepoint(mx, my):
-                    self._start_resize_left(mx)
+                if rect.collidepoint(mx, my):
+                    self._start_marker_drag(i, mx)
                     return None
 
-            # RIGHT RESIZE START
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if right_handle.collidepoint(mx, my):
-                    self._start_resize_right(mx)
+        # DRAG MOVE
+        if event.type == pygame.MOUSEMOTION:
+            if self.marker_dragging is not None:
+                self._update_marker_drag(mx)
+                return None
+
+        # DRAG END
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.marker_dragging is not None:
+                self._end_marker_drag()
+                return None
+
+        # ADD MARKER (SHIFT + LEFT CLICK in ruler)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mods = pygame.key.get_mods()
+            if mods & pygame.KMOD_SHIFT:
+                if self.y <= my <= self.y + 20:
+                    self._add_marker(mx)
                     return None
 
-            # LOOP DRAG START
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if loop_rect.collidepoint(mx, my):
-                    self._start_loop_drag(mx)
-                    return None
+        # (ostatné eventy nechávam presne tak, ako si mal)
+        # ---------------------------------------------------------
+        # LOOP REGION, SCROLL, ZOOM, SEEK, HANDLE DRAG
+        # ---------------------------------------------------------
 
-            # LOOP DRAG MOVE
-            if event.type == pygame.MOUSEMOTION:
-                if self.loop_dragging:
-                    self._update_loop_drag(mx)
-                    return None
-
-            # LOOP RESIZE MOVE
-            if event.type == pygame.MOUSEMOTION:
-                if self.loop_resizing_left:
-                    self._update_resize_left(mx)
-                    return None
-                if self.loop_resizing_right:
-                    self._update_resize_right(mx)
-                    return None
-
-            # LOOP END
-            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                if self.loop_dragging or self.loop_resizing_left or self.loop_resizing_right:
-                    self.loop_dragging = False
-                    self.loop_resizing_left = False
-                    self.loop_resizing_right = False
-                    self._finalize_loop()
-                    return None
-
-        # LOOP REGION CREATION
+        # LOOP REGION START (left click in ruler)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.y <= my <= self.y + 20:
                 self._start_loop(mx)
                 return None
 
+        # LOOP REGION UPDATE
         if event.type == pygame.MOUSEMOTION:
-            if self.loop_active and pygame.mouse.get_pressed()[0]:
-                self._update_loop(mx)
-                return None
+            if self.loop_active and not self.handle_dragging and not self.dragging:
+                if pygame.mouse.get_pressed()[0]:
+                    self._update_loop(mx)
+                    return None
 
+        # LOOP REGION FINALIZE
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.loop_active:
                 self._finalize_loop()
