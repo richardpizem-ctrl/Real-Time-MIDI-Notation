@@ -60,16 +60,17 @@ class TimelineUI:
         self.loop_drag_offset = 0
 
         # MARKERS (DAW PRO)
-        self.markers = []  # {"beat": float, "label": "M1", "color": (r,g,b)}
-        self.marker_dragging = None
+        # marker: {"beat": float, "label": str, "color": (r,g,b), "type_index": int}
+        self.markers = []
+        self.marker_dragging: Optional[int] = None
         self.marker_drag_offset = 0
-        self.marker_rename_index = None
+        self.marker_rename_index: Optional[int] = None
         self.marker_rename_text = ""
         self.marker_next_id = 1
 
         # double‑click tracking
         self._last_click_time = 0
-        self._last_click_marker_index = None
+        self._last_click_marker_index: Optional[int] = None
         self._double_click_threshold_ms = 300
 
         # MARKER COLORS (Ableton palette)
@@ -86,6 +87,16 @@ class TimelineUI:
             (200, 255, 120),  # lime
             (180, 180, 180),  # gray
             (255, 255, 255),  # white
+        ]
+
+        # MARKER TYPES (Unicode ikony + text)
+        # SHIFT+T / right‑click cycle type
+        self.marker_types = [
+            {"name": "Section", "icon": "§"},
+            {"name": "Verse", "icon": "♪"},
+            {"name": "Chorus", "icon": "★"},
+            {"name": "Bridge", "icon": "⇄"},
+            {"name": "Cue", "icon": "⚑"},
         ]
 
         # LAYOUT HEIGHTS
@@ -156,6 +167,22 @@ class TimelineUI:
 
         lane_y = self.y + self.ruler_height + self.loop_height
         return pygame.Rect(px - 6, lane_y, 12, self.marker_lane_height)
+
+    # ---------------------------------------------------------
+    # LOOP RECT
+    # ---------------------------------------------------------
+    def _compute_loop_rect(self) -> Optional[pygame.Rect]:
+        if not self.loop_active:
+            return None
+
+        layout = self.controller.layout
+        start_px = self.x + layout.beat_to_pixel(self.loop_start_beat) - self.scroll_x
+        end_px = self.x + layout.beat_to_pixel(self.loop_end_beat) - self.scroll_x
+
+        if end_px < start_px:
+            start_px, end_px = end_px, start_px
+
+        return pygame.Rect(start_px, self.y + self.ruler_height, end_px - start_px, self.loop_height)
 
     # ---------------------------------------------------------
     # DRAW
@@ -244,6 +271,19 @@ class TimelineUI:
         pygame.draw.rect(surface, (30, 30, 35), (self.x, lane_y, self.width, self.marker_lane_height))
 
     # ---------------------------------------------------------
+    # ZOOM BAR DRAW
+    # ---------------------------------------------------------
+    def _draw_zoom_bar(self, surface):
+        pygame.draw.rect(surface, (25, 25, 30), self.zoom_bar_rect)
+        # (voliteľne: neskôr doplniť vizuálny zoom indikátor)
+
+    # ---------------------------------------------------------
+    # SCROLL BAR DRAW
+    # ---------------------------------------------------------
+    def _draw_scroll_bar(self, surface):
+        pygame.draw.rect(surface, (25, 25, 30), self.scroll_bar_rect)
+
+    # ---------------------------------------------------------
     # MARKER DRAW
     # ---------------------------------------------------------
     def _draw_markers(self, surface):
@@ -253,7 +293,7 @@ class TimelineUI:
         for i, marker in enumerate(self.markers):
             rect = self._compute_marker_rect(marker)
 
-            color = marker.get("color", (255, 200, 80))
+            color = marker.get("color", self.marker_colors[0])
 
             # Triangle marker
             pygame.draw.polygon(
@@ -266,18 +306,29 @@ class TimelineUI:
                 ],
             )
 
+            # Marker type (Unicode icon)
+            type_index = marker.get("type_index", 0) % max(1, len(self.marker_types))
+            marker_type = self.marker_types[type_index]
+            icon_text = marker_type.get("icon", "")
+
+            text_x = rect.centerx + 4
+            if icon_text:
+                icon_surf = self.font.render(icon_text, True, color)
+                surface.blit(icon_surf, (text_x, rect.y + 2))
+                text_x += icon_surf.get_width() + 4
+
             # Label or rename box
             if self.marker_rename_index == i:
                 text = self.font.render(self.marker_rename_text, True, (0, 0, 0))
                 box_w = max(40, text.get_width() + 10)
                 box_h = text.get_height() + 6
-                box_rect = pygame.Rect(rect.centerx + 4, rect.y + 2, box_w, box_h)
+                box_rect = pygame.Rect(text_x, rect.y + 2, box_w, box_h)
                 pygame.draw.rect(surface, (255, 255, 255), box_rect)
                 pygame.draw.rect(surface, (0, 0, 0), box_rect, 1)
                 surface.blit(text, (box_rect.x + 4, box_rect.y + 3))
             else:
                 text = self.font.render(marker["label"], True, color)
-                surface.blit(text, (rect.centerx + 4, rect.y + 2))
+                surface.blit(text, (text_x, rect.y + 2))
 
     # ---------------------------------------------------------
     # SNAPPING HELPERS
@@ -314,6 +365,18 @@ class TimelineUI:
         self._sync_markers()
 
     # ---------------------------------------------------------
+    # MARKER TYPE LOGIC
+    # ---------------------------------------------------------
+    def _cycle_marker_type(self, index):
+        if not self.marker_types:
+            return
+        marker = self.markers[index]
+        current = marker.get("type_index", 0)
+        new_index = (current + 1) % len(self.marker_types)
+        marker["type_index"] = new_index
+        self._sync_markers()
+
+    # ---------------------------------------------------------
     # MARKER LOGIC
     # ---------------------------------------------------------
     def _add_marker(self, mouse_x):
@@ -328,7 +391,8 @@ class TimelineUI:
         self.markers.append({
             "beat": beat,
             "label": label,
-            "color": self.marker_colors[0]
+            "color": self.marker_colors[0],
+            "type_index": 0,
         })
         self._sync_markers()
 
@@ -377,17 +441,80 @@ class TimelineUI:
         self.marker_rename_text = ""
 
     def _sync_markers(self):
+        # prepojenie s renderer
         if hasattr(self.renderer, "set_markers"):
             try:
                 self.renderer.set_markers(self.markers)
-            except:
+            except Exception:
                 pass
 
+        # prepojenie s controller.layout
         if hasattr(self.controller.layout, "set_markers"):
             try:
                 self.controller.layout.set_markers(self.markers)
-            except:
+            except Exception:
                 pass
+
+    # ---------------------------------------------------------
+    # LOOP LOGIC
+    # ---------------------------------------------------------
+    def _start_loop(self, mouse_x):
+        layout = self.controller.layout
+        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+        beat = self._snap_beat(beat)
+
+        self.loop_active = True
+        self.loop_start_beat = beat
+        self.loop_end_beat = beat
+
+    def _update_loop(self, mouse_x):
+        if not self.loop_active:
+            return
+        layout = self.controller.layout
+        beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
+        beat = self._snap_beat(beat)
+        self.loop_end_beat = max(0.0, beat)
+
+    def _finalize_loop(self):
+        if not self.loop_active:
+            return
+
+        if self.loop_end_beat < self.loop_start_beat:
+            self.loop_start_beat, self.loop_end_beat = self.loop_end_beat, self.loop_start_beat
+
+        # prepojenie s controller (ak má loop API)
+        if hasattr(self.controller, "set_loop_region"):
+            try:
+                self.controller.set_loop_region(self.loop_start_beat, self.loop_end_beat)
+            except Exception:
+                pass
+
+    # ---------------------------------------------------------
+    # HANDLE DRAG LOGIC
+    # ---------------------------------------------------------
+    def _start_handle_drag(self, mouse_x):
+        self.handle_dragging = True
+        handle = self._compute_handle_rect()
+        self.handle_drag_offset = mouse_x - handle.x
+
+    def _update_handle_drag(self, mouse_x):
+        handle = self._compute_handle_rect()
+        new_x = mouse_x - self.handle_drag_offset
+
+        new_x = max(self.x, min(self.x + self.width - handle.w, new_x))
+
+        total_width = 200000
+        max_scroll = (total_width * self.zoom) - self.width
+        if max_scroll <= 0:
+            self.scroll_x = 0
+            return
+
+        scroll_ratio = (new_x - self.x) / (self.width - handle.w)
+        self.scroll_x = int(scroll_ratio * max_scroll)
+
+    def _end_handle_drag(self):
+        self.handle_dragging = False
+        self.handle_drag_offset = 0
 
     # ---------------------------------------------------------
     # EVENTS
@@ -414,10 +541,14 @@ class TimelineUI:
         for i, marker in enumerate(self.markers):
             rect = self._compute_marker_rect(marker)
 
-            # RIGHT CLICK → delete
+            # RIGHT CLICK → change type / delete with CTRL
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 if rect.collidepoint(mx, my):
-                    self._delete_marker(i)
+                    mods = pygame.key.get_mods()
+                    if mods & pygame.KMOD_CTRL:
+                        self._delete_marker(i)
+                    else:
+                        self._cycle_marker_type(i)
                     return None
 
             # SHIFT + C → cycle color
@@ -426,6 +557,14 @@ class TimelineUI:
                 if mods & pygame.KMOD_SHIFT:
                     if rect.collidepoint(mx, my):
                         self._cycle_marker_color(i)
+                        return None
+
+            # SHIFT + T → cycle type
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_t:
+                mods = pygame.key.get_mods()
+                if mods & pygame.KMOD_SHIFT:
+                    if rect.collidepoint(mx, my):
+                        self._cycle_marker_type(i)
                         return None
 
             # LEFT CLICK: drag or rename (double‑click)
@@ -501,4 +640,20 @@ class TimelineUI:
             self._end_handle_drag()
 
         # CLICK‑TO‑SEEK (grid area)
-        grid_y = self.y + self.ruler_height + self.loop
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            grid_y = self.y + self.ruler_height + self.loop_height + self.marker_lane_height
+            grid_h = self.height - (self.ruler_height + self.loop_height + self.marker_lane_height + self.zoom_bar_rect.h + self.scroll_bar_rect.h)
+            if grid_h < 0:
+                grid_h = 0
+            if grid_y <= my <= grid_y + grid_h:
+                layout = self.controller.layout
+                beat = layout.pixel_to_beat(mx - self.x + self.scroll_x)
+                beat = max(0.0, beat)
+                if hasattr(self.controller, "set_playhead_beat"):
+                    try:
+                        self.controller.set_playhead_beat(beat)
+                    except Exception:
+                        pass
+                elif hasattr(self.controller, "playhead_beat"):
+                    self.controller.playhead_beat = beat
+                return None
