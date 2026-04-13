@@ -112,16 +112,16 @@ class NotationRenderer:
             # DRUM INFO
             drum_info = ""
             try:
-                if isinstance(n.get("drum"), dict):
-                    d = n["drum"]
+                drum = n.get("drum")
+                if isinstance(drum, dict):
                     drum_info = (
-                        f"   [DRUM: {d.get('name')}, "
-                        f"head={d.get('notehead_type')}, "
-                        f"stem={d.get('stem_direction')}, "
-                        f"open={d.get('is_open_hat')}, "
-                        f"closed={d.get('is_closed_hat')}, "
-                        f"ghost={d.get('is_ghost')}, "
-                        f"accent={d.get('is_accent')}]"
+                        f"   [DRUM: {drum.get('name')}, "
+                        f"head={drum.get('notehead_type')}, "
+                        f"stem={drum.get('stem_direction')}, "
+                        f"open={drum.get('is_open_hat')}, "
+                        f"closed={drum.get('is_closed_hat')}, "
+                        f"ghost={drum.get('is_ghost')}, "
+                        f"accent={drum.get('is_accent')}]"
                     )
             except Exception:
                 drum_info = "   [DRUM: ERROR]"
@@ -144,4 +144,3 @@ class NotationRenderer:
                 self.clock.tick(60)
         except Exception:
             pass
-
