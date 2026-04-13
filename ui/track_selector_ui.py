@@ -42,11 +42,17 @@ class TrackSelectorUI:
             self.active_track = 0
 
     def update_visibility(self, track_index: int, visible: bool):
-        """Rezervované pre budúce rozšírenie."""
+        """
+        Rezervované pre budúce rozšírenie.
+        TrackSelectorUI zatiaľ nezobrazuje viditeľnosť, ale API musí existovať.
+        """
         pass
 
     def update_color(self, track_index: int, color_hex: str):
-        """Farba sa berie priamo z TrackControlManager, netreba cache."""
+        """
+        Farba sa berie priamo z TrackControlManager.
+        TrackSelectorUI si farby necache-uje, takže tu netreba nič robiť.
+        """
         pass
 
     # ---------------------------------------------------------
