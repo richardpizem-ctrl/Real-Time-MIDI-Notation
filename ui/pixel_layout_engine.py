@@ -19,7 +19,7 @@ class PixelLayoutEngine:
         ┌──────────────────────────────────────────────┐
         │ TRANSPORT (fixed height)                     │
         ├──────────────────────────────────────────────┤
-        │ TIMELINE (dynamic height)                    │
+        │ TIMELINE (fixed 100 px – stabilné UI)        │
         ├──────────────────────────────────────────────┤
         │ TRACK SWITCHER (fixed height)                │
         ├──────────────────────────────────────────────┤
@@ -37,8 +37,7 @@ class PixelLayoutEngine:
     def __init__(
         self,
         transport_height: int = 50,
-        timeline_min_height: int = 80,
-        timeline_max_height: int = 160,
+        timeline_height: int = 100,   # pevná výška timeline
         track_switcher_height: int = 60,
         track_selector_height: int = 60,
         piano_height: int = 180,
@@ -49,8 +48,7 @@ class PixelLayoutEngine:
         margin: int = 0,
     ):
         self.transport_height = transport_height
-        self.timeline_min_height = timeline_min_height
-        self.timeline_max_height = timeline_max_height
+        self.timeline_height = timeline_height
         self.track_switcher_height = track_switcher_height
         self.track_selector_height = track_selector_height
         self.piano_height = piano_height
@@ -83,17 +81,12 @@ class PixelLayoutEngine:
         y += self.transport_height
 
         # -----------------------------------------------------
-        # TIMELINE (dynamic height)
+        # TIMELINE (pevná výška 100 px)
         # -----------------------------------------------------
-        timeline_h = max(
-            self.timeline_min_height,
-            min(self.timeline_max_height, int(window_height * 0.12))
-        )
-
         layout["timeline"] = Rect(
-            x0, y, w_main, timeline_h
+            x0, y, w_main, self.timeline_height
         )
-        y += timeline_h
+        y += self.timeline_height
 
         # -----------------------------------------------------
         # TRACK SWITCHER
