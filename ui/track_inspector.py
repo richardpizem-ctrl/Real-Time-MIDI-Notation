@@ -45,29 +45,31 @@ class TrackInspector:
         except Exception:
             self.font = None
 
-        # Lokálny stav pre eventy z UIManager (ak by bolo treba)
-        self.active_track = 0
+        # Lokálny stav pre eventy z UIManager
+        self.active_track = 0  # 0-based index
 
     # ---------------------------------------------------------
     # PUBLIC API (volané z UIManager event callbackov)
     # ---------------------------------------------------------
     def set_active_track(self, track_index: int):
         """UI reaguje na zmenu aktívnej stopy (0-based index)."""
-        self.active_track = max(0, int(track_index))
+        try:
+            self.active_track = max(0, int(track_index))
+        except Exception:
+            self.active_track = 0
 
     def update_visibility(self, track_index: int, visible: bool):
         """
         Volané z UIManager._on_visibility_changed.
-        Viditeľnosť je primárne riadená TrackControlManagerom,
-        tu môžeme v budúcnosti doplniť lokálny cache alebo animácie.
+        Viditeľnosť je riadená TrackControlManagerom.
+        UI si ju necache-uje, ale API musí existovať.
         """
         pass
 
     def update_color(self, track_index: int, color_hex: str):
         """
         Volané z UIManager._on_color_changed.
-        Farba sa berie priamo z TrackControlManager / track_manager,
-        takže tu netreba nič cacheovať.
+        Farba sa berie priamo z TrackControlManager / track_manager.
         """
         pass
 
@@ -117,7 +119,6 @@ class TrackInspector:
     def _get_active_track_id(self) -> Optional[int]:
         try:
             if self.track_control is not None:
-                # TrackControlManager používa 0-based index
                 return int(self.track_control.get_active_track()) + 1
             return int(self.track_manager.get_active_track())
         except Exception:
