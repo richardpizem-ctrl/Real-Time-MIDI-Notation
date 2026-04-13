@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+title: "Real-Time MIDI Notation: A High-Performance Real-Time 16-Track MIDI Notation Engine"
+version: "0.9.0"
+authors:
+  - family-names: "Pizem"
+    given-names: "Richard"
+    affiliation: "Independent Researcher"
+keywords:
+  - midi
+  - real-time
+  - music-notation
+  - visualization
+  - python
+  - pygame
+  - yamaha
+  - multi-track
+  - real-time-midi
+  - music-technology
+  - digital-audio
+abstract: >
+  Real-Time MIDI Notation is a high-performance real-time 16-track MIDI notation
+  and visualization engine written in Python. It provides real-time rendering of
+  MIDI events, velocity dynamics, beams, stems, barlines, and multi-track
+  visualization optimized for Yamaha arranger keyboards and music research.
+repository-code: "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation"
+license: "MIT"
+date-released: "2026-04-13"
