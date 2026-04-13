@@ -8,6 +8,8 @@ from .track_selector_ui import TrackSelectorUI
 from .canvas_ui import CanvasUI
 from .transport_ui import TransportUI
 from .track_inspector import TrackInspector
+from .timeline_ui import TimelineUI
+from .pixel_layout_engine import PixelLayoutEngine
 
 from .track_control_manager import TrackControlManager
 from renderer_new.graphic_renderer import GraphicNotationRenderer
@@ -24,11 +26,9 @@ class UIManager:
         pygame.font.init()
 
         # ---------------------------------------------------------
-        # TRACK CONTROL MANAGER (CENTRÁLNY)
+        # TRACK CONTROL MANAGER
         # ---------------------------------------------------------
         self.track_control = TrackControlManager(track_count=16)
-
-        # Eventy z TrackControlManager
         self.track_control.on("track_selected", self._on_track_selected)
         self.track_control.on("visibility_changed", self._on_visibility_changed)
         self.track_control.on("color_changed", self._on_color_changed)
@@ -42,11 +42,23 @@ class UIManager:
         self.current_time_ms = 0
 
         # ---------------------------------------------------------
+        # TIMELINE
+        # ---------------------------------------------------------
+        self.timeline = TimelineUI(
+            x=0,
+            y=50,
+            width=width,
+            height=80,
+            event_bus=track_system.event_bus,
+            renderer=None,
+        )
+
+        # ---------------------------------------------------------
         # TRACK SWITCHER
         # ---------------------------------------------------------
         self.track_switcher = TrackSwitcherUI(
             x=0,
-            y=55,
+            y=130,
             width=width,
             height=60,
             track_colors=None,
@@ -72,7 +84,7 @@ class UIManager:
         self.visualizer = NoteVisualizerUI(width, 200)
 
         # ---------------------------------------------------------
-        # RENDERER (nový, stabilný)
+        # RENDERER
         # ---------------------------------------------------------
         self.renderer = GraphicNotationRenderer(
             width,
@@ -80,6 +92,7 @@ class UIManager:
             track_system,
             self.track_control,
         )
+        self.timeline.renderer = self.renderer
 
         # ---------------------------------------------------------
         # TRACK INSPECTOR
@@ -101,24 +114,19 @@ class UIManager:
         self.quantize_division = 1.0
         self.swing_amount = 0.0
 
-        # Layout
-        self.layout = {
-            "transport": (0, 0),
-            "track_switcher": (0, 55),
-            "track_selector": (0, 120),
-            "piano": (0, 190),
-            "piano_roll": (0, 380),
-            "staff": (0, 570),
-            "visualizer": (0, 770),
-            "renderer": (0, 970),
-            "track_inspector": (0, 1180),
-        }
+        # ---------------------------------------------------------
+        # PIXEL LAYOUT ENGINE (FÁZA 5)
+        # ---------------------------------------------------------
+        self.layout_engine = PixelLayoutEngine()
+
+        # Layout dict (Rect objekty)
+        self.layout = {}
 
         self.export_button_rect = pygame.Rect(self.width - 120, 10, 110, 35)
         self.export_font = pygame.font.SysFont("Arial", 20)
 
     # ---------------------------------------------------------
-    # LAYOUT / CANVAS
+    # CANVAS
     # ---------------------------------------------------------
     def build_layout(self, parent):
         self.canvas_ui = CanvasUI(parent)
@@ -129,39 +137,36 @@ class UIManager:
         if hasattr(self.canvas_ui, "set_swing"):
             self.canvas_ui.set_swing(self.swing_amount)
 
-    def _apply_quantization_to_canvas(self):
-        if self.canvas_ui is None:
-            return
-        if hasattr(self.canvas_ui, "set_quantization"):
-            self.canvas_ui.set_quantization(self.quantize_division)
-        if hasattr(self.canvas_ui, "set_swing"):
-            self.canvas_ui.set_swing(self.swing_amount)
-
     # ---------------------------------------------------------
     # EVENTS
     # ---------------------------------------------------------
     def handle_event(self, event):
+
         # Transport
         t = self.transport.handle_event(event)
         if t:
             action = t.get("action")
-
             if action == "play":
                 self.is_playing = True
                 self.play_start_time = pygame.time.get_ticks() - self.current_time_ms
-
             elif action == "stop":
                 self.is_playing = False
                 self.current_time_ms = 0
                 self.transport.set_time("00:00.0")
-
             elif action == "rewind":
                 self.current_time_ms = 0
                 self.play_start_time = pygame.time.get_ticks()
                 self.transport.set_time("00:00.0")
 
+        # Timeline
+        try:
+            self.timeline.handle_event(event)
+        except:
+            pass
+
         # Export + Track switcher + Track selector + Track inspector
         if event.type == pygame.MOUSEBUTTONDOWN:
+
             # EXPORT
             if self.export_button_rect.collidepoint(event.pos):
                 if self.canvas is not None:
@@ -172,30 +177,25 @@ class UIManager:
             try:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
-                    selected = result["selected_track"]
-                    try:
-                        self.track_control.set_active_track(selected)
-                    except Exception:
-                        pass
-            except Exception:
+                    self.track_control.set_active_track(result["selected_track"])
+            except:
                 pass
 
             # Track Selector
             try:
                 self.track_selector.handle_click(event.pos)
-            except Exception:
+            except:
                 pass
 
             # Track Inspector
             try:
                 self.track_inspector.handle_event(event)
-            except Exception:
+            except:
                 pass
 
         # Quantization shortcuts
         if event.type == pygame.KEYDOWN:
             updated = False
-
             if event.key == pygame.K_1:
                 self.quantize_division = 1.0
                 updated = True
@@ -220,135 +220,7 @@ class UIManager:
                 self._apply_quantization_to_canvas()
 
     # ---------------------------------------------------------
-    # NOTE EVENTS
-    # ---------------------------------------------------------
-    def on_note_on(self, event):
-        if not isinstance(event, dict):
-            return
-
-        track_id = event.get("track_id", 0)
-        note = event.get("note")
-        if note is None:
-            return
-
-        idx = max(0, int(track_id))
-
-        try:
-            if not self.track_control.is_visible(idx):
-                return
-        except Exception:
-            pass
-
-        velocity = event.get("velocity", 100)
-
-        # farba stopy
-        track_color = None
-        try:
-            color_hex = self.track_control.get_color(idx)
-            track_color = tuple(int(color_hex[i:i + 2], 16) for i in (1, 3, 5))
-            event["track_color"] = track_color
-        except Exception:
-            pass
-
-        # PIANO
-        try:
-            if track_color is not None:
-                self.piano.highlight_key(note, track_color)
-            else:
-                self.piano.highlight_key(note)
-        except Exception:
-            pass
-
-        # PIANO ROLL
-        try:
-            if track_color is not None:
-                self.piano_roll.highlight_key(note, track_color)
-            else:
-                self.piano_roll.highlight_key(note)
-        except Exception:
-            pass
-
-        # VISUALIZER
-        try:
-            self.visualizer.on_note(event)
-        except Exception:
-            pass
-
-        # STAFF
-        try:
-            self.staff.add_note(event)
-        except Exception:
-            pass
-
-        # Notation processor
-        if self.notation_processor is not None:
-            try:
-                self.notation_processor.process_midi_event({
-                    "type": "note_on",
-                    "note": note,
-                    "velocity": velocity,
-                    "time": event.get("time", 0.0),
-                    "channel": track_id,
-                })
-            except Exception:
-                pass
-
-    def on_note_off(self, event):
-        if not isinstance(event, dict):
-            return
-
-        note = event.get("note")
-        if note is None:
-            return
-
-        track_id = event.get("track_id", 0)
-        idx = max(0, int(track_id))
-
-        try:
-            if not self.track_control.is_visible(idx):
-                return
-        except Exception:
-            pass
-
-        # PIANO
-        try:
-            self.piano.unhighlight_key(note)
-        except Exception:
-            pass
-
-        # PIANO ROLL
-        try:
-            self.piano_roll.unhighlight_key(note)
-        except Exception:
-            pass
-
-        # VISUALIZER
-        try:
-            self.visualizer.on_note_off(event)
-        except Exception:
-            pass
-
-        # STAFF
-        try:
-            self.staff.remove_note(event)
-        except Exception:
-            pass
-
-        # Notation processor
-        if self.notation_processor is not None:
-            try:
-                self.notation_processor.process_midi_event({
-                    "type": "note_off",
-                    "note": note,
-                    "velocity": 0,
-                    "time": event.get("time", 0.0),
-                    "channel": track_id,
-                })
-            except Exception:
-                pass
-
-    # ---------------------------------------------------------
-    # TIME / BPM
+    # TIME UPDATE
     # ---------------------------------------------------------
     def _update_time(self):
         if self.is_playing:
@@ -362,59 +234,40 @@ class UIManager:
             time_str = f"{minutes:02}:{seconds:02}.{tenths}"
             self.transport.set_time(time_str)
 
+            try:
+                self.renderer.set_playback_time(total_ms / 1000.0)
+            except:
+                pass
+
     # ---------------------------------------------------------
     # TRACK CONTROL CALLBACKS
     # ---------------------------------------------------------
     def _on_track_selected(self, data):
         track = data.get("track", 0)
-
-        try:
-            self.track_selector.set_active_track(track)
-        except Exception:
-            pass
-
-        try:
-            self.track_switcher.set_active_track(track)
-        except Exception:
-            pass
-
-        try:
-            self.track_inspector.set_active_track(track)
-        except Exception:
-            pass
+        try: self.track_selector.set_active_track(track)
+        except: pass
+        try: self.track_switcher.set_active_track(track)
+        except: pass
+        try: self.track_inspector.set_active_track(track)
+        except: pass
 
     def _on_visibility_changed(self, data):
         track = data.get("track", 0)
         visible = data.get("visible", True)
-
-        try:
-            self.track_switcher.update_visibility(track, visible)
-        except Exception:
-            pass
-
-        try:
-            self.renderer.update_visibility(track, visible)
-        except Exception:
-            pass
+        try: self.track_switcher.update_visibility(track, visible)
+        except: pass
+        try: self.renderer.update_visibility(track, visible)
+        except: pass
 
     def _on_color_changed(self, data):
         track = data.get("track", 0)
         color = data.get("color", "#FFFFFF")
-
-        try:
-            self.track_switcher.update_color(track, color)
-        except Exception:
-            pass
-
-        try:
-            self.renderer.update_color(track, color)
-        except Exception:
-            pass
-
-        try:
-            self.track_inspector.update_color(track, color)
-        except Exception:
-            pass
+        try: self.track_switcher.update_color(track, color)
+        except: pass
+        try: self.renderer.update_color(track, color)
+        except: pass
+        try: self.track_inspector.update_color(track, color)
+        except: pass
 
     # ---------------------------------------------------------
     # DRAW
@@ -422,75 +275,86 @@ class UIManager:
     def draw(self, surface):
         self._update_time()
 
+        # Prepočítať layout
+        self.layout = self.layout_engine.compute_layout(self.width, self.height)
+
         # TRANSPORT
         try:
-            x, y = self.layout["transport"]
-            self.transport.draw(surface.subsurface((x, y, self.width, 50)))
-        except Exception:
+            r = self.layout["transport"]
+            self.transport.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
+        except:
+            pass
+
+        # TIMELINE
+        try:
+            r = self.layout["timeline"]
+            self.timeline.set_bounds(r.x, r.y, r.w, r.h)
+            self.timeline.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
+        except:
             pass
 
         # TRACK SWITCHER
         try:
-            x, y = self.layout["track_switcher"]
+            r = self.layout["track_switcher"]
             self.track_switcher.draw(
-                surface.subsurface((x, y, self.width, 60)),
+                surface.subsurface((r.x, r.y, r.w, r.h)),
                 active_track=self.track_control.get_active_track(),
             )
-        except Exception:
+        except:
             pass
 
         # TRACK SELECTOR
         try:
-            x, y = self.layout["track_selector"]
+            r = self.layout["track_selector"]
             self.track_selector.draw(
-                surface.subsurface((x, y, self.width, 60)),
+                surface.subsurface((r.x, r.y, r.w, r.h)),
                 active_track=self.track_control.get_active_track(),
             )
-        except Exception:
+        except:
             pass
 
         # PIANO
         try:
-            x, y = self.layout["piano"]
-            self.piano.draw(surface.subsurface((x, y, self.width, 180)))
-        except Exception:
+            r = self.layout["piano"]
+            self.piano.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
+        except:
             pass
 
         # PIANO ROLL
         try:
-            x, y = self.layout["piano_roll"]
-            self.piano_roll.draw(surface.subsurface((x, y, self.width, 180)))
-        except Exception:
+            r = self.layout["piano_roll"]
+            self.piano_roll.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
+        except:
             pass
 
         # STAFF
         try:
-            x, y = self.layout["staff"]
-            self.staff.draw(surface.subsurface((x, y, self.width, 200)))
-        except Exception:
+            r = self.layout["staff"]
+            self.staff.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
+        except:
             pass
 
         # VISUALIZER
         try:
-            x, y = self.layout["visualizer"]
+            r = self.layout["visualizer"]
             timestamp = pygame.time.get_ticks() / 1000.0
             self.visualizer.update_bpm_pulse(self.transport.bpm, timestamp)
-            self.visualizer.draw(surface.subsurface((x, y, self.width, 200)))
-        except Exception:
+            self.visualizer.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
+        except:
             pass
 
         # RENDERER
         try:
-            x, y = self.layout["renderer"]
-            self.renderer.draw(surface.subsurface((x, y, self.width, 200)))
-        except Exception:
+            r = self.layout["renderer"]
+            self.renderer.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
+        except:
             pass
 
         # TRACK INSPECTOR
         try:
-            x, y = self.layout["track_inspector"]
-            self.track_inspector.draw(surface.subsurface((x, y, 260, 400)))
-        except Exception:
+            r = self.layout["track_inspector"]
+            self.track_inspector.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
+        except:
             pass
 
         # EXPORT BUTTON
