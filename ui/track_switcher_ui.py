@@ -405,7 +405,6 @@ class TrackSwitcherUI:
     # ---------------------------------------------------------
     # PUBLIC API PRE UIManager (ZJEDNOTENÉ, PROFESIONÁLNE)
     # ---------------------------------------------------------
-
     def _handle_track_click(self, tid, local_y):
         tm = self.event_bus.track_manager
 
@@ -431,4 +430,35 @@ class TrackSwitcherUI:
             return "solo"
 
         if self.track_control_manager is not None:
-            self.track_control_manager.set_active_track(t
+            self.track_control_manager.set_active_track(tid - 1)
+            self.event_bus.emit("track_selected", tid)
+            return "select"
+
+        return None
+
+    def handle_click(self, x, y):
+        """Spracuje kliknutie myšou a aktivuje príslušnú akciu."""
+        for i in range(self.track_count):
+            rect = pygame.Rect(self.x + i * self.button_width, self.y, self.button_width, self.button_height)
+            if rect.collidepoint(x, y):
+                tid = i + 1
+                local_y = y - rect.y
+                return self._handle_track_click(tid, local_y)
+        return None
+
+    def set_active_track(self, tid):
+        """Externé API pre UIManager."""
+        if self.track_control_manager is not None:
+            self.track_control_manager.set_active_track(tid - 1)
+
+    def refresh(self):
+        """Externé API – UIManager môže zavolať pri zmene stavu."""
+        self.update_peak_hold()
+        self._emit_audible_state()
+
+    def handle_event(self, event):
+        """Spracuje pygame event a premapuje ho na kliknutie."""
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            x, y = event.pos
+            return self.handle_click(x, y)
+        return None
