@@ -52,7 +52,7 @@ class UIManager:
         )
 
         # ---------------------------------------------------------
-        # TIMELINE (prepojené s renderer.timeline_controller)
+        # TIMELINE
         # ---------------------------------------------------------
         self.timeline = TimelineUI(
             x=0,
@@ -60,7 +60,7 @@ class UIManager:
             width=width,
             height=80,
             event_bus=track_system.event_bus,
-            renderer=self.renderer,   # PREPOJENIE
+            renderer=self.renderer,
         )
 
         # ---------------------------------------------------------
@@ -114,11 +114,9 @@ class UIManager:
         self.swing_amount = 0.0
 
         # ---------------------------------------------------------
-        # PIXEL LAYOUT ENGINE (FÁZA 5)
+        # PIXEL LAYOUT ENGINE
         # ---------------------------------------------------------
         self.layout_engine = PixelLayoutEngine()
-
-        # Layout dict (Rect objekty)
         self.layout = {}
 
         self.export_button_rect = pygame.Rect(self.width - 120, 10, 110, 35)
@@ -243,46 +241,30 @@ class UIManager:
     # ---------------------------------------------------------
     def _on_track_selected(self, data):
         track = data.get("track", 0)
-        try:
-            self.track_selector.set_active_track(track)
-        except:
-            pass
-        try:
-            self.track_switcher.set_active_track(track)
-        except:
-            pass
-        try:
-            self.track_inspector.set_active_track(track)
-        except:
-            pass
+        try: self.track_selector.set_active_track(track)
+        except: pass
+        try: self.track_switcher.set_active_track(track)
+        except: pass
+        try: self.track_inspector.set_active_track(track)
+        except: pass
 
     def _on_visibility_changed(self, data):
         track = data.get("track", 0)
         visible = data.get("visible", True)
-        try:
-            self.track_switcher.update_visibility(track, visible)
-        except:
-            pass
-        try:
-            self.renderer.update_visibility(track, visible)
-        except:
-            pass
+        try: self.track_switcher.update_visibility(track, visible)
+        except: pass
+        try: self.renderer.update_visibility(track, visible)
+        except: pass
 
     def _on_color_changed(self, data):
         track = data.get("track", 0)
         color = data.get("color", "#FFFFFF")
-        try:
-            self.track_switcher.update_color(track, color)
-        except:
-            pass
-        try:
-            self.renderer.update_color(track, color)
-        except:
-            pass
-        try:
-            self.track_inspector.update_color(track, color)
-        except:
-            pass
+        try: self.track_switcher.update_color(track, color)
+        except: pass
+        try: self.renderer.update_color(track, color)
+        except: pass
+        try: self.track_inspector.update_color(track, color)
+        except: pass
 
     # ---------------------------------------------------------
     # QUANTIZATION → CANVAS
