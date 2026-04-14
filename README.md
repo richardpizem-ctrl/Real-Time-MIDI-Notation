@@ -1,6 +1,6 @@
 # 🎼 Real-Time MIDI Notation  
 ### **Real‑time multi‑track MIDI visualization & notation engine (Python, Pygame)**  
-A high‑performance renderer for real‑time MIDI events with 16‑track support, advanced beams, velocity shading, and a fully modular UI.
+A high‑performance renderer for real‑time MIDI events with 16‑track support, advanced beams, velocity dynamics, and a fully modular UI.
 
 ---
 
@@ -89,7 +89,7 @@ A full **CITATION.cff** file will be added for academic referencing.
 - 8th/16th beam detection  
 - dynamic stems  
 - full Yamaha 16‑track support  
-- track visibility + volume shading  
+- track visibility + color integration  
 - real‑time activity meter  
 - zoom + scroll  
 - fully stabilized  
@@ -113,7 +113,7 @@ A full **CITATION.cff** file will be added for academic referencing.
 - rhythmic analysis  
 - BPM detection  
 - velocity + timing extraction  
-- basic Rhythm Analyzer (complete)  
+- basic Rhythm Analyzer  
 
 ---
 
@@ -147,20 +147,21 @@ Modular. Extensible. Professional.
 
 ### Core Engine
 - `src/processor.py`  
-- `rhythm_analyzer.py`  
-- `midi_input/midi_note_mapper.py`  
-- `event_bus.py`  
+- `src/rhythm_analyzer.py`  
+- `src/midi_input/midi_note_mapper.py`  
+- `src/event_bus.py`  
 
 ### Track System
 - `core/track_system.py`  
 - `core/track_manager.py`  
 
 ### Rendering
-- `renderer/graphic_notation_renderer.py`  
+- `renderer_new/graphic_renderer.py`  
+- `renderer_legacy/notation_renderer.py`  
 
 ### UI Layer
-- `ui_manager.py`  
-- `ui_components/track_switcher_ui.py`  
+- `ui/ui_manager.py`  
+- `ui/ui_components/*`  
 
 ---
 
@@ -168,20 +169,20 @@ Modular. Extensible. Professional.
 
 | Area | Progress | Visual |
 |------|----------|--------|
-| GraphicNotationRenderer | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
-| NotationRenderer | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
-| Processor | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
-| Rhythm Analyzer | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
-| TrackManager | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
-| Pipeline (MIDI → Renderer → UI) | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 |
+| GraphicNotationRenderer | **100%** | 🟩🟩🟩🟩🟩 |
+| NotationRenderer | **100%** | 🟩🟩🟩🟩🟩 |
+| Processor | **100%** | 🟩🟩🟩🟩🟩 |
+| Rhythm Analyzer | **100%** | 🟩🟩🟩🟩🟩 |
+| TrackManager | **100%** | 🟩🟩🟩🟩🟩 |
+| Pipeline (MIDI → Renderer → UI) | **100%** | 🟩🟩🟩🟩🟩 |
 
 ---
 
 # 🗺 Roadmap
 
 ## 🔜 Next steps
-- UI Track Switcher (16‑track control)  
-- minor UI improvements  
+- UI Track Switcher improvements  
+- minor UI polish  
 - documentation: “How the renderer works”  
 
 ---
