@@ -175,6 +175,8 @@ def main():
     running = True
     try:
         while running:
+            dt = clock.tick(60) / 1000.0   # DELTA TIME FIX
+
             try:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -185,21 +187,34 @@ def main():
                     except Exception as e:
                         Logger.error(f"UI event error: {e}")
 
-                stream_handler.poll()
-                playback_surface = playback.update()
+                # MIDI burst-safe polling
+                stream_handler.poll(max_messages=64)
+
+                # Delta-time aware playback
+                playback_surface = playback.update(dt=dt)
 
                 ui.draw(screen)
 
                 if playback_surface is not None:
-                    screen.blit(playback_surface, (0, 700))
+                    # UIManager now owns layout → no magic numbers
+                    screen.blit(playback_surface, ui.get_playback_surface_pos())
 
                 pygame.display.update()
-                clock.tick(60)
 
             except Exception as e:
                 Logger.error(f"Main loop error: {e}")
 
     finally:
+        try:
+            stream_handler.stop()          # CLEAN SHUTDOWN
+        except:
+            pass
+
+        try:
+            event_bus.clear_all_subscribers()
+        except:
+            pass
+
         pygame.quit()
         Logger.info("=== END ===")
 
