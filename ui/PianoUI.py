@@ -1,3 +1,22 @@
+"""
+PianoUI – Real‑Time Klavírna Vizualizácia (FÁZA 4)
+
+Tento modul poskytuje jednoduchú, stabilnú a rýchlu vizualizáciu
+MIDI klaviatúry v pygame. Slúži ako doplnková UI komponenta pre
+real‑time MIDI pipeline.
+
+Poskytuje:
+- výpočet pozícií bielych a čiernych kláves podľa MIDI rozsahu
+- zvýrazňovanie kláves pri NOTE ON / NOTE OFF
+- reset a clear funkcie
+- vykresľovanie klaviatúry na pygame surface
+
+Prepojenia:
+- kompatibilné s real‑time MIDI pipeline (midi_input → notation_engine → UI)
+- používa rovnaké MIDI noty ako GraphicNotationRenderer
+- vhodné na vizuálny debugging a výučbu MIDI
+"""
+
 import pygame
 
 
