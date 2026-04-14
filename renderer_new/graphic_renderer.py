@@ -628,3 +628,276 @@ class GraphicNotationRenderer:
                             )
                         except Exception:
                             pass
+    # ---------------------------------------------------------
+    # MAIN RENDER ENTRY
+    # ---------------------------------------------------------
+    def set_markers(self, markers: List[Dict[str, Any]]) -> None:
+        """
+        Volané z TimelineUI._sync_markers.
+        Renderer si markery môže držať lokálne alebo ich posunúť do timeline_controller.
+        """
+        if not isinstance(markers, (list, tuple)):
+            return
+
+        # uložíme si ich lokálne (ak by sme ich chceli neskôr kresliť)
+        self.markers = list(markers)
+
+        # prepojenie na timeline_controller (ak podporuje markery)
+        if self.timeline_controller is not None and hasattr(self.timeline_controller, "set_markers"):
+            try:
+                self.timeline_controller.set_markers(self.markers)
+            except Exception:
+                pass
+
+    # ---------------------------------------------------------
+    # TRACK COLOR HELPERS
+    # ---------------------------------------------------------
+    def _get_track_color(self, track_id: int, default: Tuple[int, int, int]) -> Tuple[int, int, int]:
+        """
+        Bezpečne zistí farbu tracku z track_control alebo track_managera.
+        Očakáva hex string, ale zvládne aj RGB tuple.
+        """
+        # TrackControlManager – preferovaný zdroj farby
+        if self.track_control is not None:
+            # napr. track_control.get_track_color_hex(track_id)
+            if hasattr(self.track_control, "get_track_color_hex"):
+                try:
+                    hex_color = self.track_control.get_track_color_hex(track_id)
+                    if isinstance(hex_color, str):
+                        return self._hex_to_rgb(hex_color)
+                except Exception:
+                    pass
+
+            # fallback: get_track_color → môže vrátiť tuple
+            if hasattr(self.track_control, "get_track_color"):
+                try:
+                    c = self.track_control.get_track_color(track_id)
+                    if isinstance(c, (tuple, list)) and len(c) == 3:
+                        return tuple(int(x) for x in c)
+                except Exception:
+                    pass
+
+        # TrackManager – alternatívny zdroj farby
+        if self.track_manager is not None:
+            # napr. track_manager.get_track_color_hex(track_id)
+            if hasattr(self.track_manager, "get_track_color_hex"):
+                try:
+                    hex_color = self.track_manager.get_track_color_hex(track_id)
+                    if isinstance(hex_color, str):
+                        return self._hex_to_rgb(hex_color)
+                except Exception:
+                    pass
+
+            if hasattr(self.track_manager, "get_track_color"):
+                try:
+                    c = self.track_manager.get_track_color(track_id)
+                    if isinstance(c, (tuple, list)) and len(c) == 3:
+                        return tuple(int(x) for x in c)
+                except Exception:
+                    pass
+
+        return default
+
+    # ---------------------------------------------------------
+    # NOTE SOURCE (TRACK MANAGER)
+    # ---------------------------------------------------------
+    def _iter_notes(self) -> List[Dict[str, Any]]:
+        """
+        Bezpečne vytiahne noty z track_managera.
+        Podporuje viacero možných API, ale nič nepredpokladá natvrdo.
+        Očakávané polia v note_obj:
+            - pitch alebo note
+            - timestamp alebo start
+            - duration (voliteľné)
+            - velocity (voliteľné)
+            - track_id (voliteľné, default 1)
+            - color_hex (voliteľné)
+            - error (bool, voliteľné)
+            - flash (float, voliteľné)
+        """
+        if self.track_manager is None:
+            return []
+
+        # 1) get_all_notes()
+        if hasattr(self.track_manager, "get_all_notes"):
+            try:
+                notes = self.track_manager.get_all_notes()
+                if isinstance(notes, (list, tuple)):
+                    return list(notes)
+            except Exception:
+                pass
+
+        # 2) get_notes()
+        if hasattr(self.track_manager, "get_notes"):
+            try:
+                notes = self.track_manager.get_notes()
+                if isinstance(notes, (list, tuple)):
+                    return list(notes)
+            except Exception:
+                pass
+
+        # 3) tracks → track.notes
+        if hasattr(self.track_manager, "tracks"):
+            try:
+                all_notes = []
+                tracks = self.track_manager.tracks
+                if isinstance(tracks, (list, tuple, dict)):
+                    if isinstance(tracks, dict):
+                        iterable = tracks.values()
+                    else:
+                        iterable = tracks
+                    for t in iterable:
+                        if hasattr(t, "notes"):
+                            tn = getattr(t, "notes")
+                            if isinstance(tn, (list, tuple)):
+                                all_notes.extend(tn)
+                return all_notes
+            except Exception:
+                pass
+
+        return []
+
+    # ---------------------------------------------------------
+    # MAIN RENDER
+    # ---------------------------------------------------------
+    def render(self):
+        """
+        Hlavný renderovací vstup.
+        Vráti pygame.Surface alebo None (ak pygame nie je k dispozícii).
+        """
+        if pygame is None or self.surface is None:
+            return None
+
+        # aktualizácia času a scrollu
+        self._update_time()
+
+        # vyčistiť surface
+        try:
+            self.surface.fill((10, 10, 15))
+        except Exception:
+            return self.surface
+
+        # STAFF LINES (cache)
+        staff_surface = self._render_staff_lines()
+        if staff_surface is not None:
+            try:
+                self.surface.blit(staff_surface, (0, self.timeline_height))
+            except Exception:
+                pass
+
+        # GRID + BARLINES + RULER
+        self._draw_grid_lines()
+        self._draw_barlines()
+        self._draw_timeline_ruler()
+
+        # NOTY
+        notes = self._iter_notes()
+        groups = self._group_notes(notes)
+
+        for (qt, track_id), group in groups.items():
+            # čas skupiny = quantized time
+            t = float(qt)
+            x = self._time_to_x(t)
+
+            # základná farba tracku
+            base_color = self._get_track_color(track_id, (120, 180, 220))
+
+            # zoradiť podľa pitch (pre ligatúry / beams)
+            valid_notes = []
+            for note in group:
+                if not isinstance(note, dict):
+                    continue
+
+                midi = note.get("pitch")
+                if midi is None:
+                    midi = note.get("note")
+                if midi is None:
+                    continue
+
+                track = note.get("track_id", track_id)
+                velocity = note.get("velocity", 100)
+                flash = note.get("flash", 0.0)
+
+                # čas – preferuj timestamp, fallback start
+                ts = note.get("timestamp", note.get("start", t))
+
+                try:
+                    midi_int = int(midi)
+                except Exception:
+                    midi_int = 60
+
+                try:
+                    track_int = int(track)
+                except Exception:
+                    track_int = 1
+
+                try:
+                    vel_int = int(velocity)
+                except Exception:
+                    vel_int = 100
+
+                try:
+                    fl = float(flash)
+                except Exception:
+                    fl = 0.0
+
+                y = self._pitch_to_y(midi_int, track_int)
+
+                # individuálna farba noty (ak existuje)
+                note_color = base_color
+                if "color_hex" in note:
+                    note_color = self._hex_to_rgb(note.get("color_hex"))
+                elif "color" in note:
+                    c = note.get("color")
+                    if isinstance(c, (tuple, list)) and len(c) == 3:
+                        try:
+                            note_color = tuple(int(x) for x in c)
+                        except Exception:
+                            pass
+
+                valid_notes.append({
+                    "x": x,
+                    "y": y,
+                    "velocity": vel_int,
+                    "flash": fl,
+                    "color": note_color,
+                    "note_obj": note,
+                })
+
+            if not valid_notes:
+                continue
+
+            # zoradiť podľa výšky (y)
+            valid_notes.sort(key=lambda n: n["y"])
+
+            # nakresliť ligatúru / beam medzi najvyššou a najnižšou
+            if len(valid_notes) >= 2:
+                top = valid_notes[0]
+                bottom = valid_notes[-1]
+                self._draw_ligature(top["x"], bottom["x"], (top["y"] + bottom["y"]) / 2, base_color)
+
+            # nakresliť jednotlivé noty
+            for n in valid_notes:
+                self._draw_note(
+                    self.surface,
+                    n["x"],
+                    n["y"],
+                    n["color"],
+                    n["velocity"],
+                    note_obj=n["note_obj"],
+                    flash=n["flash"],
+                )
+
+        # PLAYHEAD – vertikálna čiara v strede (alebo podľa playhead_x)
+        try:
+            pygame.draw.line(
+                self.surface,
+                (255, 80, 80),
+                (int(self.playhead_x), self.timeline_height),
+                (int(self.playhead_x), self.height),
+                2
+            )
+        except Exception:
+            pass
+
+        return self.surface
