@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="real-time-midi-notation",
-    version="0.9.0",
+    version="1.0.0",
     packages=find_packages(),
     install_requires=[
         "pygame",
@@ -26,7 +26,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
 
-        # Licencia (ak máš MIT v repo)
+        # Licencia
         "License :: OSI Approved :: MIT License",
 
         # Platforma
