@@ -1,12 +1,14 @@
 """
-stream_handler.py – Real-time MIDI Stream Handler (FÁZA 4)
+stream_handler.py – Real-time MIDI Stream Handler (FÁZA 5)
 
 Poskytuje:
 - bezpečné čítanie MIDI eventov
 - ochranu pred None objektmi
 - ochranu pred nevalidnými MIDI dátami
+- burst‑safe spracovanie (limit správ na cyklus)
 - fallback pri chýbajúcom zariadení
 - bezpečné logovanie bez pádu
+- čistý shutdown (stop())
 """
 
 import time
@@ -16,13 +18,15 @@ from typing import Optional, Dict, Any
 
 class StreamHandler:
     """
-    Stabilizovaný Real-time MIDI Stream Handler.
+    Stabilizovaný Real-time MIDI Stream Handler (FÁZA 5).
     """
 
     def __init__(self, ui_manager=None, event_router=None, perf=None):
         self.ui = ui_manager
         self.event_router = event_router
         self.perf = perf
+        self.midi_input = None
+        self.running = True
 
         # -----------------------------------------------------
         # INIT MIDI
@@ -31,7 +35,6 @@ class StreamHandler:
             pygame.midi.init()
         except Exception as e:
             print(f"[StreamHandler] MIDI init error: {e}")
-            self.midi_input = None
             return
 
         # -----------------------------------------------------
@@ -41,12 +44,10 @@ class StreamHandler:
             default_id = pygame.midi.get_default_input_id()
         except Exception as e:
             print(f"[StreamHandler] MIDI device lookup error: {e}")
-            self.midi_input = None
             return
 
         if default_id == -1:
             print("[StreamHandler] Žiadne MIDI zariadenie nebolo nájdené.")
-            self.midi_input = None
             return
 
         # -----------------------------------------------------
@@ -60,10 +61,36 @@ class StreamHandler:
             self.midi_input = None
 
     # ---------------------------------------------------------
-    # POLLING
+    # CLEAN SHUTDOWN
     # ---------------------------------------------------------
-    def poll(self) -> None:
-        """Bezpečné čítanie MIDI eventov."""
+    def stop(self):
+        """Bezpečné ukončenie MIDI vstupu."""
+        self.running = False
+
+        try:
+            if self.midi_input:
+                self.midi_input.close()
+        except Exception:
+            pass
+
+        try:
+            pygame.midi.quit()
+        except Exception:
+            pass
+
+        print("[StreamHandler] Shutdown OK")
+
+    # ---------------------------------------------------------
+    # POLLING (BURST-SAFE)
+    # ---------------------------------------------------------
+    def poll(self, max_messages: int = 64) -> None:
+        """
+        Bezpečné čítanie MIDI eventov.
+        max_messages = limit správ na jeden cyklus (burst-safe).
+        """
+        if not self.running:
+            return
+
         if self.midi_input is None:
             return
 
@@ -75,12 +102,18 @@ class StreamHandler:
             print(f"[StreamHandler] MIDI poll error: {e}")
             return
 
-        # Read
+        # Read (max 32 naraz, ale my limitujeme spracovanie)
         try:
             events = self.midi_input.read(32)
         except Exception as e:
             print(f"[StreamHandler] MIDI read error: {e}")
             return
+
+        # -----------------------------------------------------
+        # BURST-SAFE LIMIT
+        # -----------------------------------------------------
+        if len(events) > max_messages:
+            events = events[:max_messages]
 
         # -----------------------------------------------------
         # PROCESS EVENTS
@@ -122,7 +155,7 @@ class StreamHandler:
             elif status_type == 0xB0:
                 event_type = "control_change"
             else:
-                print(f"[StreamHandler] Neznámy MIDI status: {status}")
+                # Unknown or unsupported message
                 continue
 
             # -------------------------------------------------
