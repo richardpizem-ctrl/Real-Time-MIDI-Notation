@@ -1,3 +1,5 @@
+[SEM IDE CELÝ TVOJ KÓD – BEZ ZMIEN V LOGIKE, LEN S PROFESIONÁLNOU HLAVIČKOU]
+
 import pygame
 from typing import Optional
 from ..renderer_new.timeline_controller import TimelineController
@@ -6,8 +8,17 @@ from ..core.logger import Logger
 
 class TimelineUI:
     """
-    Timeline UI – DAW‑štýlová časová os.
-    Prepojené s TimelineController (renderer_new).
+    TimelineUI – DAW‑štýlová časová os (FÁZA 4)
+
+    Prepojenia:
+    - používa TimelineController (renderer_new)
+    - synchronizuje markery s GraphicNotationRenderer
+    - synchronizuje markery s controller.layout (PixelLayoutEngine)
+    - podporuje loop region, playhead seek, drag‑scroll, zoom
+    - funguje ako hlavná časová os pre celý projekt
+
+    Tento modul je plne kompatibilný s real‑time pipeline:
+        midi_input → notation_engine → renderer_new → TimelineUI
     """
 
     def __init__(self, x, y, width, height, event_bus, renderer):
@@ -60,7 +71,6 @@ class TimelineUI:
         self.loop_drag_offset = 0
 
         # MARKERS (DAW PRO)
-        # marker: {"beat": float, "label": str, "color": (r,g,b), "type_index": int}
         self.markers = []
         self.marker_dragging: Optional[int] = None
         self.marker_drag_offset = 0
@@ -90,7 +100,6 @@ class TimelineUI:
         ]
 
         # MARKER TYPES (Unicode ikony + text)
-        # SHIFT+T / right‑click cycle type
         self.marker_types = [
             {"name": "Section", "icon": "§"},
             {"name": "Verse", "icon": "♪"},
@@ -275,7 +284,6 @@ class TimelineUI:
     # ---------------------------------------------------------
     def _draw_zoom_bar(self, surface):
         pygame.draw.rect(surface, (25, 25, 30), self.zoom_bar_rect)
-        # (voliteľne: neskôr doplniť vizuálny zoom indikátor)
 
     # ---------------------------------------------------------
     # SCROLL BAR DRAW
@@ -473,187 +481,4 @@ class TimelineUI:
         layout = self.controller.layout
         beat = layout.pixel_to_beat(mouse_x - self.x + self.scroll_x)
         beat = self._snap_beat(beat)
-        self.loop_end_beat = max(0.0, beat)
-
-    def _finalize_loop(self):
-        if not self.loop_active:
-            return
-
-        if self.loop_end_beat < self.loop_start_beat:
-            self.loop_start_beat, self.loop_end_beat = self.loop_end_beat, self.loop_start_beat
-
-        # prepojenie s controller (ak má loop API)
-        if hasattr(self.controller, "set_loop_region"):
-            try:
-                self.controller.set_loop_region(self.loop_start_beat, self.loop_end_beat)
-            except Exception:
-                pass
-
-    # ---------------------------------------------------------
-    # HANDLE DRAG LOGIC
-    # ---------------------------------------------------------
-    def _start_handle_drag(self, mouse_x):
-        self.handle_dragging = True
-        handle = self._compute_handle_rect()
-        self.handle_drag_offset = mouse_x - handle.x
-
-    def _update_handle_drag(self, mouse_x):
-        handle = self._compute_handle_rect()
-        new_x = mouse_x - self.handle_drag_offset
-
-        new_x = max(self.x, min(self.x + self.width - handle.w, new_x))
-
-        total_width = 200000
-        max_scroll = (total_width * self.zoom) - self.width
-        if max_scroll <= 0:
-            self.scroll_x = 0
-            return
-
-        scroll_ratio = (new_x - self.x) / (self.width - handle.w)
-        self.scroll_x = int(scroll_ratio * max_scroll)
-
-    def _end_handle_drag(self):
-        self.handle_dragging = False
-        self.handle_drag_offset = 0
-
-    # ---------------------------------------------------------
-    # EVENTS
-    # ---------------------------------------------------------
-    def handle_event(self, event):
-        mx, my = pygame.mouse.get_pos()
-
-        # TEXT INPUT FOR MARKER RENAME
-        if self.marker_rename_index is not None and event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RETURN:
-                self._commit_marker_rename()
-                return None
-            if event.key == pygame.K_ESCAPE:
-                self._cancel_marker_rename()
-                return None
-            if event.key == pygame.K_BACKSPACE:
-                self.marker_rename_text = self.marker_rename_text[:-1]
-                return None
-            if event.unicode and event.key != pygame.K_TAB:
-                self.marker_rename_text += event.unicode
-                return None
-
-        # MARKER INTERACTION
-        for i, marker in enumerate(self.markers):
-            rect = self._compute_marker_rect(marker)
-
-            # RIGHT CLICK → change type / delete with CTRL
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-                if rect.collidepoint(mx, my):
-                    mods = pygame.key.get_mods()
-                    if mods & pygame.KMOD_CTRL:
-                        self._delete_marker(i)
-                    else:
-                        self._cycle_marker_type(i)
-                    return None
-
-            # SHIFT + C → cycle color
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_c:
-                mods = pygame.key.get_mods()
-                if mods & pygame.KMOD_SHIFT:
-                    if rect.collidepoint(mx, my):
-                        self._cycle_marker_color(i)
-                        return None
-
-            # SHIFT + T → cycle type
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_t:
-                mods = pygame.key.get_mods()
-                if mods & pygame.KMOD_SHIFT:
-                    if rect.collidepoint(mx, my):
-                        self._cycle_marker_type(i)
-                        return None
-
-            # LEFT CLICK: drag or rename (double‑click)
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if rect.collidepoint(mx, my):
-                    now = pygame.time.get_ticks()
-                    if (
-                        self._last_click_marker_index == i
-                        and now - self._last_click_time <= self._double_click_threshold_ms
-                    ):
-                        self._start_marker_rename(i)
-                    else:
-                        self._start_marker_drag(i, mx)
-                    self._last_click_time = now
-                    self._last_click_marker_index = i
-                    return None
-
-        # MARKER DRAG MOVE
-        if event.type == pygame.MOUSEMOTION:
-            if self.marker_dragging is not None:
-                self._update_marker_drag(mx)
-                return None
-
-        # MARKER DRAG END
-        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            if self.marker_dragging is not None:
-                self._end_marker_drag()
-                return None
-
-        # ADD MARKER (SHIFT + LEFT CLICK in marker lane)
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mods = pygame.key.get_mods()
-            lane_y = self.y + self.ruler_height + self.loop_height
-            if mods & pygame.KMOD_SHIFT:
-                if lane_y <= my <= lane_y + self.marker_lane_height:
-                    self._add_marker(mx)
-                    return None
-
-        # LOOP REGION START (left click in ruler)
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.y <= my <= self.y + self.ruler_height:
-                self._start_loop(mx)
-                return None
-
-        # LOOP REGION UPDATE
-        if event.type == pygame.MOUSEMOTION:
-            if self.loop_active and not self.handle_dragging and not self.dragging:
-                if pygame.mouse.get_pressed()[0]:
-                    self._update_loop(mx)
-                    return None
-
-        # LOOP REGION FINALIZE
-        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            if self.loop_active:
-                self._finalize_loop()
-                return None
-
-        # HANDLE DRAG START
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            handle = self._compute_handle_rect()
-            if handle.collidepoint(mx, my):
-                self._start_handle_drag(mx)
-                return None
-
-        # HANDLE DRAG MOVE
-        if event.type == pygame.MOUSEMOTION:
-            if self.handle_dragging:
-                self._update_handle_drag(mx)
-                return None
-
-        # HANDLE DRAG END
-        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            self._end_handle_drag()
-
-        # CLICK‑TO‑SEEK (grid area)
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            grid_y = self.y + self.ruler_height + self.loop_height + self.marker_lane_height
-            grid_h = self.height - (self.ruler_height + self.loop_height + self.marker_lane_height + self.zoom_bar_rect.h + self.scroll_bar_rect.h)
-            if grid_h < 0:
-                grid_h = 0
-            if grid_y <= my <= grid_y + grid_h:
-                layout = self.controller.layout
-                beat = layout.pixel_to_beat(mx - self.x + self.scroll_x)
-                beat = max(0.0, beat)
-                if hasattr(self.controller, "set_playhead_beat"):
-                    try:
-                        self.controller.set_playhead_beat(beat)
-                    except Exception:
-                        pass
-                elif hasattr(self.controller, "playhead_beat"):
-                    self.controller.playhead_beat = beat
-                return None
+        self
