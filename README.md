@@ -43,7 +43,7 @@ This project solves:
 - **real‑time beam detection**  
 - **real‑time velocity dynamics**  
 - **real‑time multi‑track rendering**  
-- **real‑time layout without pre‑analysis**  
+- **real‑time layout engine (no pre‑analysis)**  
 
 This makes it ideal for:
 
@@ -69,9 +69,10 @@ A full **CITATION.cff** file will be added for academic referencing.
 ---
 
 # 🔎 SEO Keywords  
-`midi`, `real-time midi`, `midi notation`, `midi visualizer`, `midi renderer`,  
-`music notation`, `pygame`, `python midi`, `multi-track midi`, `midi to sheet music`,  
-`yamaha`, `arranger keyboard`, `live midi`, `midi processing`, `real-time visualization`
+`midi`, `real-time midi`, `real-time midi notation`, `midi notation`, `midi visualizer`,  
+`midi renderer`, `music notation`, `pygame`, `python midi`, `multi-track midi`,  
+`midi to sheet music`, `yamaha`, `arranger keyboard`, `live midi`, `midi processing`,  
+`real-time visualization`, `midi sheet music`, `midi score`
 
 ---
 
@@ -84,13 +85,13 @@ A full **CITATION.cff** file will be added for academic referencing.
 - staff cache (performance boost)  
 - barlines, grid, timeline ruler  
 - real‑time playhead  
-- velocity shading (color + size)  
+- velocity dynamics (color + size)  
 - chord grouping  
 - 8th/16th beam detection  
 - dynamic stems  
 - full Yamaha 16‑track support  
 - track visibility + color integration  
-- real‑time activity meter  
+- real‑time activity meters  
 - zoom + scroll  
 - fully stabilized  
 
@@ -135,7 +136,7 @@ GraphicNotationRenderer
 ↓
 UI Layer (Piano, Roll, Staff, Visualizer)
 ↓
-TrackManager (16-track control)
+TrackManager (16‑track control)
 ↓
 Debug Layer (NotationRenderer)
 
@@ -188,7 +189,7 @@ Modular. Extensible. Professional.
 ---
 
 ## 🎯 Version 1.2 – UI Improvements
-- activity meter  
+- real‑time activity meter  
 - improved layout  
 - track color integration  
 
