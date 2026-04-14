@@ -1,13 +1,24 @@
 """
 notation_renderer.py – Legacy Text Renderer (FÁZA 4)
 
+Tento renderer predstavuje pôvodný, plne stabilizovaný textový výstup
+pre debug, fallback a testovanie real‑time MIDI pipeline.
+
 Poskytuje:
-- bezpečné pridávanie nôt
-- textovú vizualizáciu vrátane bubnových značiek
-- filter funkciu
+- bezpečné pridávanie nôt do interného bufferu
+- textovú vizualizáciu vrátane bubnových značiek (drum metadata)
+- podporu pre layering (drum_layer_offset)
+- filter() funkciu pre selektívne zobrazovanie nôt
 - clear() bufferu
+- timestampy pri každom renderovaní
 - FPS limit (ak pygame existuje)
 - ochranu pred None, nevalidnými dátami a chybami pri výpise
+
+Prepojenia:
+- používa sa ako fallback renderer pre debug a testy
+- kompatibilný s real‑time MIDI pipeline (midi_input → notation_engine → renderer)
+- zdieľa rovnaký dátový formát nôt ako GraphicNotationRenderer
+- vhodný na rýchle ladenie bez grafického prostredia
 """
 
 from typing import Callable, Optional, Dict, Any
@@ -17,7 +28,7 @@ class NotationRenderer:
     """
     Jednoduchý textový renderer.
     Zobrazuje noty v konzole vždy, keď príde nová nota.
-    Podporuje aj bubnové značky, layering, timestampy, clear() a filter().
+    Podporuje bubnové značky, layering, timestampy, clear() a filter().
     """
 
     def __init__(self):
