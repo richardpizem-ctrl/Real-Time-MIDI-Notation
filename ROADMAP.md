@@ -1,143 +1,110 @@
-# 🎼 Real-Time MIDI Notation — MEGA ROADMAP (Ultimate Edition)
+# 🆕 Upcoming Version: v1.1.0 — Enhanced UI & Performance Update
 
-This is the complete, extended, professional roadmap combining:
-- colored emoji progress bars  
-- ASCII progress bars  
-- contributor-friendly task structure  
-- direct links to code modules  
-- GitHub‑friendly formatting  
-- expanded descriptions for the community  
+This section describes:
+- what is **already completed** in v1.0.0  
+- what **new features** will be included in v1.1.0  
+- how the project will evolve after the stable release  
 
 ---
 
-# 📦 Architecture Overview (with module links)
+# ✅ What We Already Have (v1.0.0 Complete)
 
-### 🔧 Core Engine
-- **Processor** → [`src/processor.py`](../src/processor.py)
-- **Rhythm Analyzer** → [`rhythm_analyzer.py`](../rhythm_analyzer.py)
-- **MidiNoteMapper** → [`midi_input/midi_note_mapper.py`](../midi_input/midi_note_mapper.py)
-- **EventBus** → [`event_bus.py`](../event_bus.py)
+### 🎨 GraphicNotationRenderer — 100%  
+- full Yamaha 16‑track support  
+- beams, stems, barlines, grid  
+- velocity dynamics (yellow/green/red)  
+- blue error‑note highlighting  
+- staff cache (performance boost)  
+- real‑time playhead  
+- zoom + scroll  
+- safe rendering (no crashes without pygame/font)  
+- stable FÁZA 4 module  
 
-### 🎚 Track System
-- **TrackSystem** → [`core/track_system.py`](../core/track_system.py)
-- **TrackManager** → [`core/track_manager.py`](../core/track_manager.py)
+### 🕒 TimelineUI — 100%  
+- markers (drag, rename, recolor)  
+- loop region  
+- snapping  
+- zoom + scroll  
+- playhead sync  
+- stable FÁZA 4 module  
 
-### 🎨 Rendering
-- **GraphicNotationRenderer** → [`renderer/graphic_notation_renderer.py`](../renderer/graphic_notation_renderer.py)
+### 🧠 Processor & Rhythm Analyzer — 100%  
+- velocity + timing extraction  
+- rhythmic grouping  
+- BPM handling  
+- timing deviation analysis  
 
-### 🖥 UI Layer
-- **UIManager** → [`ui_manager.py`](../ui_manager.py)
-- **TrackSwitcherUI** → [`ui_components/track_switcher_ui.py`](../ui_components/track_switcher_ui.py)
+### 🎚 Track System — 100%  
+- 16‑track Yamaha TrackManager  
+- per‑track colors  
+- visibility + activity  
+- TrackControlManager integration  
 
----
-
-# 📊 Current Project Status (Emoji + ASCII)
-
-| Area | Progress | Emoji Bar | ASCII Bar | Description |
-|------|----------|-----------|-----------|-------------|
-| **Core Engine** | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 | [##########] | Fully stable pipeline. |
-| **GraphicNotationRenderer** | **95%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟨 | [#########-] | Stabilized renderer, Yamaha 16‑track, beams, stems, grid, playhead. |
-| **UI Layer** | **90%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟨🟥 | [########--] | TrackSwitcherUI + UIManager fully integrated. |
-| **Realtime Pipeline** | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 | [##########] | DAW‑level bidirectional communication. |
-| **Tests & Stability** | **80%** | 🟩🟩🟩🟩🟩🟩🟨🟥🟥🟥 | [########--] | Missing extreme scenario tests. |
-| **Documentation** | **100%** | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 | [##########] | Complete templates, README, policies. |
-
----
-
-# 🚀 Overall Progress  
-# **94% COMPLETE**  
-🟩🟩🟩🟩🟩🟩🟩🟩🟨🟥  
-`[#########-]`
-
----
-
-# 🛣 Roadmap to v1.0.0 (Expanded)
-
-## 🎯 PHASE 1 — Final Visual Polish (95% → 97%)
-🎨 *Focus: professional visual refinement.*
-
-- [ ] Anti‑aliasing for notes, lines, UI  
-- [ ] Subtle UI animations (mute/solo/rec)  
-- [ ] Unified line thickness  
-- [ ] Active track glow  
-- [ ] Yamaha color palette  
-- [ ] Improved text contrast  
-- [ ] Highlight active measures  
+### 🖥 UI Layer — 100%  
+- Transport  
+- Timeline  
+- Track Switcher  
+- Track Selector  
+- Piano  
+- Piano Roll  
+- Staff  
+- Visualizer  
+- Track Inspector  
+- PixelLayoutEngine (DAW‑style layout)  
 
 ---
 
-## 🎯 PHASE 2 — Stability & Performance (97% → 98%)
-⚙️ *Focus: extreme scenarios and optimization.*
+# 🚀 Next Release: v1.1.0 — What It Will Contain
 
-- [ ] Beam caching  
-- [ ] Chord group caching  
-- [ ] BPM stress tests (20–600 BPM)  
-- [ ] Velocity stress tests  
-- [ ] Scroll/zoom optimization  
-- [ ] Memory footprint audit  
-- [ ] CPU/GPU benchmarking  
+## 🎚 1. Improved Track Switcher
+- faster switching  
+- better active‑track highlighting  
+- improved color palette  
+- smoother UI feedback  
 
----
+## 🎨 2. Renderer Performance Boost
+- reduced draw calls  
+- optimized staff cache  
+- smoother scroll at high BPM  
+- micro‑optimizations for 16‑track mode  
 
-## 🎯 PHASE 3 — Functional Enhancements (98% → 99%)
-🧩 *Focus: new user features.*
+## 🧠 3. Smarter Quantization (Adaptive Prep)
+- better timing deviation handling  
+- groundwork for adaptive quantization  
+- more stable grouping in fast passages  
 
-- [ ] Export current frame → PNG  
-- [ ] Export playback → GIF/MP4  
-- [ ] Zoom slider  
-- [ ] Layer toggles (grid, barlines, stems, beams)  
-- [ ] MIDI event inspector  
-- [ ] Track color customization  
+## 🖥 4. UI Polish
+- improved contrast  
+- cleaner panel layout  
+- refined timeline visuals  
+- safer subsurface handling  
 
----
-
-## 🎯 PHASE 4 — Release Polish (99% → 100%)
-📦 *Focus: final release preparation.*
-
-- [ ] README screenshots & GIFs  
-- [ ] v1.0.0 release notes  
-- [ ] 10‑minute stability test  
-- [ ] 16‑track stress test  
-- [ ] Extreme MIDI tests  
-- [ ] Final code cleanup  
-- [ ] Tag v1.0.0 + GitHub Release  
+## 🧩 5. Internal Improvements
+- safer fallbacks  
+- improved event handling  
+- preparation for PNG/SVG export  
+- small refactors for future versions  
 
 ---
 
-# 🧩 Contributor Guide (Beginner → Advanced)
+# 🗺 Future Roadmap After v1.1.0
 
-### 🟦 Beginner‑friendly
-- Improve documentation  
-- Add comments to complex renderer functions  
-- Add simple unit tests  
-- Fix UI text issues  
+### v1.2.0 — UI Enhancements  
+- activity meter  
+- improved layout  
+- track color customization  
 
-### 🟩 Intermediate
-- Implement anti‑aliasing  
-- Improve UI animations  
-- Optimize scroll/zoom  
-- Add layer toggles  
+### v1.3.0 — Export Module  
+- PNG export  
+- SVG export  
+- screenshot engine  
 
-### 🟥 Advanced
-- Beam caching  
-- Chord caching  
-- GIF/MP4 export  
-- Extreme MIDI stress testing  
+### v2.0.0 — Advanced Layout Engine  
+- multi‑voice notation  
+- polyphony  
+- advanced beams  
+- articulations  
 
----
-
-# 🏁 Final Goal  
-## **Real-Time MIDI Notation v1.0.0 — a professional open‑source tool for real‑time Yamaha‑style MIDI visualization**
-
-After completing this roadmap, the project will be:
-
-- stable  
-- visually polished  
-- fully real‑time  
-- community‑ready  
-- suitable for professional use  
-
----
-
-For contributions, see **Contributing.md**.  
-To report issues, use the **Bug Report Template**.
+### v3.0.0 — Professional Engraving  
+- MuseScore/LilyPond‑level engraving  
+- full notation engine  
