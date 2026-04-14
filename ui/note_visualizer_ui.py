@@ -1,3 +1,23 @@
+"""
+note_visualizer_ui.py – Real‑Time Note Visualizer (FÁZA 4)
+
+Jednoduchý real‑time vizualizér MIDI nôt s farebným pulzovaním.
+Každá nota vytvorí pulz, ktorý postupne mizne. Modul obsahuje aj
+globálny BPM pulz pre vizuálny rytmus.
+
+Poskytuje:
+- farebné pulzy pre každú aktívnu notu
+- BPM pulz (globálne blikanie podľa tempa)
+- fade-out efekt pre noty
+- bezpečné no-op metódy pre UIManager
+- kompatibilitu s real‑time MIDI pipeline
+
+Prepojenia:
+- používa sa ako doplnková UI vrstva (midi_input → engine → UIManager → NoteVisualizerUI)
+- prijíma eventy vo formáte: {note, track_color, time}
+- funguje paralelne s PianoUI a GraphicNotationRenderer
+"""
+
 import pygame
 import math
 import time
