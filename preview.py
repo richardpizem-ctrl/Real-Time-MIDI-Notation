@@ -6,18 +6,22 @@ from notation_engine.notation_renderer import NotationRenderer
 
 def build_demo_timeline():
     """
-    Demo timeline pre vizuálny náhľad.
+    Demo timeline pre vizuálny náhľad renderera.
     """
     timeline = []
 
+    # -----------------------------------------------------
     # Takt 1 – barline + akord
+    # -----------------------------------------------------
     timeline.append({
         "type": "barline",
         "start": 0.0,
         "chord": "Cmaj7"
     })
 
-    # Melody
+    # -----------------------------------------------------
+    # Melody (horná linka)
+    # -----------------------------------------------------
     timeline.append({
         "type": "note",
         "track_type": "melody",
@@ -35,7 +39,9 @@ def build_demo_timeline():
         "color": "#FFFFFF",
     })
 
-    # Bass
+    # -----------------------------------------------------
+    # Bass (spodná linka)
+    # -----------------------------------------------------
     timeline.append({
         "type": "note",
         "track_type": "bass",
@@ -45,7 +51,9 @@ def build_demo_timeline():
         "color": "#FFFFFF",
     })
 
-    # Drums
+    # -----------------------------------------------------
+    # Drums (perkusie)
+    # -----------------------------------------------------
     timeline.append({
         "type": "note",
         "track_type": "drums",
@@ -67,22 +75,29 @@ def build_demo_timeline():
 
 
 def main():
+    # -----------------------------------------------------
+    # Tkinter okno
+    # -----------------------------------------------------
     root = tk.Tk()
     root.title("Real-Time MIDI Notation – Preview")
 
     canvas = tk.Canvas(root, width=1200, height=400, bg="#202020")
     canvas.pack(fill="both", expand=True)
 
+    # Renderer
     renderer = NotationRenderer(canvas=canvas)
 
+    # Demo timeline
     timeline = build_demo_timeline()
 
+    # Dummy akord objekt (renderer očakáva .name)
     class DummyChord:
         def __init__(self, name):
             self.name = name
 
     current_chord = DummyChord("Cmaj7")
 
+    # Render
     renderer.render(timeline, current_chord=current_chord)
 
     root.mainloop()
