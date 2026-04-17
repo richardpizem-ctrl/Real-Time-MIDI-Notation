@@ -9,7 +9,7 @@ This section describes:
 
 # ✅ What We Already Have (v1.0.0 Complete)
 
-### 🎨 GraphicNotationRenderer — 100%  
+### 🎨 GraphicNotationRenderer — 100%
 - full Yamaha 16‑track support  
 - beams, stems, barlines, grid  
 - velocity dynamics (yellow/green/red)  
@@ -20,7 +20,7 @@ This section describes:
 - safe rendering (no crashes without pygame/font)  
 - stable FÁZA 4 module  
 
-### 🕒 TimelineUI — 100%  
+### 🕒 TimelineUI — 100%
 - markers (drag, rename, recolor)  
 - loop region  
 - snapping  
@@ -28,19 +28,19 @@ This section describes:
 - playhead sync  
 - stable FÁZA 4 module  
 
-### 🧠 Processor & Rhythm Analyzer — 100%  
+### 🧠 Processor & Rhythm Analyzer — 100%
 - velocity + timing extraction  
 - rhythmic grouping  
 - BPM handling  
 - timing deviation analysis  
 
-### 🎚 Track System — 100%  
+### 🎚 Track System — 100%
 - 16‑track Yamaha TrackManager  
 - per‑track colors  
 - visibility + activity  
 - TrackControlManager integration  
 
-### 🖥 UI Layer — 100%  
+### 🖥 UI Layer — 100%
 - Transport  
 - Timeline  
 - Track Switcher  
@@ -98,13 +98,69 @@ This section describes:
 - PNG export  
 - SVG export  
 - screenshot engine  
+- **MIDI → PNG (simple sheet export)**  
+- **foundation for MIDI → sheet‑music conversion**  
 
 ### v2.0.0 — Advanced Layout Engine  
 - multi‑voice notation  
 - polyphony  
 - advanced beams  
 - articulations  
+- **improved engraving rules**  
 
 ### v3.0.0 — Professional Engraving  
 - MuseScore/LilyPond‑level engraving  
 - full notation engine  
+- **professional score preparation tools**  
+
+---
+
+# 🌟 Long‑Term Vision (Concept for the Future)
+
+### 🎼 1. Create Sheet Music for Musicians Who Play by Ear  
+A key long‑term goal:  
+**allow musicians who do not read notation to generate professional sheet music from their own playing.**
+
+This includes:
+- real‑time capture of performance  
+- automatic rhythmic + pitch analysis  
+- exportable notation (PNG/SVG/PDF in future)  
+- clean layout suitable for professional musicians  
+
+### 🎹 2. Bridge Between Amateur and Professional Worlds  
+The project aims to become a tool where:
+- amateurs can record ideas  
+- the engine converts them into readable notation  
+- professionals can refine, orchestrate, and arrange  
+
+### 🧪 3. Music Research Platform  
+- timing deviation analysis  
+- expressive performance studies  
+- educational visualization  
+- MIDI‑based research tools  
+
+### 📄 4. Full Export & Sharing Ecosystem  
+- snapshots  
+- sheet exports  
+- timeline exports  
+- multi‑track score exports  
+
+### 🎼 5. Future Engraving Engine  
+- spacing algorithms  
+- collision avoidance  
+- slurs, ties, articulations  
+- professional publishing quality  
+
+---
+
+# 🔮 Summary of Vision
+Real‑Time‑MIDI‑Notation is evolving from a **real‑time visualizer** into a **full musical toolchain**:
+
+- real‑time performance visualization  
+- notation extraction  
+- export for musicians  
+- educational tools  
+- research platform  
+- future engraving engine  
+
+A complete ecosystem for **creating, understanding, and sharing music**.
