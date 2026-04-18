@@ -21,6 +21,18 @@ This project aims to evolve into a **full real‑time engraving engine**, simila
 
 ---
 
+# 🎹 Supported Instruments  
+This software works with any MIDI‑capable instrument, including:
+
+- **Yamaha arranger keyboards** (full 16‑track support)  
+- **Korg workstations and arrangers**  
+- **Roland synths and workstations**  
+- **Kurzweil workstations**  
+
+(Consumer‑grade keyboards like **Casio are not the target platform**.)
+
+---
+
 # 🎯 Who Is This For?
 
 - MIDI visualizers  
@@ -124,6 +136,7 @@ Real-Time MIDI Notation is now:
 - professionally structured  
 - fully functional end‑to‑end  
 - recognized as **real‑time MIDI notation software**  
+- compatible with Yamaha, Korg, Roland, Kurzweil  
 - ready for rapid expansion  
 
 This is the foundation of a **full real‑time notation engine**.
