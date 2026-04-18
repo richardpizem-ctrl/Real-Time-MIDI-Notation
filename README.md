@@ -1,4 +1,8 @@
 # 🎼 Real-Time MIDI Notation  
+
+![SIRIUS Banner](SIRIUS%20PROGRAM%20S%20EM.png)
+
+### **SIRIUS — the brightest star in real‑time MIDI notation**
 ### **Real‑time multi‑track MIDI visualization & notation software (Python, Pygame)**  
 A high‑performance real‑time MIDI notation **software engine** with 16‑track Yamaha support, advanced beams, velocity dynamics, and a fully modular UI.
 
@@ -137,6 +141,7 @@ Real-Time MIDI Notation is now:
 - fully functional end‑to‑end  
 - recognized as **real‑time MIDI notation software**  
 - compatible with Yamaha, Korg, Roland, Kurzweil  
+- visually branded under **SIRIUS**  
 - ready for rapid expansion  
 
 This is the foundation of a **full real‑time notation engine**.
