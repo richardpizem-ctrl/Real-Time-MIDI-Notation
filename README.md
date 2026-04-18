@@ -1,11 +1,11 @@
 # 🎼 Real-Time MIDI Notation  
-### **Real‑time multi‑track MIDI visualization & notation engine (Python, Pygame)**  
-A high‑performance renderer for real‑time MIDI events with 16‑track support, advanced beams, velocity dynamics, and a fully modular UI.
+### **Real‑time multi‑track MIDI visualization & notation software (Python, Pygame)**  
+A high‑performance real‑time MIDI notation **software engine** with 16‑track Yamaha support, advanced beams, velocity dynamics, and a fully modular UI.
 
 ---
 
 # 🔍 What is Real-Time MIDI Notation?  
-**Real-Time MIDI Notation** is a **real‑time multi‑track MIDI renderer** written in Python.  
+**Real-Time MIDI Notation** is a **real‑time multi‑track MIDI notation software** written in Python.  
 It converts incoming MIDI events into **live notation**, including:
 
 - real‑time note placement  
@@ -25,8 +25,8 @@ This project aims to evolve into a **full real‑time engraving engine**, simila
 
 - MIDI visualizers  
 - DAW companion tools  
-- real‑time notation engines  
-- music education software  
+- real‑time notation software  
+- music education tools  
 - live performance analysis  
 - Yamaha arranger keyboard users  
 - MIDI debugging and development  
@@ -37,7 +37,7 @@ This project aims to evolve into a **full real‑time engraving engine**, simila
 Real‑time notation is a **non‑trivial engineering challenge**.  
 Most notation engines (MuseScore, LilyPond, Dorico) are **offline engravers** — they expect complete musical context.
 
-This project solves:
+This software solves:
 
 - **real‑time note grouping**  
 - **real‑time beam detection**  
@@ -55,7 +55,7 @@ This makes it ideal for:
 ---
 
 # 🎓 Academic Relevance  
-This engine is suitable for:
+This software is suitable for:
 
 - **music informatics research**  
 - **real‑time systems courses**  
@@ -81,7 +81,7 @@ This includes:
 - clean layout suitable for professional musicians  
 
 ### 🎹 2. Bridge Between Amateur and Professional Worlds  
-The engine aims to become a tool where:
+The software aims to become a tool where:
 - amateurs can record ideas  
 - the engine converts them into readable notation  
 - professionals can refine, orchestrate, and arrange  
@@ -107,153 +107,11 @@ The engine aims to become a tool where:
 ---
 
 # 🔎 SEO Keywords  
-`midi`, `real-time midi`, `real-time midi notation`, `midi notation`, `midi visualizer`,  
-`midi renderer`, `music notation`, `pygame`, `python midi`, `multi-track midi`,  
-`midi to sheet music`, `yamaha`, `arranger keyboard`, `live midi`, `midi processing`,  
-`real-time visualization`, `midi sheet music`, `midi score`
-
----
-
-# ✅ Completed Modules & Features
-
-## 🎨 GraphicNotationRenderer (core graphic engine)
-- real‑time layout engine  
-- time → X mapping  
-- pitch → Y mapping  
-- staff cache (performance boost)  
-- barlines, grid, timeline ruler  
-- real‑time playhead  
-- velocity dynamics (color + size)  
-- chord grouping  
-- 8th/16th beam detection  
-- dynamic stems  
-- full Yamaha 16‑track support  
-- track visibility + color integration  
-- real‑time activity meters  
-- zoom + scroll  
-- fully stabilized  
-
----
-
-## 📝 NotationRenderer (text/debug renderer)
-- textual MIDI visualization  
-- drum notation support  
-- drum stave offset  
-- timestamps on every line  
-- `clear()` – reset buffer  
-- `filter()` – filter by pitch/channel/drums  
-- pygame‑safe fallback  
-- ideal for debugging  
-
----
-
-## 🧠 Processor
-- note mapping  
-- rhythmic analysis  
-- BPM detection  
-- velocity + timing extraction  
-- basic Rhythm Analyzer  
-
----
-
-## 🎚 TrackManager
-- 16 tracks (Yamaha standard)  
-- per‑track colors  
-- volume, visibility, activity  
-- active track highlighting  
-- real‑time activity updates  
-
----
-
-# 🏗 Architecture Overview
-MIDI Input  
-↓  
-Processor (timing, rhythm, velocity)  
-↓  
-GraphicNotationRenderer  
-↓  
-UI Layer (Piano, Roll, Staff, Visualizer)  
-↓  
-TrackManager (16‑track control)  
-↓  
-Debug Layer (NotationRenderer)
-
-Modular. Extensible. Professional.
-
----
-
-# 📦 Code Structure
-
-### Core Engine
-- `src/processor.py`  
-- `src/rhythm_analyzer.py`  
-- `src/midi_input/midi_note_mapper.py`  
-- `src/event_bus.py`  
-
-### Track System
-- `core/track_system.py`  
-- `core/track_manager.py`  
-
-### Rendering
-- `renderer_new/graphic_renderer.py`  
-- `renderer_legacy/notation_renderer.py`  
-
-### UI Layer
-- `ui/ui_manager.py`  
-- `ui/ui_components/*`  
-
----
-
-# 🚀 Current Status
-
-| Area | Progress | Visual |
-|------|----------|--------|
-| GraphicNotationRenderer | **100%** | 🟩🟩🟩🟩🟩 |
-| NotationRenderer | **100%** | 🟩🟩🟩🟩🟩 |
-| Processor | **100%** | 🟩🟩🟩🟩🟩 |
-| Rhythm Analyzer | **100%** | 🟩🟩🟩🟩🟩 |
-| TrackManager | **100%** | 🟩🟩🟩🟩🟩 |
-| Pipeline (MIDI → Renderer → UI) | **100%** | 🟩🟩🟩🟩🟩 |
-
----
-
-# 🗺 Roadmap
-
-## 🔜 Next steps
-- UI Track Switcher improvements  
-- minor UI polish  
-- documentation: “How the renderer works”  
-
----
-
-## 🎯 Version 1.2 – UI Improvements
-- real‑time activity meter  
-- improved layout  
-- track color integration  
-
----
-
-## 🎯 Version 1.3 – Export
-- PNG export  
-- SVG export  
-- screenshot engine  
-- **MIDI → PNG (simple sheet export)**  
-- **foundation for MIDI → sheet‑music conversion**  
-
----
-
-## 🎯 Version 2.0 – Advanced Layout Engine
-- multi‑voice notation  
-- polyphony  
-- advanced beams  
-- dynamics  
-- articulations  
-
----
-
-## 🎯 Version 3.0 – Professional Engraving
-- MuseScore / LilyPond‑level engraving  
-- full notation engine  
+`midi`, `real-time midi`, `real-time midi notation`, `midi notation software`,  
+`midi visualizer`, `midi renderer`, `music notation`, `pygame`, `python midi`,  
+`multi-track midi`, `midi to sheet music`, `yamaha`, `arranger keyboard`,  
+`live midi`, `midi processing`, `real-time visualization`, `midi sheet music`,  
+`midi score`
 
 ---
 
@@ -265,6 +123,7 @@ Real-Time MIDI Notation is now:
 - modular  
 - professionally structured  
 - fully functional end‑to‑end  
+- recognized as **real‑time MIDI notation software**  
 - ready for rapid expansion  
 
 This is the foundation of a **full real‑time notation engine**.
