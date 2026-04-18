@@ -2,36 +2,41 @@
 
 ![SIRIUS Banner](SIRIUS%20PROGRAM%20S%20EM.png)
 
-### **SIRIUS — the brightest star in real‑time MIDI notation**
-### **Real‑time multi‑track MIDI visualization & notation software (Python, Pygame)**  
-A high‑performance real‑time MIDI notation **software engine** with 16‑track Yamaha support, advanced beams, velocity dynamics, and a fully modular UI.
+### **SIRIUS — the brightest star in real‑time MIDI notation**  
+### **Real‑time multi‑track MIDI visualization & notation engine (Python + Pygame)**  
+
+A high‑performance **real‑time MIDI notation engine** with full Yamaha 16‑track support, advanced beams, velocity‑based dynamics, and a fully modular UI.  
+Designed for **live performance**, **music education**, **research**, and **next‑generation MIDI tools**.
 
 ---
 
-# 🔍 What is Real-Time MIDI Notation?  
-**Real-Time MIDI Notation** is a **real‑time multi‑track MIDI notation software** written in Python.  
-It converts incoming MIDI events into **live notation**, including:
+# 🔍 What Is Real-Time MIDI Notation?
+
+**Real-Time MIDI Notation** is a **real‑time multi‑track MIDI notation engine** written in Python.  
+It converts incoming MIDI events into **live, readable notation**, including:
 
 - real‑time note placement  
 - multi‑track color coding  
 - velocity‑based dynamics  
 - beams, stems, barlines  
-- grid, timeline, and playhead  
-- full Yamaha 16‑track standard  
+- timeline, grid & playhead  
+- Yamaha 16‑track arranger standard  
 - real‑time activity meters  
-- zoom + scroll  
+- zoom & scroll  
+- modular UI components  
 
-This project aims to evolve into a **full real‑time engraving engine**, similar to MuseScore or LilyPond, but optimized for **live MIDI input**.
+This project aims to evolve into a **full real‑time engraving engine**, similar to MuseScore or LilyPond — but optimized for **live MIDI input**, not offline engraving.
 
 ---
 
-# 🎹 Supported Instruments  
-This software works with any MIDI‑capable instrument, including:
+# 🎹 Supported Instruments
+
+Works with any MIDI‑capable instrument, including:
 
 - **Yamaha arranger keyboards** (full 16‑track support)  
-- **Korg workstations and arrangers**  
-- **Roland synths and workstations**  
-- **Kurzweil workstations**  
+- **Korg** workstations & arrangers  
+- **Roland** synths & workstations  
+- **Kurzweil** workstations  
 
 (Consumer‑grade keyboards like **Casio are not the target platform**.)
 
@@ -39,82 +44,83 @@ This software works with any MIDI‑capable instrument, including:
 
 # 🎯 Who Is This For?
 
-- MIDI visualizers  
+- real‑time MIDI visualizers  
 - DAW companion tools  
-- real‑time notation software  
-- music education tools  
+- music education & pedagogy  
 - live performance analysis  
 - Yamaha arranger keyboard users  
-- MIDI debugging and development  
+- MIDI debugging & development  
+- research & academic tools  
 
 ---
 
-# 🧩 Why This Project Matters  
-Real‑time notation is a **non‑trivial engineering challenge**.  
-Most notation engines (MuseScore, LilyPond, Dorico) are **offline engravers** — they expect complete musical context.
+# 🧩 Why This Project Matters
 
-This software solves:
+Real‑time notation is a **non‑trivial engineering challenge**.  
+Most notation engines (MuseScore, LilyPond, Dorico) are **offline engravers** — they require full musical context.
+
+This engine solves:
 
 - **real‑time note grouping**  
 - **real‑time beam detection**  
 - **real‑time velocity dynamics**  
 - **real‑time multi‑track rendering**  
-- **real‑time layout engine (no pre‑analysis)**  
+- **real‑time layout (no pre‑analysis)**  
 
-This makes it ideal for:
+Ideal for:
 
 - research  
 - education  
-- live performance tools  
+- performance tools  
 - MIDI hardware development  
 
 ---
 
-# 🎓 Academic Relevance  
-This software is suitable for:
+# 🎓 Academic Relevance
 
-- **music informatics research**  
-- **real‑time systems courses**  
-- **MIDI protocol analysis**  
-- **digital signal processing labs**  
-- **human–computer interaction studies**  
-- **music pedagogy and visualization**  
+Suitable for:
 
-A full **CITATION.cff** file will be added for academic referencing.
+- music informatics  
+- real‑time systems  
+- MIDI protocol analysis  
+- digital signal processing  
+- HCI studies  
+- music pedagogy  
+
+A full **CITATION.cff** will be added for academic referencing.
 
 ---
 
-# 🌟 Long‑Term Vision (Future Concept)
+# 🌟 Long‑Term Vision
 
-### 🎼 1. Create Sheet Music for Musicians Who Play by Ear  
-A major long‑term goal:  
-**allow musicians who do not read notation to generate professional sheet music from their own playing.**
+## 🎼 1. Sheet Music for Musicians Who Play by Ear  
+Goal:  
+**Generate professional sheet music from live performance.**
 
-This includes:
-- real‑time capture of performance  
-- automatic rhythmic + pitch analysis  
+Includes:  
+- real‑time capture  
+- rhythmic & pitch analysis  
 - exportable notation (PNG/SVG/PDF in future)  
-- clean layout suitable for professional musicians  
+- clean engraving layout  
 
-### 🎹 2. Bridge Between Amateur and Professional Worlds  
-The software aims to become a tool where:
-- amateurs can record ideas  
-- the engine converts them into readable notation  
-- professionals can refine, orchestrate, and arrange  
+## 🎹 2. Bridge Amateur ↔ Professional Worlds  
+- amateurs record ideas  
+- engine converts to notation  
+- professionals refine & orchestrate  
 
-### 🧪 3. Music Research Platform  
+## 🧪 3. Research Platform  
 - timing deviation analysis  
 - expressive performance studies  
 - educational visualization  
 - MIDI‑based research tools  
 
-### 📄 4. Full Export & Sharing Ecosystem  
+## 📄 4. Export & Sharing  
 - snapshots  
-- sheet exports  
+- score exports  
 - timeline exports  
-- multi‑track score exports  
+- multi‑track score rendering  
 
-### 🎼 5. Future Engraving Engine  
+## 🎼 5. Future Engraving Engine  
 - spacing algorithms  
 - collision avoidance  
 - slurs, ties, articulations  
@@ -125,9 +131,9 @@ The software aims to become a tool where:
 # 🔎 SEO Keywords  
 `midi`, `real-time midi`, `real-time midi notation`, `midi notation software`,  
 `midi visualizer`, `midi renderer`, `music notation`, `pygame`, `python midi`,  
-`multi-track midi`, `midi to sheet music`, `yamaha`, `arranger keyboard`,  
-`live midi`, `midi processing`, `real-time visualization`, `midi sheet music`,  
-`midi score`
+`multi-track midi`, `midi to sheet music`, `live midi`, `midi processing`,  
+`real-time visualization`, `midi sheet music`, `midi score`,  
+`notation engine`, `real-time notation`, `music education`
 
 ---
 
@@ -144,4 +150,4 @@ Real-Time MIDI Notation is now:
 - visually branded under **SIRIUS**  
 - ready for rapid expansion  
 
-This is the foundation of a **full real‑time notation engine**.
+This is the foundation of a **full real‑time engraving engine**.
