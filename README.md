@@ -6,7 +6,7 @@
 ### **Real‑time multi‑track MIDI visualization & notation engine (Python + Pygame)**  
 
 A high‑performance **real‑time MIDI notation engine** with full Yamaha 16‑track support, advanced beams, velocity‑based dynamics, and a fully modular UI.  
-Designed for **live performance**, **music education**, **research**, **recording studios**, and **next‑generation MIDI tools**.
+Designed for **live performance**, **music education**, **research**, and **next‑generation MIDI tools**.
 
 ---
 
@@ -26,6 +26,37 @@ It converts incoming MIDI events into **live, readable notation**, including:
 - modular UI components  
 
 This project aims to evolve into a **full real‑time engraving engine**, similar to MuseScore or LilyPond — but optimized for **live MIDI input**, not offline engraving.
+
+---
+
+# 🆕 A New Class of Real‑Time MIDI Engine
+
+**SIRIUS / Real‑Time MIDI Notation** nepatrí do žiadnej existujúcej kategórie softvéru.  
+Nie je to MIDI vizualizér, nie je to offline notátor, nie je to DAW plugin a nie je to tradičná MIDI knižnica.
+
+Predstavuje **úplne novú triedu softvéru**, ktorá doteraz v hudobnej technológii neexistovala:
+
+### **Real‑Time Multi‑Track MIDI Notation Engine**
+
+Tento typ softvéru kombinuje vlastnosti, ktoré sa nikdy predtým nevyskytli spolu:
+
+- plne **real‑time** spracovanie MIDI udalostí  
+- **16‑track Yamaha kompatibilný** multi‑track engine  
+- okamžitá grafická notácia (beams, stems, barlines)  
+- **velocity‑based** dynamika v reálnom čase  
+- modulárny grafický renderer (Python + Pygame)  
+- architektúra optimalizovaná pre **výskum, výučbu, živé hranie a štúdiá**  
+- žiadne predspracovanie, žiadna analýza dopredu, žiadne offline kroky  
+
+Vďaka tomu SIRIUS vytvára **novú kategóriu real‑time MIDI nástrojov**, ktorá dopĺňa tradičné offline notátory (MuseScore, LilyPond, Dorico) a otvára priestor pre:
+
+- živú notáciu  
+- real‑time analýzu výkonu  
+- výskum expresivity  
+- štúdiové pred‑nahrávacie nástroje  
+- vizualizáciu pre hudobnú pedagogiku  
+
+SIRIUS je prvý open‑source projekt, ktorý túto kategóriu definuje.
 
 ---
 
