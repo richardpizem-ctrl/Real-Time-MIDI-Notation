@@ -6,7 +6,7 @@
 ### **Real‑time multi‑track MIDI visualization & notation engine (Python + Pygame)**  
 
 A high‑performance **real‑time MIDI notation engine** with full Yamaha 16‑track support, advanced beams, velocity‑based dynamics, and a fully modular UI.  
-Designed for **live performance**, **music education**, **research**, and **next‑generation MIDI tools**.
+Designed for **live performance**, **music education**, **research**, **recording studios**, and **next‑generation MIDI tools**.
 
 ---
 
@@ -51,6 +51,8 @@ Works with any MIDI‑capable instrument, including:
 - Yamaha arranger keyboard users  
 - MIDI debugging & development  
 - research & academic tools  
+- **recording studios needing pre‑recording input control**  
+  *(checking timing, dynamics, articulation, and performance cleanliness before recording)*  
 
 ---
 
