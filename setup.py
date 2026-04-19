@@ -15,7 +15,7 @@ setup(
     ],
     author="Richard",
     author_email="",
-    description="High-performance real-time 16-track MIDI notation engine for Python.",
+    description="Next‑generation real‑time multi‑track MIDI notation engine with full Yamaha 16‑track support.",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
