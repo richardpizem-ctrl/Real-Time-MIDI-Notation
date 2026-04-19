@@ -18,11 +18,22 @@ keywords:
   - real-time-midi
   - music-technology
   - digital-audio
+
 abstract: >
   Real-Time MIDI Notation is a high-performance real-time 16-track MIDI notation
   and visualization engine written in Python. It provides real-time rendering of
   MIDI events, velocity dynamics, beams, stems, barlines, and multi-track
   visualization optimized for Yamaha arranger keyboards and music research.
+
+  This project introduces a completely new class of software that did not
+  previously exist in music technology: a Real-Time Multi-Track MIDI Notation
+  Engine. Unlike traditional offline notation systems (MuseScore, LilyPond,
+  Dorico) or simple MIDI visualizers, this engine performs full real-time
+  multi-track notation, Yamaha-style track processing, and dynamic rendering
+  without pre-analysis or offline steps. It defines a new category of tools for
+  research, education, live performance, expressive timing analysis, and
+  next-generation MIDI workflows.
+
 repository-code: "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation"
 license: "MIT"
 date-released: "2026-04-19"
