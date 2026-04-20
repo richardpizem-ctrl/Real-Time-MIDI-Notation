@@ -1,7 +1,7 @@
-class AIEngine:
+class SiriusAI:
     """
-    Central AI manager for Real-Time MIDI Notation Engine.
-    Routes data to quantizer, interpretation and notation modules.
+    SIRIUS-AI – centrálna inteligentná vrstva pre Real-Time MIDI Notation Engine.
+    Riadi kvantizáciu, interpretáciu a predikciu notácie.
     """
 
     def __init__(self, quantizer=None, interpreter=None, notation_engine=None):
