@@ -17,7 +17,7 @@ from event_bus.event_types import (
 # CORE / TRACKS / PROCESSING
 # ---------------------------------------------------------
 from core.logger import Logger
-    from core.track_manager import TrackManager
+from core.track_manager import TrackManager
 from core.playback_engine import PlaybackEngine
 
 from track_system.track_system import TrackSystem
@@ -41,9 +41,9 @@ from real_time_processing.stream_handler import StreamHandler
 from renderer.graphic_renderer import GraphicNotationRenderer
 
 # ---------------------------------------------------------
-# AI MODULE
+# AI MODULE (SIRIUS-AI)
 # ---------------------------------------------------------
-from AI.ai_core import AIEngine
+from AI.ai_core import SiriusAI
 from AI.Kvantizér.smart_quantizer import SmartQuantizer
 from AI.Interpretácia.performance_interpreter import PerformanceInterpreter
 from AI.Notácia.notation_predictor import NotationPredictor
@@ -107,21 +107,21 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 3. AI ENGINE (NOVÉ)
+    # 3. SIRIUS-AI ENGINE (NOVÉ)
     # -----------------------------------------------------
     try:
-        ai_engine = AIEngine(
+        ai_engine = SiriusAI(
             quantizer=SmartQuantizer(),
             interpreter=PerformanceInterpreter(),
             notation_engine=NotationPredictor()
         )
 
-        # Prepojenie AI → NotationProcessor (bez zásahu do vnútra)
+        # Prepojenie AI → NotationProcessor
         notation_processor.attach_ai(ai_engine)
 
-        Logger.info("AI Engine initialized and attached.")
+        Logger.info("SIRIUS-AI Engine initialized and attached.")
     except Exception as e:
-        Logger.error(f"Failed to initialize AI Engine: {e}")
+        Logger.error(f"Failed to initialize SIRIUS-AI Engine: {e}")
 
     # -----------------------------------------------------
     # 4. UI Manager
