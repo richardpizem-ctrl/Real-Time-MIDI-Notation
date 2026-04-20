@@ -17,7 +17,7 @@ from event_bus.event_types import (
 # CORE / TRACKS / PROCESSING
 # ---------------------------------------------------------
 from core.logger import Logger
-from core.track_manager import TrackManager
+    from core.track_manager import TrackManager
 from core.playback_engine import PlaybackEngine
 
 from track_system.track_system import TrackSystem
@@ -39,6 +39,14 @@ from real_time_processing.stream_handler import StreamHandler
 # RENDERER
 # ---------------------------------------------------------
 from renderer.graphic_renderer import GraphicNotationRenderer
+
+# ---------------------------------------------------------
+# AI MODULE
+# ---------------------------------------------------------
+from AI.ai_core import AIEngine
+from AI.Kvantizér.smart_quantizer import SmartQuantizer
+from AI.Interpretácia.performance_interpreter import PerformanceInterpreter
+from AI.Notácia.notation_predictor import NotationPredictor
 
 
 # ---------------------------------------------------------
@@ -99,7 +107,24 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 3. UI Manager
+    # 3. AI ENGINE (NOVÉ)
+    # -----------------------------------------------------
+    try:
+        ai_engine = AIEngine(
+            quantizer=SmartQuantizer(),
+            interpreter=PerformanceInterpreter(),
+            notation_engine=NotationPredictor()
+        )
+
+        # Prepojenie AI → NotationProcessor (bez zásahu do vnútra)
+        notation_processor.attach_ai(ai_engine)
+
+        Logger.info("AI Engine initialized and attached.")
+    except Exception as e:
+        Logger.error(f"Failed to initialize AI Engine: {e}")
+
+    # -----------------------------------------------------
+    # 4. UI Manager
     # -----------------------------------------------------
     try:
         ui = UIManager(
@@ -120,7 +145,7 @@ def main():
         Logger.error(f"Failed to bind UI components to NotationProcessor: {e}")
 
     # -----------------------------------------------------
-    # 4. EventRouter (MIDI → EventBus → UI)
+    # 5. EventRouter (MIDI → EventBus → UI)
     # -----------------------------------------------------
     try:
         event_router = EventRouter(
@@ -132,7 +157,7 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 5. MIDI Stream Handler
+    # 6. MIDI Stream Handler
     # -----------------------------------------------------
     try:
         stream_handler = StreamHandler(
@@ -144,7 +169,7 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 6. TrackManager + Renderer + CanvasUI + PlaybackEngine
+    # 7. TrackManager + Renderer + CanvasUI + PlaybackEngine
     # -----------------------------------------------------
     try:
         track_manager = TrackManager(track_system)
@@ -170,7 +195,7 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 7. HLAVNÁ RENDER SLUČKA
+    # 8. HLAVNÁ RENDER SLUČKA
     # -----------------------------------------------------
     running = True
     try:
@@ -196,7 +221,6 @@ def main():
                 ui.draw(screen)
 
                 if playback_surface is not None:
-                    # UIManager now owns layout → no magic numbers
                     screen.blit(playback_surface, ui.get_playback_surface_pos())
 
                 pygame.display.update()
@@ -206,7 +230,7 @@ def main():
 
     finally:
         try:
-            stream_handler.stop()          # CLEAN SHUTDOWN
+            stream_handler.stop()
         except:
             pass
 
