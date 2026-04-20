@@ -19,6 +19,15 @@ class NotationProcessor:
     def __init__(self, track_system, event_bus=None):
         self.track_system = track_system
         self.event_bus = event_bus
+        self.ai = None   # AI engine (voliteľné)
+
+    # ---------------------------------------------------------
+    # AI ATTACH (NOVÉ)
+    # ---------------------------------------------------------
+    def attach_ai(self, ai_engine):
+        """Pripojí AI modul k NotationProcessoru."""
+        self.ai = ai_engine
+        Logger.info("AI Engine attached to NotationProcessor.")
 
     # ---------------------------------------------------------
     # PUBLIC EXPORT API
