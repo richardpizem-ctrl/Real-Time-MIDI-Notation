@@ -14,7 +14,7 @@ class TimelineController:
     Účel:
         - Riadi timeline (grid, playhead, layout)
         - Poskytuje API pre zoom, scroll, update, markers
-        - Slúži ako zdroj pre renderer_layers (GridLayer, MarkerLayer, PlayheadLayer)
+        - Slúži ako zdroj pre TimelineLayer (renderer_new/layers/timeline_layer.py)
         - Real‑time safe, bez blokujúcich operácií
     """
 
@@ -133,7 +133,7 @@ class TimelineController:
             Logger.error(f"TimelineController update error: {e}")
 
     # ---------------------------------------------------------
-    # DRAW HELPERS (pre LayerManager)
+    # DRAW HELPERS (pre TimelineLayer)
     # ---------------------------------------------------------
     def draw_grid(self, surface):
         """Kreslí beaty, takty, subdivízie."""
@@ -162,7 +162,12 @@ class TimelineController:
             if t is None:
                 continue
 
-            x = self.layout.time_to_x(t)
+            # prepočet času na X pozíciu cez layout engine
+            try:
+                x = self.layout.time_to_x(t)
+            except Exception:
+                continue
+
             if not (0 <= x <= self.width):
                 continue
 
@@ -188,20 +193,18 @@ class TimelineController:
                     pass
 
     # ---------------------------------------------------------
-    # MAIN RENDER ENTRY
+    # MAIN RENDER ENTRY (fallback)
     # ---------------------------------------------------------
     def render(self) -> Optional[pygame.Surface]:
-        """Vykreslí timeline a vráti surface."""
+        """
+        Fallback render – používa sa len ak TimelineLayer nie je aktívna.
+        V LayerManager architektúre sa používa TimelineLayer.draw().
+        """
         try:
             self.surface.fill((25, 25, 25))
 
-            # 1. Grid
             self.draw_grid(self.surface)
-
-            # 2. Markers
             self.draw_markers(self.surface)
-
-            # 3. Playhead
             self.draw_playhead(self.surface)
 
             return self.surface
