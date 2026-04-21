@@ -2,6 +2,13 @@ import pygame
 from typing import Optional
 from ..renderer_new.timeline_controller import TimelineController
 from ..core.logger import Logger
+from ..renderer_new.selection_actions import (
+    delete_selected_notes,
+    move_selected_notes,
+    transpose_selected_notes,
+    velocity_selected_notes,
+    stretch_selected_notes,
+)
 
 
 class TimelineUI:
@@ -52,7 +59,7 @@ class TimelineUI:
 
         # DRAG SCROLL (pravé tlačidlo)
         self.dragging = False
-        self.drag_start_x = 0
+               self.drag_start_x = 0
         self.drag_initial_scroll = 0
 
         # HANDLE DRAG
@@ -735,4 +742,57 @@ class TimelineUI:
                         pass
                 elif hasattr(self.controller, "playhead_beat"):
                     self.controller.playhead_beat = beat
+                return None
+
+        # ---------------------------------------------------------
+        # SELECTION KEYBOARD ACTIONS
+        # ---------------------------------------------------------
+        if event.type == pygame.KEYDOWN and hasattr(self.renderer, "notes"):
+            notes = self.renderer.notes
+            selected_indices = []
+            if hasattr(self.renderer, "get_selected_indices"):
+                try:
+                    selected_indices = self.renderer.get_selected_indices()
+                except Exception:
+                    selected_indices = []
+
+            # DELETE
+            if event.key == pygame.K_DELETE:
+                self.renderer.notes = delete_selected_notes(notes, selected_indices)
+                return None
+
+            # MOVE LEFT / RIGHT
+            if event.key == pygame.K_LEFT:
+                self.renderer.notes = move_selected_notes(notes, selected_indices, dx=-10, dy=0)
+                return None
+
+            if event.key == pygame.K_RIGHT:
+                self.renderer.notes = move_selected_notes(notes, selected_indices, dx=10, dy=0)
+                return None
+
+            # TRANSPOSE UP / DOWN
+            if event.key == pygame.K_UP:
+                self.renderer.notes = transpose_selected_notes(notes, selected_indices, semitones=1)
+                return None
+
+            if event.key == pygame.K_DOWN:
+                self.renderer.notes = transpose_selected_notes(notes, selected_indices, semitones=-1)
+                return None
+
+            # VELOCITY + / -
+            if event.key in (pygame.K_PLUS, pygame.K_EQUALS):
+                self.renderer.notes = velocity_selected_notes(notes, selected_indices, delta=5)
+                return None
+
+            if event.key == pygame.K_MINUS:
+                self.renderer.notes = velocity_selected_notes(notes, selected_indices, delta=-5)
+                return None
+
+            # STRETCH (optional: SHIFT + < / >)
+            mods = pygame.key.get_mods()
+            if event.key == pygame.K_COMMA and (mods & pygame.KMOD_SHIFT):
+                self.renderer.notes = stretch_selected_notes(notes, selected_indices, factor=0.9)
+                return None
+            if event.key == pygame.K_PERIOD and (mods & pygame.KMOD_SHIFT):
+                self.renderer.notes = stretch_selected_notes(notes, selected_indices, factor=1.1)
                 return None
