@@ -59,7 +59,7 @@ class TimelineUI:
 
         # DRAG SCROLL (pravé tlačidlo)
         self.dragging = False
-               self.drag_start_x = 0
+        self.drag_start_x = 0
         self.drag_initial_scroll = 0
 
         # HANDLE DRAG
@@ -750,6 +750,7 @@ class TimelineUI:
         if event.type == pygame.KEYDOWN and hasattr(self.renderer, "notes"):
             notes = self.renderer.notes
             selected_indices = []
+
             if hasattr(self.renderer, "get_selected_indices"):
                 try:
                     selected_indices = self.renderer.get_selected_indices()
@@ -788,7 +789,7 @@ class TimelineUI:
                 self.renderer.notes = velocity_selected_notes(notes, selected_indices, delta=-5)
                 return None
 
-            # STRETCH (optional: SHIFT + < / >)
+            # STRETCH (SHIFT + , / .)
             mods = pygame.key.get_mods()
             if event.key == pygame.K_COMMA and (mods & pygame.KMOD_SHIFT):
                 self.renderer.notes = stretch_selected_notes(notes, selected_indices, factor=0.9)
