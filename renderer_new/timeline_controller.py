@@ -1,5 +1,5 @@
 import pygame
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from ..core.logger import Logger
 
 from .timeline_grid import TimelineGrid
@@ -9,20 +9,13 @@ from .timeline_layout_engine import TimelineLayoutEngine
 
 class TimelineController:
     """
-    TimelineController (Riadiaca jednotka časovej osi)
-    --------------------------------------------------
-    FÁZA 4 – Stabilizovaná verzia
+    TimelineController – FÁZA 4 (kompletná stabilizovaná verzia)
 
     Účel:
-        - Spája TimelineGrid, Playhead a TimelineLayoutEngine
-        - Poskytuje jednoduché API pre update() a render()
-        - Slúži ako jediný vstupný bod pre Timeline v projekte
-        - Pripravené pre integráciu s GraphicNotationRenderer a PlaybackEngine
-
-    Vlastnosti:
-        - Real‑time safe
-        - Žiadne blokujúce operácie
-        - Čistá architektúra
+        - Riadi timeline (grid, playhead, layout)
+        - Poskytuje API pre zoom, scroll, update, markers
+        - Slúži ako zdroj pre renderer_layers (GridLayer, MarkerLayer, PlayheadLayer)
+        - Real‑time safe, bez blokujúcich operácií
     """
 
     def __init__(
@@ -59,23 +52,31 @@ class TimelineController:
             pixels_per_beat=pixels_per_beat
         )
 
+        # Markery
+        self.markers: List[Dict[str, Any]] = []
+
         # Surface pre timeline
         self.surface = pygame.Surface((self.width, self.height))
 
-        Logger.info("TimelineController initialized.")
+        # Font pre ruler / markers
+        try:
+            self.font = pygame.font.SysFont("Arial", 14)
+        except Exception:
+            self.font = None
+
+        Logger.info("TimelineController initialized (FÁZA 4).")
 
     # ---------------------------------------------------------
-    # EXTERNAL LAYOUT UPDATES (PixelLayoutEngine)
+    # EXTERNAL LAYOUT UPDATES
     # ---------------------------------------------------------
     def set_bounds(self, width: int, height: int) -> None:
-        """Externé nastavenie veľkosti timeline (PixelLayoutEngine)."""
+        """Externé nastavenie veľkosti timeline."""
         try:
             self.width = max(1, int(width))
             self.height = max(1, int(height))
 
             self.surface = pygame.Surface((self.width, self.height))
 
-            # Aktualizovať grid + playhead výšku
             self.grid.set_size(self.width, self.height)
             self.playhead.set_height(self.height)
 
@@ -83,7 +84,7 @@ class TimelineController:
             Logger.error(f"TimelineController set_bounds error: {e}")
 
     # ---------------------------------------------------------
-    # EXTERNAL CONTROLS (zoom + scroll)
+    # ZOOM + SCROLL
     # ---------------------------------------------------------
     def set_zoom(self, zoom: float) -> None:
         """Externé nastavenie zoomu timeline."""
@@ -101,49 +102,107 @@ class TimelineController:
         """Externé nastavenie posunu timeline."""
         try:
             self.layout.set_offset(offset_x)
-
-            # Grid musí poznať offset
             self.grid.set_offset(self.layout.offset_x)
-
         except Exception:
             Logger.error("TimelineController set_scroll error.")
+
+    # ---------------------------------------------------------
+    # MARKERS
+    # ---------------------------------------------------------
+    def set_markers(self, markers: List[Dict[str, Any]]) -> None:
+        """Prijme markery z TimelineUI alebo rendereru."""
+        if isinstance(markers, (list, tuple)):
+            self.markers = list(markers)
 
     # ---------------------------------------------------------
     # UPDATE TIMELINE STATE
     # ---------------------------------------------------------
     def update(self, time_seconds: float) -> None:
-        """
-        Aktualizuje stav timeline (playhead, layout, atď.)
-        """
+        """Aktualizuje stav timeline (playhead, layout, grid)."""
         try:
-            # Playhead update
             self.playhead.update(time_seconds)
 
-            # Grid musí poznať zoom a offset
+            # Grid sync
             self.grid.set_zoom(self.layout.zoom)
             self.grid.set_offset(self.layout.offset_x)
 
-            # Playhead musí poznať zoom (pixels_per_beat)
+            # Playhead sync
             self.playhead.set_pixels_per_beat(self.layout.pixels_per_beat)
 
         except Exception as e:
             Logger.error(f"TimelineController update error: {e}")
 
     # ---------------------------------------------------------
-    # RENDER TIMELINE
+    # DRAW HELPERS (pre LayerManager)
+    # ---------------------------------------------------------
+    def draw_grid(self, surface):
+        """Kreslí beaty, takty, subdivízie."""
+        try:
+            self.grid.render(surface)
+        except Exception:
+            pass
+
+    def draw_playhead(self, surface):
+        """Kreslí playhead."""
+        try:
+            self.playhead.render(surface)
+        except Exception:
+            pass
+
+    def draw_markers(self, surface):
+        """Kreslí markery na timeline."""
+        if pygame is None or surface is None:
+            return
+
+        for m in self.markers:
+            if not isinstance(m, dict):
+                continue
+
+            t = m.get("time", m.get("timestamp"))
+            if t is None:
+                continue
+
+            x = self.layout.time_to_x(t)
+            if not (0 <= x <= self.width):
+                continue
+
+            # marker line
+            try:
+                pygame.draw.line(
+                    surface,
+                    (255, 200, 0),
+                    (int(x), 0),
+                    (int(x), self.height),
+                    2
+                )
+            except Exception:
+                pass
+
+            # marker name
+            name = m.get("name", "")
+            if self.font and name:
+                try:
+                    txt = self.font.render(name, True, (255, 200, 0))
+                    surface.blit(txt, (int(x) + 4, 4))
+                except Exception:
+                    pass
+
+    # ---------------------------------------------------------
+    # MAIN RENDER ENTRY
     # ---------------------------------------------------------
     def render(self) -> Optional[pygame.Surface]:
-        """
-        Vykreslí timeline a vráti surface (render timeline).
-        """
+        """Vykreslí timeline a vráti surface."""
         try:
-            self.surface.fill((25, 25, 25))  # pozadie timeline
+            self.surface.fill((25, 25, 25))
 
             # 1. Grid
-            self.grid.render(self.surface)
+            self.draw_grid(self.surface)
 
-            # 2. Playhead
-            self.playhead.render(self.surface)
+            # 2. Markers
+            self.draw_markers(self.surface)
+
+            # 3. Playhead
+            self.draw_playhead(self.surface)
 
             return self.surface
 
