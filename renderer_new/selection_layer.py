@@ -1,214 +1,129 @@
 import pygame
-from typing import Optional, List, Dict, Any
-from ..core.logger import Logger
-
-from .timeline_grid import TimelineGrid
-from .playhead import Playhead
-from .timeline_layout_engine import TimelineLayoutEngine
+from typing import List, Tuple, Optional
+from .layers import BaseLayer
 
 
-class TimelineController:
+class SelectionLayer(BaseLayer):
     """
-    TimelineController – FÁZA 4 (kompletná stabilizovaná verzia)
-
-    Účel:
-        - Riadi timeline (grid, playhead, layout)
-        - Poskytuje API pre zoom, scroll, update, markers
-        - Slúži ako zdroj pre TimelineLayer (renderer_new/layers/timeline_layer.py)
-        - Real‑time safe, bez blokujúcich operácií
+    SelectionLayer – FÁZA 4
+    Vrstva pre výber nôt (selection box + highlight).
+    Nezasahuje do NotesLayer – funguje ako overlay.
     """
 
-    def __init__(
-        self,
-        width: int,
-        height: int = 120,
-        bpm: float = 120.0,
-        beats_per_bar: int = 4,
-        pixels_per_beat: int = 100
-    ) -> None:
+    def __init__(self, controller, z_index: int = 4):
+        super().__init__(z_index=z_index, visible=True)
 
-        self.width = width
-        self.height = height
+        self.controller = controller
 
-        # Layout engine (zoom, offset, pixel mapping)
-        self.layout = TimelineLayoutEngine(
-            pixels_per_beat=pixels_per_beat,
-            beats_per_bar=beats_per_bar
-        )
+        # Selection state
+        self.is_selecting = False
+        self.start_pos: Optional[Tuple[int, int]] = None
+        self.current_pos: Optional[Tuple[int, int]] = None
 
-        # Grid (taktová a beatová mriežka)
-        self.grid = TimelineGrid(
-            width=width,
-            height=height,
-            beats_per_bar=beats_per_bar,
-            pixels_per_beat=pixels_per_beat
-        )
-
-        # Playhead (prehrávacia hlava)
-        self.playhead = Playhead(
-            height=height,
-            bpm=bpm,
-            beats_per_bar=beats_per_bar,
-            pixels_per_beat=pixels_per_beat
-        )
-
-        # Markery
-        self.markers: List[Dict[str, Any]] = []
-
-        # Surface pre timeline
-        self.surface = pygame.Surface((self.width, self.height))
-
-        # Font pre ruler / markers
-        try:
-            self.font = pygame.font.SysFont("Arial", 14)
-        except Exception:
-            self.font = None
-
-        Logger.info("TimelineController initialized (FÁZA 4).")
+        # Výsledok výberu
+        self.selected_notes: List[int] = []   # indexy alebo ID nôt
 
     # ---------------------------------------------------------
-    # EXTERNAL LAYOUT UPDATES
+    # INPUT EVENTS (UI volá tieto metódy)
     # ---------------------------------------------------------
-    def set_bounds(self, width: int, height: int) -> None:
-        """Externé nastavenie veľkosti timeline."""
-        try:
-            self.width = max(1, int(width))
-            self.height = max(1, int(height))
+    def on_mouse_down(self, x: int, y: int):
+        """Začiatok selection boxu."""
+        self.is_selecting = True
+        self.start_pos = (x, y)
+        self.current_pos = (x, y)
 
-            self.surface = pygame.Surface((self.width, self.height))
+    def on_mouse_drag(self, x: int, y: int):
+        """Aktualizácia selection boxu počas ťahania."""
+        if self.is_selecting:
+            self.current_pos = (x, y)
 
-            self.grid.set_size(self.width, self.height)
-            self.playhead.set_height(self.height)
-
-        except Exception as e:
-            Logger.error(f"TimelineController set_bounds error: {e}")
-
-    # ---------------------------------------------------------
-    # ZOOM + SCROLL
-    # ---------------------------------------------------------
-    def set_zoom(self, zoom: float) -> None:
-        """Externé nastavenie zoomu timeline."""
-        try:
-            self.layout.set_zoom(zoom)
-
-            # Grid + playhead musia poznať nové pixels_per_beat
-            self.grid.set_pixels_per_beat(self.layout.pixels_per_beat)
-            self.playhead.set_pixels_per_beat(self.layout.pixels_per_beat)
-
-        except Exception:
-            Logger.error("TimelineController set_zoom error.")
-
-    def set_scroll(self, offset_x: float) -> None:
-        """Externé nastavenie posunu timeline."""
-        try:
-            self.layout.set_offset(offset_x)
-            self.grid.set_offset(self.layout.offset_x)
-        except Exception:
-            Logger.error("TimelineController set_scroll error.")
-
-    # ---------------------------------------------------------
-    # MARKERS
-    # ---------------------------------------------------------
-    def set_markers(self, markers: List[Dict[str, Any]]) -> None:
-        """Prijme markery z TimelineUI alebo rendereru."""
-        if isinstance(markers, (list, tuple)):
-            self.markers = list(markers)
-
-    # ---------------------------------------------------------
-    # UPDATE TIMELINE STATE
-    # ---------------------------------------------------------
-    def update(self, time_seconds: float) -> None:
-        """Aktualizuje stav timeline (playhead, layout, grid)."""
-        try:
-            self.playhead.update(time_seconds)
-
-            # Grid sync
-            self.grid.set_zoom(self.layout.zoom)
-            self.grid.set_offset(self.layout.offset_x)
-
-            # Playhead sync
-            self.playhead.set_pixels_per_beat(self.layout.pixels_per_beat)
-
-        except Exception as e:
-            Logger.error(f"TimelineController update error: {e}")
-
-    # ---------------------------------------------------------
-    # DRAW HELPERS (pre TimelineLayer)
-    # ---------------------------------------------------------
-    def draw_grid(self, surface):
-        """Kreslí beaty, takty, subdivízie."""
-        try:
-            self.grid.render(surface)
-        except Exception:
-            pass
-
-    def draw_playhead(self, surface):
-        """Kreslí playhead."""
-        try:
-            self.playhead.render(surface)
-        except Exception:
-            pass
-
-    def draw_markers(self, surface):
-        """Kreslí markery na timeline."""
-        if pygame is None or surface is None:
+    def on_mouse_up(self, x: int, y: int, notes: List[dict]):
+        """Dokončenie výberu – vyhodnotenie nôt."""
+        if not self.is_selecting:
             return
 
-        for m in self.markers:
-            if not isinstance(m, dict):
+        self.current_pos = (x, y)
+        self.is_selecting = False
+
+        rect = self._get_selection_rect()
+        if rect is None:
+            return
+
+        sx, sy, sw, sh = rect
+
+        self.selected_notes.clear()
+
+        # Hit-test na noty
+        for i, note in enumerate(notes):
+            nx = note.get("x")
+            ny = note.get("y")
+            nw = note.get("width", 8)
+            nh = note.get("height", 8)
+
+            if nx is None or ny is None:
                 continue
 
-            t = m.get("time", m.get("timestamp"))
-            if t is None:
-                continue
+            note_rect = pygame.Rect(nx, ny, nw, nh)
+            sel_rect = pygame.Rect(sx, sy, sw, sh)
 
-            # prepočet času na X pozíciu cez layout engine
-            try:
-                x = self.layout.time_to_x(t)
-            except Exception:
-                continue
+            if sel_rect.colliderect(note_rect):
+                self.selected_notes.append(i)
 
-            if not (0 <= x <= self.width):
-                continue
+    # ---------------------------------------------------------
+    # SELECTION RECT
+    # ---------------------------------------------------------
+    def _get_selection_rect(self) -> Optional[Tuple[int, int, int, int]]:
+        """Vráti selection box ako (x, y, w, h)."""
+        if not self.start_pos or not self.current_pos:
+            return None
 
-            # marker line
-            try:
-                pygame.draw.line(
-                    surface,
-                    (255, 200, 0),
-                    (int(x), 0),
-                    (int(x), self.height),
-                    2
-                )
-            except Exception:
-                pass
+        x1, y1 = self.start_pos
+        x2, y2 = self.current_pos
 
-            # marker name
-            name = m.get("name", "")
-            if self.font and name:
+        sx = min(x1, x2)
+        sy = min(y1, y2)
+        sw = abs(x2 - x1)
+        sh = abs(y2 - y1)
+
+        return (sx, sy, sw, sh)
+
+    # ---------------------------------------------------------
+    # PUBLIC API
+    # ---------------------------------------------------------
+    def get_selected_notes(self) -> List[int]:
+        return list(self.selected_notes)
+
+    def clear_selection(self):
+        self.selected_notes.clear()
+
+    # ---------------------------------------------------------
+    # DRAW
+    # ---------------------------------------------------------
+    def draw(self, surface: pygame.Surface):
+        """Kreslí selection box + highlight vybraných nôt."""
+        # 1. Selection box
+        if self.is_selecting and self.start_pos and self.current_pos:
+            rect = self._get_selection_rect()
+            if rect:
+                sx, sy, sw, sh = rect
+                pygame.draw.rect(surface, (0, 180, 255), (sx, sy, sw, sh), 1)
+                pygame.draw.rect(surface, (0, 180, 255, 40), (sx, sy, sw, sh), 0)
+
+        # 2. Highlight vybraných nôt
+        # NotesLayer kreslí noty → my kreslíme overlay
+        if hasattr(self.controller, "notes"):
+            for i in self.selected_notes:
                 try:
-                    txt = self.font.render(name, True, (255, 200, 0))
-                    surface.blit(txt, (int(x) + 4, 4))
+                    note = self.controller.notes[i]
+                    nx = note.get("x")
+                    ny = note.get("y")
+                    nw = note.get("width", 8)
+                    nh = note.get("height", 8)
+
+                    if nx is None or ny is None:
+                        continue
+
+                    pygame.draw.rect(surface, (0, 255, 180), (nx, ny, nw, nh), 2)
+
                 except Exception:
                     pass
-
-    # ---------------------------------------------------------
-    # MAIN RENDER ENTRY (fallback)
-    # ---------------------------------------------------------
-    def render(self) -> Optional[pygame.Surface]:
-        """
-        Fallback render – používa sa len ak TimelineLayer nie je aktívna.
-        V LayerManager architektúre sa používa TimelineLayer.draw().
-        """
-        try:
-            self.surface.fill((25, 25, 25))
-
-            self.draw_grid(self.surface)
-            self.draw_markers(self.surface)
-            self.draw_playhead(self.surface)
-
-            return self.surface
-
-        except Exception as e:
-            Logger.error(f"TimelineController render error: {e}")
-            return None
