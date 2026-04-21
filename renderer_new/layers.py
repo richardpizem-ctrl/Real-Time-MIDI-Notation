@@ -1,112 +1,216 @@
-"""
-renderer_layers.py
-Layer system for the new Graphic Notation Renderer.
-
-This module defines:
-- BaseLayer: abstract layer interface
-- Concrete layers: NotesLayer, GridLayer, PlayheadLayer, MarkerLayer
-- LayerManager: manages ordering, visibility and drawing
-"""
-
-from abc import ABC, abstractmethod
-from typing import List, Optional
 import pygame
+from typing import Optional, List, Dict, Any
+from ..core.logger import Logger
+
+from .timeline_grid import TimelineGrid
+from .playhead import Playhead
+from .timeline_layout_engine import TimelineLayoutEngine
 
 
-# ------------------------------------------------------------
-# BASE LAYER
-# ------------------------------------------------------------
+class TimelineController:
+    """
+    TimelineController – FÁZA 4 (kompletná stabilizovaná verzia)
 
-class BaseLayer(ABC):
-    """Abstract base class for all renderer layers."""
+    Účel:
+        - Riadi timeline (grid, playhead, layout)
+        - Poskytuje API pre zoom, scroll, update, markers
+        - Slúži ako zdroj pre renderer_layers (GridLayer, MarkerLayer, PlayheadLayer)
+        - Real‑time safe, bez blokujúcich operácií
+    """
 
-    def __init__(self, name: str, visible: bool = True):
-        self.name = name
-        self.visible = visible
+    def __init__(
+        self,
+        width: int,
+        height: int = 120,
+        bpm: float = 120.0,
+        beats_per_bar: int = 4,
+        pixels_per_beat: int = 100
+    ) -> None:
 
-    @abstractmethod
-    def draw(self, surface: pygame.Surface, context):
-        """Draw the layer using the provided rendering context."""
-        pass
+        self.width = width
+        self.height = height
 
-    def set_visible(self, state: bool):
-        self.visible = state
+        # Layout engine (zoom, offset, pixel mapping)
+        self.layout = TimelineLayoutEngine(
+            pixels_per_beat=pixels_per_beat,
+            beats_per_bar=beats_per_bar
+        )
 
+        # Grid (taktová a beatová mriežka)
+        self.grid = TimelineGrid(
+            width=width,
+            height=height,
+            beats_per_bar=beats_per_bar,
+            pixels_per_beat=pixels_per_beat
+        )
 
-# ------------------------------------------------------------
-# EXAMPLE LAYERS
-# ------------------------------------------------------------
+        # Playhead (prehrávacia hlava)
+        self.playhead = Playhead(
+            height=height,
+            bpm=bpm,
+            beats_per_bar=beats_per_bar,
+            pixels_per_beat=pixels_per_beat
+        )
 
-class GridLayer(BaseLayer):
-    """Draws timeline/grid background."""
+        # Markery
+        self.markers: List[Dict[str, Any]] = []
 
-    def __init__(self):
-        super().__init__("grid")
+        # Surface pre timeline
+        self.surface = pygame.Surface((self.width, self.height))
 
-    def draw(self, surface: pygame.Surface, context):
-        grid = context.timeline_grid
-        grid.draw(surface)
+        # Font pre ruler / markers
+        try:
+            self.font = pygame.font.SysFont("Arial", 14)
+        except Exception:
+            self.font = None
 
+        Logger.info("TimelineController initialized (FÁZA 4).")
 
-class NotesLayer(BaseLayer):
-    """Draws MIDI notes."""
+    # ---------------------------------------------------------
+    # EXTERNAL LAYOUT UPDATES
+    # ---------------------------------------------------------
+    def set_bounds(self, width: int, height: int) -> None:
+        """Externé nastavenie veľkosti timeline."""
+        try:
+            self.width = max(1, int(width))
+            self.height = max(1, int(height))
 
-    def __init__(self):
-        super().__init__("notes")
+            self.surface = pygame.Surface((self.width, self.height))
 
-    def draw(self, surface: pygame.Surface, context):
-        renderer = context.note_renderer
-        renderer.draw(surface)
+            self.grid.set_size(self.width, self.height)
+            self.playhead.set_height(self.height)
 
+        except Exception as e:
+            Logger.error(f"TimelineController set_bounds error: {e}")
 
-class PlayheadLayer(BaseLayer):
-    """Draws the playhead line."""
+    # ---------------------------------------------------------
+    # ZOOM + SCROLL
+    # ---------------------------------------------------------
+    def set_zoom(self, zoom: float) -> None:
+        """Externé nastavenie zoomu timeline."""
+        try:
+            self.layout.set_zoom(zoom)
 
-    def __init__(self):
-        super().__init__("playhead")
+            # Grid + playhead musia poznať nové pixels_per_beat
+            self.grid.set_pixels_per_beat(self.layout.pixels_per_beat)
+            self.playhead.set_pixels_per_beat(self.layout.pixels_per_beat)
 
-    def draw(self, surface: pygame.Surface, context):
-        playhead = context.playhead
-        playhead.draw(surface)
+        except Exception:
+            Logger.error("TimelineController set_zoom error.")
 
+    def set_scroll(self, offset_x: float) -> None:
+        """Externé nastavenie posunu timeline."""
+        try:
+            self.layout.set_offset(offset_x)
+            self.grid.set_offset(self.layout.offset_x)
+        except Exception:
+            Logger.error("TimelineController set_scroll error.")
 
-class MarkerLayer(BaseLayer):
-    """Draws timeline markers."""
+    # ---------------------------------------------------------
+    # MARKERS
+    # ---------------------------------------------------------
+    def set_markers(self, markers: List[Dict[str, Any]]) -> None:
+        """Prijme markery z TimelineUI alebo rendereru."""
+        if isinstance(markers, (list, tuple)):
+            self.markers = list(markers)
 
-    def __init__(self):
-        super().__init__("markers")
+    # ---------------------------------------------------------
+    # UPDATE TIMELINE STATE
+    # ---------------------------------------------------------
+    def update(self, time_seconds: float) -> None:
+        """Aktualizuje stav timeline (playhead, layout, grid)."""
+        try:
+            self.playhead.update(time_seconds)
 
-    def draw(self, surface: pygame.Surface, context):
-        marker_renderer = context.marker_renderer
-        marker_renderer.draw(surface)
+            # Grid sync
+            self.grid.set_zoom(self.layout.zoom)
+            self.grid.set_offset(self.layout.offset_x)
 
+            # Playhead sync
+            self.playhead.set_pixels_per_beat(self.layout.pixels_per_beat)
 
-# ------------------------------------------------------------
-# LAYER MANAGER
-# ------------------------------------------------------------
+        except Exception as e:
+            Logger.error(f"TimelineController update error: {e}")
 
-class LayerManager:
-    """Manages ordering, visibility and drawing of all layers."""
+    # ---------------------------------------------------------
+    # DRAW HELPERS (pre LayerManager)
+    # ---------------------------------------------------------
+    def draw_grid(self, surface):
+        """Kreslí beaty, takty, subdivízie."""
+        try:
+            self.grid.render(surface)
+        except Exception:
+            pass
 
-    def __init__(self):
-        self.layers: List[BaseLayer] = []
+    def draw_playhead(self, surface):
+        """Kreslí playhead."""
+        try:
+            self.playhead.render(surface)
+        except Exception:
+            pass
 
-    def add_layer(self, layer: BaseLayer):
-        self.layers.append(layer)
+    def draw_markers(self, surface):
+        """Kreslí markery na timeline."""
+        if pygame is None or surface is None:
+            return
 
-    def get_layer(self, name: str) -> Optional[BaseLayer]:
-        for layer in self.layers:
-            if layer.name == name:
-                return layer
-        return None
+        for m in self.markers:
+            if not isinstance(m, dict):
+                continue
 
-    def set_visible(self, name: str, state: bool):
-        layer = self.get_layer(name)
-        if layer:
-            layer.set_visible(state)
+            t = m.get("time", m.get("timestamp"))
+            if t is None:
+                continue
 
-    def draw(self, surface: pygame.Surface, context):
-        """Draw layers in order."""
-        for layer in self.layers:
-            if layer.visible:
-                layer.draw(surface, context)
+            # prepočet času na X pozíciu cez layout engine
+            try:
+                x = self.layout.time_to_x(t)
+            except Exception:
+                continue
+
+            if not (0 <= x <= self.width):
+                continue
+
+            # marker line
+            try:
+                pygame.draw.line(
+                    surface,
+                    (255, 200, 0),
+                    (int(x), 0),
+                    (int(x), self.height),
+                    2
+                )
+            except Exception:
+                pass
+
+            # marker name
+            name = m.get("name", "")
+            if self.font and name:
+                try:
+                    txt = self.font.render(name, True, (255, 200, 0))
+                    surface.blit(txt, (int(x) + 4, 4))
+                except Exception:
+                    pass
+
+    # ---------------------------------------------------------
+    # MAIN RENDER ENTRY
+    # ---------------------------------------------------------
+    def render(self) -> Optional[pygame.Surface]:
+        """Vykreslí timeline a vráti surface."""
+        try:
+            self.surface.fill((25, 25, 25))
+
+            # 1. Grid
+            self.draw_grid(self.surface)
+
+            # 2. Markers
+            self.draw_markers(self.surface)
+
+            # 3. Playhead
+            self.draw_playhead(self.surface)
+
+            return self.surface
+
+        except Exception as e:
+            Logger.error(f"TimelineController render error: {e}")
+            return None
