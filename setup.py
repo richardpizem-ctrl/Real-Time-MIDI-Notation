@@ -1,52 +1,44 @@
-from setuptools import setup, find_packages
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
-# Načítanie README.md ako long_description
-with open("README.md", "r", encoding="utf-8") as f:
-    long_description = f.read()
+[project]
+name = "real-time-midi-notation"
+version = "1.1.0"
+description = "Real-time multi-track MIDI notation engine with Yamaha 16-track support and advanced visualization."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
 
-setup(
-    name="real-time-midi-notation",
-    version="1.0.0",
-    packages=find_packages(),
-    install_requires=[
-        "pygame",
-        "mido",
-        "python-rtmidi",
-    ],
-    author="Richard",
-    author_email="",
-    description="Next‑generation real‑time multi‑track MIDI notation engine with full Yamaha 16‑track support.",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
+authors = [
+    { name = "Richard Pizem", email = "" }
+]
 
-    url="https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation",
+keywords = [
+    "midi",
+    "real-time",
+    "real-time-midi",
+    "midi-notation",
+    "music-notation",
+    "visualization",
+    "python",
+    "pygame",
+    "yamaha",
+    "multi-track",
+    "music-technology",
+    "digital-audio",
+    "midi-visualizer",
+    "notation-engine"
+]
 
-    classifiers=[
-        # Jazyk
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
+dependencies = [
+    "pygame",
+    "mido",
+    "python-rtmidi"
+]
 
-        # Licencia
-        "License :: OSI Approved :: MIT License",
-
-        # Platforma
-        "Operating System :: OS Independent",
-
-        # Cieľové publikum
-        "Intended Audience :: Education",
-        "Intended Audience :: Science/Research",
-        "Intended Audience :: Developers",
-
-        # Témy
-        "Topic :: Multimedia :: Sound/Audio :: MIDI",
-        "Topic :: Multimedia :: Sound/Audio :: Sound Synthesis",
-        "Topic :: Scientific/Engineering :: Visualization",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: Education",
-
-        # Real-time
-        "Topic :: System :: Real-Time",
-    ],
-
-    python_requires=">=3.10",
-)
+[project.urls]
+Homepage = "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation"
+Repository = "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation"
+Issues = "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation/issues"
+Documentation = "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation/tree/main/docs"
