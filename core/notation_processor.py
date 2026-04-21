@@ -19,14 +19,18 @@ class NotationProcessor:
     def __init__(self, track_system, event_bus=None):
         self.track_system = track_system
         self.event_bus = event_bus
-        self.ai = None   # AI engine (voliteľné)
+
+        # AI modul (voliteľný)
+        self.ai = None
+        self.ai_enabled = False   # NOVÉ – AI sa dá zapnúť/vypnúť
 
     # ---------------------------------------------------------
-    # AI ATTACH (NOVÉ)
+    # AI ATTACH (NOVÉ – PRÍPRAVA NA v3.0.0)
     # ---------------------------------------------------------
     def attach_ai(self, ai_engine):
         """Pripojí AI modul k NotationProcessoru."""
         self.ai = ai_engine
+        self.ai_enabled = True
         Logger.info("AI Engine attached to NotationProcessor.")
 
     # ---------------------------------------------------------
@@ -79,6 +83,16 @@ class NotationProcessor:
                     events = []
 
                 for event in events:
+
+                    # ---------------------------------------------------------
+                    # AI HOOK (NOVÉ – PRÍPRAVA NA v3.0.0)
+                    # ---------------------------------------------------------
+                    if self.ai_enabled and self.ai:
+                        try:
+                            event = self.ai.process_event(event)
+                        except Exception as e:
+                            Logger.error(f"AI processing failed: {e}")
+
                     msg = self._event_to_mido_message(event)
                     if msg is not None:
                         try:
