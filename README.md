@@ -28,6 +28,38 @@ The long‑term goal is to evolve into a **full real‑time engraving engine**, 
 
 ---
 
+# 🧪 Testing Policy
+
+Real‑time MIDI systems behave differently on every computer due to variations in:
+
+- operating systems  
+- audio/MIDI drivers  
+- hardware latency  
+- CPU/GPU performance  
+- connected MIDI devices  
+- Python and library versions  
+
+Because of this, **no single developer can reliably test all possible configurations**.
+
+To ensure accuracy and compatibility:
+
+### ⭐ **Each user is responsible for testing the engine on their own system.**
+
+This is not about avoiding work — it is a **technical necessity**.  
+Real‑time MIDI performance depends heavily on the user’s hardware and environment, and only the user can verify how the engine behaves on their setup.
+
+If you encounter issues, feel free to open an Issue on GitHub with:
+
+- your OS  
+- Python version  
+- MIDI device  
+- steps to reproduce  
+- error logs (if any)
+
+Community testing ensures the engine remains stable across many environments.
+
+---
+
 # 🆕 A New Class of Real‑Time MIDI Engine
 
 **SIRIUS / Real‑Time MIDI Notation** does **not** belong to any existing category of music software.  
