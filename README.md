@@ -1,5 +1,4 @@
 # 🎼 Real-Time MIDI Notation  
-
 ![SIRIUS Banner](SIRIUS%20PROGRAM%20S%20EM.png)
 
 ### **SIRIUS — the brightest star in real‑time MIDI notation**  
@@ -25,38 +24,38 @@ It converts incoming MIDI events into **live, readable notation**, including:
 - zoom & scroll  
 - modular UI components  
 
-This project aims to evolve into a **full real‑time engraving engine**, similar to MuseScore or LilyPond — but optimized for **live MIDI input**, not offline engraving.
+The long‑term goal is to evolve into a **full real‑time engraving engine**, similar to MuseScore or LilyPond — but optimized for **live MIDI input**, not offline engraving.
 
 ---
 
 # 🆕 A New Class of Real‑Time MIDI Engine
 
-**SIRIUS / Real‑Time MIDI Notation** nepatrí do žiadnej existujúcej kategórie softvéru.  
-Nie je to MIDI vizualizér, nie je to offline notátor, nie je to DAW plugin a nie je to tradičná MIDI knižnica.
+**SIRIUS / Real‑Time MIDI Notation** does **not** belong to any existing category of music software.  
+It is not a MIDI visualizer, not an offline notation program, not a DAW plugin, and not a traditional MIDI library.
 
-Predstavuje **úplne novú triedu softvéru**, ktorá doteraz v hudobnej technológii neexistovala:
+It represents a **completely new class of software**:
 
-### **Real‑Time Multi‑Track MIDI Notation Engine**
+## ⭐ **Real‑Time Multi‑Track MIDI Notation Engine**
 
-Tento typ softvéru kombinuje vlastnosti, ktoré sa nikdy predtým nevyskytli spolu:
+This engine combines features that have never existed together before:
 
-- plne **real‑time** spracovanie MIDI udalostí  
-- **16‑track Yamaha kompatibilný** multi‑track engine  
-- okamžitá grafická notácia (beams, stems, barlines)  
-- **velocity‑based** dynamika v reálnom čase  
-- modulárny grafický renderer (Python + Pygame)  
-- architektúra optimalizovaná pre **výskum, výučbu, živé hranie a štúdiá**  
-- žiadne predspracovanie, žiadna analýza dopredu, žiadne offline kroky  
+- fully **real‑time** MIDI processing  
+- **Yamaha‑compatible 16‑track** architecture  
+- instant graphical notation (beams, stems, barlines)  
+- **velocity‑based** dynamics  
+- modular graphic renderer (Python + Pygame)  
+- architecture optimized for **research, education, live performance, and studio workflows**  
+- no pre‑processing, no look‑ahead, no offline steps  
 
-Vďaka tomu SIRIUS vytvára **novú kategóriu real‑time MIDI nástrojov**, ktorá dopĺňa tradičné offline notátory (MuseScore, LilyPond, Dorico) a otvára priestor pre:
+SIRIUS defines a **new category** of real‑time MIDI tools, complementing traditional offline notation systems (MuseScore, LilyPond, Dorico) and enabling:
 
-- živú notáciu  
-- real‑time analýzu výkonu  
-- výskum expresivity  
-- štúdiové pred‑nahrávacie nástroje  
-- vizualizáciu pre hudobnú pedagogiku  
+- live notation  
+- real‑time performance analysis  
+- expressive timing research  
+- pre‑recording studio diagnostics  
+- educational visualization  
 
-SIRIUS je prvý open‑source projekt, ktorý túto kategóriu definuje.
+It is the **first open‑source project** to define this category.
 
 ---
 
@@ -82,32 +81,26 @@ Works with any MIDI‑capable instrument, including:
 - Yamaha arranger keyboard users  
 - MIDI debugging & development  
 - research & academic tools  
-- **recording studios needing pre‑recording input control**  
-  *(checking timing, dynamics, articulation, and performance cleanliness before recording)*  
+- **recording studios needing pre‑recording performance diagnostics**  
 
 ---
 
 # 🚀 Future Trajectory & Strategic Horizons
 
-SIRIUS is architected as an open‑ended, next‑generation real‑time MIDI engine with a long‑term roadmap that extends far beyond visualization.  
-The following strategic directions outline its evolution into a full ecosystem for performance, research, education, and studio workflows.
+SIRIUS is designed as a next‑generation real‑time MIDI engine with a long‑term roadmap extending far beyond visualization.
 
 ## 🤖 AI‑Enhanced Notation
-- real‑time predictive quantization  
+- predictive quantization  
 - intelligent rhythm correction  
-- harmonic and chord‑function analysis  
-- phrase detection and expressive timing modeling  
-- machine‑learning‑based performance cleanup  
-
-AI transforms SIRIUS from a renderer into a **musical assistant**.
+- harmonic analysis  
+- phrase detection  
+- expressive timing modeling  
 
 ## 🧩 Embedded Systems & Hardware Integration
-- lightweight builds for Raspberry Pi / ARM boards  
+- Raspberry Pi / ARM builds  
 - dedicated MIDI HUD devices  
-- standalone notation displays for keyboards  
-- low‑latency hardware score monitors for live performance  
-
-This positions SIRIUS as a **hardware‑ready engine**.
+- standalone notation displays  
+- low‑latency score monitors for live performance  
 
 ## 🎛 Studio‑Grade Performance Analytics
 - micro‑timing deviation maps  
@@ -116,32 +109,26 @@ This positions SIRIUS as a **hardware‑ready engine**.
 - pre‑recording performance auditing  
 - DAW‑style diagnostic overlays  
 
-Aimed at studios and session musicians who need **precision before recording**.
-
-## 🎮 Educational Gamification & Learning Tools
-- interactive rhythm‑training modules  
-- real‑time feedback for beginners  
-- visual accuracy scoring  
+## 🎮 Educational Tools & Gamification
+- interactive rhythm training  
+- real‑time feedback  
+- accuracy scoring  
 - adaptive difficulty  
-- notation‑based music games  
-
-A foundation for **next‑generation music education platforms**.
+- notation‑based learning games  
 
 ## 🌐 Ecosystem Expansion
 - plugin bridge (VST/AU)  
 - MIDI file import/export  
-- MusicXML export (future engraving engine)  
+- MusicXML export (future)  
 - multi‑voice notation  
 - advanced layout algorithms  
-
-SIRIUS evolves into a **complete real‑time engraving and analysis ecosystem**.
 
 ---
 
 # 🧩 Why This Project Matters
 
 Real‑time notation is a **non‑trivial engineering challenge**.  
-Most notation engines (MuseScore, LilyPond, Dorico) are **offline engravers** — they require full musical context.
+Traditional notation engines (MuseScore, LilyPond, Dorico) are **offline engravers** — they require full musical context.
 
 This engine solves:
 
@@ -149,7 +136,7 @@ This engine solves:
 - **real‑time beam detection**  
 - **real‑time velocity dynamics**  
 - **real‑time multi‑track rendering**  
-- **real‑time layout (no pre‑analysis)**  
+- **real‑time layout without pre‑analysis**  
 
 Ideal for:
 
@@ -171,7 +158,7 @@ Suitable for:
 - HCI studies  
 - music pedagogy  
 
-A full **CITATION.cff** will be added for academic referencing.
+A full **CITATION.cff** is included for academic referencing.
 
 ---
 
