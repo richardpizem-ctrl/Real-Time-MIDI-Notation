@@ -4,124 +4,163 @@ This document tracks all major changes, improvements, stabilizations, and milest
 
 ---
 
-# 🚀 v1.0.0 — Core Engine Complete (In Development)
+# 🚀 v1.1.0 — Timeline Selection & Phase‑4 Stabilization (Released)
 
-## 🎨 Rendering Engine
-- Completed **GraphicNotationRenderer** (full real-time engine)
-- Added velocity shading (color + size)
-- Added chord grouping logic
-- Added 8th/16th beam detection
-- Added dynamic stems
-- Added barlines, grid, timeline ruler
-- Added real-time playhead
-- Added zoom + scroll system
-- Implemented staff caching for performance
-- Stabilized renderer for long sessions
+## 🎯 TimelineUI — Phase 4 Complete
+- Fully cleaned and unified codebase  
+- Integrated **Selection Actions** (delete, move, transpose, velocity, stretch)  
+- Added safe retrieval of selected note indices  
+- Improved marker handling (drag, rename, color, type)  
+- Improved loop region logic  
+- Improved playhead seeking  
+- Stabilized scroll/zoom bars  
+- Removed duplicate logic and legacy fragments  
 
-## 🧠 Processing & Analysis
-- Completed **NotationProcessor**
-- Completed **Rhythm Analyzer**
-- Added timing + velocity extraction
-- Added note object generation
-- Added channel/track mapping
+## 🎚 Selection Pipeline
+- Added new module: **selection_actions.py**  
+- Supports:  
+  - deleting selected notes  
+  - horizontal movement  
+  - transposition  
+  - velocity adjustments  
+  - stretching/compressing durations  
+- Fully integrated into TimelineUI  
+- Renderer compatibility ensured  
 
-## 🎚 Track System
-- Completed **TrackManager**
-- Added mute / solo / volume / pan
-- Added record arm
-- Added real-time activity meter (internal)
-- Added Yamaha 16‑track standard support
-- Added per-track colors + visibility
+## 🖥 Renderer & Layout Engine
+- Confirmed compatibility with selection pipeline  
+- Stable integration with TimelineController  
+- No breaking changes  
+- Improved refresh behavior  
 
-## 🖥 UI Layer
-- Completed **CanvasUI**
-- Completed **UIManager**
-- Added playhead rendering
-- Added scroll + zoom integration
-- Added track switching logic
-- Added renderer → UI synchronization
-
-## ⏱ Playback Engine
-- Completed **PlaybackEngine**
-- Added BPM + meter control
-- Added active note selection
-- Added real-time timeline progression
-- Integrated with renderer + UI
-
-## 🛰 MIDI Input Pipeline
-- Completed **StreamHandler**
-- Completed **EventRouter**
-- Added device auto-detection
-- Added normalized event routing
-- Added channel → track mapping
-
-## 📡 Event System
-- Completed **EventBus**
-- Added publish/subscribe architecture
-- Decoupled all modules cleanly
-
-## 🧱 Architecture
-- Finalized modular directory structure:
-  - core/
-  - renderer/
-  - ui/
-  - track_system/
-  - notation_processor/
-  - event_bus/
-  - midi_input/
-  - real_time_processing/
-  - docs/
-
-## 🧪 Stability & Testing
-- Added test suite (basic)
-- Stabilized long-running sessions
-- Fixed timing drift issues
-- Fixed renderer freeze conditions
-- Fixed MIDI routing inconsistencies
+## 🧹 Codebase Cleanup
+- Removed unused imports  
+- Removed legacy timeline code  
+- Unified event handling  
+- Improved internal consistency across UI modules  
 
 ## 📘 Documentation
-- Added **MEGA README**
-- Added **MEGA ROADMAP**
-- Added **MEGA CONTRIBUTING**
-- Added **MEGA PROJECT OVERVIEW**
-- Added **MEGA SUPPORT**
-- Added **MEGA CODE OF CONDUCT**
-- Added **MEGA SECURITY**
-- Added **MEGA LICENSE**
-- Added **MEGA INSTALLATION GUIDE**
-- Added **MEGA FAQ**
-- Added **MEGA ARCHITECTURE DIAGRAM**
+- Updated CHANGELOG  
+- Updated release notes  
+- Updated internal architecture notes  
 
 ---
 
-# 🔮 Planned for v1.1+
-- PNG export  
-- SVG export  
-- screenshot engine  
-- toolbar (Play / Pause / Stop / Seek)  
-- MIDI file loader  
-- peak meter visualization  
-- metronome  
-- track inspector panel  
+# 🚀 v1.0.0 — Core Engine Complete (Released)
+
+## 🎨 Rendering Engine
+- Completed **GraphicNotationRenderer** (full real-time engine)  
+- Velocity shading (color + size)  
+- Chord grouping logic  
+- 8th/16th beam detection  
+- Dynamic stems  
+- Barlines, grid, timeline ruler  
+- Real-time playhead  
+- Zoom + scroll system  
+- Staff caching for performance  
+- Renderer stabilized for long sessions  
+
+## 🧠 Processing & Analysis
+- Completed **NotationProcessor**  
+- Completed **RhythmAnalyzer**  
+- Timing + velocity extraction  
+- Note object generation  
+- Channel/track mapping  
+
+## 🎚 Track System
+- Completed **TrackManager**  
+- Mute / solo / volume / pan  
+- Record arm  
+- Real-time activity meter  
+- Yamaha 16‑track standard support  
+- Per-track colors + visibility  
+
+## 🖥 UI Layer
+- Completed **CanvasUI**  
+- Completed **UIManager**  
+- Playhead rendering  
+- Scroll + zoom integration  
+- Track switching logic  
+- Renderer → UI synchronization  
+
+## ⏱ Playback Engine
+- Completed **PlaybackEngine**  
+- BPM + meter control  
+- Active note selection  
+- Real-time timeline progression  
+- Renderer + UI integration  
+
+## 🛰 MIDI Input Pipeline
+- Completed **StreamHandler**  
+- Completed **EventRouter**  
+- Device auto-detection  
+- Normalized event routing  
+- Channel → track mapping  
+
+## 📡 Event System
+- Completed **EventBus**  
+- Publish/subscribe architecture  
+- Fully decoupled modules  
+
+## 🧱 Architecture
+- Finalized modular directory structure:  
+  - core/  
+  - renderer_new/  
+  - ui/  
+  - track_system/  
+  - notation_processor/  
+  - event_bus/  
+  - midi_input/  
+  - real_time_processing/  
+  - docs/  
+
+## 🧪 Stability & Testing
+- Added basic test suite  
+- Stabilized long-running sessions  
+- Fixed timing drift  
+- Fixed renderer freeze conditions  
+- Fixed MIDI routing inconsistencies  
+
+## 📘 Documentation
+- Added MEGA README  
+- Added MEGA ROADMAP  
+- Added CONTRIBUTING  
+- Added PROJECT OVERVIEW  
+- Added SUPPORT  
+- Added CODE OF CONDUCT  
+- Added SECURITY  
+- Added LICENSE  
+- Added INSTALLATION GUIDE  
+- Added FAQ  
+- Added ARCHITECTURE DIAGRAM  
+
+---
+
+# 🔮 Planned for v1.2.0+
+- Selection box (drag rectangle)  
+- Multi-note drag & resize  
+- Note editing UI  
+- Piano roll editor (new module)  
+- Advanced selection tools  
+- Improved timeline visuals  
 
 ---
 
 # 🔮 Planned for v2.0+
-- multi‑voice notation  
-- polyphony  
-- advanced beams  
-- articulations  
-- dynamics  
-- engraving engine improvements  
+- Multi‑voice notation  
+- Polyphony  
+- Advanced beams  
+- Articulations  
+- Dynamics  
+- Engraving engine improvements  
 
 ---
 
 # 🔮 Planned for v3.0+
 - MuseScore / LilyPond‑level engraving  
-- full notation engine  
-- advanced layout intelligence  
+- Full notation engine  
+- Advanced layout intelligence  
 
 ---
 
 # 🎉 End of Changelog
-
