@@ -1,9 +1,9 @@
-# 🆕 Upcoming Version: v1.1.0 — Enhanced UI & Performance Update
+# 🆕 Upcoming Version: v1.1.0 — Timeline Selection & Phase‑4 UI Update
 
 This section describes:
 - what is **already completed** in v1.0.0  
-- what **new features** will be included in v1.1.0  
-- how the project will evolve after the stable release  
+- what **new features** are included in v1.1.0  
+- how the project will evolve after this release  
 
 ---
 
@@ -21,7 +21,7 @@ This section describes:
 - stable FÁZA 4 module  
 
 ### 🕒 TimelineUI — 100%
-- markers (drag, rename, recolor)  
+- markers (drag, rename, recolor, type cycling)  
 - loop region  
 - snapping  
 - zoom + scroll  
@@ -35,7 +35,7 @@ This section describes:
 - timing deviation analysis  
 
 ### 🎚 Track System — 100%
-- 16‑track Yamaha TrackManager  
+- Yamaha 16‑track TrackManager  
 - per‑track colors  
 - visibility + activity  
 - TrackControlManager integration  
@@ -46,7 +46,6 @@ This section describes:
 - Track Switcher  
 - Track Selector  
 - Piano  
-- Piano Roll  
 - Staff  
 - Visualizer  
 - Track Inspector  
@@ -54,13 +53,16 @@ This section describes:
 
 ---
 
-# 🚀 Next Release: v1.1.0 — What It Will Contain
+# 🚀 Next Release: v1.1.0 — What It Contains
 
-## 🎚 1. Improved Track Switcher
-- faster switching  
-- better active‑track highlighting  
-- improved color palette  
-- smoother UI feedback  
+## 🎚 1. Selection Actions (NEW)
+- delete selected notes  
+- move notes horizontally  
+- transpose notes  
+- adjust velocity  
+- stretch/compress durations  
+- unified selection pipeline  
+- fully integrated into TimelineUI  
 
 ## 🎨 2. Renderer Performance Boost
 - reduced draw calls  
@@ -68,20 +70,22 @@ This section describes:
 - smoother scroll at high BPM  
 - micro‑optimizations for 16‑track mode  
 
-## 🧠 3. Smarter Quantization (Adaptive Prep)
-- better timing deviation handling  
+## 🧠 3. Smarter Quantization Prep
+- improved timing deviation handling  
 - groundwork for adaptive quantization  
 - more stable grouping in fast passages  
 
-## 🖥 4. UI Polish
+## 🖥 4. UI Polish & Stability
 - improved contrast  
 - cleaner panel layout  
 - refined timeline visuals  
 - safer subsurface handling  
+- unified event handling  
+- removed legacy code fragments  
 
 ## 🧩 5. Internal Improvements
 - safer fallbacks  
-- improved event handling  
+- improved event routing  
 - preparation for PNG/SVG export  
 - small refactors for future versions  
 
@@ -93,45 +97,45 @@ This section describes:
 - activity meter  
 - improved layout  
 - track color customization  
+- selection box (drag rectangle)  
+- multi‑note drag & resize  
+- note editing UI  
 
 ### v1.3.0 — Export Module  
 - PNG export  
 - SVG export  
 - screenshot engine  
-- **MIDI → PNG (simple sheet export)**  
-- **foundation for MIDI → sheet‑music conversion**  
+- MIDI → PNG (simple sheet export)  
+- foundation for MIDI → sheet‑music conversion  
 
 ### v2.0.0 — Advanced Layout Engine  
 - multi‑voice notation  
 - polyphony  
 - advanced beams  
 - articulations  
-- **improved engraving rules**  
+- improved engraving rules  
 
 ### v3.0.0 — Professional Engraving  
 - MuseScore/LilyPond‑level engraving  
 - full notation engine  
-- **professional score preparation tools**  
+- professional score preparation tools  
 
 ---
 
-# 🌟 Long‑Term Vision (Concept for the Future)
+# 🌟 Long‑Term Vision
 
-### 🎼 1. Create Sheet Music for Musicians Who Play by Ear  
-A key long‑term goal:  
-**allow musicians who do not read notation to generate professional sheet music from their own playing.**
-
-This includes:
-- real‑time capture of performance  
+### 🎼 1. Sheet Music for Musicians Who Play by Ear  
+Enable musicians who do not read notation to generate professional sheet music from their own playing:
+- real‑time capture  
 - automatic rhythmic + pitch analysis  
 - exportable notation (PNG/SVG/PDF in future)  
-- clean layout suitable for professional musicians  
+- clean layout for musicians  
 
 ### 🎹 2. Bridge Between Amateur and Professional Worlds  
-The project aims to become a tool where:
-- amateurs can record ideas  
+A tool where:
+- amateurs record ideas  
 - the engine converts them into readable notation  
-- professionals can refine, orchestrate, and arrange  
+- professionals refine, orchestrate, arrange  
 
 ### 🧪 3. Music Research Platform  
 - timing deviation analysis  
@@ -139,7 +143,7 @@ The project aims to become a tool where:
 - educational visualization  
 - MIDI‑based research tools  
 
-### 📄 4. Full Export & Sharing Ecosystem  
+### 📄 4. Export & Sharing Ecosystem  
 - snapshots  
 - sheet exports  
 - timeline exports  
