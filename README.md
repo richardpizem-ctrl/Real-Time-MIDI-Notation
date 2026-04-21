@@ -9,6 +9,17 @@ Designed for **live performance**, **music education**, **research**, and **next
 
 ---
 
+# 📸 Showcase (Community Screenshots)
+
+Do you use **SIRIUS / Real-Time MIDI Notation** in your setup?
+
+Feel free to share a screenshot of your workflow, keyboard, studio, or live setup.  
+Community examples will be added here (with credit).
+
+👉 Open an Issue titled **“Showcase Submission”** and attach your screenshot.
+
+---
+
 # 🔍 What Is Real-Time MIDI Notation?
 
 **Real-Time MIDI Notation** is a **real‑time multi‑track MIDI notation engine** written in Python.  
@@ -57,6 +68,39 @@ If you encounter issues, feel free to open an Issue on GitHub with:
 - error logs (if any)
 
 Community testing ensures the engine remains stable across many environments.
+
+---
+
+# 🤝 Contributing
+
+Thank you for your interest in contributing to **SIRIUS / Real-Time MIDI Notation**!
+
+## 🧪 Testing
+Real-time MIDI behavior depends on your hardware and OS.  
+Please test the engine on your own system before submitting issues or PRs.
+
+## 🐛 Reporting Issues
+Include:
+- OS and Python version  
+- MIDI device  
+- steps to reproduce  
+- screenshots or logs  
+
+## 🔧 Pull Requests
+Before opening a PR:
+- keep changes modular  
+- follow the existing architecture  
+- avoid mixing unrelated changes  
+- describe your motivation clearly  
+
+## 📦 Code Style
+- Python 3.10+  
+- clear modular structure  
+- no heavy dependencies  
+- keep real-time code efficient  
+
+## 🚀 Feature Requests
+If you want to propose a feature, open a **Feature Request** issue.
 
 ---
 
