@@ -20,6 +20,7 @@ from .renderer_layers import (
     PlayheadLayer,
     MarkerLayer,
 )
+from .layers.timeline_layer import TimelineLayer
 
 
 class RenderContext:
@@ -27,8 +28,8 @@ class RenderContext:
     Kontext pre vrstvy renderera.
     Obsahuje všetky objekty, ktoré vrstvy potrebujú.
     """
-    def __init__(self, timeline_grid, note_renderer, playhead, marker_renderer):
-        self.timeline_grid = timeline_grid
+    def __init__(self, timeline_controller, note_renderer, playhead, marker_renderer):
+        self.timeline_controller = timeline_controller
         self.note_renderer = note_renderer
         self.playhead = playhead
         self.marker_renderer = marker_renderer
@@ -113,14 +114,22 @@ class GraphicNotationRenderer:
         self.color_mode = "heatmap"
 
         # ------------------------------------------------------------
-        # NEW: LAYER MANAGER
+        # LAYER MANAGER
         # ------------------------------------------------------------
         self.layers = LayerManager()
 
         # Vrstvy pridávame v poradí kreslenia
-        self.layers.add_layer(GridLayer())
+        # 1) Timeline (grid + markers + playhead)
+        if self.timeline_controller is not None:
+            self.layers.add_layer(TimelineLayer(self.timeline_controller))
+
+        # 2) Notes
         self.layers.add_layer(NotesLayer())
+
+        # 3) Playhead overlay (ak chceš extra vrstvu, nechávam tu)
         self.layers.add_layer(PlayheadLayer())
+
+        # 4) Markers overlay (ak budeš mať samostatný renderer)
         self.layers.add_layer(MarkerLayer())
 
     # ---------------------------------------------------------
@@ -316,11 +325,9 @@ class GraphicNotationRenderer:
             except Exception:
                 pass
 
-        # ------------------------------------------------------------
-        # NEW: LAYERED RENDERING
-        # ------------------------------------------------------------
+        # LAYERED RENDERING
         context = RenderContext(
-            timeline_grid=self.timeline_controller,
+            timeline_controller=self.timeline_controller,
             note_renderer=self,
             playhead=self,
             marker_renderer=self.timeline_controller,
