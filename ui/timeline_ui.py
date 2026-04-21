@@ -44,7 +44,7 @@ class TimelineUI:
             height=height,
             bpm=120.0,
             beats_per_bar=4,
-            pixels_per_beat=100
+            pixels_per_beat=100,
         )
 
         # Prepojenie s renderer.timeline_controller
@@ -468,12 +468,14 @@ class TimelineUI:
         label = f"M{self.marker_next_id}"
         self.marker_next_id += 1
 
-        self.markers.append({
-            "beat": beat,
-            "label": label,
-            "color": self.marker_colors[0],
-            "type_index": 0,
-        })
+        self.markers.append(
+            {
+                "beat": beat,
+                "label": label,
+                "color": self.marker_colors[0],
+                "type_index": 0,
+            }
+        )
         self._sync_markers()
 
     def _delete_marker(self, index):
