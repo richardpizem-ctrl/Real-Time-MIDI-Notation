@@ -107,20 +107,28 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 3. SIRIUS-AI ENGINE (NOVÉ)
+    # 3. SIRIUS-AI ENGINE (PRÍPRAVA NA v3.0.0)
     # -----------------------------------------------------
     try:
-        ai_engine = SiriusAI(
-            quantizer=SmartQuantizer(),
-            interpreter=PerformanceInterpreter(),
-            notation_engine=NotationPredictor()
-        )
+        AI_ENABLED = True  # môžeš vypnúť podľa potreby
 
-        # Prepojenie AI → NotationProcessor
-        notation_processor.attach_ai(ai_engine)
+        if AI_ENABLED:
+            ai_engine = SiriusAI(
+                quantizer=SmartQuantizer(),
+                interpreter=PerformanceInterpreter(),
+                notation_engine=NotationPredictor()
+            )
 
-        Logger.info("SIRIUS-AI Engine initialized and attached.")
+            notation_processor.attach_ai(ai_engine)
+            notation_processor.ai_enabled = True
+
+            Logger.info("SIRIUS-AI Engine initialized and attached.")
+        else:
+            notation_processor.ai_enabled = False
+            Logger.info("SIRIUS-AI disabled (fallback to basic quantization).")
+
     except Exception as e:
+        notation_processor.ai_enabled = False
         Logger.error(f"Failed to initialize SIRIUS-AI Engine: {e}")
 
     # -----------------------------------------------------
@@ -212,10 +220,8 @@ def main():
                     except Exception as e:
                         Logger.error(f"UI event error: {e}")
 
-                # MIDI burst-safe polling
                 stream_handler.poll(max_messages=64)
 
-                # Delta-time aware playback
                 playback_surface = playback.update(dt=dt)
 
                 ui.draw(screen)
