@@ -53,7 +53,7 @@ class PianoUI:
             3: 1.65,
             6: 3.65,
             8: 4.65,
-            10: 5.65
+            10: 5.65,
         }
 
         self.white_keys.clear()
