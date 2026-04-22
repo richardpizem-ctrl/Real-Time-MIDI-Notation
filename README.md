@@ -12,6 +12,7 @@ Designed for **live performance**, **music education**, **research**, and **next
 # 📸 Showcase (Community Screenshots)
 ![Real-Time MIDI Notation Screenshot](assets/screenshots/Copilot_20260422_120106.png)
 
+
 Do you use **SIRIUS / Real-Time MIDI Notation** in your setup?
 
 Feel free to share a screenshot of your workflow, keyboard, studio, or live setup.  
