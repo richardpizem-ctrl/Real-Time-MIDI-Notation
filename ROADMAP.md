@@ -1,13 +1,13 @@
-# 🆕 Upcoming Version: v1.1.0 — Timeline Selection & Phase‑4 UI Update
+# 🆕 Upcoming Version: v1.2.0 — TimelineUI Refactor & UI Stabilization
 
 This section describes:
-- what is **already completed** in v1.0.0  
-- what **new features** are included in v1.1.0  
+- what is **already completed** in v1.0.0 and v1.1.0  
+- what **new improvements** are included in v1.2.0  
 - how the project will evolve after this release  
 
 ---
 
-# ✅ What We Already Have (v1.0.0 Complete)
+# ✅ What We Already Have (v1.0.0 & v1.1.0 Complete)
 
 ### 🎨 GraphicNotationRenderer — 100%
 - full Yamaha 16‑track support  
@@ -18,15 +18,16 @@ This section describes:
 - real‑time playhead  
 - zoom + scroll  
 - safe rendering (no crashes without pygame/font)  
-- stable FÁZA 4 module  
+- stable Phase‑4 module  
 
-### 🕒 TimelineUI — 100%
+### 🕒 TimelineUI — 100% (v1.1.0)
 - markers (drag, rename, recolor, type cycling)  
 - loop region  
 - snapping  
 - zoom + scroll  
 - playhead sync  
-- stable FÁZA 4 module  
+- selection actions integrated  
+- stable Phase‑4 module  
 
 ### 🧠 Processor & Rhythm Analyzer — 100%
 - velocity + timing extraction  
@@ -53,69 +54,64 @@ This section describes:
 
 ---
 
-# 🚀 Next Release: v1.1.0 — What It Contains
+# 🚀 Current Release: v1.2.0 — What It Contains
 
-## 🎚 1. Selection Actions (NEW)
-- delete selected notes  
-- move notes horizontally  
-- transpose notes  
-- adjust velocity  
-- stretch/compress durations  
-- unified selection pipeline  
-- fully integrated into TimelineUI  
+## 🎯 1. Full TimelineUI Refactor (NEW)
+- unified structure and internal logic  
+- cleaned and optimized drawing functions  
+- stabilized marker interactions  
+- stabilized loop region behavior  
+- improved calculations (marker rect, loop rect, handle rect)  
+- unified event handler  
+- removed duplicate logic  
+- prepared for PixelLayoutEngine 2.0  
+- no breaking changes  
 
-## 🎨 2. Renderer Performance Boost
-- reduced draw calls  
-- optimized staff cache  
-- smoother scroll at high BPM  
-- micro‑optimizations for 16‑track mode  
+## 🎚 2. Selection Pipeline Integration (Improved)
+- stable behavior for delete/move/transpose/velocity/stretch  
+- unified selected‑index retrieval  
+- fully compatible with TimelineUI 1.2.0  
 
-## 🧠 3. Smarter Quantization Prep
-- improved timing deviation handling  
-- groundwork for adaptive quantization  
-- more stable grouping in fast passages  
-
-## 🖥 4. UI Polish & Stability
-- improved contrast  
-- cleaner panel layout  
+## 🎨 3. UI Polish & Stability
+- improved contrast and clarity  
 - refined timeline visuals  
 - safer subsurface handling  
-- unified event handling  
-- removed legacy code fragments  
+- consistent behavior across zoom/scroll  
+- cleaned legacy fragments  
 
-## 🧩 5. Internal Improvements
+## 🧩 4. Internal Improvements
 - safer fallbacks  
 - improved event routing  
-- preparation for PNG/SVG export  
-- small refactors for future versions  
+- micro‑optimizations for renderer interaction  
+- groundwork for future UI modules  
 
 ---
 
-# 🗺 Future Roadmap After v1.1.0
+# 🗺 Future Roadmap After v1.2.0
 
-### v1.2.0 — UI Enhancements  
-- activity meter  
-- improved layout  
-- track color customization  
+### v1.3.0 — Comfort & Interaction Update
 - selection box (drag rectangle)  
 - multi‑note drag & resize  
 - note editing UI  
+- improved timeline visuals  
+- track color customization  
+- activity meter  
 
-### v1.3.0 — Export Module  
+### v1.4.0 — Export Module
 - PNG export  
 - SVG export  
 - screenshot engine  
 - MIDI → PNG (simple sheet export)  
 - foundation for MIDI → sheet‑music conversion  
 
-### v2.0.0 — Advanced Layout Engine  
+### v2.0.0 — Advanced Layout Engine
 - multi‑voice notation  
 - polyphony  
 - advanced beams  
 - articulations  
 - improved engraving rules  
 
-### v3.0.0 — Professional Engraving  
+### v3.0.0 — Professional Engraving
 - MuseScore/LilyPond‑level engraving  
 - full notation engine  
 - professional score preparation tools  
@@ -124,32 +120,30 @@ This section describes:
 
 # 🌟 Long‑Term Vision
 
-### 🎼 1. Sheet Music for Musicians Who Play by Ear  
-Enable musicians who do not read notation to generate professional sheet music from their own playing:
+### 🎼 1. Sheet Music for Musicians Who Play by Ear
 - real‑time capture  
 - automatic rhythmic + pitch analysis  
 - exportable notation (PNG/SVG/PDF in future)  
 - clean layout for musicians  
 
-### 🎹 2. Bridge Between Amateur and Professional Worlds  
-A tool where:
+### 🎹 2. Bridge Between Amateur and Professional Worlds
 - amateurs record ideas  
-- the engine converts them into readable notation  
+- engine converts them into readable notation  
 - professionals refine, orchestrate, arrange  
 
-### 🧪 3. Music Research Platform  
+### 🧪 3. Music Research Platform
 - timing deviation analysis  
 - expressive performance studies  
 - educational visualization  
 - MIDI‑based research tools  
 
-### 📄 4. Export & Sharing Ecosystem  
+### 📄 4. Export & Sharing Ecosystem
 - snapshots  
 - sheet exports  
 - timeline exports  
 - multi‑track score exports  
 
-### 🎼 5. Future Engraving Engine  
+### 🎼 5. Future Engraving Engine
 - spacing algorithms  
 - collision avoidance  
 - slurs, ties, articulations  
