@@ -1,11 +1,13 @@
 cff-version: 1.2.0
 message: "If you use this software in your research, please cite it as below."
 title: "Real-Time MIDI Notation: A High-Performance Real-Time 16-Track MIDI Notation Engine"
-version: "1.0.0"
+version: "1.2.0"
+
 authors:
   - family-names: "Pizem"
     given-names: "Richard"
     affiliation: "Independent Researcher"
+
 keywords:
   - midi
   - real-time
@@ -36,4 +38,4 @@ abstract: >
 
 repository-code: "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation"
 license: "MIT"
-date-released: "2026-04-19"
+date-released: "2026-04-23"
