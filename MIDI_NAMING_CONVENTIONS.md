@@ -1,113 +1,115 @@
 # 🎼 MIDI Naming Conventions
 Real‑Time MIDI Notation Engine – Official Naming Standard (v1.0.0)
 
-Tento dokument definuje jednotné pravidlá pomenovania súborov, modulov, tried a komponentov v rámci Real‑Time MIDI Notation Engine. Cieľom je zachovať konzistentnú, profesionálnu a rozšíriteľnú architektúru.
+This document defines unified naming rules for files, modules, classes, and components within the Real‑Time MIDI Notation Engine.  
+The goal is to maintain a consistent, professional, and scalable architecture.
 
 ---
 
-## 1. Základné princípy
-- názvy musia byť popisné a jednoznačné
-- názvy musia odrážať funkciu modulu
-- názvy musia byť konzistentné v celom projekte
-- názvy musia byť budúco‑rozšíriteľné (verzie 2.0.0, 3.0.0)
-- názvy musia byť architektonické, nie skriptové
+## 1. Core Principles
+- names must be descriptive and unambiguous  
+- names must reflect the module’s function  
+- names must be consistent across the entire project  
+- names must be future‑expandable (versions 2.0.0, 3.0.0)  
+- names must be architectural, not script‑like  
 
 ---
 
 ## 2. MIDI Input & Processing
-| Modul | Účel |
-|-------|------|
-| `midi_input_manager.py` | Príjem MIDI správ v reálnom čase |
-| `real_time_processing/` | Celý real‑time engine |
-| `event_bus.py` | Distribúcia MIDI eventov medzi modulmi |
-| `activity_tracking.py` | Logovanie a sledovanie aktivity |
+| Module | Purpose |
+|--------|---------|
+| `midi_input_manager.py` | Receives real‑time MIDI messages |
+| `real_time_processing/` | Entire real‑time engine |
+| `event_bus.py` | Distributes MIDI events between modules |
+| `activity_tracking.py` | Logs and tracks activity |
 
 ---
 
 ## 3. Notation Engine
-| Modul | Účel |
-|-------|------|
-| `notation_engine.py` | Prevod MIDI → notové objekty |
-| `notation_renderer.py` | Renderovanie notových symbolov |
-| `note_mapper.py` | Prevod MIDI čísla → názov noty |
-| `duration_resolver.py` | Výpočet rytmických hodnôt |
+| Module | Purpose |
+|--------|---------|
+| `notation_engine.py` | Converts MIDI → notation objects |
+| `notation_renderer.py` | Renders notation symbols |
+| `note_mapper.py` | Converts MIDI numbers → note names |
+| `duration_resolver.py` | Calculates rhythmic durations |
 
 ---
 
 ## 4. Graphic Rendering
-| Modul | Účel |
-|-------|------|
-| `graphic_renderer.py` | Hlavný grafický renderer |
-| `pixel_layout_engine.py` | Výpočet pixelovej pozície prvkov |
-| `renderer_new/` | Nová generácia renderera |
-| `renderer_legacy/` | Archív starého renderera |
+| Module | Purpose |
+|--------|---------|
+| `graphic_renderer.py` | Main graphic renderer |
+| `pixel_layout_engine.py` | Computes pixel positions of elements |
+| `renderer_new/` | New‑generation renderer |
+| `renderer_legacy/` | Archive of the old renderer |
 
 ---
 
 ## 5. User Interface Layer
-| Modul | Účel |
-|-------|------|
+| Module | Purpose |
+|--------|---------|
 | `timeline_ui.py` | Timeline + markers |
-| `track_manager.py` | Správa 16 MIDI stôp |
-| `track_control.py` | UI prvky pre prepínanie stôp |
-| `ui_components/` | Všetky UI widgety |
+| `track_manager.py` | Management of 16 MIDI tracks |
+| `track_control.py` | UI elements for track switching |
+| `ui_components/` | All UI widgets |
 
 ---
 
 ## 6. Processing Pipeline
-| Modul | Účel |
-|-------|------|
-| `pipeline.py` | Hlavná pipeline pre spracovanie |
-| `pipeline_stage_x.py` | Jednotlivé kroky pipeline |
-| `event_transformer.py` | Transformácie MIDI eventov |
+| Module | Purpose |
+|--------|---------|
+| `pipeline.py` | Main processing pipeline |
+| `pipeline_stage_x.py` | Individual pipeline stages |
+| `event_transformer.py` | MIDI event transformations |
 
 ---
 
-## 7. Budúce verzie
+## 7. Future Versions
 
-### Verzia 2.0.0
-- `undo_redo_manager.py`
-- `cached_grid_renderer.py`
-- `text_input.py`
-- `hover_effects.py`
+### Version 2.0.0
+- `undo_redo_manager.py`  
+- `cached_grid_renderer.py`  
+- `text_input.py`  
+- `hover_effects.py`  
 
-### Verzia 3.0.0
-- `mpe_visualizer.py`
-- `vibrato_animator.py`
-- `poly_pressure_waveform.py`
-- `rgb_velocity_pulse.py`
-
----
-
-## 8. Pravidlá pre názvy tried
-- PascalCase
-- názov triedy musí odrážať jednu zodpovednosť
-- príklady:
-  - `GraphicRenderer`
-  - `NotationEngine`
-  - `PixelLayoutEngine`
-  - `TrackManager`
+### Version 3.0.0
+- `mpe_visualizer.py`  
+- `vibrato_animator.py`  
+- `poly_pressure_waveform.py`  
+- `rgb_velocity_pulse.py`  
 
 ---
 
-## 9. Pravidlá pre názvy funkcií
-- snake_case
-- musia byť akčné (sloveso + objekt)
-- príklady:
-  - `process_event()`
-  - `render_note()`
-  - `calculate_position()`
-  - `update_timeline()`
+## 8. Class Naming Rules
+- PascalCase  
+- class name must reflect a single responsibility  
+- examples:  
+  - `GraphicRenderer`  
+  - `NotationEngine`  
+  - `PixelLayoutEngine`  
+  - `TrackManager`  
 
 ---
 
-## 10. Pravidlá pre názvy konštánt
-- UPPER_CASE
-- príklady:
-  - `DEFAULT_VELOCITY_COLOR`
-  - `MAX_TRACKS = 16`
+## 9. Function Naming Rules
+- snake_case  
+- must be action‑based (verb + object)  
+- examples:  
+  - `process_event()`  
+  - `render_note()`  
+  - `calculate_position()`  
+  - `update_timeline()`  
 
 ---
 
-## 11. Záver
-Tento dokument definuje oficiálny naming štandard pre Real‑Time MIDI Notation Engine. Je navrhnutý tak, aby podporoval rast projektu, udržiaval profesionálnu architektúru a vytváral nový štandard v MIDI svete.
+## 10. Constant Naming Rules
+- UPPER_CASE  
+- examples:  
+  - `DEFAULT_VELOCITY_COLOR`  
+  - `MAX_TRACKS = 16`  
+
+---
+
+## 11. Conclusion
+This document defines the official naming standard for the Real‑Time MIDI Notation Engine.  
+It is designed to support project growth, maintain a professional architecture, and establish a new standard in the MIDI ecosystem.
