@@ -1,3 +1,4 @@
+import math
 import pygame
 from typing import Optional, List, Dict, Any
 
@@ -78,6 +79,9 @@ class TimelineUI:
         self.loop_end_beat: float = 0.0
         self.loop_drag_offset: float = 0.0
 
+        # LOOP HOVER
+        self.loop_hover: bool = False
+
         # MARKERS (DAW PRO)
         # marker: {"beat": float, "label": str, "color": (r,g,b), "type_index": int}
         self.markers: List[Dict[str, Any]] = []
@@ -89,6 +93,22 @@ class TimelineUI:
 
         # HOVER – index markeru pod myšou
         self.hover_marker_index: Optional[int] = None
+
+        # PLAYHEAD HOVER
+        self.playhead_hover: bool = False
+
+        # GHOST LINES (snapping vizuál)
+        self.ghost_x: Optional[int] = None
+
+        # TRACK SWITCHER UI (príprava na 1.4.0)
+        self.tracks: List[Dict[str, Any]] = [
+            {"name": "Track 1", "color": (120, 180, 255)},
+            {"name": "Track 2", "color": (180, 120, 255)},
+            {"name": "Track 3", "color": (120, 255, 180)},
+        ]
+        self.active_track_index: int = 0
+        self.track_button_rects: List[pygame.Rect] = []
+        self.track_switcher_height: int = 18
 
         # double‑click tracking
         self._last_click_time: int = 0
@@ -213,7 +233,7 @@ class TimelineUI:
         return pygame.Rect(start_px, self.y + self.ruler_height, end_px - start_px, self.loop_height)
 
     # ---------------------------------------------------------
-    # PLAYHEAD RECT
+    # PLAYHEAD X
     # ---------------------------------------------------------
     def _compute_playhead_x(self) -> Optional[int]:
         if not hasattr(self.controller, "layout"):
@@ -224,9 +244,21 @@ class TimelineUI:
         return int(px)
 
     # ---------------------------------------------------------
+    # HOVER PULSE (jemné animácie)
+    # ---------------------------------------------------------
+    def _get_hover_pulse(self) -> int:
+        t = pygame.time.get_ticks()
+        phase = (t % 1000) / 1000.0 * 2 * math.pi
+        # 0 – 40
+        return int(20 + 20 * (math.sin(phase) * 0.5 + 0.5))
+
+    # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface: pygame.Surface) -> None:
+        # 0. Track Switcher UI (nad rulerom)
+        self._draw_track_switcher(surface)
+
         # 1. Timeline grid
         timeline_surface = self.controller.render()
         if timeline_surface is not None:
@@ -245,16 +277,62 @@ class TimelineUI:
         # 5. Markers
         self._draw_markers(surface)
 
-        # 6. Playhead
+        # 6. Ghost snapping line
+        self._draw_ghost_line(surface)
+
+        # 7. Playhead
         self._draw_playhead(surface)
 
-        # 7. Bars
+        # 8. Bars
         self._draw_zoom_bar(surface)
         self._draw_scroll_bar(surface)
 
-        # 8. Scroll handle
+        # 9. Scroll handle
         handle = self._compute_handle_rect()
         pygame.draw.rect(surface, (120, 120, 130), handle, border_radius=3)
+
+    # ---------------------------------------------------------
+    # TRACK SWITCHER DRAW
+    # ---------------------------------------------------------
+    def _draw_track_switcher(self, surface: pygame.Surface) -> None:
+        if not self.tracks or not self.font:
+            return
+
+        bar_y = self.y - self.track_switcher_height
+        bar_h = self.track_switcher_height
+        bar_rect = pygame.Rect(self.x, bar_y, self.width, bar_h)
+
+        pygame.draw.rect(surface, (20, 20, 25), bar_rect)
+        pygame.draw.line(surface, (60, 60, 70), (bar_rect.x, bar_rect.bottom - 1), (bar_rect.right, bar_rect.bottom - 1), 1)
+
+        self.track_button_rects = []
+        padding = 6
+        btn_x = self.x + padding
+        btn_h = bar_h - 6
+
+        for idx, track in enumerate(self.tracks):
+            name = track.get("name", f"T{idx+1}")
+            color = track.get("color", (120, 150, 255))
+            text_surf = self.font.render(name, True, (230, 230, 235))
+            btn_w = text_surf.get_width() + 16
+            btn_rect = pygame.Rect(btn_x, bar_y + 3, btn_w, btn_h)
+
+            is_active = (idx == self.active_track_index)
+            base_color = color
+            if is_active:
+                pulse = self._get_hover_pulse()
+                base_color = (
+                    min(255, color[0] + pulse // 2),
+                    min(255, color[1] + pulse // 2),
+                    min(255, color[2] + pulse // 2),
+                )
+
+            pygame.draw.rect(surface, base_color, btn_rect, border_radius=4)
+            pygame.draw.rect(surface, (10, 10, 15), btn_rect, 1, border_radius=4)
+            surface.blit(text_surf, (btn_rect.x + 8, btn_rect.y + (btn_rect.h - text_surf.get_height()) // 2))
+
+            self.track_button_rects.append(btn_rect)
+            btn_x += btn_w + padding
 
     # ---------------------------------------------------------
     # RULER DRAW
@@ -292,7 +370,7 @@ class TimelineUI:
                 pygame.draw.line(surface, (110, 110, 120), (px, ruler_y + 10), (px, ruler_y + ruler_h), 1)
 
     # ---------------------------------------------------------
-    # LOOP DRAW
+    # LOOP DRAW (s hover efektom)
     # ---------------------------------------------------------
     def _draw_loop(self, surface: pygame.Surface) -> None:
         rect = self._compute_loop_rect()
@@ -302,11 +380,20 @@ class TimelineUI:
         rect.y = self.y + self.ruler_height
         rect.h = self.loop_height
 
-        # hlavný loop blok
-        pygame.draw.rect(surface, (80, 120, 200, 80), rect)
-        pygame.draw.rect(surface, (160, 200, 255), rect, 2)
+        base_fill = (80, 120, 200, 80)
+        base_border = (160, 200, 255)
 
-        # vizuálne "handles" na okrajoch (len vizuálne, logika loop už existuje)
+        if self.loop_hover:
+            pulse = self._get_hover_pulse()
+            base_border = (
+                min(255, base_border[0] + pulse),
+                min(255, base_border[1] + pulse),
+                min(255, base_border[2] + pulse),
+            )
+
+        pygame.draw.rect(surface, base_fill, rect)
+        pygame.draw.rect(surface, base_border, rect, 2)
+
         handle_w = 4
         left_handle = pygame.Rect(rect.x - handle_w, rect.y, handle_w, rect.h)
         right_handle = pygame.Rect(rect.right, rect.y, handle_w, rect.h)
@@ -319,7 +406,6 @@ class TimelineUI:
     def _draw_marker_lane(self, surface: pygame.Surface) -> None:
         lane_y = self.y + self.ruler_height + self.loop_height
         pygame.draw.rect(surface, (30, 30, 35), (self.x, lane_y, self.width, self.marker_lane_height))
-        # jemná deliaca čiara pod marker lane
         pygame.draw.line(
             surface,
             (50, 50, 60),
@@ -337,7 +423,6 @@ class TimelineUI:
         if not self.font:
             return
 
-        # jednoduchý textový indikátor zoomu
         zoom_percent = int(self.zoom * 100)
         text = self.font.render(f"Zoom: {zoom_percent}%", True, (200, 200, 210))
         text_rect = text.get_rect()
@@ -350,7 +435,6 @@ class TimelineUI:
     # ---------------------------------------------------------
     def _draw_scroll_bar(self, surface: pygame.Surface) -> None:
         pygame.draw.rect(surface, (20, 20, 25), self.scroll_bar_rect)
-        # jemný horný okraj pre oddelenie
         pygame.draw.line(
             surface,
             (45, 45, 55),
@@ -360,7 +444,22 @@ class TimelineUI:
         )
 
     # ---------------------------------------------------------
-    # PLAYHEAD DRAW
+    # GHOST LINE DRAW (snapping vizuál)
+    # ---------------------------------------------------------
+    def _draw_ghost_line(self, surface: pygame.Surface) -> None:
+        if self.ghost_x is None:
+            return
+
+        grid_top = self.y + self.ruler_height
+        grid_bottom = self.y + self.height - (self.zoom_bar_rect.h + self.scroll_bar_rect.h)
+
+        pulse = self._get_hover_pulse()
+        color = (100 + pulse // 2, 100 + pulse // 2, 160 + pulse // 2)
+
+        pygame.draw.line(surface, color, (self.ghost_x, grid_top), (self.ghost_x, grid_bottom), 1)
+
+    # ---------------------------------------------------------
+    # PLAYHEAD DRAW (s hover efektom)
     # ---------------------------------------------------------
     def _draw_playhead(self, surface: pygame.Surface) -> None:
         x = self._compute_playhead_x()
@@ -370,10 +469,21 @@ class TimelineUI:
         grid_top = self.y + self.ruler_height + self.loop_height + self.marker_lane_height
         grid_bottom = self.y + self.height - (self.zoom_bar_rect.h + self.scroll_bar_rect.h)
 
-        pygame.draw.line(surface, self.playhead_color, (x, grid_top), (x, grid_bottom), 2)
+        color = self.playhead_color
+        width = 2
+        if self.playhead_hover:
+            pulse = self._get_hover_pulse()
+            color = (
+                min(255, color[0] + pulse),
+                min(255, color[1] + pulse // 2),
+                min(255, color[2] + pulse // 2),
+            )
+            width = 3
+
+        pygame.draw.line(surface, color, (x, grid_top), (x, grid_bottom), width)
 
     # ---------------------------------------------------------
-    # MARKER DRAW
+    # MARKER DRAW (s hover efektom)
     # ---------------------------------------------------------
     def _draw_markers(self, surface: pygame.Surface) -> None:
         if not self.font:
@@ -384,14 +494,14 @@ class TimelineUI:
 
             color = marker.get("color", self.marker_colors[0])
 
-            # HOVER EFFECT
             is_hover = (self.hover_marker_index == i)
             if is_hover:
+                pulse = self._get_hover_pulse()
                 hover_rect = rect.inflate(6, 4)
                 pygame.draw.rect(surface, (255, 255, 255, 40), hover_rect, border_radius=3)
-                pygame.draw.rect(surface, (200, 200, 200), hover_rect, 1)
+                border_color = (200 + pulse // 2, 200 + pulse // 2, 200 + pulse // 2)
+                pygame.draw.rect(surface, border_color, hover_rect, 1)
 
-            # Triangle marker
             pygame.draw.polygon(
                 surface,
                 color,
@@ -402,7 +512,6 @@ class TimelineUI:
                 ],
             )
 
-            # Marker type (Unicode icon)
             type_index = marker.get("type_index", 0) % max(1, len(self.marker_types))
             marker_type = self.marker_types[type_index]
             icon_text = marker_type.get("icon", "")
@@ -413,7 +522,6 @@ class TimelineUI:
                 surface.blit(icon_surf, (text_x, rect.y + 2))
                 text_x += icon_surf.get_width() + 4
 
-            # Label or rename box
             if self.marker_rename_index == i:
                 text = self.font.render(self.marker_rename_text, True, (0, 0, 0))
                 box_w = max(40, text.get_width() + 10)
@@ -433,15 +541,12 @@ class TimelineUI:
         mods = pygame.key.get_mods()
         beats_per_bar = self.controller.beats_per_bar
 
-        # SHIFT = disable snapping
         if mods & pygame.KMOD_SHIFT:
             return beat
 
-        # CTRL = snap to bars
         if mods & pygame.KMOD_CTRL:
             return round(beat / beats_per_bar) * beats_per_bar
 
-        # default = snap to nearest beat
         return round(beat)
 
     # ---------------------------------------------------------
@@ -539,14 +644,12 @@ class TimelineUI:
         self.marker_rename_text = ""
 
     def _sync_markers(self) -> None:
-        # prepojenie s renderer
         if hasattr(self.renderer, "set_markers"):
             try:
                 self.renderer.set_markers(self.markers)
             except Exception:
                 pass
 
-        # prepojenie s controller.layout
         if hasattr(self.controller.layout, "set_markers"):
             try:
                 self.controller.layout.set_markers(self.markers)
@@ -580,7 +683,6 @@ class TimelineUI:
         if self.loop_end_beat < self.loop_start_beat:
             self.loop_start_beat, self.loop_end_beat = self.loop_end_beat, self.loop_start_beat
 
-        # prepojenie s controller (ak má loop API)
         if hasattr(self.controller, "set_loop_region"):
             try:
                 self.controller.set_loop_region(self.loop_start_beat, self.loop_end_beat)
@@ -628,6 +730,43 @@ class TimelineUI:
                 self.hover_marker_index = i
                 break
 
+        # HOVER DETECTION FOR LOOP
+        loop_rect = self._compute_loop_rect()
+        self.loop_hover = bool(loop_rect and loop_rect.collidepoint(mx, my))
+
+        # HOVER DETECTION FOR PLAYHEAD
+        self.playhead_hover = False
+        x_playhead = self._compute_playhead_x()
+        if x_playhead is not None:
+            grid_top = self.y + self.ruler_height + self.loop_height + self.marker_lane_height
+            grid_bottom = self.y + self.height - (self.zoom_bar_rect.h + self.scroll_bar_rect.h)
+            if abs(mx - x_playhead) <= 3 and grid_top <= my <= grid_bottom:
+                self.playhead_hover = True
+
+        # GHOST LINE UPDATE (snapping vizuál)
+        self.ghost_x = None
+        if hasattr(self.controller, "layout"):
+            layout = self.controller.layout
+            # ruler alebo grid
+            in_ruler = self.y <= my <= self.y + self.ruler_height
+            grid_y = self.y + self.ruler_height + self.loop_height + self.marker_lane_height
+            grid_h = self.height - (
+                self.ruler_height
+                + self.loop_height
+                + self.marker_lane_height
+                + self.zoom_bar_rect.h
+                + self.scroll_bar_rect.h
+            )
+            if grid_h < 0:
+                grid_h = 0
+            in_grid = grid_y <= my <= grid_y + grid_h
+
+            if in_ruler or in_grid:
+                beat = layout.pixel_to_beat(mx - self.x + self.scroll_x)
+                beat = self._snap_beat(beat)
+                px = self.x + layout.beat_to_pixel(beat) - self.scroll_x
+                self.ghost_x = int(px)
+
         # TEXT INPUT FOR MARKER RENAME
         if self.marker_rename_index is not None and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
@@ -643,11 +782,23 @@ class TimelineUI:
                 self.marker_rename_text += event.unicode
                 return None
 
+        # TRACK SWITCHER CLICK
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            for idx, rect in enumerate(self.track_button_rects):
+                if rect.collidepoint(mx, my):
+                    if idx != self.active_track_index:
+                        self.active_track_index = idx
+                        if self.event_bus and hasattr(self.event_bus, "publish"):
+                            try:
+                                self.event_bus.publish("timeline.track_switched", index=idx)
+                            except Exception:
+                                pass
+                    return None
+
         # MARKER INTERACTION
         for i, marker in enumerate(self.markers):
             rect = self._compute_marker_rect(marker)
 
-            # RIGHT CLICK → change type / delete with CTRL
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 if rect.collidepoint(mx, my):
                     mods = pygame.key.get_mods()
@@ -657,7 +808,6 @@ class TimelineUI:
                         self._cycle_marker_type(i)
                     return None
 
-            # SHIFT + C → cycle color
             if event.type == pygame.KEYDOWN and event.key == pygame.K_c:
                 mods = pygame.key.get_mods()
                 if mods & pygame.KMOD_SHIFT:
@@ -665,7 +815,6 @@ class TimelineUI:
                         self._cycle_marker_color(i)
                         return None
 
-            # SHIFT + T → cycle type
             if event.type == pygame.KEYDOWN and event.key == pygame.K_t:
                 mods = pygame.key.get_mods()
                 if mods & pygame.KMOD_SHIFT:
@@ -673,7 +822,6 @@ class TimelineUI:
                         self._cycle_marker_type(i)
                         return None
 
-            # LEFT CLICK: drag or rename (double‑click)
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if rect.collidepoint(mx, my):
                     now = pygame.time.get_ticks()
@@ -783,12 +931,10 @@ class TimelineUI:
                 except Exception:
                     selected_indices = []
 
-            # DELETE
             if event.key == pygame.K_DELETE:
                 self.renderer.notes = delete_selected_notes(notes, selected_indices)
                 return None
 
-            # MOVE LEFT / RIGHT
             if event.key == pygame.K_LEFT:
                 self.renderer.notes = move_selected_notes(notes, selected_indices, dx=-10, dy=0)
                 return None
@@ -797,7 +943,6 @@ class TimelineUI:
                 self.renderer.notes = move_selected_notes(notes, selected_indices, dx=10, dy=0)
                 return None
 
-            # TRANSPOSE UP / DOWN
             if event.key == pygame.K_UP:
                 self.renderer.notes = transpose_selected_notes(notes, selected_indices, semitones=1)
                 return None
@@ -806,7 +951,6 @@ class TimelineUI:
                 self.renderer.notes = transpose_selected_notes(notes, selected_indices, semitones=-1)
                 return None
 
-            # VELOCITY + / -
             if event.key in (pygame.K_PLUS, pygame.K_EQUALS):
                 self.renderer.notes = velocity_selected_notes(notes, selected_indices, delta=5)
                 return None
@@ -815,7 +959,6 @@ class TimelineUI:
                 self.renderer.notes = velocity_selected_notes(notes, selected_indices, delta=-5)
                 return None
 
-            # STRETCH (SHIFT + , / .)
             mods = pygame.key.get_mods()
             if event.key == pygame.K_COMMA and (mods & pygame.KMOD_SHIFT):
                 self.renderer.notes = stretch_selected_notes(notes, selected_indices, factor=0.9)
