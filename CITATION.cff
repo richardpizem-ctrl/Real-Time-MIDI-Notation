@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software in your research, please cite it as below."
-title: "Real-Time MIDI Notation: A High-Performance Real-Time 16-Track MIDI Notation Engine"
-version: "1.2.0"
+title: "Real-Time MIDI Notation: A High-Performance Real-Time 16-Track Real-Time Notation Engine"
+version: "1.3.0"
 
 authors:
   - family-names: "Pizem"
@@ -20,6 +20,8 @@ keywords:
   - real-time-midi
   - music-technology
   - digital-audio
+  - notation-engine
+  - live-notation
 
 abstract: >
   Real-Time MIDI Notation is a high-performance real-time 16-track MIDI notation
@@ -32,10 +34,13 @@ abstract: >
   Engine. Unlike traditional offline notation systems (MuseScore, LilyPond,
   Dorico) or simple MIDI visualizers, this engine performs full real-time
   multi-track notation, Yamaha-style track processing, and dynamic rendering
-  without pre-analysis or offline steps. It defines a new category of tools for
-  research, education, live performance, expressive timing analysis, and
-  next-generation MIDI workflows.
+  without pre-analysis or offline steps.
+
+  Version 1.3.0 finalizes the TimelineUI architecture, stabilizes the event
+  pipeline, and completes Phase‑4 of the real-time rendering system. It defines
+  a new category of tools for research, education, live performance, expressive
+  timing analysis, and next-generation MIDI workflows.
 
 repository-code: "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation"
 license: "MIT"
-date-released: "2026-04-23"
+date-released: "2026-04-29"
