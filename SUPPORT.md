@@ -1,9 +1,9 @@
-# 🆘 Real-Time MIDI Notation — Support Guide (Ultimate Edition)
+# 🆘 Real-Time MIDI Notation — Support Guide (Ultimate Edition, v1.3.0)
 
-Thank you for your interest in **Real‑Time MIDI Notation**!  
+Thank you for your interest in **Real‑Time MIDI Notation (SIRIUS Engine)**!  
 This project is under active development, and community support is essential for improving stability, performance, and cross‑platform compatibility.
 
-This document explains how to get help, report issues, test the project, and contribute effectively.
+This guide explains how to get help, report issues, test the engine, and contribute effectively.
 
 ---
 
@@ -24,13 +24,13 @@ Use the **Issues** tab to report:
 - feature requests  
 - questions about usage  
 
-The repository includes **professional Issue Templates** to make reporting easier and more structured.
+The repository includes **professional Issue Templates** to make reporting structured and efficient.
 
 ---
 
 ## 🔹 Email Support
 
-For private or sensitive questions, you can contact the maintainer directly:
+For private or sensitive questions, you may contact the maintainer directly:
 
 **richardpizem@gmail.com**
 
@@ -38,7 +38,7 @@ For private or sensitive questions, you can contact the maintainer directly:
 
 # 🧪 2. Testing the Project
 
-Because this is a **real‑time MIDI prototype**, testing on different systems is extremely valuable.
+Because this is a **real‑time MIDI engine**, testing on different systems is extremely valuable.
 
 Please test:
 
@@ -48,9 +48,9 @@ Please test:
 - rendering performance  
 - UI responsiveness  
 - timing accuracy  
-- unexpected behavior  
+- unexpected behavior or crashes  
 
-If you test the project, please consider reporting your results in the **Issues** tab.
+If you test the project, consider reporting your results in the **Issues** tab to help improve cross‑platform stability.
 
 ---
 
@@ -65,7 +65,7 @@ When reporting an issue, please include:
 - screenshots or logs (if available)  
 - expected vs. actual behavior  
 
-Clear, detailed reports help us fix problems faster and improve cross‑platform stability.
+Clear, detailed reports help us fix problems faster and ensure consistent behavior across different systems.
 
 ---
 
@@ -81,7 +81,7 @@ It explains:
 - how to propose features  
 - how to report issues  
 - contributor task levels (beginner → advanced)  
-- community values  
+- community values and expectations  
 
 All contributions are welcome — from small fixes to major features.
 
@@ -100,14 +100,14 @@ Do **not** open a public issue for security‑related problems.
 # 🧭 6. Frequently Asked Questions (FAQ)
 
 ### **Q: The renderer is slow on my system. What should I do?**  
-Check if your system supports hardware acceleration.  
-Include your OS + GPU info when reporting performance issues.
+Check whether your system supports hardware acceleration.  
+Include your OS + GPU information when reporting performance issues.
 
 ### **Q: My MIDI device is not detected.**  
 Some devices require exclusive access.  
 Close other MIDI applications and try again.
 
-### **Q: Does the project support Yamaha styles?**  
+### **Q: Does the engine support Yamaha styles?**  
 Yes — the engine is built around the **Yamaha 16‑track standard**.
 
 ### **Q: Can I use this in a DAW?**  
@@ -120,4 +120,4 @@ Yes, via virtual MIDI routing (LoopMIDI, IAC Driver, etc.).
 Your feedback, testing, and participation help shape the future of this project.  
 Even a single test or issue report makes a real difference.
 
-Thank you for supporting **Real‑Time MIDI Notation**!
+Thank you for supporting **Real‑Time MIDI Notation (SIRIUS Engine)**!
