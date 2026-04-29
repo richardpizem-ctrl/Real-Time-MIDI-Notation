@@ -87,6 +87,9 @@ class TimelineUI:
         self.marker_rename_text: str = ""
         self.marker_next_id: int = 1
 
+        # HOVER – index markeru pod myšou
+        self.hover_marker_index: Optional[int] = None
+
         # double‑click tracking
         self._last_click_time: int = 0
         self._last_click_marker_index: Optional[int] = None
@@ -381,6 +384,13 @@ class TimelineUI:
 
             color = marker.get("color", self.marker_colors[0])
 
+            # HOVER EFFECT
+            is_hover = (self.hover_marker_index == i)
+            if is_hover:
+                hover_rect = rect.inflate(6, 4)
+                pygame.draw.rect(surface, (255, 255, 255, 40), hover_rect, border_radius=3)
+                pygame.draw.rect(surface, (200, 200, 200), hover_rect, 1)
+
             # Triangle marker
             pygame.draw.polygon(
                 surface,
@@ -609,6 +619,14 @@ class TimelineUI:
     # ---------------------------------------------------------
     def handle_event(self, event) -> Optional[None]:
         mx, my = pygame.mouse.get_pos()
+
+        # HOVER DETECTION FOR MARKERS
+        self.hover_marker_index = None
+        for i, marker in enumerate(self.markers):
+            rect = self._compute_marker_rect(marker)
+            if rect.collidepoint(mx, my):
+                self.hover_marker_index = i
+                break
 
         # TEXT INPUT FOR MARKER RENAME
         if self.marker_rename_index is not None and event.type == pygame.KEYDOWN:
