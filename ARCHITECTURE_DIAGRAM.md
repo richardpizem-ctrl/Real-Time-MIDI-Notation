@@ -1,38 +1,43 @@
 # 🏗️ Real-Time MIDI Notation — MEGA ARCHITECTURE DIAGRAM (Ultimate Edition)
 
-This document provides a complete, high‑level overview of the entire system architecture, including  
-real‑time MIDI flow, module responsibilities, and communication pathways.
+This document provides a complete, high-level overview of the entire system architecture, including  
+real-time MIDI flow, module responsibilities, and communication pathways.
 
 It is designed for developers, contributors, researchers, and anyone studying the internal structure of the engine.
 
 ---
 
-# 🆕 A New Class of Real‑Time MIDI Engine
+# 🆕 A New Class of Real-Time MIDI Engine
 
-**SIRIUS / Real‑Time MIDI Notation** nepatrí do žiadnej existujúcej kategórie softvéru.  
-Nie je to MIDI vizualizér, nie je to offline notátor, nie je to DAW plugin a nie je to tradičná MIDI knižnica.
+**SIRIUS / Real-Time MIDI Notation** does not belong to any existing category of music software.
 
-Predstavuje **úplne novú triedu softvéru**, ktorá doteraz v hudobnej technológii neexistovala:
+It is NOT:
+- a MIDI visualizer  
+- an offline notation editor  
+- a DAW plugin  
+- a traditional MIDI library  
 
-### **Real‑Time Multi‑Track MIDI Notation Engine**
+It represents a **completely new class of software** that did not exist before:
 
-Tento typ softvéru kombinuje vlastnosti, ktoré sa nikdy predtým nevyskytli spolu:
+## 🎼 Real-Time Multi-Track MIDI Notation Engine
 
-- plne **real‑time** spracovanie MIDI udalostí  
-- **16‑track Yamaha kompatibilný** multi‑track engine  
-- okamžitá grafická notácia (beams, stems, barlines)  
-- **velocity‑based** dynamika v reálnom čase  
-- modulárny grafický renderer (Python + Pygame)  
-- architektúra optimalizovaná pre **výskum, výučbu, živé hranie a štúdiá**  
-- žiadne predspracovanie, žiadna analýza dopredu, žiadne offline kroky  
+This engine combines features that have never been seen together:
 
-SIRIUS tým definuje **novú kategóriu real‑time MIDI nástrojov**, ktorá dopĺňa tradičné offline notátory (MuseScore, LilyPond, Dorico) a otvára priestor pre:
+- fully **real-time** MIDI processing  
+- **16‑track Yamaha‑compatible** multi-track architecture  
+- instant graphical notation (beams, stems, barlines)  
+- **velocity‑based** real-time dynamics  
+- modular graphic renderer (Python + Pygame)  
+- architecture optimized for **research, education, live performance, and studio work**  
+- no preprocessing, no lookahead, no offline steps  
 
-- živú notáciu  
-- real‑time analýzu výkonu  
-- výskum expresivity  
-- štúdiové pred‑nahrávacie nástroje  
-- vizualizáciu pre hudobnú pedagogiku  
+SIRIUS defines a **new category of real-time MIDI tools**, complementing traditional offline notation systems (MuseScore, LilyPond, Dorico) and enabling:
+
+- live notation  
+- real-time performance analysis  
+- expressivity research  
+- pre‑recording studio tools  
+- visualization for music education  
 
 ---
 
@@ -74,65 +79,70 @@ SIRIUS tým definuje **novú kategóriu real‑time MIDI nástrojov**, ktorá do
 
 # 🧩 2. Module Responsibilities
 
-## 🎹 **MIDI Input Layer**
+## 🎹 MIDI Input Layer
+
 ### `real_time_processing/StreamHandler`
 - Detects MIDI devices  
 - Reads MIDI events in real time  
 - Sends raw events to EventRouter  
 
 ### `midi_input/EventRouter`
-- Routes MIDI → EventBus  
-- Normalizes event format  
+- Normalizes MIDI events  
+- Routes them into EventBus  
 - Handles channel/track mapping  
 
 ---
 
-## 📡 **Event Communication Layer**
+## 📡 Event Communication Layer
+
 ### `event_bus/EventBus`
-- Publish/subscribe system  
+- Publish/Subscribe system  
 - Decouples all modules  
-- Ensures clean communication between:
+- Enables communication between:
   - UI  
   - Renderer  
-  - Processor  
+  - NotationProcessor  
   - TrackManager  
   - PlaybackEngine  
 
 ---
 
-## 🎚 **Track System**
+## 🎚 Track System
+
 ### `track_system/TrackSystem`
-- 16-track Yamaha-style architecture  
-- Track attributes (color, name, visibility)  
+- 16‑track Yamaha‑style architecture  
+- Track attributes (name, color, visibility)  
 
 ### `core/TrackManager`
 - Mute / Solo / Volume / Pan  
 - Record arm  
 - Real-time activity meter  
-- DAW-style logic  
 
 ---
 
-## 🧠 **Notation Processing**
+## 🧠 Notation Processing
+
 ### `notation_processor/NotationProcessor`
-- Converts MIDI → internal note objects  
+- Converts MIDI → internal Note objects  
 - Rhythm analysis  
 - Timing + velocity extraction  
 - Prepares data for renderer  
 
 ---
 
-## ⏱ **Playback Engine**
+## ⏱ Playback Engine
+
 ### `core/PlaybackEngine`
 - Controls global time  
 - Moves playhead  
-- Selects active notes  
 - Applies BPM + meter  
-- Drives the entire render loop  
+- Selects active notes  
+- Drives the render loop  
 
 ---
 
-## 🎨 **Rendering Engine**
+## 🎨 Rendering Engine
+
 ### `renderer/GraphicNotationRenderer`
 - Real-time note rendering  
 - Beams, stems, barlines  
@@ -144,7 +154,8 @@ SIRIUS tým definuje **novú kategóriu real‑time MIDI nástrojov**, ktorá do
 
 ---
 
-## 🖥 **UI Layer**
+## 🖥 UI Layer
+
 ### `ui/CanvasUI`
 - Main drawing surface  
 - Playhead rendering  
