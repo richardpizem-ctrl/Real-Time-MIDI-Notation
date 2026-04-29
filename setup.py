@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "real-time-midi-notation"
-version = "1.2.0"
-description = "Real-time multi-track MIDI notation engine with Yamaha 16-track support, advanced visualization, and fully refactored TimelineUI."
+version = "1.3.0"
+description = "Real-time multi-track MIDI notation engine with Yamaha 16-track support, advanced rendering, and finalized TimelineUI architecture."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -28,7 +28,8 @@ keywords = [
     "music-technology",
     "digital-audio",
     "midi-visualizer",
-    "notation-engine"
+    "notation-engine",
+    "live-notation"
 ]
 
 dependencies = [
