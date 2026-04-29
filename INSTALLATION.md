@@ -1,6 +1,6 @@
-# 🛠️ Real-Time MIDI Notation — MEGA INSTALLATION GUIDE (Ultimate Edition)
+# 🛠️ Real-Time MIDI Notation — MEGA INSTALLATION GUIDE (Ultimate Edition, v1.3.0)
 
-This guide explains how to install, configure, and run **Real-Time MIDI Notation** on any supported system.  
+This guide explains how to install, configure, and run **Real-Time MIDI Notation (SIRIUS Engine)** on any supported system.  
 It is designed for beginners, developers, testers, and musicians.
 
 ---
@@ -14,7 +14,7 @@ It is designed for beginners, developers, testers, and musicians.
 
 ## ✔ Python Version
 - Python **3.10+** recommended  
-(Older versions may work but are not supported.)
+(Older versions may work but are not officially supported.)
 
 ## ✔ Dependencies (installed automatically)
 - pygame  
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 
 # 🎹 3. MIDI Device Setup
 
-The project automatically detects:
+The engine automatically detects:
 
 - USB MIDI keyboards  
 - Yamaha arranger keyboards  
@@ -69,6 +69,7 @@ If your device is not detected:
 - reconnect the device  
 - restart the application  
 - check OS MIDI permissions  
+- ensure no other app is using the MIDI port  
 
 ---
 
@@ -131,6 +132,5 @@ If nothing appears:
 
 # 🎉 Installation Complete
 
-You are now ready to use **Real-Time MIDI Notation**.  
+You are now ready to use **Real-Time MIDI Notation (SIRIUS Engine)**.  
 For more help, see **FAQ.md** or **SUPPORT.md**.
-
