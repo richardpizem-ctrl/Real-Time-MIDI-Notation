@@ -1,6 +1,8 @@
 # 🎼 Real-Time MIDI Notation  
 ![SIRIUS Banner](SIRIUS%20PROGRAM%20S%20EM.png)
 
+<!-- SEO: real-time midi notation engine, python midi notation, pygame midi visualizer, multi-track midi, yamaha 16-track, live midi notation, midi to sheet music, real-time midi renderer -->
+
 ### **SIRIUS — the brightest star in real‑time MIDI notation**  
 ### **Real‑time multi‑track MIDI visualization & notation engine (Python + Pygame)**  
 
@@ -11,7 +13,6 @@ Designed for **live performance**, **music education**, **research**, and **next
 
 # 📸 Showcase (Community Screenshots)
 ![Real-Time MIDI Notation Screenshot](assets/screenshots/Copilot_20260422_120106.png)
-
 
 Do you use **SIRIUS / Real-Time MIDI Notation** in your setup?
 
@@ -283,6 +284,8 @@ Includes:
 `multi-track midi`, `midi to sheet music`, `live midi`, `midi processing`,  
 `real-time visualization`, `midi sheet music`, `midi score`,  
 `notation engine`, `real-time notation`, `music education`
+
+<!-- SEO: real-time midi engine, live midi score, python pygame midi notation, yamaha midi analyzer, midi research tool -->
 
 ---
 
