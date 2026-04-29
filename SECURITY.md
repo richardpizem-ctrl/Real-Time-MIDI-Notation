@@ -1,6 +1,7 @@
-# 🔐 Real-Time MIDI Notation — Security Policy (Ultimate Edition)
+# 🔐 Real-Time MIDI Notation — Security Policy  
+### Ultimate Edition (v1.3.0)
 
-Security is a core priority of the **Real-Time MIDI Notation** project.  
+Security is a core priority of the **Real-Time MIDI Notation (SIRIUS Engine)** project.  
 This document explains how vulnerabilities should be reported, how they are handled, and what contributors can expect from the security process.
 
 Our goal is to ensure that the project remains safe, stable, and trustworthy for all users.
@@ -9,12 +10,12 @@ Our goal is to ensure that the project remains safe, stable, and trustworthy for
 
 # 🛡 1. Supported Versions
 
-The following versions of this project currently receive security updates:
+The following versions currently receive security updates:
 
 | Version | Supported |
 |---------|-----------|
-| **Latest** | ✔ Yes |
-| **Older** | ✖ No |
+| **Latest (v1.3.0)** | ✔ Yes |
+| Older versions | ✖ No |
 
 Only the latest version receives security patches.  
 Older versions may contain unresolved vulnerabilities and should not be used in production environments.
@@ -25,12 +26,10 @@ Older versions may contain unresolved vulnerabilities and should not be used in 
 
 If you discover a security vulnerability, please report it **responsibly and privately**.
 
-You may report a vulnerability by:
-
 ### 🔹 GitHub Issues (non‑sensitive only)
 Use this for:
-- minor security concerns  
 - dependency warnings  
+- minor security concerns  
 - non‑critical vulnerabilities  
 
 ### 🔹 Email (recommended for sensitive issues)
@@ -126,7 +125,7 @@ These should be reported via normal GitHub Issues.
 
 The project follows these principles:
 
-- no unsafe eval/exec usage  
+- no unsafe `eval` / `exec` usage  
 - strict separation of UI and logic  
 - no untrusted code execution  
 - no automatic file writes without user action  
@@ -155,4 +154,4 @@ Security is a shared responsibility.
 Security researchers, testers, and contributors play a crucial role in improving this project.  
 Your effort and responsible reporting help protect users worldwide.
 
-Thank you for helping keep **Real-Time MIDI Notation** secure.
+Thank you for helping keep **Real-Time MIDI Notation (SIRIUS Engine)** secure.
