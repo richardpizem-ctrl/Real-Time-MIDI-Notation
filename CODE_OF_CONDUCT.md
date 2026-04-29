@@ -1,6 +1,6 @@
-# 🤝 Real-Time MIDI Notation — Code of Conduct (Ultimate Edition)
+# 🤝 Real-Time MIDI Notation — Code of Conduct (Ultimate Edition, v1.3.0)
 
-The **Real-Time MIDI Notation** project is built by a diverse global community of developers, musicians, designers, researchers, and contributors.  
+The **Real-Time MIDI Notation (SIRIUS Engine)** project is built by a diverse global community of developers, musicians, designers, researchers, and contributors.  
 Some are professionals, others are volunteers — all united by a shared mission:
 
 ### **To build an open, accessible, and high‑quality real‑time MIDI notation engine.**
@@ -92,7 +92,7 @@ Harassment and exclusionary behavior are unacceptable. This includes:
 - violent threats or language  
 - discriminatory jokes or slurs  
 - posting sexually explicit or violent material  
-- doxing (posting others’ personal information)  
+- doxing (sharing private information)  
 - personal insults, especially racist or sexist  
 - unwelcome sexual attention  
 - advocating for or encouraging any of the above  
@@ -148,8 +148,8 @@ Reports will be handled respectfully and confidentially.
 
 Portions of this Code of Conduct are adapted from:
 
-- the **Speak Up! Project** (archived)  
 - the **Contributor Covenant**  
+- the **Speak Up! Project** (archived)  
 - other open‑source community guidelines  
 
 ---
@@ -160,4 +160,4 @@ If you have questions or concerns about this Code of Conduct, please contact the
 
 📧 **richardpizem@gmail.com**
 
-Thank you for helping make **Real-Time MIDI Notation** a safe, respectful, and welcoming community.
+Thank you for helping make **Real-Time MIDI Notation (SIRIUS Engine)** a safe, respectful, and welcoming community.
