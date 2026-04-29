@@ -1,4 +1,4 @@
-# ❓ Real-Time MIDI Notation — MEGA FAQ (Ultimate Edition)
+# ❓ Real-Time MIDI Notation — MEGA FAQ (Ultimate Edition, v1.3.0)
 
 A collection of the most common questions from users, testers, developers, and researchers.
 
@@ -12,13 +12,14 @@ If still not detected:
 - reconnect the device  
 - restart the OS  
 - check OS MIDI permissions  
+- ensure no other app is using the MIDI port  
 
 ### **Q: Does this support Yamaha arranger keyboards?**
 Yes — the engine is built around the **Yamaha 16‑track standard**, including:
 - channel colors  
-- multi-track routing  
+- multi‑track routing  
 - accompaniment parts  
-- real-time visualization  
+- real‑time visualization  
 
 ### **Q: Can I use virtual MIDI ports?**
 Yes — LoopMIDI (Windows), IAC Driver (macOS), and similar tools work perfectly.
@@ -36,17 +37,18 @@ Possible causes:
 - slow audio/MIDI drivers  
 - background CPU load  
 - USB hub bottlenecks  
+- low‑quality MIDI interface  
 
 ### **Q: Why do some beams not appear?**
 Beam grouping depends on rhythmic analysis.  
-Extreme rhythms or unusual timing may require future improvements.
+Unusual timing or extreme rhythms may require future improvements.
 
 ### **Q: Why are some notes drawn with different colors?**
 Colors represent **tracks** (Yamaha 16‑track standard).  
 Each track has its own color.
 
 ### **Q: Why does the renderer scroll automatically?**
-Scrolling follows the **playhead** controlled by PlaybackEngine.
+Scrolling follows the **playhead**, controlled by the PlaybackEngine.
 
 ---
 
@@ -65,7 +67,7 @@ Yes — every part of the system is isolated:
 Yes — the architecture supports custom renderers.
 
 ### **Q: Is this a DAW?**
-No — it is a **real-time notation engine**, not an audio workstation.
+No — it is a **real‑time notation engine**, not an audio workstation.
 
 ### **Q: Does it support audio?**
 Not yet — MIDI only.
@@ -106,23 +108,25 @@ MIDI file import is planned for a future version.
 
 ### **Q: Why is the renderer slow on my system?**
 Try:
-- closing GPU-heavy apps  
+- closing GPU‑heavy apps  
 - updating graphics drivers  
 - reducing window size  
 - disabling background processes  
+- using a wired MIDI interface instead of Bluetooth  
 
 ### **Q: Why does the playhead drift?**
 This can happen if:
 - CPU is overloaded  
 - system timer resolution is low  
 - background tasks interrupt timing  
+- OS power‑saving modes are active  
 
 ---
 
 # 🧩 MISCELLANEOUS
 
 ### **Q: Is this project stable?**
-Yes — all core modules are complete and stable.
+Yes — all core modules are complete and stable as of v1.3.0.
 
 ### **Q: Is this suitable for education?**
 Absolutely — it is ideal for:
@@ -133,7 +137,7 @@ Absolutely — it is ideal for:
 
 ### **Q: Is this suitable for research?**
 Yes — the modular architecture is ideal for:
-- real-time systems  
+- real‑time systems  
 - music informatics  
 - HCI research  
 - visualization studies  
@@ -142,4 +146,3 @@ Yes — the modular architecture is ideal for:
 
 # 🎉 More questions?
 Open an Issue or contact the maintainer at **richardpizem@gmail.com**.
-
