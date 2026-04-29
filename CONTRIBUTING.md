@@ -1,9 +1,9 @@
 # 🤝 Contributing to Real-Time MIDI Notation  
-A Complete Guide for Developers, Testers, Musicians & Researchers
+### Ultimate Edition (v1.3.0)
 
-Thank you for your interest in contributing to **Real‑Time MIDI Notation** — the world’s first open‑source prototype of real‑time multi‑track Yamaha‑style notation.  
-Your participation helps shape a tool that has never existed before.
+Thank you for your interest in contributing to **Real‑Time MIDI Notation (SIRIUS Engine)** — the world’s first open‑source real‑time multi‑track Yamaha‑style notation engine.
 
+Your participation helps shape a tool that has never existed before.  
 We welcome **testers, developers, musicians, researchers, UI/UX designers, and anyone** who wants to help improve the project.
 
 ---
@@ -27,12 +27,12 @@ Every test improves accuracy, stability, and cross‑platform compatibility.
 
 ### What to test
 - MIDI input latency  
-- Multi‑track behavior  
-- Rendering performance  
-- Harmony/chord detection  
+- multi‑track behavior  
+- rendering performance  
+- harmony/chord detection  
 - UI responsiveness  
 - Yamaha style compatibility  
-- Any unexpected behavior  
+- any unexpected behavior  
 
 Please report your results in the **Issues** tab.
 
@@ -48,10 +48,10 @@ If you find a bug, inconsistency, or unexpected behavior:
    - OS version  
    - Python version  
    - MIDI device used  
-   - Steps to reproduce  
-   - Screenshots or logs (if possible)
+   - steps to reproduce  
+   - screenshots or logs (if possible)
 
-Clear reports help us fix problems faster.
+Clear reports help us fix problems faster and improve stability across platforms.
 
 ---
 
@@ -69,11 +69,17 @@ We welcome all improvements — from small fixes to major features.
    - screenshots or examples (if relevant)
 
 ### PR Guidelines:
-- Keep code clean and readable  
-- Follow the existing project structure  
-- Comment complex logic  
-- Avoid unnecessary dependencies  
-- Test your changes before submitting  
+- keep code clean and readable  
+- follow the existing project structure  
+- comment complex logic  
+- avoid unnecessary dependencies  
+- test your changes before submitting  
+- ensure no regressions in:
+  - MIDI input  
+  - rendering  
+  - TimelineUI  
+  - TrackManager  
+  - playback timing  
 
 ---
 
@@ -102,28 +108,28 @@ We welcome all improvements — from small fixes to major features.
 
 ## 🟦 Beginner‑Friendly Tasks
 Perfect for newcomers:
-- Improve documentation  
-- Add comments to complex renderer functions  
-- Fix typos or formatting issues  
-- Add simple unit tests  
-- Improve UI labels or text clarity  
+- improve documentation  
+- add comments to complex renderer functions  
+- fix typos or formatting issues  
+- add simple unit tests  
+- improve UI labels or text clarity  
 
 ## 🟩 Intermediate Tasks
 For contributors with some experience:
-- Implement anti‑aliasing  
-- Improve UI animations  
-- Optimize scroll/zoom performance  
-- Add layer toggles (grid, barlines, stems, beams)  
-- Improve track highlighting  
+- implement anti‑aliasing  
+- improve UI animations  
+- optimize scroll/zoom performance  
+- add layer toggles (grid, barlines, stems, beams)  
+- improve track highlighting  
 
 ## 🟥 Advanced Tasks
 For experienced developers:
-- Beam caching  
-- Chord group caching  
+- beam caching  
+- chord group caching  
 - GIF/MP4 export  
-- Extreme MIDI stress testing  
-- Performance profiling (CPU/GPU)  
-- Memory footprint optimization  
+- extreme MIDI stress testing  
+- performance profiling (CPU/GPU)  
+- memory footprint optimization  
 
 ---
 
@@ -131,10 +137,10 @@ For experienced developers:
 
 If you have an idea that could improve the project:
 
-- Open an **Issue** labeled *Feature Request*  
-- Describe the idea clearly  
-- Explain why it would be useful  
-- Include examples or references if possible  
+- open an **Issue** labeled *Feature Request*  
+- describe the idea clearly  
+- explain why it would be useful  
+- include examples or references if possible  
 
 We especially welcome ideas related to:
 
@@ -165,7 +171,7 @@ Everyone is invited to participate.
 
 If you want to discuss ideas or need help, feel free to open an issue or contact the maintainer:
 
-**richardpizem@gmail.com**
+📧 **richardpizem@gmail.com**
 
 Thank you for helping shape the future of this project!  
 Your contribution — even a single test — makes a real difference.
