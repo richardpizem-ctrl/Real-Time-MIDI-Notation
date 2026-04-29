@@ -1,22 +1,22 @@
-# 🎼 Real-Time MIDI Notation  
+# 🎼 Real-Time MIDI Notation — SIRIUS Engine  
 ![SIRIUS Banner](SIRIUS%20PROGRAM%20S%20EM.png)
 
 <!-- SEO: real-time midi notation engine, python midi notation, pygame midi visualizer, multi-track midi, yamaha 16-track, live midi notation, midi to sheet music, real-time midi renderer -->
 
-### **SIRIUS — the brightest star in real‑time MIDI notation**  
-### **Real‑time multi‑track MIDI visualization & notation engine (Python + Pygame)**  
+### ⭐ **SIRIUS — the brightest star in real‑time MIDI notation**  
+### **A next‑generation real‑time multi‑track MIDI notation engine (Python + Pygame)**  
 
 A high‑performance **real‑time MIDI notation engine** with full Yamaha 16‑track support, advanced beams, velocity‑based dynamics, and a fully modular UI.  
-Designed for **live performance**, **music education**, **research**, and **next‑generation MIDI tools**.
+Designed for **live performance**, **music education**, **research**, and **next‑generation MIDI workflows**.
 
 ---
 
-# 📸 Showcase (Community Screenshots)
+# 📸 Showcase  
 ![Real-Time MIDI Notation Screenshot](assets/screenshots/Copilot_20260422_120106.png)
 
 Do you use **SIRIUS / Real-Time MIDI Notation** in your setup?
 
-Feel free to share a screenshot of your workflow, keyboard, studio, or live setup.  
+Share your workflow, keyboard, studio, or live rig.  
 Community examples will be added here (with credit).
 
 👉 Open an Issue titled **“Showcase Submission”** and attach your screenshot.
@@ -55,22 +55,17 @@ Real‑time MIDI systems behave differently on every computer due to variations 
 
 Because of this, **no single developer can reliably test all possible configurations**.
 
-To ensure accuracy and compatibility:
-
 ### ⭐ **Each user is responsible for testing the engine on their own system.**
 
-This is not about avoiding work — it is a **technical necessity**.  
-Real‑time MIDI performance depends heavily on the user’s hardware and environment, and only the user can verify how the engine behaves on their setup.
+If you encounter issues, open a GitHub Issue with:
 
-If you encounter issues, feel free to open an Issue on GitHub with:
-
-- your OS  
+- OS  
 - Python version  
 - MIDI device  
 - steps to reproduce  
-- error logs (if any)
+- error logs  
 
-Community testing ensures the engine remains stable across many environments.
+Community testing ensures stability across many environments.
 
 ---
 
@@ -103,14 +98,18 @@ Before opening a PR:
 - keep real-time code efficient  
 
 ## 🚀 Feature Requests
-If you want to propose a feature, open a **Feature Request** issue.
+Open a **Feature Request** issue.
 
 ---
 
 # 🆕 A New Class of Real‑Time MIDI Engine
 
-**SIRIUS / Real‑Time MIDI Notation** does **not** belong to any existing category of music software.  
-It is not a MIDI visualizer, not an offline notation program, not a DAW plugin, and not a traditional MIDI library.
+**SIRIUS / Real‑Time MIDI Notation** does **not** belong to any existing category of music software.
+
+It is not a MIDI visualizer.  
+It is not an offline notation program.  
+It is not a DAW plugin.  
+It is not a traditional MIDI library.
 
 It represents a **completely new class of software**:
 
@@ -126,7 +125,7 @@ This engine combines features that have never existed together before:
 - architecture optimized for **research, education, live performance, and studio workflows**  
 - no pre‑processing, no look‑ahead, no offline steps  
 
-SIRIUS defines a **new category** of real‑time MIDI tools, complementing traditional offline notation systems (MuseScore, LilyPond, Dorico) and enabling:
+SIRIUS defines a **new category** of real‑time MIDI tools, enabling:
 
 - live notation  
 - real‑time performance analysis  
@@ -160,13 +159,13 @@ Works with any MIDI‑capable instrument, including:
 - Yamaha arranger keyboard users  
 - MIDI debugging & development  
 - research & academic tools  
-- **recording studios needing pre‑recording performance diagnostics**  
+- recording studios needing **pre‑recording performance diagnostics**  
 
 ---
 
 # 🚀 Future Trajectory & Strategic Horizons
 
-SIRIUS is designed as a next‑generation real‑time MIDI engine with a long‑term roadmap extending far beyond visualization.
+SIRIUS is designed as a next‑generation real‑time MIDI engine with a long‑term roadmap.
 
 ## 🤖 AI‑Enhanced Notation
 - predictive quantization  
@@ -211,11 +210,11 @@ Traditional notation engines (MuseScore, LilyPond, Dorico) are **offline engrave
 
 This engine solves:
 
-- **real‑time note grouping**  
-- **real‑time beam detection**  
-- **real‑time velocity dynamics**  
-- **real‑time multi‑track rendering**  
-- **real‑time layout without pre‑analysis**  
+- real‑time note grouping  
+- real‑time beam detection  
+- real‑time velocity dynamics  
+- real‑time multi‑track rendering  
+- real‑time layout without pre‑analysis  
 
 Ideal for:
 
@@ -284,8 +283,6 @@ Includes:
 `multi-track midi`, `midi to sheet music`, `live midi`, `midi processing`,  
 `real-time visualization`, `midi sheet music`, `midi score`,  
 `notation engine`, `real-time notation`, `music education`
-
-<!-- SEO: real-time midi engine, live midi score, python pygame midi notation, yamaha midi analyzer, midi research tool -->
 
 ---
 
