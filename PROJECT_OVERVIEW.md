@@ -1,7 +1,7 @@
-# 🎼 Real-Time MIDI Notation — Project Overview (Ultimate Edition)
+# 🎼 Real-Time MIDI Notation — Project Overview (Ultimate Edition, v1.3.0)
 
 This document serves as the **official architecture guide, technical overview, and system documentation** for the  
-**Real-Time MIDI Notation** project — a professional real‑time multi‑track MIDI visualization and notation engine.
+**Real-Time MIDI Notation (SIRIUS Engine)** — a professional real‑time multi‑track MIDI visualization and notation engine.
 
 The goal of the project is to create a tool that:
 
@@ -16,30 +16,30 @@ The goal of the project is to create a tool that:
 
 # 🆕 A New Class of Real‑Time MIDI Engine
 
-**SIRIUS / Real‑Time MIDI Notation** nepatrí do žiadnej existujúcej kategórie softvéru.  
-Nie je to MIDI vizualizér, nie je to offline notátor, nie je to DAW plugin a nie je to tradičná MIDI knižnica.
+**SIRIUS / Real‑Time MIDI Notation** does not belong to any existing category of music software.  
+It is not a MIDI visualizer, not an offline notation editor, not a DAW plugin, and not a traditional MIDI library.
 
-Predstavuje **úplne novú triedu softvéru**, ktorá doteraz v hudobnej technológii neexistovala:
+It represents a **completely new class of software**:
 
-### **Real‑Time Multi‑Track MIDI Notation Engine**
+## ⭐ Real‑Time Multi‑Track MIDI Notation Engine
 
-Tento typ softvéru kombinuje vlastnosti, ktoré sa nikdy predtým nevyskytli spolu:
+This engine combines features that have never existed together before:
 
-- plne **real‑time** spracovanie MIDI udalostí  
-- **16‑track Yamaha kompatibilný** multi‑track engine  
-- okamžitá grafická notácia (beams, stems, barlines)  
-- **velocity‑based** dynamika v reálnom čase  
-- modulárny grafický renderer (Python + Pygame)  
-- architektúra optimalizovaná pre **výskum, výučbu, živé hranie a štúdiá**  
-- žiadne predspracovanie, žiadna analýza dopredu, žiadne offline kroky  
+- fully **real‑time** MIDI processing  
+- **Yamaha‑compatible 16‑track** architecture  
+- instant graphical notation (beams, stems, barlines)  
+- **velocity‑based** dynamics  
+- modular graphic renderer (Python + Pygame)  
+- architecture optimized for **research, education, live performance, and studio workflows**  
+- no preprocessing, no look‑ahead, no offline steps  
 
-SIRIUS tým definuje **novú kategóriu real‑time MIDI nástrojov**, ktorá dopĺňa tradičné offline notátory (MuseScore, LilyPond, Dorico) a otvára priestor pre:
+SIRIUS defines a **new category** of real‑time MIDI tools, complementing traditional offline notation systems (MuseScore, LilyPond, Dorico) and enabling:
 
-- živú notáciu  
-- real‑time analýzu výkonu  
-- výskum expresivity  
-- štúdiové pred‑nahrávacie nástroje  
-- vizualizáciu pre hudobnú pedagogiku  
+- live notation  
+- real‑time performance analysis  
+- expressive timing research  
+- pre‑recording studio diagnostics  
+- educational visualization  
 
 ---
 
@@ -75,22 +75,21 @@ This modular structure ensures:
 - mute / solo / volume / pan  
 - record arm  
 - real‑time activity (peak meter)  
-- DAW‑style logic for routing MIDI events  
+- DAW‑style routing logic  
 - track color + visibility management  
 
 ---
 
 ## **GraphicNotationRenderer (`renderer/graphic_notation_renderer.py`)**
 - real‑time note rendering  
-- heatmap colors + velocity shading  
+- velocity shading  
 - barlines, grid, timeline ruler  
 - real‑time playhead  
 - chord grouping  
-- beam detection (8th, 16th)  
+- beam detection  
 - dynamic stems  
 - zoom + scroll  
 - optimized staff caching  
-- fully stabilized  
 
 ---
 
@@ -221,7 +220,7 @@ Planned features include:
 
 ---
 
-# 🏁 6. Project Status
+# 🏁 6. Project Status (v1.3.0)
 
 All major modules are **finished and stable**:
 
@@ -230,6 +229,7 @@ All major modules are **finished and stable**:
 - TrackManager — ✔ final  
 - PlaybackEngine — ✔ final  
 - run.py — ✔ final integration  
+- TimelineUI — ✔ finalized in v1.3.0  
 
 The project is ready for large‑scale testing and expansion.
 
@@ -308,9 +308,8 @@ UIManager handles:
 GraphicNotationRenderer:
 
 - draws notes along the timeline  
-- uses heatmap colors  
-- displays velocity  
-- draws barlines  
+- uses velocity shading  
+- displays barlines  
 - scrolls notes with the playhead  
 - groups chords and beams  
 
