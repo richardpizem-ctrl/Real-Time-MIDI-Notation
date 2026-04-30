@@ -19,8 +19,8 @@ Prepojenia:
 """
 
 import pygame
-import math
 import time
+from typing import Dict, Tuple, Any
 
 
 class NoteVisualizerUI:
@@ -29,16 +29,16 @@ class NoteVisualizerUI:
     Každá nota vytvorí farebný pulz, ktorý postupne mizne.
     """
 
-    def __init__(self, width=1400, height=200):
-        self.width = width
-        self.height = height
+    def __init__(self, width: int = 1400, height: int = 200) -> None:
+        self.width = int(width)
+        self.height = int(height)
 
         # aktívne pulzy: midi -> {color, timestamp}
-        self.active_notes = {}
+        self.active_notes: Dict[int, Dict[str, Any]] = {}
 
         # BPM pulz
-        self.bpm = 120
-        self.last_pulse_time = time.time()
+        self.bpm: int = 120
+        self.last_pulse_time: float = time.time()
 
         pygame.font.init()
         try:
@@ -49,31 +49,35 @@ class NoteVisualizerUI:
     # ---------------------------------------------------------
     # PUBLIC API (pre UIManager – bezpečné no-op metódy)
     # ---------------------------------------------------------
-    def update_color(self, track_index: int, color_hex: str):
+    def update_color(self, track_index: int, color_hex: str) -> None:
         return
 
-    def update_visibility(self, track_index: int, visible: bool):
+    def update_visibility(self, track_index: int, visible: bool) -> None:
         return
 
-    def set_active_track(self, track_index: int):
+    def set_active_track(self, track_index: int) -> None:
         return
 
     # ---------------------------------------------------------
     # BPM PULSE
     # ---------------------------------------------------------
-    def update_bpm_pulse(self, bpm, timestamp):
+    def update_bpm_pulse(self, bpm: float, timestamp: float) -> None:
         """Aktualizuje BPM pulz (volané z UIManager)."""
         try:
             self.bpm = max(1, int(bpm))
         except Exception:
             self.bpm = 120
 
-        self.last_pulse_time = timestamp
+        # timestamp očakávame v sekundách (float)
+        try:
+            self.last_pulse_time = float(timestamp)
+        except Exception:
+            self.last_pulse_time = time.time()
 
     # ---------------------------------------------------------
     # NOTE EVENTS
     # ---------------------------------------------------------
-    def on_note(self, event):
+    def on_note(self, event: Dict[str, Any]) -> None:
         """
         event:
             note
@@ -84,24 +88,37 @@ class NoteVisualizerUI:
         if midi is None:
             return
 
+        try:
+            midi_int = int(midi)
+        except Exception:
+            return
+
         color = event.get("track_color", (255, 80, 80))
-        if not isinstance(color, (tuple, list)) or len(color) != 3:
+        if (
+            not isinstance(color, (tuple, list))
+            or len(color) != 3
+        ):
             color = (255, 80, 80)
 
-        self.active_notes[midi] = {
-            "color": color,
-            "timestamp": time.time()
+        self.active_notes[midi_int] = {
+            "color": tuple(color),
+            "timestamp": time.time(),
         }
 
-    def on_note_off(self, event):
+    def on_note_off(self, event: Dict[str, Any]) -> None:
         midi = event.get("note")
-        if midi in self.active_notes:
-            del self.active_notes[midi]
+        try:
+            midi_int = int(midi)
+        except Exception:
+            return
+
+        if midi_int in self.active_notes:
+            del self.active_notes[midi_int]
 
     # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
-    def draw(self, surface):
+    def draw(self, surface: pygame.Surface) -> None:
         if surface is None:
             return
 
@@ -115,17 +132,25 @@ class NoteVisualizerUI:
 
         # pozadie pulzu
         bg_intensity = int(beat_strength * 40)
-        pygame.draw.rect(surface, (bg_intensity, bg_intensity, bg_intensity),
-                         (0, 0, self.width, self.height))
+        pygame.draw.rect(
+            surface,
+            (bg_intensity, bg_intensity, bg_intensity),
+            (0, 0, self.width, self.height),
+        )
 
         # NOTE PULZY
-        for midi, data in list(self.active_notes.items()):
-            color = data.get("color", (255, 80, 80))
-            t = data.get("timestamp", now)
+        # iterujeme cez kľúče, aby mazanie bolo lacnejšie
+        for midi in list(self.active_notes):
+            data = self.active_notes.get(midi)
+            if not data:
+                continue
+
+            color: Tuple[int, int, int] = data.get("color", (255, 80, 80))
+            t: float = data.get("timestamp", now)
 
             fade = max(0.0, 1.0 - (now - t) * 1.2)
 
-            if fade <= 0:
+            if fade <= 0.0:
                 del self.active_notes[midi]
                 continue
 
@@ -146,6 +171,10 @@ class NoteVisualizerUI:
             pygame.draw.circle(surface, pulsed_color, (x, y), radius)
 
         # oddelovacia čiara
-        pygame.draw.line(surface, (80, 80, 80),
-                         (0, self.height - 2),
-                         (self.width, self.height - 2), 2)
+        pygame.draw.line(
+            surface,
+            (80, 80, 80),
+            (0, self.height - 2),
+            (self.width, self.height - 2),
+            2,
+        )
