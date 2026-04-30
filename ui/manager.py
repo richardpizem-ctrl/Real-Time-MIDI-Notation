@@ -18,8 +18,8 @@ from renderer.exporter import export_to_png
 
 class UIManager:
     def __init__(self, width, height, track_system, notation_processor):
-        self.width = width
-        self.height = height
+        self.width = int(width)
+        self.height = int(height)
         self.track_system = track_system
         self.notation_processor = notation_processor
 
@@ -36,7 +36,7 @@ class UIManager:
         # ---------------------------------------------------------
         # TRANSPORT
         # ---------------------------------------------------------
-        self.transport = TransportUI(width, 50)
+        self.transport = TransportUI(self.width, 50)
         self.is_playing = False
         self.play_start_time = 0
         self.current_time_ms = 0
@@ -45,7 +45,7 @@ class UIManager:
         # RENDERER (musí byť vytvorený PRED TimelineUI)
         # ---------------------------------------------------------
         self.renderer = GraphicNotationRenderer(
-            width,
+            self.width,
             200,
             track_system,
             self.track_control,
@@ -57,7 +57,7 @@ class UIManager:
         self.timeline = TimelineUI(
             x=0,
             y=50,
-            width=width,
+            width=self.width,
             height=80,
             event_bus=track_system.event_bus,
             renderer=self.renderer,
@@ -69,7 +69,7 @@ class UIManager:
         self.track_switcher = TrackSwitcherUI(
             x=0,
             y=130,
-            width=width,
+            width=self.width,
             height=60,
             track_colors=None,
             event_bus=track_system.event_bus,
@@ -81,17 +81,17 @@ class UIManager:
         # ---------------------------------------------------------
         self.track_selector = TrackSelectorUI(
             track_control_manager=self.track_control,
-            width=width,
+            width=self.width,
             height=60,
         )
 
         # ---------------------------------------------------------
         # UI PANELY
         # ---------------------------------------------------------
-        self.piano = PianoUI(width, 180)
-        self.piano_roll = PianoRollUI(width, 180)
-        self.staff = StaffUI(width, 200)
-        self.visualizer = NoteVisualizerUI(width, 200)
+        self.piano = PianoUI(self.width, 180)
+        self.piano_roll = PianoRollUI(self.width, 180)
+        self.staff = StaffUI(self.width, 200)
+        self.visualizer = NoteVisualizerUI(self.width, 200)
 
         # ---------------------------------------------------------
         # TRACK INSPECTOR
@@ -121,6 +121,11 @@ class UIManager:
 
         self.export_button_rect = pygame.Rect(self.width - 120, 10, 110, 35)
         self.export_font = pygame.font.SysFont("Arial", 20)
+
+        # Legend
+        self.legend_font = pygame.font.SysFont("Arial", 18)
+        self.legend_x = 20
+        self.legend_y = self.height - 160
 
     # ---------------------------------------------------------
     # CANVAS
@@ -193,24 +198,24 @@ class UIManager:
         # Quantization shortcuts
         if event.type == pygame.KEYDOWN:
             updated = False
-            if event.key == pygame.K_1:
-                self.quantize_division = 1.0
-                updated = True
-            elif event.key == pygame.K_2:
-                self.quantize_division = 0.5
-                updated = True
-            elif event.key == pygame.K_3:
-                self.quantize_division = 0.25
-                updated = True
-            elif event.key == pygame.K_4:
-                self.quantize_division = 0.125
+
+            quant_map = {
+                pygame.K_1: 1.0,
+                pygame.K_2: 0.5,
+                pygame.K_3: 0.25,
+                pygame.K_4: 0.125,
+            }
+            swing_map = {
+                pygame.K_q: 0.0,
+                pygame.K_w: 0.3,
+            }
+
+            if event.key in quant_map:
+                self.quantize_division = quant_map[event.key]
                 updated = True
 
-            if event.key == pygame.K_q:
-                self.swing_amount = 0.0
-                updated = True
-            elif event.key == pygame.K_w:
-                self.swing_amount = 0.3
+            if event.key in swing_map:
+                self.swing_amount = swing_map[event.key]
                 updated = True
 
             if updated:
@@ -302,8 +307,10 @@ class UIManager:
     def draw(self, surface):
         self._update_time()
 
-        # Prepočítať layout
-        self.layout = self.layout_engine.compute_layout(self.width, self.height)
+        if not self.layout:
+            self.layout = self.layout_engine.compute_layout(self.width, self.height)
+
+        active_track = self.track_control.get_active_track()
 
         # TRANSPORT
         try:
@@ -325,7 +332,7 @@ class UIManager:
             r = self.layout["track_switcher"]
             self.track_switcher.draw(
                 surface.subsurface((r.x, r.y, r.w, r.h)),
-                active_track=self.track_control.get_active_track(),
+                active_track=active_track,
             )
         except Exception:
             pass
@@ -335,7 +342,7 @@ class UIManager:
             r = self.layout["track_selector"]
             self.track_selector.draw(
                 surface.subsurface((r.x, r.y, r.w, r.h)),
-                active_track=self.track_control.get_active_track(),
+                active_track=active_track,
             )
         except Exception:
             pass
@@ -390,37 +397,35 @@ class UIManager:
         # ---------------------------------------------------------
         # FAREBNÁ LEGENDA (ŽLTÁ / ZELENÁ / ČERVENÁ / MODRÁ)
         # ---------------------------------------------------------
-        legend_x = 20
-        legend_y = self.height - 160
-        legend_font = pygame.font.SysFont("Arial", 18)
-
         try:
+            legend_x = self.legend_x
+            legend_y = self.legend_y
             pygame.draw.rect(surface, (25, 25, 25), (legend_x - 10, legend_y - 10, 260, 150))
 
-            title = legend_font.render("Dynamika / Chyby", True, (255, 255, 255))
+            title = self.legend_font.render("Dynamika / Chyby", True, (255, 255, 255))
             surface.blit(title, (legend_x, legend_y))
 
             pygame.draw.rect(surface, (255, 220, 0), (legend_x, legend_y + 30, 20, 20))
             surface.blit(
-                legend_font.render("Slabá (1–50)", True, (255, 255, 255)),
+                self.legend_font.render("Slabá (1–50)", True, (255, 255, 255)),
                 (legend_x + 30, legend_y + 30),
             )
 
             pygame.draw.rect(surface, (0, 200, 0), (legend_x, legend_y + 60, 20, 20))
             surface.blit(
-                legend_font.render("Stredná (51–90)", True, (255, 255, 255)),
+                self.legend_font.render("Stredná (51–90)", True, (255, 255, 255)),
                 (legend_x + 30, legend_y + 60),
             )
 
             pygame.draw.rect(surface, (255, 60, 60), (legend_x, legend_y + 90, 20, 20))
             surface.blit(
-                legend_font.render("Silná (91–127)", True, (255, 255, 255)),
+                self.legend_font.render("Silná (91–127)", True, (255, 255, 255)),
                 (legend_x + 30, legend_y + 90),
             )
 
             pygame.draw.rect(surface, (0, 120, 255), (legend_x, legend_y + 120, 20, 20))
             surface.blit(
-                legend_font.render("Chyba (error)", True, (255, 255, 255)),
+                self.legend_font.render("Chyba (error)", True, (255, 255, 255)),
                 (legend_x + 30, legend_y + 120),
             )
         except Exception:
