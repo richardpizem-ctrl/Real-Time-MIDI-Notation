@@ -2,13 +2,15 @@
 timeline_events.py
 Event handling module for the Timeline UI.
 
-This module defines all event types and event dispatching logic
-used by timeline_ui.py, timeline_controller.py and timeline_renderer.py.
+Defines all event types and dispatching logic used by:
+- timeline_ui.py
+- timeline_controller.py
+- timeline_renderer.py
 """
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Callable, Dict, Any
 
 
 # ------------------------------------------------------------
@@ -33,7 +35,7 @@ class TimelineEventType(Enum):
 # EVENT DATA STRUCTURES
 # ------------------------------------------------------------
 
-@dataclass
+@dataclass(slots=True)
 class TimelineEvent:
     """Generic event object passed between UI and controller."""
     event_type: TimelineEventType
@@ -42,7 +44,7 @@ class TimelineEvent:
     marker_id: Optional[int] = None              # affected marker
     text: Optional[str] = None                   # rename text, etc.
     zoom_factor: Optional[float] = None          # zoom in/out
-    raw_event: Optional[object] = None           # original UI event (mouse, key, etc.)
+    raw_event: Optional[Any] = None              # original UI event (mouse, key, etc.)
 
 
 # ------------------------------------------------------------
@@ -55,45 +57,29 @@ class TimelineEventDispatcher:
     timeline_ui.py → TimelineEventDispatcher → timeline_controller.py
     """
 
-    def __init__(self, controller):
+    def __init__(self, controller: Any):
         self.controller = controller
+
+        # Pre‑computed dispatch table (rýchlejšie ako if‑elif reťazec)
+        self._handlers: Dict[TimelineEventType, Callable[[TimelineEvent], None]] = {
+            TimelineEventType.CLICK: controller.on_click,
+            TimelineEventType.DOUBLE_CLICK: controller.on_double_click,
+            TimelineEventType.DRAG_START: controller.on_drag_start,
+            TimelineEventType.DRAG_MOVE: controller.on_drag_move,
+            TimelineEventType.DRAG_END: controller.on_drag_end,
+            TimelineEventType.MARKER_ADD: controller.on_marker_add,
+            TimelineEventType.MARKER_DELETE: controller.on_marker_delete,
+            TimelineEventType.MARKER_MOVE: controller.on_marker_move,
+            TimelineEventType.MARKER_RENAME: controller.on_marker_rename,
+            TimelineEventType.ZOOM: controller.on_zoom,
+            TimelineEventType.SCROLL: controller.on_scroll,
+        }
 
     def dispatch(self, event: TimelineEvent):
         """Route event to the correct controller method."""
-        et = event.event_type
+        handler = self._handlers.get(event.event_type)
 
-        if et == TimelineEventType.CLICK:
-            self.controller.on_click(event)
-
-        elif et == TimelineEventType.DOUBLE_CLICK:
-            self.controller.on_double_click(event)
-
-        elif et == TimelineEventType.DRAG_START:
-            self.controller.on_drag_start(event)
-
-        elif et == TimelineEventType.DRAG_MOVE:
-            self.controller.on_drag_move(event)
-
-        elif et == TimelineEventType.DRAG_END:
-            self.controller.on_drag_end(event)
-
-        elif et == TimelineEventType.MARKER_ADD:
-            self.controller.on_marker_add(event)
-
-        elif et == TimelineEventType.MARKER_DELETE:
-            self.controller.on_marker_delete(event)
-
-        elif et == TimelineEventType.MARKER_MOVE:
-            self.controller.on_marker_move(event)
-
-        elif et == TimelineEventType.MARKER_RENAME:
-            self.controller.on_marker_rename(event)
-
-        elif et == TimelineEventType.ZOOM:
-            self.controller.on_zoom(event)
-
-        elif et == TimelineEventType.SCROLL:
-            self.controller.on_scroll(event)
-
+        if handler:
+            handler(event)
         else:
-            print(f"[TimelineEventDispatcher] Unknown event: {et}")
+            print(f"[TimelineEventDispatcher] Unknown event: {event.event_type}")
