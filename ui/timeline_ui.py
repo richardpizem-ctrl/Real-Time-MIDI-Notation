@@ -373,8 +373,11 @@ class TimelineUI:
 
         pygame.draw.rect(surface, (35, 35, 40), (self.x, ruler_y, self.width, ruler_h))
 
-        start_beat = layout.pixel_to_beat(self.scroll_x)
-        end_beat = layout.pixel_to_beat(self.scroll_x + self.width)
+        pixel_to_beat = layout.pixel_to_beat
+        beat_to_pixel = layout.beat_to_pixel
+
+        start_beat = pixel_to_beat(self.scroll_x)
+        end_beat = pixel_to_beat(self.scroll_x + self.width)
 
         start_beat = int(start_beat) - 2
         end_beat = int(end_beat) + 2
@@ -383,7 +386,7 @@ class TimelineUI:
             if beat < 0:
                 continue
 
-            px = self.x + layout.beat_to_pixel(beat) - self.scroll_x
+            px = self.x + beat_to_pixel(beat) - self.scroll_x
 
             if beat % beats_per_bar == 0:
                 pygame.draw.line(surface, (180, 180, 190), (px, ruler_y), (px, ruler_y + ruler_h), 2)
@@ -507,7 +510,7 @@ class TimelineUI:
 
         base_r, base_g, base_b = self.playhead_color
         t = pygame.time.get_ticks()
-        pulse = 0.15 + 0.15 * math.sin(t / 250.0)
+        pulse = 0.15 + 0.15 * math.sin(t * 0.004)
         factor = 1.0 + (0.5 if self.playhead_hover else 0.25) * pulse
         r = max(0, min(255, int(base_r * factor)))
         g = max(0, min(255, int(base_g * factor)))
@@ -576,7 +579,8 @@ class TimelineUI:
             is_hover = (self.hover_marker_index == i)
             if is_hover:
                 hover_rect = rect.inflate(6, 4)
-                pygame.draw.rect(surface, (255, 255, 255), hover_rect, 1, border_radius=3)
+                if hover_rect.w > 0 and hover_rect.h > 0:
+                    pygame.draw.rect(surface, (255, 255, 255), hover_rect, 1, border_radius=3)
 
             pygame.draw.polygon(
                 surface,
