@@ -158,7 +158,7 @@ class UIManager:
         # Timeline
         try:
             self.timeline.handle_event(event)
-        except:
+        except Exception:
             pass
 
         # Export + Track switcher + Track selector + Track inspector
@@ -175,19 +175,19 @@ class UIManager:
                 result = self.track_switcher.handle_event(event)
                 if isinstance(result, dict) and "selected_track" in result:
                     self.track_control.set_active_track(result["selected_track"])
-            except:
+            except Exception:
                 pass
 
             # Track Selector
             try:
                 self.track_selector.handle_click(event.pos)
-            except:
+            except Exception:
                 pass
 
             # Track Inspector
             try:
                 self.track_inspector.handle_event(event)
-            except:
+            except Exception:
                 pass
 
         # Quantization shortcuts
@@ -233,7 +233,7 @@ class UIManager:
 
             try:
                 self.renderer.set_playback_time(total_ms / 1000.0)
-            except:
+            except Exception:
                 pass
 
     # ---------------------------------------------------------
@@ -241,30 +241,46 @@ class UIManager:
     # ---------------------------------------------------------
     def _on_track_selected(self, data):
         track = data.get("track", 0)
-        try: self.track_selector.set_active_track(track)
-        except: pass
-        try: self.track_switcher.set_active_track(track)
-        except: pass
-        try: self.track_inspector.set_active_track(track)
-        except: pass
+        try:
+            self.track_selector.set_active_track(track)
+        except Exception:
+            pass
+        try:
+            self.track_switcher.set_active_track(track)
+        except Exception:
+            pass
+        try:
+            self.track_inspector.set_active_track(track)
+        except Exception:
+            pass
 
     def _on_visibility_changed(self, data):
         track = data.get("track", 0)
         visible = data.get("visible", True)
-        try: self.track_switcher.update_visibility(track, visible)
-        except: pass
-        try: self.renderer.update_visibility(track, visible)
-        except: pass
+        try:
+            self.track_switcher.update_visibility(track, visible)
+        except Exception:
+            pass
+        try:
+            self.renderer.update_visibility(track, visible)
+        except Exception:
+            pass
 
     def _on_color_changed(self, data):
         track = data.get("track", 0)
         color = data.get("color", "#FFFFFF")
-        try: self.track_switcher.update_color(track, color)
-        except: pass
-        try: self.renderer.update_color(track, color)
-        except: pass
-        try: self.track_inspector.update_color(track, color)
-        except: pass
+        try:
+            self.track_switcher.update_color(track, color)
+        except Exception:
+            pass
+        try:
+            self.renderer.update_color(track, color)
+        except Exception:
+            pass
+        try:
+            self.track_inspector.update_color(track, color)
+        except Exception:
+            pass
 
     # ---------------------------------------------------------
     # QUANTIZATION → CANVAS
@@ -277,7 +293,7 @@ class UIManager:
                 self.canvas_ui.set_quantization(self.quantize_division)
             if hasattr(self.canvas_ui, "set_swing"):
                 self.canvas_ui.set_swing(self.swing_amount)
-        except:
+        except Exception:
             pass
 
     # ---------------------------------------------------------
@@ -293,7 +309,7 @@ class UIManager:
         try:
             r = self.layout["transport"]
             self.transport.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
-        except:
+        except Exception:
             pass
 
         # TIMELINE
@@ -301,7 +317,7 @@ class UIManager:
             r = self.layout["timeline"]
             self.timeline.set_bounds(r.x, r.y, r.w, r.h)
             self.timeline.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
-        except:
+        except Exception:
             pass
 
         # TRACK SWITCHER
@@ -311,7 +327,7 @@ class UIManager:
                 surface.subsurface((r.x, r.y, r.w, r.h)),
                 active_track=self.track_control.get_active_track(),
             )
-        except:
+        except Exception:
             pass
 
         # TRACK SELECTOR
@@ -321,28 +337,28 @@ class UIManager:
                 surface.subsurface((r.x, r.y, r.w, r.h)),
                 active_track=self.track_control.get_active_track(),
             )
-        except:
+        except Exception:
             pass
 
         # PIANO
         try:
             r = self.layout["piano"]
             self.piano.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
-        except:
+        except Exception:
             pass
 
         # PIANO ROLL
         try:
             r = self.layout["piano_roll"]
             self.piano_roll.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
-        except:
+        except Exception:
             pass
 
         # STAFF
         try:
             r = self.layout["staff"]
             self.staff.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
-        except:
+        except Exception:
             pass
 
         # VISUALIZER
@@ -351,21 +367,24 @@ class UIManager:
             timestamp = pygame.time.get_ticks() / 1000.0
             self.visualizer.update_bpm_pulse(self.transport.bpm, timestamp)
             self.visualizer.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
-        except:
+        except Exception:
             pass
 
         # RENDERER
         try:
             r = self.layout["renderer"]
-            self.renderer.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
-        except:
+            target = surface.subsurface((r.x, r.y, r.w, r.h))
+            rendered = self.renderer.render()
+            if rendered is not None:
+                target.blit(rendered, (0, 0))
+        except Exception:
             pass
 
         # TRACK INSPECTOR
         try:
             r = self.layout["track_inspector"]
             self.track_inspector.draw(surface.subsurface((r.x, r.y, r.w, r.h)))
-        except:
+        except Exception:
             pass
 
         # ---------------------------------------------------------
@@ -404,7 +423,7 @@ class UIManager:
                 legend_font.render("Chyba (error)", True, (255, 255, 255)),
                 (legend_x + 30, legend_y + 120),
             )
-        except:
+        except Exception:
             pass
 
         # ---------------------------------------------------------
