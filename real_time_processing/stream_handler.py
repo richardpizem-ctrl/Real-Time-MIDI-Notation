@@ -102,11 +102,15 @@ class StreamHandler:
             print(f"[StreamHandler] MIDI poll error: {e}")
             return
 
-        # Read (max 32 naraz, ale my limitujeme spracovanie)
+        # Read (max 32 naraz)
         try:
             events = self.midi_input.read(32)
         except Exception as e:
             print(f"[StreamHandler] MIDI read error: {e}")
+            return
+
+        # Stuck‑poll protection
+        if not events:
             return
 
         # -----------------------------------------------------
@@ -123,7 +127,7 @@ class StreamHandler:
                 print(f"[StreamHandler] Nevalidný MIDI event: {event}")
                 continue
 
-            data, timestamp = event
+            data, timestamp_raw = event
 
             if not isinstance(data, (list, tuple)) or len(data) < 3:
                 print(f"[StreamHandler] Nevalidné MIDI dáta: {data}")
@@ -155,11 +159,10 @@ class StreamHandler:
             elif status_type == 0xB0:
                 event_type = "control_change"
             else:
-                # Unknown or unsupported message
                 continue
 
             # -------------------------------------------------
-            # BUILD EVENT DICT
+            # BUILD EVENT DICT (timestamp = perf_counter)
             # -------------------------------------------------
             midi_event: Dict[str, Any] = {
                 "type": event_type,
@@ -167,7 +170,7 @@ class StreamHandler:
                 "note": note,
                 "velocity": velocity,
                 "channel": channel,
-                "time": timestamp
+                "time": time.perf_counter()
             }
 
             # -------------------------------------------------
