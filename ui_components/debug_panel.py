@@ -10,8 +10,8 @@ class DebugPanel:
     FÁZA 4 – Stabilizovaná verzia
 
     Účel:
-        - Bezpečné logovanie MIDI udalostí (MIDI events)
-        - Logovanie pipeline krokov (pipeline stages)
+        - Bezpečné logovanie MIDI udalostí
+        - Logovanie pipeline krokov
         - Jednotné error logovanie
         - Možnosť zapnúť/vypnúť debug mód
         - Bezpečné formátovanie objektov
@@ -23,17 +23,20 @@ class DebugPanel:
     """
 
     def __init__(self, enabled: bool = True, print_enabled: bool = True) -> None:
-        self.enabled = enabled
-        self.print_enabled = print_enabled
-        Logger.info("DebugPanel initialized.")
+        self.enabled = bool(enabled)
+        self.print_enabled = bool(print_enabled)
+
+        if self.enabled:
+            Logger.info("DebugPanel initialized.")
 
     # ---------------------------------------------------------
     # ENABLE / DISABLE
     # ---------------------------------------------------------
-    def toggle(self) -> None:
-        """Prepína stav debug panelu (toggle debug panel)."""
+    def toggle(self) -> bool:
+        """Prepína stav debug panelu a vráti nový stav."""
         self.enabled = not self.enabled
         Logger.info(f"DebugPanel toggled: {self.enabled}")
+        return self.enabled
 
     # ---------------------------------------------------------
     # MIDI EVENT LOGGING
@@ -76,13 +79,15 @@ class DebugPanel:
     # ---------------------------------------------------------
     # ERROR LOGGING
     # ---------------------------------------------------------
-    def log_error(self, message: str) -> None:
+    def log_error(self, message: Any) -> None:
         """Loguje chybu (error)."""
         try:
-            if self.print_enabled:
-                print(f"[ERROR] {message}")
+            safe_msg = self._safe_format(message)
 
-            Logger.error(f"DebugPanel error: {message}")
+            if self.print_enabled:
+                print(f"[ERROR] {safe_msg}")
+
+            Logger.error(f"DebugPanel error: {safe_msg}")
 
         except Exception as e:
             Logger.error(f"DebugPanel logging failure: {e}")
