@@ -36,6 +36,10 @@ class TimelineLayer(BaseLayer):
         if self.controller is None:
             return
 
+        # 🔒 Odporúčaná ochrana (pridané)
+        if surface is None:
+            return
+
         try:
             # Grid
             self.controller.draw_grid(surface)
