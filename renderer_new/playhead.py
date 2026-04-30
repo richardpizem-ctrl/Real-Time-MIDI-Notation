@@ -29,20 +29,41 @@ class Playhead:
         pixels_per_beat: int = 100
     ) -> None:
 
-        self.height = height
+        self.height = max(1, int(height))
         self.color = color
 
         self.bpm = max(1.0, float(bpm))
         self.beats_per_bar = max(1, int(beats_per_bar))
         self.pixels_per_beat = max(1, int(pixels_per_beat))
 
-        # Zoom + offset (doplnene)
+        # Zoom + offset
         self.zoom = 1.0
         self.offset_x = 0
 
         self.x = 0  # aktuálna pozícia playheadu v pixeloch
 
+        # Cache pre glow surface (optimalizácia)
+        self._glow_surface: pygame.Surface | None = None
+        self._rebuild_glow_surface()
+
         Logger.info("Playhead initialized.")
+
+    # ---------------------------------------------------------
+    # INTERNAL HELPERS
+    # ---------------------------------------------------------
+    def _rebuild_glow_surface(self) -> None:
+        """Vytvorí alebo obnoví glow surface podľa aktuálnej výšky a farby."""
+        try:
+            self._glow_surface = pygame.Surface((6, self.height), pygame.SRCALPHA)
+            pygame.draw.rect(
+                self._glow_surface,
+                (*self.color, 70),
+                self._glow_surface.get_rect(),
+                border_radius=3
+            )
+        except Exception:
+            self._glow_surface = None
+            Logger.error("Playhead _rebuild_glow_surface error.")
 
     # ---------------------------------------------------------
     # SETTERS (pre PixelLayoutEngine / TransportUI / TimelineUI)
@@ -50,6 +71,7 @@ class Playhead:
     def set_height(self, height: int) -> None:
         try:
             self.height = max(1, int(height))
+            self._rebuild_glow_surface()
         except Exception:
             Logger.error("Playhead set_height error.")
 
@@ -110,11 +132,13 @@ class Playhead:
         """
         Vykreslí playhead na daný surface (render playhead).
         """
+        if surface is None:
+            return
+
         try:
-            # Glow efekt (jemný)
-            glow = pygame.Surface((6, self.height), pygame.SRCALPHA)
-            pygame.draw.rect(glow, (*self.color, 70), glow.get_rect(), border_radius=3)
-            surface.blit(glow, (self.x - 3, 0))
+            # Glow efekt (použije cache, ak existuje)
+            if self._glow_surface is not None:
+                surface.blit(self._glow_surface, (self.x - 3, 0))
 
             # Hlavná čiara
             pygame.draw.line(
