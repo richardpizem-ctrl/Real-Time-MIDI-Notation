@@ -16,7 +16,8 @@ class DeviceManager:
     def scan_devices(self):
         """Scan available MIDI input devices."""
         try:
-            self.devices = mido.get_input_names()
+            # Strip whitespace – niektoré drivery vracajú trailing spaces
+            self.devices = [d.strip() for d in mido.get_input_names()]
 
             if not self.devices:
                 Logger.info("No MIDI devices found.")
@@ -43,9 +44,11 @@ class DeviceManager:
                 Logger.error(f"Device '{device_name}' not found.")
                 return None
 
-            self.selected_device = device_name
-            Logger.info(f"Selected MIDI device: {device_name}")
-            return device_name
+            # Pretypovanie pre robustnosť
+            self.selected_device = str(device_name)
+
+            Logger.info(f"Selected MIDI device: {self.selected_device}")
+            return self.selected_device
 
         except Exception as e:
             Logger.error(f"Device selection error: {e}")
@@ -61,7 +64,12 @@ class DeviceManager:
                 Logger.error("No MIDI device selected.")
                 return None
 
-            port = mido.open_input(self.selected_device)
+            try:
+                port = mido.open_input(self.selected_device)
+            except IOError:
+                Logger.error("Device busy or locked by another application.")
+                return None
+
             Logger.info(f"MIDI device opened: {self.selected_device}")
             return port
 
