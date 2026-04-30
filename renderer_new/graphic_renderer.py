@@ -126,10 +126,10 @@ class GraphicNotationRenderer:
         # 2) Notes
         self.layers.add_layer(NotesLayer())
 
-        # 3) Playhead overlay (ak chceš extra vrstvu, nechávam tu)
+        # 3) Playhead overlay
         self.layers.add_layer(PlayheadLayer())
 
-        # 4) Markers overlay (ak budeš mať samostatný renderer)
+        # 4) Markers overlay
         self.layers.add_layer(MarkerLayer())
 
     # ---------------------------------------------------------
@@ -156,6 +156,11 @@ class GraphicNotationRenderer:
             return
         if b > 0:
             self.bpm = b
+            if self.timeline_controller is not None:
+                try:
+                    self.timeline_controller.set_bpm(self.bpm)
+                except Exception:
+                    pass
 
     def set_zoom(self, zoom: float) -> None:
         try:
