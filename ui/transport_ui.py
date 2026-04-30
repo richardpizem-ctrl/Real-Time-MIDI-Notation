@@ -1,9 +1,10 @@
 import pygame
 
+
 class TransportUI:
     def __init__(self, width=1400, height=50):
-        self.width = width
-        self.height = height
+        self.width = int(width)
+        self.height = int(height)
 
         pygame.font.init()
         try:
@@ -43,32 +44,34 @@ class TransportUI:
     # EVENT HANDLING
     # ---------------------------------------------------------
     def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            pos = event.pos
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return None
 
-            if self.buttons["rewind"].collidepoint(pos):
-                self.is_playing = False
-                return {"action": "rewind"}
+        pos = event.pos
 
-            if self.buttons["play"].collidepoint(pos):
-                self.is_playing = True
-                return {"action": "play"}
+        if self.buttons["rewind"].collidepoint(pos):
+            self.is_playing = False
+            return {"action": "rewind"}
 
-            if self.buttons["stop"].collidepoint(pos):
-                self.is_playing = False
-                return {"action": "stop"}
+        if self.buttons["play"].collidepoint(pos):
+            self.is_playing = True
+            return {"action": "play"}
 
-            if self.buttons["loop"].collidepoint(pos):
-                self.loop_enabled = not self.loop_enabled
-                return {"action": "loop", "enabled": self.loop_enabled}
+        if self.buttons["stop"].collidepoint(pos):
+            self.is_playing = False
+            return {"action": "stop"}
 
-            if self.buttons["bpm_minus"].collidepoint(pos):
-                self.bpm = max(20, self.bpm - 1)
-                return {"action": "bpm", "value": self.bpm}
+        if self.buttons["loop"].collidepoint(pos):
+            self.loop_enabled = not self.loop_enabled
+            return {"action": "loop", "enabled": self.loop_enabled}
 
-            if self.buttons["bpm_plus"].collidepoint(pos):
-                self.bpm = min(300, self.bpm + 1)
-                return {"action": "bpm", "value": self.bpm}
+        if self.buttons["bpm_minus"].collidepoint(pos):
+            self.bpm = max(20, self.bpm - 1)
+            return {"action": "bpm", "value": self.bpm}
+
+        if self.buttons["bpm_plus"].collidepoint(pos):
+            self.bpm = min(300, self.bpm + 1)
+            return {"action": "bpm", "value": self.bpm}
 
         return None
 
