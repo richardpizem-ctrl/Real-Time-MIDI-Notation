@@ -1,5 +1,5 @@
 import pygame
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any
 from ..core.logger import Logger
 
 
@@ -31,32 +31,37 @@ class StatusBar:
         text_color: Tuple[int, int, int] = (220, 220, 220)
     ) -> None:
 
-        self.enabled = enabled
-        self.width = width
-        self.height = height
+        self.enabled = bool(enabled)
+        self.width = int(width)
+        self.height = int(height)
         self.bg_color = bg_color
         self.text_color = text_color
 
         pygame.font.init()
-        self.font = pygame.font.SysFont("Consolas", font_size)
+        try:
+            self.font = pygame.font.SysFont("Consolas", font_size)
+        except Exception:
+            self.font = pygame.font.Font(None, font_size)
 
         self.current_message: str = ""
         self.surface = pygame.Surface((self.width, self.height))
 
-        Logger.info("StatusBar initialized.")
+        if self.enabled:
+            Logger.info("StatusBar initialized.")
 
     # ---------------------------------------------------------
     # ENABLE / DISABLE
     # ---------------------------------------------------------
-    def toggle(self) -> None:
-        """Prepína viditeľnosť status baru (toggle visibility)."""
+    def toggle(self) -> bool:
+        """Prepína viditeľnosť status baru a vráti nový stav."""
         self.enabled = not self.enabled
         Logger.info(f"StatusBar toggled: {self.enabled}")
+        return self.enabled
 
     # ---------------------------------------------------------
     # SET MESSAGE
     # ---------------------------------------------------------
-    def set_message(self, message: str) -> None:
+    def set_message(self, message: Any) -> None:
         """Nastaví novú správu (set status message)."""
         try:
             safe_message = self._safe_format(message)
@@ -93,7 +98,7 @@ class StatusBar:
     # ---------------------------------------------------------
     # SAFE FORMATTER
     # ---------------------------------------------------------
-    def _safe_format(self, obj) -> str:
+    def _safe_format(self, obj: Any) -> str:
         """Bezpečne konvertuje objekt na text (safe string conversion)."""
         try:
             return str(obj)
@@ -105,7 +110,7 @@ class StatusBar:
     # ---------------------------------------------------------
     def _truncate(self, text: str) -> str:
         """Skráti text, ak je príliš dlhý (truncate long text)."""
-        max_chars = int(self.width / 10)  # približný odhad šírky
+        max_chars = max(4, int(self.width / 10))  # bezpečný limit
         if len(text) > max_chars:
             return text[:max_chars - 3] + "..."
         return text
