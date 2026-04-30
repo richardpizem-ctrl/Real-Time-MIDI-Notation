@@ -63,20 +63,28 @@ class PerformanceTracker:
             self.process = None
 
     # ---------------------------------------------------------
+    # INTERNAL SAFE INTERVAL RECORDER
+    # ---------------------------------------------------------
+
+    @staticmethod
+    def _record_interval(start: Optional[float], target_deque: collections.deque) -> None:
+        if start is None:
+            return
+        try:
+            dt = time.perf_counter() - start
+            target_deque.append(dt)
+        except Exception:
+            pass
+
+    # ---------------------------------------------------------
     # FRAME / FPS
     # ---------------------------------------------------------
 
     def frame_start(self) -> None:
-        self.last_frame_start = time.time()
+        self.last_frame_start = time.perf_counter()
 
     def frame_end(self) -> None:
-        if self.last_frame_start is None:
-            return
-        try:
-            dt = time.time() - self.last_frame_start
-            self.frame_times.append(dt)
-        except Exception:
-            pass
+        self._record_interval(self.last_frame_start, self.frame_times)
         self.last_frame_start = None
 
     def get_fps(self) -> float:
@@ -101,16 +109,10 @@ class PerformanceTracker:
     # ---------------------------------------------------------
 
     def render_start(self) -> None:
-        self.last_render_start = time.time()
+        self.last_render_start = time.perf_counter()
 
     def render_end(self) -> None:
-        if self.last_render_start is None:
-            return
-        try:
-            dt = time.time() - self.last_render_start
-            self.render_times.append(dt)
-        except Exception:
-            pass
+        self._record_interval(self.last_render_start, self.render_times)
         self.last_render_start = None
 
     def get_avg_render_time_ms(self) -> float:
@@ -126,16 +128,10 @@ class PerformanceTracker:
     # ---------------------------------------------------------
 
     def midi_event_received(self) -> None:
-        self.last_midi_event_time = time.time()
+        self.last_midi_event_time = time.perf_counter()
 
     def midi_event_rendered(self) -> None:
-        if self.last_midi_event_time is None:
-            return
-        try:
-            dt = time.time() - self.last_midi_event_time
-            self.midi_latencies.append(dt)
-        except Exception:
-            pass
+        self._record_interval(self.last_midi_event_time, self.midi_latencies)
         self.last_midi_event_time = None
 
     def get_avg_midi_latency_ms(self) -> float:
@@ -151,7 +147,7 @@ class PerformanceTracker:
     # ---------------------------------------------------------
 
     def event_processed(self) -> None:
-        now = time.time()
+        now = time.perf_counter()
         try:
             if self.last_event_time is not None:
                 dt = now - self.last_event_time
@@ -220,7 +216,10 @@ class PerformanceTracker:
         if self.process is None:
             return None
         try:
-            return self.process.cpu_percent(interval=0.0)
+            raw = self.process.cpu_percent(interval=0.0)
+            if psutil is not None:
+                return raw / psutil.cpu_count()
+            return raw
         except Exception:
             return None
 
