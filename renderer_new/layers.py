@@ -71,10 +71,11 @@ def create_default_layers(controller) -> LayerManager:
 
     manager = LayerManager()
 
-    manager.add_layer(TimelineLayer(controller, z_index=0))
-    manager.add_layer(NotesLayer(controller, z_index=1))
-    manager.add_layer(MarkerLayer(controller, z_index=2))
-    manager.add_layer(PlayheadLayer(controller, z_index=3))
-    manager.add_layer(SelectionLayer(controller, z_index=4))
+    # Vrstvy používajú vlastné defaultné z-indexy z BaseLayer
+    manager.add_layer(TimelineLayer(controller))
+    manager.add_layer(NotesLayer(controller))
+    manager.add_layer(MarkerLayer(controller))
+    manager.add_layer(PlayheadLayer(controller))
+    manager.add_layer(SelectionLayer(controller))
 
     return manager
