@@ -7,18 +7,18 @@ class CanvasUI:
     MIN_ZOOM = 0.25
     MAX_ZOOM = 4.0
 
-    def __init__(self, parent):
+    def __init__(self, parent: tk.Misc):
         # Main canvas
         self.canvas = tk.Canvas(parent, bg="white", width=1100, height=700)
         self.canvas.pack(fill="both", expand=True)
 
         # Viewport transform
-        self.offset_x = 0
-        self.offset_y = 40
+        self.offset_x = 0.0
+        self.offset_y = 40.0
         self.zoom = 1.0
 
-        # Playhead
-        self.playhead_time = 1000
+        # Playhead (v „časových jednotkách“ CanvasUI, nie priamo v ms)
+        self.playhead_time = 1000.0
         self.playhead_color = "#ff4444"
         self.playhead_width = 2
 
@@ -28,13 +28,13 @@ class CanvasUI:
         self.timeline_line_color = "#888"
 
         # Notes
-        self.notes = []
-        self.current_note = None
+        self.notes: list[dict] = []
+        self.current_note: dict | None = None
 
         # Velocity editing
         self.velocity_min = 1
         self.velocity_max = 127
-        self._velocity_target_note = None
+        self._velocity_target_note: dict | None = None
 
         # Tools
         self.tool = "draw"
@@ -52,8 +52,8 @@ class CanvasUI:
 
         # Selection box
         self.selecting = False
-        self.selection_start = None
-        self.selection_end = None
+        self.selection_start: tuple[float, float] | None = None
+        self.selection_end: tuple[float, float] | None = None
 
         # Color modes
         self.color_mode = "heatmap"
@@ -77,37 +77,38 @@ class CanvasUI:
     # ---------------------------------------------------------
     # PUBLIC API (pre UIManager – bezpečné no-op metódy)
     # ---------------------------------------------------------
-    def update_color(self, track_index: int, color_hex: str):
+    def update_color(self, track_index: int, color_hex: str) -> None:
         return
 
-    def update_visibility(self, track_index: int, visible: bool):
+    def update_visibility(self, track_index: int, visible: bool) -> None:
         return
 
-    def set_active_track(self, track_index: int):
+    def set_active_track(self, track_index: int) -> None:
         return
 
-    def get_canvas(self):
+    def get_canvas(self) -> tk.Canvas:
         return self.canvas
 
-    def set_playhead_time(self, time_ms, pixels_per_second=100):
+    def set_playhead_time(self, time_ms: float, pixels_per_second: float = 100.0) -> None:
+        """Nastaví internú playhead pozíciu na základe času v ms a mierky px/s."""
         try:
-            self.playhead_time = (time_ms / 1000.0) * pixels_per_second
+            self.playhead_time = (float(time_ms) / 1000.0) * float(pixels_per_second)
         except Exception:
             return
         self._center_playhead_if_needed()
 
-    def set_tool(self, tool_name):
+    def set_tool(self, tool_name: str) -> None:
         if tool_name in ("draw", "select", "erase"):
             self.tool = tool_name
 
-    def set_color_mode(self, mode: str):
+    def set_color_mode(self, mode: str) -> None:
         if mode in ("classic", "heatmap", "glow"):
             self.color_mode = mode
 
     # ---------------------------------------------------------
     # QUANTIZATION
     # ---------------------------------------------------------
-    def set_quantization(self, division: float):
+    def set_quantization(self, division: float) -> None:
         try:
             d = float(division)
         except Exception:
@@ -115,7 +116,7 @@ class CanvasUI:
         self.quantize_division = max(0.03125, min(4.0, d))
         self.snap_step = self.GRID_STEP_TIME * self.quantize_division
 
-    def set_swing(self, amount: float):
+    def set_swing(self, amount: float) -> None:
         try:
             a = float(amount)
         except Exception:
@@ -125,26 +126,26 @@ class CanvasUI:
     # ---------------------------------------------------------
     # REDRAW LOOP
     # ---------------------------------------------------------
-    def _schedule_redraw(self):
+    def _schedule_redraw(self) -> None:
         self._draw()
         self.canvas.after(16, self._schedule_redraw)
 
     # ---------------------------------------------------------
     # COORD TRANSFORMS
     # ---------------------------------------------------------
-    def _time_to_screen_x(self, t):
+    def _time_to_screen_x(self, t: float) -> float:
         return t * self.zoom + self.offset_x
 
-    def _screen_x_to_time(self, x):
+    def _screen_x_to_time(self, x: float) -> float:
         return (x - self.offset_x) / max(self.zoom, 1e-6)
 
-    def _row_to_screen_y(self, row):
+    def _row_to_screen_y(self, row: int) -> float:
         return self.timeline_height + row * self.ROW_HEIGHT + self.offset_y
 
-    def _screen_y_to_row(self, y):
+    def _screen_y_to_row(self, y: float) -> int:
         return int((y - self.timeline_height - self.offset_y) / self.ROW_HEIGHT)
 
-    def _snap_time(self, t):
+    def _snap_time(self, t: float) -> float:
         if not self.snap:
             return t
 
@@ -163,17 +164,22 @@ class CanvasUI:
     # ---------------------------------------------------------
     # COLOR HELPERS
     # ---------------------------------------------------------
-    def _hex_to_rgb(self, h: str):
+    def _hex_to_rgb(self, h: str) -> tuple[int, int, int]:
         h = h.lstrip("#")
-        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        if len(h) != 6:
+            return 0, 0, 0
+        try:
+            return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        except Exception:
+            return 0, 0, 0
 
-    def _rgb_to_hex(self, r: int, g: int, b: int):
+    def _rgb_to_hex(self, r: int, g: int, b: int) -> str:
         return f"#{r:02x}{g:02x}{b:02x}"
 
-    def _lerp(self, a: int, b: int, t: float):
+    def _lerp(self, a: int, b: int, t: float) -> int:
         return int(a + (b - a) * t)
 
-    def _mix_colors(self, c1: str, c2: str, t: float):
+    def _mix_colors(self, c1: str, c2: str, t: float) -> str:
         r1, g1, b1 = self._hex_to_rgb(c1)
         r2, g2, b2 = self._hex_to_rgb(c2)
         r = self._lerp(r1, r2, t)
@@ -182,15 +188,15 @@ class CanvasUI:
         return self._rgb_to_hex(r, g, b)
 
     def _velocity_to_color(self, velocity: int) -> str:
-        v = max(self.velocity_min, min(self.velocity_max, velocity))
+        v = max(self.velocity_min, min(self.velocity_max, int(velocity)))
         t = v / float(self.velocity_max)
 
         if self.color_mode == "classic":
             return "#66aaff"
 
-        blue = (0x4d, 0xa6, 0xff)
-        green = (0x33, 0xcc, 0x33)
-        red = (0xff, 0x44, 0x44)
+        blue = (0x4D, 0xA6, 0xFF)
+        green = (0x33, 0xCC, 0x33)
+        red = (0xFF, 0x44, 0x44)
 
         if t <= 0.5:
             lt = t / 0.5
@@ -213,7 +219,7 @@ class CanvasUI:
     # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
-    def _draw(self):
+    def _draw(self) -> None:
         self.canvas.delete("all")
 
         width = self.canvas.winfo_width()
@@ -228,12 +234,18 @@ class CanvasUI:
         max_time = self._screen_x_to_time(width + 200)
         min_time = self._screen_x_to_time(-200)
 
+        # Common start for grid/ticks
+        t_start = (min_time // self.GRID_STEP_TIME) * self.GRID_STEP_TIME
+
         # Timeline ticks
-        t = (min_time // self.GRID_STEP_TIME) * self.GRID_STEP_TIME
+        t = t_start
         while t < max_time:
             x = self._time_to_screen_x(t)
             if 0 <= x <= width:
-                self.canvas.create_line(x, 0, x, self.timeline_height, fill=self.timeline_line_color)
+                self.canvas.create_line(
+                    x, 0, x, self.timeline_height,
+                    fill=self.timeline_line_color
+                )
                 self.canvas.create_text(
                     x + 2, self.timeline_height // 2,
                     text=f"{int(t / self.GRID_STEP_TIME)}",
@@ -248,14 +260,20 @@ class CanvasUI:
             y = self._row_to_screen_y(r)
             if 0 <= y <= height:
                 color = "#f7f7f7" if r % 2 == 0 else "#f0f0f0"
-                self.canvas.create_rectangle(0, y, width, y + self.ROW_HEIGHT, fill=color, outline="")
+                self.canvas.create_rectangle(
+                    0, y, width, y + self.ROW_HEIGHT,
+                    fill=color, outline=""
+                )
 
         # Vertical grid lines
-        t = (min_time // self.GRID_STEP_TIME) * self.GRID_STEP_TIME
+        t = t_start
         while t < max_time:
             x = self._time_to_screen_x(t)
             if 0 <= x <= width:
-                self.canvas.create_line(x, self.timeline_height, x, height, fill="#dddddd")
+                self.canvas.create_line(
+                    x, self.timeline_height, x, height,
+                    fill="#dddddd"
+                )
             t += self.GRID_STEP_TIME
 
         # Notes
@@ -269,11 +287,19 @@ class CanvasUI:
         if self.selecting and self.selection_start and self.selection_end:
             x1, y1 = self.selection_start
             x2, y2 = self.selection_end
-            self.canvas.create_rectangle(x1, y1, x2, y2, outline="#3399ff", dash=(3, 3))
+            self.canvas.create_rectangle(
+                x1, y1, x2, y2,
+                outline="#3399ff",
+                dash=(3, 3)
+            )
 
         # Playhead
         px = self._time_to_screen_x(self.playhead_time)
-        self.canvas.create_line(px, 0, px, height, fill=self.playhead_color, width=self.playhead_width)
+        self.canvas.create_line(
+            px, 0, px, height,
+            fill=self.playhead_color,
+            width=self.playhead_width
+        )
 
         # Legend
         self._draw_legend(width, height)
@@ -281,12 +307,16 @@ class CanvasUI:
     # ---------------------------------------------------------
     # LEGEND
     # ---------------------------------------------------------
-    def _draw_legend(self, width, height):
+    def _draw_legend(self, width: int, height: int) -> None:
         legend_height = 22
         y0 = height - legend_height
         y1 = height
 
-        self.canvas.create_rectangle(0, y0, width, y1, fill="#f8f8f8", outline="#dddddd")
+        self.canvas.create_rectangle(
+            0, y0, width, y1,
+            fill="#f8f8f8",
+            outline="#dddddd"
+        )
 
         x0 = 10
         x1 = 210
@@ -298,7 +328,11 @@ class CanvasUI:
             color = self._velocity_to_color(v)
             sx0 = x0 + (x1 - x0) * t
             sx1 = x0 + (x1 - x0) * ((i + 1) / (steps - 1))
-            self.canvas.create_rectangle(sx0, y0 + 4, sx1, y1 - 4, fill=color, outline=color)
+            self.canvas.create_rectangle(
+                sx0, y0 + 4, sx1, y1 - 4,
+                fill=color,
+                outline=color
+            )
 
         self.canvas.create_text(
             x1 + 10, (y0 + y1) / 2,
@@ -315,3 +349,35 @@ class CanvasUI:
             fill="#666",
             font=("TkDefaultFont", 8)
         )
+
+    # ---------------------------------------------------------
+    # PLACEHOLDER HANDLERS (aby bol súbor kompletný)
+    # ---------------------------------------------------------
+    def _on_mouse_down(self, event) -> None:
+        pass
+
+    def _on_mouse_up(self, event) -> None:
+        pass
+
+    def _on_mouse_drag(self, event) -> None:
+        pass
+
+    def _on_mouse_wheel(self, event) -> None:
+        pass
+
+    def _on_right_mouse_down(self, event) -> None:
+        pass
+
+    def _on_right_mouse_drag(self, event) -> None:
+        pass
+
+    def _on_right_mouse_up(self, event) -> None:
+        pass
+
+    def _center_playhead_if_needed(self) -> None:
+        """Placeholder – implementuješ podľa toho, ako chceš správať viewport."""
+        pass
+
+    def _draw_note(self, note: dict, preview: bool = False) -> None:
+        """Placeholder – reálna implementácia je v tvojej verzii."""
+        pass
