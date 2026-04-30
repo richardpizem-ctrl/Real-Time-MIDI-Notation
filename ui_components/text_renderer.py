@@ -20,18 +20,20 @@ class TextRenderer:
     """
 
     def __init__(self, enabled: bool = True, print_enabled: bool = True) -> None:
-        self.enabled = enabled
-        self.print_enabled = print_enabled
+        self.enabled = bool(enabled)
+        self.print_enabled = bool(print_enabled)
 
-        Logger.info("TextRenderer initialized.")
+        if self.enabled:
+            Logger.info("TextRenderer initialized.")
 
     # ---------------------------------------------------------
     # ENABLE / DISABLE
     # ---------------------------------------------------------
-    def toggle(self) -> None:
-        """Prepína stav textového renderera (toggle text renderer)."""
+    def toggle(self) -> bool:
+        """Prepína stav textového renderera a vráti nový stav."""
         self.enabled = not self.enabled
         Logger.info(f"TextRenderer toggled: {self.enabled}")
+        return self.enabled
 
     # ---------------------------------------------------------
     # DISPLAY TEXT
@@ -43,7 +45,7 @@ class TextRenderer:
 
         try:
             safe_text = self._safe_format(text)
-            if not safe_text:
+            if not safe_text or safe_text.strip() == "":
                 return
 
             if self.print_enabled:
