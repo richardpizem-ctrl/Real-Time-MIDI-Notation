@@ -37,18 +37,18 @@ class TrackSwitcherUI:
     ):
         pygame.font.init()
 
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        self.x = int(x)
+        self.y = int(y)
+        self.width = int(width)
+        self.height = int(height)
         self.track_colors = track_colors
         self.event_bus = event_bus
 
         self.track_control_manager = track_control_manager
 
         self.track_count = self.TRACK_COUNT
-        self.button_width = max(1, width // self.track_count)
-        self.button_height = height
+        self.button_width = max(1, self.width // self.track_count)
+        self.button_height = self.height
 
         self.peak_hold = [0.0] * self.track_count
 
@@ -104,6 +104,8 @@ class TrackSwitcherUI:
     def _draw_gradient(self, surface, rect, base_color):
         r, g, b = base_color
         height = rect.height
+        if height <= 0:
+            return
         for y in range(height):
             factor = y / height
             shade = (
@@ -279,20 +281,27 @@ class TrackSwitcherUI:
         self.update_peak_hold()
 
         if self.track_control_manager is not None:
-            active_tid = self.track_control_manager.get_active_track() + 1
+            active_index = self.track_control_manager.get_active_track()
         else:
-            active_tid = active_track
+            try:
+                active_index = int(active_track) if active_track is not None else -1
+            except Exception:
+                active_index = -1
 
         mx, my = pygame.mouse.get_pos()
         tooltip_text = None
         tooltip_pos = None
 
+        get_color = None
+        if self.track_control_manager is not None:
+            get_color = self.track_control_manager.get_color
+
         for i in range(self.track_count):
             tid = i + 1
 
             try:
-                if self.track_control_manager is not None:
-                    hex_color = self.track_control_manager.get_color(i)
+                if get_color is not None:
+                    hex_color = get_color(i)
                 else:
                     hex_color = self.track_colors[i % len(self.track_colors)]
 
@@ -326,11 +335,12 @@ class TrackSwitcherUI:
             pygame.draw.rect(surface, overlay, rect, border_radius=6)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2, border_radius=6)
 
-            if rect.collidepoint(mx, my):
-                self._draw_outer_glow(surface, rect, intensity=40)
+            hovered = rect.collidepoint(mx, my)
+            is_active = (active_index == i)
 
-            if active_tid == tid:
-                self._draw_outer_glow(surface, rect, intensity=70)
+            if hovered or is_active:
+                self._draw_outer_glow(surface, rect, intensity=70 if is_active else 40)
+            if is_active:
                 pygame.draw.rect(surface, (255, 255, 255), rect.inflate(-2, -2), 1, border_radius=6)
 
             activity = tm.get_activity(tid)
@@ -381,7 +391,7 @@ class TrackSwitcherUI:
             except Exception:
                 name = f"Track {tid}"
 
-            name_color = (255, 255, 255) if active_tid == tid else (0, 0, 0)
+            name_color = (255, 255, 255) if is_active else (0, 0, 0)
 
             if self.font:
                 text_surface = self.font.render(name, True, name_color)
@@ -403,7 +413,7 @@ class TrackSwitcherUI:
             surface.blit(tip_surf, (bg_rect.x + 3, bg_rect.y + 2))
 
     # ---------------------------------------------------------
-    # PUBLIC API PRE UIManager (ZJEDNOTENÉ, PROFESIONÁLNE)
+    # PUBLIC API PRE UIManager
     # ---------------------------------------------------------
     def _handle_track_click(self, tid, local_y):
         tm = self.event_bus.track_manager
@@ -453,7 +463,6 @@ class TrackSwitcherUI:
 
     def refresh(self):
         """Externé API – UIManager môže zavolať pri zmene stavu."""
-        self.update_peak_hold()
         self._emit_audible_state()
 
     def handle_event(self, event):
