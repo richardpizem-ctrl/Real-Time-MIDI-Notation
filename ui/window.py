@@ -4,24 +4,24 @@ from real_time_processing.midi_input import MidiInput
 
 
 class UIWindow:
-    def __init__(self, width=1200, height=1080):
+    def __init__(self, width: int = 1200, height: int = 1080):
         pygame.init()
         pygame.display.set_caption("Real-Time MIDI Notation")
 
-        self.width = width
-        self.height = height
+        self.width = int(width)
+        self.height = int(height)
 
         # Hlavné okno
-        self.screen = pygame.display.set_mode((width, height))
+        self.screen = pygame.display.set_mode((self.width, self.height))
         self.clock = pygame.time.Clock()
 
         # MIDI + UI
         self.midi = MidiInput()
         self.ui = UIManager(
-            width,
-            height,
+            self.width,
+            self.height,
             self.midi.track_system,
-            self.midi.notation_processor
+            self.midi.notation_processor,
         )
 
     # ---------------------------------------------------------
@@ -39,13 +39,14 @@ class UIWindow:
 
                 try:
                     self.ui.handle_event(event)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print("[UI EVENT ERROR]", e)
 
             # --- MIDI EVENTS ---
             try:
                 midi_events = self.midi.poll_events()
-            except Exception:
+            except Exception as e:
+                print("[MIDI POLL ERROR]", e)
                 midi_events = []
 
             for e in midi_events:
@@ -53,23 +54,29 @@ class UIWindow:
                 if etype == "note_on":
                     try:
                         self.ui.on_note_on(e)
-                    except Exception:
-                        pass
+                    except Exception as ex:
+                        print("[UI NOTE_ON ERROR]", ex)
                 elif etype == "note_off":
                     try:
                         self.ui.on_note_off(e)
-                    except Exception:
-                        pass
+                    except Exception as ex:
+                        print("[UI NOTE_OFF ERROR]", ex)
 
             # --- DRAW ---
             try:
                 self.screen.fill((30, 30, 30))
                 self.ui.draw(self.screen)
-            except Exception:
-                pass
+            except Exception as e:
+                print("[UI DRAW ERROR]", e)
 
             pygame.display.flip()
-            self.clock.tick(60)
+            self.clock.tick_busy_loop(60)
+
+        try:
+            if hasattr(self.midi, "close"):
+                self.midi.close()
+        except Exception as e:
+            print("[MIDI CLOSE ERROR]", e)
 
         pygame.quit()
 
