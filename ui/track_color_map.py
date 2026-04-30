@@ -6,7 +6,8 @@ class TrackColorMap:
 
     def __init__(self):
         # Farby sú v hex formáte (#RRGGBB)
-        self.colors = [
+        # Tuple = rýchlejšie, nemenné, bezpečné
+        self.colors = (
             "#FF4B4B",  # Track 1 - Red
             "#FF8A33",  # Track 2 - Orange
             "#FFC233",  # Track 3 - Yellow
@@ -23,7 +24,7 @@ class TrackColorMap:
             "#FF33C4",  # Track 14 - Pink
             "#FF337A",  # Track 15 - Rose
             "#FF334B",  # Track 16 - Red-Pink
-        ]
+        )
 
     # ---------------------------------------------------------
     # PUBLIC API
@@ -34,6 +35,7 @@ class TrackColorMap:
         Ak index nie je platný, vráti fallback farbu.
         """
         try:
+            track = int(track)
             if 0 <= track < len(self.colors):
                 return self.colors[track]
         except Exception:
