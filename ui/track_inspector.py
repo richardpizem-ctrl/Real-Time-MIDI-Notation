@@ -26,11 +26,11 @@ class TrackInspector:
         self.track_manager = track_manager
         self.track_control = track_control
 
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.num_tracks = num_tracks
+        self.x = int(x)
+        self.y = int(y)
+        self.width = int(width)
+        self.height = int(height)
+        self.num_tracks = int(num_tracks)
 
         # layout
         self.header_height = 24
@@ -59,26 +59,24 @@ class TrackInspector:
             self.active_track = 0
 
     def update_visibility(self, track_index: int, visible: bool):
-        """
-        Volané z UIManager._on_visibility_changed.
-        Viditeľnosť je riadená TrackControlManagerom.
-        UI si ju necache-uje, ale API musí existovať.
-        """
-        pass
+        """UI si viditeľnosť necache-uje – no-op."""
+        return
 
     def update_color(self, track_index: int, color_hex: str):
-        """
-        Volané z UIManager._on_color_changed.
-        Farba sa berie priamo z TrackControlManager / track_manager.
-        """
-        pass
+        """UI si farby necache-uje – no-op."""
+        return
 
     # ---------------------------------------------------------
     # HELPERS
     # ---------------------------------------------------------
-    def _hex_to_rgb(self, h: str) -> Tuple[int, int, int]:
+    @staticmethod
+    def _hex_to_rgb(h: str) -> Tuple[int, int, int]:
         h = h.lstrip("#")
-        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        return (
+            int(h[0:2], 16),
+            int(h[2:4], 16),
+            int(h[4:6], 16),
+        )
 
     def _get_track_color(self, track_id: int) -> Tuple[int, int, int]:
         # track_id je 1-based
@@ -140,9 +138,12 @@ class TrackInspector:
 
         mx, my = event.pos
 
+        # Panel bounds
         if not (self.x <= mx <= self.x + self.width and
                 self.y <= my <= self.y + self.height):
             return
+
+        bar_x_base = self.x + self.width - self.padding - self.volume_bar_width
 
         for track_id in range(1, self.num_tracks + 1):
             row_top = self.y + self.header_height + (track_id - 1) * self.row_height
@@ -159,20 +160,22 @@ class TrackInspector:
                 10,
             )
             if vis_rect.collidepoint(mx, my):
-                try:
-                    if self.track_control is not None:
+                if self.track_control is not None:
+                    try:
                         self.track_control.toggle_visibility(track_id - 1)
-                except Exception:
-                    pass
+                    except Exception:
+                        pass
                 return
 
             # 2) klik na volume bar
-            bar_x = self.x + self.width - self.padding - self.volume_bar_width
-            bar_y = row_rect.y + 4
-            bar_rect = pygame.Rect(bar_x, bar_y, self.volume_bar_width, self.row_height - 8)
-
+            bar_rect = pygame.Rect(
+                bar_x_base,
+                row_rect.y + 4,
+                self.volume_bar_width,
+                self.row_height - 8,
+            )
             if bar_rect.collidepoint(mx, my):
-                rel = (mx - bar_x) / self.volume_bar_width
+                rel = (mx - bar_x_base) / self.volume_bar_width
                 rel = max(0.0, min(1.0, rel))
                 try:
                     self.track_manager.set_volume(track_id, rel)
@@ -181,12 +184,11 @@ class TrackInspector:
                 return
 
             # 3) klik na riadok → nastaviť aktívnu stopu
-            try:
-                if self.track_control is not None:
+            if self.track_control is not None:
+                try:
                     self.track_control.select_track(track_id - 1)
-            except Exception:
-                pass
-
+                except Exception:
+                    pass
             return
 
     # ---------------------------------------------------------
@@ -213,6 +215,7 @@ class TrackInspector:
         )
 
         active_track_id = self._get_active_track_id()
+        bar_x_base = self.x + self.width - self.padding - self.volume_bar_width
 
         for track_id in range(1, self.num_tracks + 1):
             row_top = self.y + self.header_height + (track_id - 1) * self.row_height
@@ -224,6 +227,7 @@ class TrackInspector:
             bg_color = (40, 40, 60) if track_id == active_track_id else (28, 28, 28)
             pygame.draw.rect(surface, bg_color, row_rect)
 
+            # visibility
             visible = self._get_track_visible(track_id)
             vis_color = (140, 220, 140) if visible else (120, 120, 120)
             vis_rect = pygame.Rect(
@@ -235,6 +239,7 @@ class TrackInspector:
             pygame.draw.rect(surface, vis_color, vis_rect)
             pygame.draw.rect(surface, (0, 0, 0), vis_rect, 1)
 
+            # color box
             base_color = self._get_track_color(track_id)
             color_rect = pygame.Rect(
                 vis_rect.right + 6,
@@ -245,6 +250,7 @@ class TrackInspector:
             pygame.draw.rect(surface, base_color, color_rect)
             pygame.draw.rect(surface, (0, 0, 0), color_rect, 1)
 
+            # name
             if self.font is not None:
                 name = self._get_track_name(track_id)
                 name_surf = self.font.render(
@@ -254,21 +260,21 @@ class TrackInspector:
                 )
                 surface.blit(name_surf, (color_rect.right + 6, row_rect.y + 3))
 
+            # volume bar
             vol = self._get_track_volume(track_id)
             if vol is not None:
-                bar_x = self.x + self.width - self.padding - self.volume_bar_width
                 bar_y = row_rect.y + 4
                 bar_h = self.row_height - 8
 
                 pygame.draw.rect(
                     surface,
                     (35, 35, 35),
-                    (bar_x, bar_y, self.volume_bar_width, bar_h),
+                    (bar_x_base, bar_y, self.volume_bar_width, bar_h),
                 )
                 pygame.draw.rect(
                     surface,
                     (0, 0, 0),
-                    (bar_x, bar_y, self.volume_bar_width, bar_h),
+                    (bar_x_base, bar_y, self.volume_bar_width, bar_h),
                     1,
                 )
 
@@ -276,7 +282,7 @@ class TrackInspector:
                 pygame.draw.rect(
                     surface,
                     (120, 200, 120),
-                    (bar_x + 1, bar_y + 1, max(0, fill_w - 2), bar_h - 2),
+                    (bar_x_base + 1, bar_y + 1, max(0, fill_w - 2), bar_h - 2),
                 )
 
         pygame.draw.rect(surface, (90, 90, 90), panel_rect, 1)
