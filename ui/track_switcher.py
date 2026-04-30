@@ -4,8 +4,8 @@ Logical controller for switching between 16 MIDI tracks.
 
 This module handles:
 - track selection logic
-- track activation/deactivation
-- communication with TrackSelectionController and TrackVisibilityController
+- communication with TrackSelectionController
+- optional visibility toggling (if UI wants it)
 - callback system for UI layer (track_switcher_ui.py)
 """
 
@@ -26,7 +26,7 @@ class TrackSwitcherLogic:
     Does NOT draw anything — drawing is handled by track_switcher_ui.py.
     """
 
-    def __init__(self, selection_controller, visibility_controller, color_map):
+    def __init__(self, selection_controller, visibility_controller=None, color_map=None):
         self.selection_controller = selection_controller
         self.visibility_controller = visibility_controller
         self.color_map = color_map
@@ -45,23 +45,35 @@ class TrackSwitcherLogic:
     # EVENT HANDLING
     # ------------------------------------------------------------
     def on_track_clicked(self, track_id: int, raw_event=None):
-        """Handle logical track switching."""
-        is_active = self.selection_controller.toggle_track(track_id)
+        """
+        Handle logical track switching.
+        Selecting a track does NOT toggle visibility.
+        """
 
-        # update visibility
-        self.visibility_controller.set_track_visible(track_id, is_active)
+        # 1) Set active track
+        self.selection_controller.select(track_id)
+        is_active = (self.selection_controller.get_active_track() == track_id)
 
-        # notify UI
+        # 2) Notify UI
         event = TrackSwitchEvent(track_id=track_id, is_active=is_active, raw_event=raw_event)
 
-        if track_id in self._callbacks:
-            self._callbacks[track_id](event)
+        callback = self._callbacks.get(track_id)
+        if callback:
+            try:
+                callback(event)
+            except Exception:
+                pass
 
-        print(f"[TrackSwitcherLogic] Track {track_id} active={is_active}")
+        print(f"[TrackSwitcherLogic] Track {track_id} selected (active={is_active})")
 
     # ------------------------------------------------------------
     # COLOR ACCESS
     # ------------------------------------------------------------
     def get_track_color(self, track_id: int):
         """Return the assigned color for the track."""
-        return self.color_map.get_color(track_id)
+        if self.color_map is None:
+            return "#FFFFFF"
+        try:
+            return self.color_map.get_color(track_id)
+        except Exception:
+            return "#FFFFFF"
