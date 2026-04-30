@@ -10,12 +10,19 @@ def test_chord(notes):
             print(f"Invalid input: {notes}")
             return
 
-        chord = detect_chord(notes)
+        # Convert all values to int safely
+        try:
+            notes_int = [int(n) for n in notes]
+        except Exception:
+            print(f"Invalid note values: {notes}")
+            return
+
+        chord = detect_chord(notes_int)
 
         if chord:
-            print(f"Notes {notes} → Detected chord: {chord.name}")
+            print(f"Notes {notes_int} → Detected chord: {chord}")
         else:
-            print(f"Notes {notes} → No chord detected")
+            print(f"Notes {notes_int} → No chord detected")
 
     except Exception as e:
         print(f"Error while testing notes {notes}: {e}")
