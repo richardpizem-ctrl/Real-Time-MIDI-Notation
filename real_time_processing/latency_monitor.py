@@ -9,6 +9,7 @@ Poskytuje:
 """
 
 import time
+from collections import deque
 from typing import Optional, Dict, Any
 from ..core.logger import Logger
 
@@ -42,7 +43,7 @@ class LatencyMonitor:
     def reset(self) -> None:
         """Reset all latency statistics."""
         self.last_timestamp: Optional[float] = None
-        self.latencies: list[float] = []
+        self.latencies: deque[float] = deque(maxlen=self.window_size)
         self.max_latency: float = 0.0
         self.min_latency: Optional[float] = None
         self.avg_latency: float = 0.0
@@ -56,7 +57,7 @@ class LatencyMonitor:
         Returns:
             float | None – last measured latency in seconds
         """
-        now = time.time()
+        now = time.perf_counter()
 
         # First event → no latency yet
         if self.last_timestamp is None:
@@ -68,10 +69,6 @@ class LatencyMonitor:
 
         try:
             self.latencies.append(latency)
-
-            # Sliding window
-            if len(self.latencies) > self.window_size:
-                self.latencies.pop(0)
 
             # Update stats
             self.max_latency = max(self.max_latency, latency)
