@@ -1,7 +1,7 @@
 import dataclasses
 
 # Basic rectangle used for pixel‑precise UI layout
-@dataclasses.dataclass
+@dataclasses.dataclass(slots=True)
 class Rect:
     x: int
     y: int
@@ -51,16 +51,16 @@ class PixelLayoutEngine:
         margin: int = 0,
     ):
         # All fixed UI dimensions
-        self.transport_height = transport_height
-        self.timeline_height = timeline_height
-        self.track_switcher_height = track_switcher_height
-        self.track_selector_height = track_selector_height
-        self.piano_height = piano_height
-        self.piano_roll_height = piano_roll_height
-        self.staff_height = staff_height
-        self.visualizer_height = visualizer_height
-        self.inspector_width = inspector_width
-        self.margin = margin
+        self.transport_height = int(transport_height)
+        self.timeline_height = int(timeline_height)
+        self.track_switcher_height = int(track_switcher_height)
+        self.track_selector_height = int(track_selector_height)
+        self.piano_height = int(piano_height)
+        self.piano_roll_height = int(piano_roll_height)
+        self.staff_height = int(staff_height)
+        self.visualizer_height = int(visualizer_height)
+        self.inspector_width = int(inspector_width)
+        self.margin = int(margin)
 
     # ---------------------------------------------------------
     # MAIN LAYOUT COMPUTATION
@@ -77,98 +77,82 @@ class PixelLayoutEngine:
         - renderer dostane zvyšok priestoru (min 200 px)
         - track inspector je vždy vpravo, na celú výšku
         """
+        ww = max(0, int(window_width))
+        wh = max(0, int(window_height))
 
         x0 = self.margin
         y = self.margin
-        w_main = window_width - self.inspector_width - self.margin * 2
+        w_main = max(0, ww - self.inspector_width - self.margin * 2)
 
-        layout = {}
+        layout: dict[str, Rect] = {}
 
         # -----------------------------------------------------
         # TRANSPORT (top bar)
         # -----------------------------------------------------
-        layout["transport"] = Rect(
-            x0, y, w_main, self.transport_height
-        )
+        layout["transport"] = Rect(x0, y, w_main, self.transport_height)
         y += self.transport_height
 
         # -----------------------------------------------------
         # TIMELINE (pevná výška 100 px)
         # Stabilný prvok UI – nemá sa meniť pri resize.
         # -----------------------------------------------------
-        layout["timeline"] = Rect(
-            x0, y, w_main, self.timeline_height
-        )
+        layout["timeline"] = Rect(x0, y, w_main, self.timeline_height)
         y += self.timeline_height
 
         # -----------------------------------------------------
         # TRACK SWITCHER (prepínanie trackov)
         # -----------------------------------------------------
-        layout["track_switcher"] = Rect(
-            x0, y, w_main, self.track_switcher_height
-        )
+        layout["track_switcher"] = Rect(x0, y, w_main, self.track_switcher_height)
         y += self.track_switcher_height
 
         # -----------------------------------------------------
         # TRACK SELECTOR (výber aktuálneho tracku)
         # -----------------------------------------------------
-        layout["track_selector"] = Rect(
-            x0, y, w_main, self.track_selector_height
-        )
+        layout["track_selector"] = Rect(x0, y, w_main, self.track_selector_height)
         y += self.track_selector_height
 
         # -----------------------------------------------------
         # PIANO (klaviatúra)
         # -----------------------------------------------------
-        layout["piano"] = Rect(
-            x0, y, w_main, self.piano_height
-        )
+        layout["piano"] = Rect(x0, y, w_main, self.piano_height)
         y += self.piano_height
 
         # -----------------------------------------------------
         # PIANO ROLL (MIDI grid)
         # -----------------------------------------------------
-        layout["piano_roll"] = Rect(
-            x0, y, w_main, self.piano_roll_height
-        )
+        layout["piano_roll"] = Rect(x0, y, w_main, self.piano_roll_height)
         y += self.piano_roll_height
 
         # -----------------------------------------------------
         # STAFF (notová osnova)
         # -----------------------------------------------------
-        layout["staff"] = Rect(
-            x0, y, w_main, self.staff_height
-        )
+        layout["staff"] = Rect(x0, y, w_main, self.staff_height)
         y += self.staff_height
 
         # -----------------------------------------------------
         # VISUALIZER (grafické zobrazenie MIDI)
         # -----------------------------------------------------
-        layout["visualizer"] = Rect(
-            x0, y, w_main, self.visualizer_height
-        )
+        layout["visualizer"] = Rect(x0, y, w_main, self.visualizer_height)
         y += self.visualizer_height
 
         # -----------------------------------------------------
         # RENDERER (fills remaining space, min 200 px)
         # Hlavná plocha pre vykresľovanie notácie.
         # -----------------------------------------------------
-        remaining = window_height - y - self.margin
+        remaining = wh - y - self.margin
         renderer_h = max(200, remaining)
 
-        layout["renderer"] = Rect(
-            x0, y, w_main, renderer_h
-        )
+        layout["renderer"] = Rect(x0, y, w_main, renderer_h)
 
         # -----------------------------------------------------
         # TRACK INSPECTOR (right side panel)
         # Fixná šírka, siaha odhora až nadol.
         # -----------------------------------------------------
         layout["track_inspector"] = Rect(
-            window_width - self.inspector_width - self.margin,
+            ww - self.inspector_width - self.margin,
             self.margin,
             self.inspector_width,
-            window_height - self.margin * 2,
+            max(0, wh - self.margin * 2),
         )
 
         return layout
