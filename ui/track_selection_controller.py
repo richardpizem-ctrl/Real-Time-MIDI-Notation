@@ -5,7 +5,7 @@ class TrackSelectionController:
     """
 
     def __init__(self, track_count: int = 16):
-        self.track_count = track_count
+        self.track_count = int(track_count)
         self.active_track = 0  # predvolená aktívna stopa
 
     # ---------------------------------------------------------
