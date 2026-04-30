@@ -9,7 +9,6 @@ Rozšírené o:
 """
 
 import pygame
-import math
 import time
 
 
@@ -22,23 +21,28 @@ class PianoUI:
     FIRST_MIDI_NOTE = 36
     LAST_MIDI_NOTE = 96
 
-    def __init__(self, width=1500, height=180):
+    def __init__(self, width: int = 1500, height: int = 180):
         self.width = width
         self.height = height
 
         # Aktívne klávesy: midi → {"color": (r,g,b), "velocity": v, "aftertouch": a, "time": t}
-        self.active_keys = {}
+        self.active_keys: dict[int, dict] = {}
 
         # Prepočítané pozície kláves
-        self.white_keys = []
-        self.black_keys = []
+        self.white_keys: list[tuple[int, pygame.Rect]] = []
+        self.black_keys: list[tuple[int, pygame.Rect]] = []
+
+        # Cache pre gradienty (optimalizácia)
+        self._white_gradient: pygame.Surface | None = None
+        self._black_shine: pygame.Surface | None = None
 
         self._calculate_positions()
+        self._build_gradients()
 
     # ---------------------------------------------------------
     # CALCULATE KEY POSITIONS
     # ---------------------------------------------------------
-    def _calculate_positions(self):
+    def _calculate_positions(self) -> None:
         white_order = [0, 2, 4, 5, 7, 9, 11]
         black_offsets = {1: 0.65, 3: 1.65, 6: 3.65, 8: 4.65, 10: 5.65}
 
@@ -67,27 +71,62 @@ class PianoUI:
                 self.black_keys.append((midi, rect))
 
     # ---------------------------------------------------------
+    # GRADIENT CACHE
+    # ---------------------------------------------------------
+    def _build_gradients(self) -> None:
+        """Predvygeneruje gradienty pre biele a čierne klávesy (optimalizácia)."""
+        # White key gradient
+        try:
+            grad = pygame.Surface(
+                (self.WHITE_KEY_WIDTH, self.WHITE_KEY_HEIGHT), pygame.SRCALPHA
+            )
+            for y in range(self.WHITE_KEY_HEIGHT):
+                alpha = int(80 * (1 - y / self.WHITE_KEY_HEIGHT))
+                pygame.draw.line(
+                    grad, (255, 255, 255, alpha), (0, y), (self.WHITE_KEY_WIDTH, y)
+                )
+            self._white_gradient = grad
+        except Exception:
+            self._white_gradient = None
+
+        # Black key shine
+        try:
+            shine = pygame.Surface(
+                (self.BLACK_KEY_WIDTH, self.BLACK_KEY_HEIGHT), pygame.SRCALPHA
+            )
+            for y in range(self.BLACK_KEY_HEIGHT):
+                alpha = int(120 * (1 - y / self.BLACK_KEY_HEIGHT))
+                pygame.draw.line(
+                    shine, (255, 255, 255, alpha), (0, y), (self.BLACK_KEY_WIDTH, y)
+                )
+            self._black_shine = shine
+        except Exception:
+            self._black_shine = None
+
+    # ---------------------------------------------------------
     # COLOR HELPERS
     # ---------------------------------------------------------
-    def _velocity_color(self, velocity):
+    def _velocity_color(self, velocity: int) -> tuple[int, int, int]:
         """Map velocity 0–127 → farba."""
-        v = max(0, min(127, velocity))
+        v = max(0, min(127, int(velocity)))
         return (
             int(80 + v * 1.3),   # R
             int(40 + v * 0.6),   # G
             int(40 + v * 0.3),   # B
         )
 
-    def _aftertouch_boost(self, base_color, aftertouch):
+    def _aftertouch_boost(
+        self, base_color: tuple[int, int, int], aftertouch: int
+    ) -> tuple[int, int, int]:
         """Zvýraznenie farby podľa poly‑aftertouch."""
-        a = max(0, min(127, aftertouch))
+        a = max(0, min(127, int(aftertouch)))
         boost = int(a * 0.8)
         r = min(255, base_color[0] + boost)
         g = min(255, base_color[1] + boost // 2)
         b = min(255, base_color[2] + boost // 3)
         return (r, g, b)
 
-    def _note_on_animation(self, t0):
+    def _note_on_animation(self, t0: float) -> float:
         """Vracia multiplikátor jasu podľa času od NOTE ON."""
         dt = time.time() - t0
         if dt < 0.12:
@@ -97,7 +136,9 @@ class PianoUI:
     # ---------------------------------------------------------
     # HIGHLIGHT / UNHIGHLIGHT
     # ---------------------------------------------------------
-    def highlight_key(self, midi_note, velocity=100, aftertouch=0):
+    def highlight_key(
+        self, midi_note: int, velocity: int = 100, aftertouch: int = 0
+    ) -> None:
         """NOTE ON – zvýrazní klávesu s velocity a aftertouch."""
         if midi_note is None:
             return
@@ -105,37 +146,40 @@ class PianoUI:
         base_color = self._velocity_color(velocity)
         boosted = self._aftertouch_boost(base_color, aftertouch)
 
-        self.active_keys[midi_note] = {
+        self.active_keys[int(midi_note)] = {
             "color": boosted,
-            "velocity": velocity,
-            "aftertouch": aftertouch,
+            "velocity": int(velocity),
+            "aftertouch": int(aftertouch),
             "time": time.time(),
         }
 
-    def update_aftertouch(self, midi_note, aftertouch):
+    def update_aftertouch(self, midi_note: int, aftertouch: int) -> None:
         """Poly‑aftertouch update."""
-        if midi_note in self.active_keys:
-            info = self.active_keys[midi_note]
+        key = int(midi_note)
+        if key in self.active_keys:
+            info = self.active_keys[key]
             base = self._velocity_color(info["velocity"])
-            info["aftertouch"] = aftertouch
+            info["aftertouch"] = int(aftertouch)
             info["color"] = self._aftertouch_boost(base, aftertouch)
 
-    def unhighlight_key(self, midi_note):
+    def unhighlight_key(self, midi_note: int) -> None:
         """NOTE OFF."""
-        if midi_note in self.active_keys:
-            del self.active_keys[midi_note]
+        key = int(midi_note) if midi_note is not None else None
+        if key in self.active_keys:
+            del self.active_keys[key]
 
-    def clear(self):
+    def clear(self) -> None:
         self.active_keys.clear()
 
-    def reset(self):
+    def reset(self) -> None:
         self.clear()
         self._calculate_positions()
+        self._build_gradients()
 
     # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
-    def draw(self, surface):
+    def draw(self, surface: pygame.Surface) -> None:
         if surface is None:
             return
 
@@ -155,17 +199,12 @@ class PianoUI:
                     min(255, int(color[2] * flash)),
                 )
 
-                # LED gradient
                 pygame.draw.rect(surface, color, rect)
                 pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
-                # gradient overlay
-                grad = pygame.Surface((rect.w, rect.h), pygame.SRCALPHA)
-                for y in range(rect.h):
-                    alpha = int(80 * (1 - y / rect.h))
-                    pygame.draw.line(grad, (255, 255, 255, alpha), (0, y), (rect.w, y))
-                surface.blit(grad, rect.topleft)
-
+                # LED gradient (z cache)
+                if self._white_gradient is not None:
+                    surface.blit(self._white_gradient, rect.topleft)
             else:
                 pygame.draw.rect(surface, (255, 255, 255), rect)
                 pygame.draw.rect(surface, (0, 0, 0), rect, 2)
@@ -186,13 +225,9 @@ class PianoUI:
                 pygame.draw.rect(surface, color, rect)
                 pygame.draw.rect(surface, (30, 30, 30), rect, 1)
 
-                # LED shine
-                shine = pygame.Surface((rect.w, rect.h), pygame.SRCALPHA)
-                for y in range(rect.h):
-                    alpha = int(120 * (1 - y / rect.h))
-                    pygame.draw.line(shine, (255, 255, 255, alpha), (0, y), (rect.w, y))
-                surface.blit(shine, rect.topleft)
-
+                # LED shine (z cache)
+                if self._black_shine is not None:
+                    surface.blit(self._black_shine, rect.topleft)
             else:
                 pygame.draw.rect(surface, (0, 0, 0), rect)
                 pygame.draw.rect(surface, (40, 40, 40), rect, 1)
