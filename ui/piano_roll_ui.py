@@ -1,5 +1,6 @@
 import pygame
 import time
+from typing import Dict, Tuple, List
 
 
 class PianoRollUI:
@@ -11,15 +12,15 @@ class PianoRollUI:
     FIRST_MIDI_NOTE = 36   # C2
     LAST_MIDI_NOTE = 96    # C7
 
-    def __init__(self, width=1400, height=200):
-        self.width = width
-        self.height = height
+    def __init__(self, width: int = 1400, height: int = 200):
+        self.width = int(width)
+        self.height = int(height)
 
         # midi_note -> (color, timestamp)
-        self.active_keys = {}
+        self.active_keys: Dict[int, Tuple[Tuple[int, int, int], float]] = {}
 
-        self.white_keys = []
-        self.black_keys = []
+        self.white_keys: List[Tuple[int, pygame.Rect]] = []
+        self.black_keys: List[Tuple[int, pygame.Rect]] = []
 
         pygame.font.init()
         try:
@@ -46,13 +47,7 @@ class PianoRollUI:
     # ---------------------------------------------------------
     def _calculate_key_positions(self):
         white_key_order = [0, 2, 4, 5, 7, 9, 11]
-        black_key_offsets = {
-            1: 0.65,
-            3: 1.65,
-            6: 3.65,
-            8: 4.65,
-            10: 5.65
-        }
+        black_key_offsets = {1: 0.65, 3: 1.65, 6: 3.65, 8: 4.65, 10: 5.65}
 
         white_index = 0
         self.white_keys.clear()
@@ -60,8 +55,7 @@ class PianoRollUI:
 
         # WHITE KEYS
         for midi_note in range(self.FIRST_MIDI_NOTE, self.LAST_MIDI_NOTE + 1):
-            note = midi_note % 12
-            if note in white_key_order:
+            if (midi_note % 12) in white_key_order:
                 x = white_index * self.WHITE_KEY_WIDTH
                 rect = pygame.Rect(x, 0, self.WHITE_KEY_WIDTH, self.WHITE_KEY_HEIGHT)
                 self.white_keys.append((midi_note, rect))
@@ -85,19 +79,29 @@ class PianoRollUI:
         if midi_note is None:
             return
 
+        try:
+            midi = int(midi_note)
+        except Exception:
+            return
+
         if not isinstance(color, (tuple, list)) or len(color) != 3:
             color = (255, 80, 80)
 
-        self.active_keys[midi_note] = (color, time.time())
+        self.active_keys[midi] = (tuple(color), time.time())
 
     def unhighlight_key(self, midi_note):
-        if midi_note in self.active_keys:
-            del self.active_keys[midi_note]
+        try:
+            midi = int(midi_note)
+        except Exception:
+            return
+
+        if midi in self.active_keys:
+            del self.active_keys[midi]
 
     # ---------------------------------------------------------
     # DRAW
     # ---------------------------------------------------------
-    def draw(self, surface):
+    def draw(self, surface: pygame.Surface):
         if surface is None:
             return
 
@@ -149,11 +153,12 @@ class PianoRollUI:
                     text = self.font.render(label, True, (0, 0, 0))
                     surface.blit(text, (rect.x + 2, rect.y + self.WHITE_KEY_HEIGHT - 18))
 
-        # --- HORIZONTAL SEPARATOR ---
+        # --- HORIZONTAL SEPARATOR (opravené) ---
+        h = surface.get_height()
         pygame.draw.line(
             surface,
             (80, 80, 80),
-            (0, self.WHITE_KEY_HEIGHT),
-            (self.width, self.WHITE_KEY_HEIGHT),
+            (0, h - 2),
+            (self.width, h - 2),
             2
         )
