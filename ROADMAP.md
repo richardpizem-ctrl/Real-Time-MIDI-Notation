@@ -91,20 +91,47 @@ This section describes:
 - safer event routing  
 - improved marker synchronization  
 - micro‑optimizations for renderer interaction  
-- groundwork for PixelLayoutEngine Phase‑1 (coming in 1.4.0)  
+- groundwork prepared for future layout engine upgrades  
+
+---
+
+# 🧱 Preparation for v2.0.0 (Already Completed Groundwork)
+
+### ⭐ Core & Real‑Time Engine
+- EventBus prepared for deque‑based real‑time routing  
+- NotationProcessor stabilized for multi‑track real‑time processing  
+- TrackManager ready for extended editing operations  
+- PlaybackEngine prepared for low‑latency optimizations  
+
+### ⭐ Timeline & Editing System
+- groundwork prepared for:  
+  - Magnetic Markers (ALT‑drag ripple edit)  
+  - Ripple editing for notes and markers  
+  - Advanced editing modes (Standard, Magnetic, Ripple)  
+  - Ghost snapping visualization  
+  - Hover effects  
+  - TextInput class for professional UI interactions  
+
+### ⭐ Renderer_new
+- prepared for Graphic Primitives separation  
+- ready for cached grid rendering (dirty‑flag system)  
+- optimized for large‑scale real‑time rendering  
+
+### ⭐ Real‑Time Performance
+- groundwork for burst‑safe event handling  
+- timestamp micro‑optimizations  
+- stability improvements for high‑density MIDI input  
+- optional multithreaded StreamHandler groundwork  
+
+### ⭐ Architecture Clean‑Up
+- all legacy modules removed or isolated  
+- no conflicts between 1.x.x and 2.0.0  
+- all CORE and UI modules stable and ready for expansion  
+- all Gemini recommendations stored and prepared for implementation  
 
 ---
 
 # 🗺 Future Roadmap After v1.3.0
-
-### v1.4.0 — Interaction & Comfort Update
-- loop hover highlight  
-- playhead hover highlight  
-- snapping ghost lines  
-- gentle UI animations  
-- full Track Switcher UI  
-- PixelLayoutEngine Phase‑1  
-- improved timeline visuals  
 
 ### v2.0.0 — Advanced Layout Engine
 - multi‑voice notation  
@@ -112,6 +139,12 @@ This section describes:
 - advanced beams  
 - articulations  
 - improved engraving rules  
+- Magnetic Markers  
+- Ripple Editing  
+- Advanced Editing Modes  
+- Cached Grid Rendering  
+- Graphic Primitives Layer  
+- Real‑Time Optimizations  
 
 ### v3.0.0 — Professional Engraving
 - MuseScore/LilyPond‑level engraving  
