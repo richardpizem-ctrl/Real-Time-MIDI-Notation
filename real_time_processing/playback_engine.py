@@ -58,7 +58,7 @@ class PlaybackEngine:
         """Spustí prehrávanie."""
         try:
             self.is_playing = True
-            self.start_time = time.time()
+            self.start_time = time.perf_counter()
             Logger.info("Playback started.")
         except Exception as e:
             Logger.error(f"PlaybackEngine play error: {e}")
@@ -82,7 +82,7 @@ class PlaybackEngine:
         """
         try:
             if self.is_playing:
-                self.time_seconds = time.time() - self.start_time
+                self.time_seconds = time.perf_counter() - self.start_time
 
             # Update timeline
             self.timeline.update(self.time_seconds)
@@ -101,7 +101,7 @@ class PlaybackEngine:
             self.surface.fill((20, 20, 20))
             timeline_surface = self.timeline.render()
 
-            if timeline_surface:
+            if timeline_surface is not None:
                 self.surface.blit(timeline_surface, (0, 0))
 
             return self.surface
