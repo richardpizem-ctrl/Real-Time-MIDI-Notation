@@ -11,11 +11,11 @@ class TrackControlManager:
     """
 
     def __init__(self, track_count: int = 16):
-        self.track_count = track_count
+        self.track_count = int(track_count)
 
         # Tri základné controllery Fázy 4
-        self.visibility = TrackVisibilityController(track_count)
-        self.selection = TrackSelectionController(track_count)
+        self.visibility = TrackVisibilityController(self.track_count)
+        self.selection = TrackSelectionController(self.track_count)
         self.colors = TrackColorMap()
 
         # Event hooky
@@ -29,16 +29,20 @@ class TrackControlManager:
     # EVENT REGISTRÁCIA
     # ---------------------------------------------------------
     def on(self, event_name: str, callback):
+        """Registruje callback pre daný event."""
         if event_name in self._listeners:
             self._listeners[event_name].append(callback)
 
     def _emit(self, event_name: str, data):
-        if event_name in self._listeners:
-            for callback in self._listeners[event_name]:
-                try:
-                    callback(data)
-                except Exception:
-                    pass
+        """Bezpečne notifikuje všetkých listenerov."""
+        listeners = self._listeners.get(event_name)
+        if not listeners:
+            return
+        for callback in listeners:
+            try:
+                callback(data)
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # INTERNÉ POMOCNÉ FUNKCIE
@@ -74,16 +78,11 @@ class TrackControlManager:
         })
 
     def set_color(self, track: int, color_hex: str):
-        """Nastaví farbu stopy a notifikuje UI."""
+        """
+        Nastaví farbu stopy a notifikuje UI.
+        TrackColorMap je read‑only → iba emitujeme event.
+        """
         t = self._clamp_track(track)
-
-        # TrackColorMap nemá set_color → bezpečný fallback
-        if hasattr(self.colors, "set_color"):
-            try:
-                self.colors.set_color(t, color_hex)
-            except Exception:
-                pass
-
         self._emit("color_changed", {
             "track": t,
             "color": color_hex
