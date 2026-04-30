@@ -6,9 +6,8 @@ class TrackVisibilityController:
     """
 
     def __init__(self, track_count: int = 16):
-        self.track_count = track_count
-        # True = stopa je viditeľná
-        self.visibility = [True] * track_count
+        self.track_count = int(track_count)
+        self.visibility = [True] * self.track_count  # True = stopa je viditeľná
 
     # ---------------------------------------------------------
     # INTERNAL HELPERS
@@ -26,20 +25,21 @@ class TrackVisibilityController:
     # ---------------------------------------------------------
     def show(self, track: int):
         """Zapne viditeľnosť danej stopy."""
-        t = self._clamp(track)
-        self.visibility[t] = True
+        self.visibility[self._clamp(track)] = True
 
     def hide(self, track: int):
         """Vypne viditeľnosť danej stopy."""
-        t = self._clamp(track)
-        self.visibility[t] = False
+        self.visibility[self._clamp(track)] = False
 
     def toggle(self, track: int):
         """Prepne viditeľnosť danej stopy."""
         t = self._clamp(track)
         self.visibility[t] = not self.visibility[t]
 
+    def set_visible(self, track: int, visible: bool):
+        """Explicitne nastaví viditeľnosť (pre kompatibilitu s UI/Manager)."""
+        self.visibility[self._clamp(track)] = bool(visible)
+
     def is_visible(self, track: int) -> bool:
         """Vráti True/False podľa toho, či je stopa viditeľná."""
-        t = self._clamp(track)
-        return self.visibility[t]
+        return self.visibility[self._clamp(track)]
