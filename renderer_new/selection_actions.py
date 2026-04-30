@@ -9,11 +9,13 @@ Modul pre operácie nad vybranými notami:
 Bez zásahu do NotesLayer – pracuje len s dátovou štruktúrou nôt.
 """
 
+from typing import List, Dict, Any, Tuple
+
 
 # -------------------------------------------------------------
 # HELPERS
 # -------------------------------------------------------------
-def clone_note(note: dict) -> dict:
+def clone_note(note: Dict[str, Any]) -> Dict[str, Any]:
     """Bezpečne klonuje notu (immutable workflow)."""
     return dict(note) if isinstance(note, dict) else {}
 
@@ -21,7 +23,7 @@ def clone_note(note: dict) -> dict:
 # -------------------------------------------------------------
 # DELETE
 # -------------------------------------------------------------
-def delete_selected_notes(notes: list, selected_indices: list) -> list:
+def delete_selected_notes(notes: List[Dict[str, Any]], selected_indices: List[int]) -> List[Dict[str, Any]]:
     """Vymaže noty podľa indexov. Vracia nový zoznam nôt."""
     if not notes or not selected_indices:
         return notes
@@ -33,12 +35,17 @@ def delete_selected_notes(notes: list, selected_indices: list) -> list:
 # -------------------------------------------------------------
 # MOVE
 # -------------------------------------------------------------
-def move_selected_notes(notes: list, selected_indices: list, dx: int, dy: int) -> list:
+def move_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    dx: int,
+    dy: int
+) -> List[Dict[str, Any]]:
     """Posunie vybrané noty o dx, dy. Vracia nový zoznam nôt."""
     if not notes or not selected_indices:
         return notes
 
-    new_notes = []
+    new_notes: List[Dict[str, Any]] = []
     selected_set = set(selected_indices)
 
     for i, note in enumerate(notes):
@@ -56,12 +63,16 @@ def move_selected_notes(notes: list, selected_indices: list, dx: int, dy: int) -
 # -------------------------------------------------------------
 # TRANSPOSE
 # -------------------------------------------------------------
-def transpose_selected_notes(notes: list, selected_indices: list, semitones: int) -> list:
+def transpose_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    semitones: int
+) -> List[Dict[str, Any]]:
     """Transponuje pitch vybraných nôt."""
     if not notes or not selected_indices:
         return notes
 
-    new_notes = []
+    new_notes: List[Dict[str, Any]] = []
     selected_set = set(selected_indices)
 
     for i, note in enumerate(notes):
@@ -78,12 +89,16 @@ def transpose_selected_notes(notes: list, selected_indices: list, semitones: int
 # -------------------------------------------------------------
 # VELOCITY
 # -------------------------------------------------------------
-def velocity_selected_notes(notes: list, selected_indices: list, delta: int) -> list:
+def velocity_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    delta: int
+) -> List[Dict[str, Any]]:
     """Zmení velocity vybraných nôt (1–127)."""
     if not notes or not selected_indices:
         return notes
 
-    new_notes = []
+    new_notes: List[Dict[str, Any]] = []
     selected_set = set(selected_indices)
 
     for i, note in enumerate(notes):
@@ -101,12 +116,16 @@ def velocity_selected_notes(notes: list, selected_indices: list, delta: int) -> 
 # -------------------------------------------------------------
 # STRETCH
 # -------------------------------------------------------------
-def stretch_selected_notes(notes: list, selected_indices: list, factor: float) -> list:
+def stretch_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    factor: float
+) -> List[Dict[str, Any]]:
     """Natiahne alebo skráti duration vybraných nôt."""
     if not notes or not selected_indices:
         return notes
 
-    new_notes = []
+    new_notes: List[Dict[str, Any]] = []
     selected_set = set(selected_indices)
 
     for i, note in enumerate(notes):
@@ -124,16 +143,24 @@ def stretch_selected_notes(notes: list, selected_indices: list, factor: float) -
 # -------------------------------------------------------------
 # MULTI-ACTION PIPELINE
 # -------------------------------------------------------------
-def apply_actions(notes: list, selected_indices: list, actions: list) -> list:
+def apply_actions(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    actions: List[Tuple]
+) -> List[Dict[str, Any]]:
     """
     Umožňuje aplikovať viac akcií naraz.
     actions = [
         ("move", dx, dy),
         ("transpose", semitones),
         ("velocity", delta),
-        ("stretch", factor)
+        ("stretch", factor),
+        ("delete",),
     ]
     """
+    if not notes or not actions:
+        return notes
+
     result = notes
 
     for action in actions:
