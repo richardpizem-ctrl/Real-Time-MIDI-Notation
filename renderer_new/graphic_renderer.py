@@ -11,16 +11,11 @@ except Exception:
     pygame = None
 
 # ------------------------------------------------------------
-# LAYER SYSTEM
+# LAYER SYSTEM – tvoje reálne vrstvy
 # ------------------------------------------------------------
-from .renderer_layers import (
-    LayerManager,
-    GridLayer,
-    NotesLayer,
-    PlayheadLayer,
-    MarkerLayer,
-)
+from .layers import LayerManager
 from .layers.timeline_layer import TimelineLayer
+from .selection_layer import SelectionLayer
 
 
 class RenderContext:
@@ -72,6 +67,7 @@ class GraphicNotationRenderer:
         self.bpm = 120.0
         self.beats_per_bar = 4
 
+        # TimelineController
         if pygame is not None:
             try:
                 from .timeline_controller import TimelineController
@@ -114,23 +110,16 @@ class GraphicNotationRenderer:
         self.color_mode = "heatmap"
 
         # ------------------------------------------------------------
-        # LAYER MANAGER
+        # LAYER MANAGER – tvoje reálne vrstvy
         # ------------------------------------------------------------
         self.layers = LayerManager()
 
-        # Vrstvy pridávame v poradí kreslenia
         # 1) Timeline (grid + markers + playhead)
         if self.timeline_controller is not None:
             self.layers.add_layer(TimelineLayer(self.timeline_controller))
 
-        # 2) Notes
-        self.layers.add_layer(NotesLayer())
-
-        # 3) Playhead overlay
-        self.layers.add_layer(PlayheadLayer())
-
-        # 4) Markers overlay
-        self.layers.add_layer(MarkerLayer())
+        # 2) Selection overlay (výber nôt)
+        self.layers.add_layer(SelectionLayer(self.timeline_controller))
 
     # ---------------------------------------------------------
     # TRACK LANE OFFSET
@@ -188,12 +177,6 @@ class GraphicNotationRenderer:
             except Exception:
                 pass
 
-    def update_visibility(self, track_index: int, visible: bool) -> None:
-        return
-
-    def update_color(self, track_index: int, color_hex: str) -> None:
-        return
-
     # ---------------------------------------------------------
     # TIME UPDATE
     # ---------------------------------------------------------
@@ -211,48 +194,9 @@ class GraphicNotationRenderer:
         if self.timeline_controller is not None:
             try:
                 self.timeline_controller.update(self.playback_time)
-                self.timeline_controller.set_scroll(self.scroll_offset)
+                self.timeline_controller.set_offset(self.scroll_offset)
             except Exception:
                 pass
-
-    # ---------------------------------------------------------
-    # TIME → X
-    # ---------------------------------------------------------
-    def _time_to_x(self, t: float) -> float:
-        try:
-            tt = float(t)
-        except Exception:
-            tt = self.playback_time
-
-        if self.bpm <= 0:
-            pixels_per_second = 80.0 * self.zoom
-        else:
-            seconds_per_beat = 60.0 / self.bpm
-            pixels_per_beat = 80.0 * self.zoom
-            pixels_per_second = pixels_per_beat / seconds_per_beat
-
-        dt = tt - self.playback_time
-        x = self.playhead_x + dt * pixels_per_second - self.scroll_offset
-        return x
-
-    # ---------------------------------------------------------
-    # PITCH → Y
-    # ---------------------------------------------------------
-    def _pitch_to_y(self, midi: int, track_id: int) -> float:
-        try:
-            midi_int = int(midi)
-        except Exception:
-            midi_int = 60
-
-        reference_pitch = 60
-        staff_center = self.timeline_height + self.margin_top + 2 * self.staff_line_spacing
-        semitone_step = self.staff_line_spacing / 2.0
-
-        dy = (reference_pitch - midi_int) * semitone_step
-        y = staff_center + dy
-
-        y += self._track_lane_offset(track_id)
-        return y
 
     # ---------------------------------------------------------
     # STAFF LINES (cached)
@@ -295,20 +239,6 @@ class GraphicNotationRenderer:
         return self.staff_cache
 
     # ---------------------------------------------------------
-    # COLOR HELPERS
-    # ---------------------------------------------------------
-    def _hex_to_rgb(self, h: str) -> Tuple[int, int, int]:
-        if not isinstance(h, str):
-            return (120, 180, 220)
-        h = h.lstrip("#")
-        if len(h) != 6:
-            return (120, 180, 220)
-        try:
-            return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-        except Exception:
-            return (120, 180, 220)
-
-    # ---------------------------------------------------------
     # MAIN RENDER
     # ---------------------------------------------------------
     def render(self):
@@ -338,6 +268,6 @@ class GraphicNotationRenderer:
             marker_renderer=self.timeline_controller,
         )
 
-        self.layers.draw(self.surface, context)
+        self.layers.render(self.surface)
 
         return self.surface
