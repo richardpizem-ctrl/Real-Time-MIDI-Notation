@@ -20,7 +20,7 @@ def test_chord(notes):
         chord = detect_chord(notes_int)
 
         if chord:
-            print(f"Notes {notes_int} → Detected chord: {chord.name}")
+            print(f"Notes {notes_int} → Detected chord: {chord}")
         else:
             print(f"Notes {notes_int} → No chord detected")
 
