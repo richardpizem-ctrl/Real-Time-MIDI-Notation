@@ -1,4 +1,7 @@
-# Logger – stabilný thread‑safe logger pre celý projekt
+# =========================================================
+# Logger v2.0.0
+# Stabilný, thread-safe logger pre celý MIDI Engine
+# =========================================================
 
 import datetime
 import threading
@@ -6,13 +9,14 @@ import threading
 
 class Logger:
     """
-    Stabilizovaný thread‑safe logger (Fáza 4):
+    Stabilizovaný thread‑safe logger (v2.0.0):
     - bezpečné timestampy
     - thread‑safe výstup
     - jednotný formát logov
     - ochrana proti nevalidným správam
     - ochrana proti extrémne dlhým správam
     - podpora INFO / WARNING / ERROR / DEBUG
+    - fail‑safe: nikdy nespadne
     """
 
     _lock = threading.Lock()
@@ -22,6 +26,7 @@ class Logger:
     # ---------------------------------------------------------
     @staticmethod
     def _timestamp():
+        """Bezpečné generovanie timestampu."""
         try:
             return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         except Exception:
