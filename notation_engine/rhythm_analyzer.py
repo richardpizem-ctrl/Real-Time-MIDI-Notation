@@ -1,4 +1,8 @@
-# Rhythm Analyzer – timing, patterns, swing, groove
+# =========================================================
+# RhythmAnalyzer v2.0.0
+# Stabilná analýza rytmu, swingu, groove a patternov
+# pre Real-Time-MIDI-Notation
+# =========================================================
 
 from collections import defaultdict, Counter
 from math import fabs
@@ -53,18 +57,23 @@ class RhythmAnalyzerConfig:
 
 class RhythmAnalyzer:
     """
-    Vstup: timeline – zoznam nôt so 'start', 'duration', 'velocity', 'track_type', 'bar_index', 'beat_in_bar'
-    Výstup: slovník s analýzou rytmu, swingom, patternmi, groove, timingom a dynamikou.
+    RhythmAnalyzer (v2.0.0):
+    - kvantizácia
+    - timing deviation
+    - velocity analýza
+    - swing detection
+    - pattern detection
+    - downbeat detection
+    - groove classification
     """
 
     def __init__(self, config=None):
         self.config = config or RhythmAnalyzerConfig()
         Logger.info("RhythmAnalyzer initialized with config.")
 
-    # -------------------------------------------------
+    # ---------------------------------------------------------
     # PUBLIC API
-    # -------------------------------------------------
-
+    # ---------------------------------------------------------
     def analyze(self, timeline):
         if not isinstance(timeline, list) or not timeline:
             Logger.warning("RhythmAnalyzer.analyze called with empty or invalid timeline.")
@@ -100,10 +109,9 @@ class RhythmAnalyzer:
 
         return result
 
-    # -------------------------------------------------
+    # ---------------------------------------------------------
     # 1) Kvantizácia
-    # -------------------------------------------------
-
+    # ---------------------------------------------------------
     def _quantize_timeline(self, timeline):
         grid = self.config.quant_grid
         quantized = []
@@ -140,10 +148,9 @@ class RhythmAnalyzer:
 
         return quantized
 
-    # -------------------------------------------------
-    # 2) Timing deviation analyzer
-    # -------------------------------------------------
-
+    # ---------------------------------------------------------
+    # 2) Timing deviation
+    # ---------------------------------------------------------
     def _analyze_timing_deviation(self, timeline, quantized):
         deviations = []
 
@@ -188,10 +195,9 @@ class RhythmAnalyzer:
             "deviations": deviations,
         }
 
-    # -------------------------------------------------
-    # 3) Velocity pattern analyzer
-    # -------------------------------------------------
-
+    # ---------------------------------------------------------
+    # 3) Velocity patterns
+    # ---------------------------------------------------------
     def _analyze_velocity_patterns(self, timeline):
         velocities = []
 
@@ -258,10 +264,9 @@ class RhythmAnalyzer:
             "velocity_profile": profile,
         }
 
-    # -------------------------------------------------
+    # ---------------------------------------------------------
     # 4) Swing detection
-    # -------------------------------------------------
-
+    # ---------------------------------------------------------
     def _detect_swing(self, timeline, quantized):
         if not timeline:
             return {"type": "unknown", "ratio": 0.0}
@@ -322,10 +327,9 @@ class RhythmAnalyzer:
             "pairs_analyzed": len(pairs),
         }
 
-    # -------------------------------------------------
+    # ---------------------------------------------------------
     # 5) Pattern recognition
-    # -------------------------------------------------
-
+    # ---------------------------------------------------------
     def _detect_rhythm_patterns(self, quantized):
         if not quantized:
             return {"patterns": [], "bar_patterns": {}}
@@ -381,10 +385,9 @@ class RhythmAnalyzer:
             "bar_patterns": bar_patterns,
         }
 
-    # -------------------------------------------------
+    # ---------------------------------------------------------
     # 6) Downbeat detection
-    # -------------------------------------------------
-
+    # ---------------------------------------------------------
     def _detect_downbeats(self, timeline, velocity_stats, timing_stats):
         if not timeline:
             return {"downbeats": []}
@@ -426,10 +429,9 @@ class RhythmAnalyzer:
 
         return {"downbeats": downbeats}
 
-    # -------------------------------------------------
+    # ---------------------------------------------------------
     # 7) Groove classifier
-    # -------------------------------------------------
-
+    # ---------------------------------------------------------
     def _classify_groove(self, swing_info, patterns, velocity_stats, timing_stats):
         swing_type = swing_info.get("type", "straight")
         ratio = swing_info.get("ratio", 0.5)
