@@ -1,4 +1,7 @@
-# MIDI Listener – stabilná verzia
+# =========================================================
+# MIDIListener v2.0.0
+# Stabilný real-time MIDI vstupný modul pre MIDI Engine
+# =========================================================
 
 import threading
 import time
@@ -10,12 +13,12 @@ from ..core.logger import Logger
 
 class MIDIListener:
     """
-    Stabilný MIDI listener (Fáza 4):
-    - bezpečné otváranie portu
+    MIDIListener (v2.0.0):
+    - bezpečné otváranie MIDI portu
     - auto-detect MIDI zariadenia
     - thread-safe štart/stop
-    - žiadne duplikované porty
     - odolný voči chybám počas čítania
+    - žiadne duplikované porty
     """
 
     def __init__(self, event_bus, device_name=None, poll_interval=0.001):
