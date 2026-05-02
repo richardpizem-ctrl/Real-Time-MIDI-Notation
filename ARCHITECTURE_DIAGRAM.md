@@ -1,15 +1,17 @@
-# 🏗️ Real-Time MIDI Notation — MEGA ARCHITECTURE DIAGRAM (Ultimate Edition)
+# 🏗️ Real-Time MIDI Notation — ARCHITECTURE DIAGRAM (v2.0.0)
 
-This document provides a complete, high-level overview of the entire system architecture, including  
-real-time MIDI flow, module responsibilities, and communication pathways.
+This document provides a complete, high-level overview of the system architecture for  
+**SIRIUS / Real-Time MIDI Notation v2.0.0**, including real-time MIDI flow, module responsibilities,  
+and communication pathways.
 
-It is designed for developers, contributors, researchers, and anyone studying the internal structure of the engine.
+It is designed for developers, contributors, researchers, and engineers studying the internal structure  
+of the engine.
 
 ---
 
 # 🆕 A New Class of Real-Time MIDI Engine
 
-**SIRIUS / Real-Time MIDI Notation** does not belong to any existing category of music software.
+**SIRIUS** does not belong to any existing category of music software.
 
 It is NOT:
 - a MIDI visualizer  
@@ -17,7 +19,7 @@ It is NOT:
 - a DAW plugin  
 - a traditional MIDI library  
 
-It represents a **completely new class of software** that did not exist before:
+It represents a **new class of software**:
 
 ## 🎼 Real-Time Multi-Track MIDI Notation Engine
 
@@ -26,18 +28,12 @@ This engine combines features that have never been seen together:
 - fully **real-time** MIDI processing  
 - **16‑track Yamaha‑compatible** multi-track architecture  
 - instant graphical notation (beams, stems, barlines)  
-- **velocity‑based** real-time dynamics  
+- velocity‑based real-time dynamics  
 - modular graphic renderer (Python + Pygame)  
 - architecture optimized for **research, education, live performance, and studio work**  
 - no preprocessing, no lookahead, no offline steps  
 
-SIRIUS defines a **new category of real-time MIDI tools**, complementing traditional offline notation systems (MuseScore, LilyPond, Dorico) and enabling:
-
-- live notation  
-- real-time performance analysis  
-- expressivity research  
-- pre‑recording studio tools  
-- visualization for music education  
+SIRIUS defines a **new category of real-time MIDI tools**, complementing traditional offline notation systems.
 
 ---
 
@@ -228,4 +224,4 @@ SIRIUS defines a **new category of real-time MIDI tools**, complementing traditi
 
 ---
 
-# 🎉 End of Architecture Diagram
+# 🎉 End of Architecture Diagram (v2.0.0)
