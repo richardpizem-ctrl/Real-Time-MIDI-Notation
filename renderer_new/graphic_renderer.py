@@ -1,6 +1,8 @@
-# graphic_renderer.py – GraphicNotationRenderer (FÁZA 4)
+# =========================================================
+# GraphicNotationRenderer v2.0.0
+# Stabilný renderer pre multi‑track grafickú notáciu
 # Integrovaný LayerManager + RenderContext
-# Bezpečný, odolný renderer pre multi-track grafickú notáciu
+# =========================================================
 
 from typing import List, Dict, Any, Tuple, Optional
 import time
@@ -35,9 +37,26 @@ class RenderContext:
 # ------------------------------------------------------------
 
 class GraphicNotationRenderer:
+    """
+    GraphicNotationRenderer (v2.0.0)
+    - stabilný
+    - real‑time safe
+    - kompatibilný s TimelineController
+    - používa LayerManager
+    - pripravený na v3 (AI/TIMELINE)
+    """
+
     def __init__(self, width: int, height: int, track_manager, track_control=None):
-        self.width = int(width)
-        self.height = int(height)
+        try:
+            self.width = int(width)
+        except Exception:
+            self.width = 1600
+
+        try:
+            self.height = int(height)
+        except Exception:
+            self.height = 400
+
         self.track_manager = track_manager
         self.track_control = track_control
 
@@ -268,6 +287,9 @@ class GraphicNotationRenderer:
             marker_renderer=self.timeline_controller,
         )
 
-        self.layers.render(self.surface)
+        try:
+            self.layers.render(self.surface)
+        except Exception:
+            pass
 
         return self.surface
