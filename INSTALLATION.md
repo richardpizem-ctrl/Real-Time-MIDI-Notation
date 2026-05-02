@@ -1,6 +1,8 @@
-# 🛠️ Real-Time MIDI Notation — MEGA INSTALLATION GUIDE (Ultimate Edition, v1.3.0)
+# 🛠️ Real-Time MIDI Notation — Installation Guide (v2.0.0)
 
-This guide explains how to install, configure, and run **Real-Time MIDI Notation (SIRIUS Engine)** on any supported system.  
+This guide explains how to install, configure, and run  
+**Real-Time MIDI Notation (SIRIUS Engine)** on any supported system.
+
 It is designed for beginners, developers, testers, and musicians.
 
 ---
@@ -13,14 +15,13 @@ It is designed for beginners, developers, testers, and musicians.
 - Linux (Ubuntu, Arch, Fedora)
 
 ## ✔ Python Version
-- Python **3.10+** recommended  
-(Older versions may work but are not officially supported.)
+- Python **3.10+** required  
+(Older versions are not supported in v2.0.0.)
 
 ## ✔ Dependencies (installed automatically)
 - pygame  
 - mido  
 - python-rtmidi  
-- numpy  
 
 ---
 
@@ -78,12 +79,12 @@ If your device is not detected:
 Start the program with:
 
 ```
-python run.py
+python main.py
 ```
 
 This will:
 
-- initialize all modules  
+- initialize all v2.0.0 modules  
 - open the pygame window  
 - start the real-time renderer  
 - begin listening for MIDI input  
