@@ -1,31 +1,30 @@
-"""
-timeline_layer.py
-FÁZA 4 – Timeline Layer pre nový LayerManager
-
-Účel:
-    - Kreslí timeline (grid, markers, playhead)
-    - Používa TimelineController ako zdroj dát
-    - Integruje sa do LayerManager v graphic_renderer.py
-"""
+# =========================================================
+# TimelineLayer v2.0.0
+# Stabilná vrstva pre kreslenie timeline (grid + markers + playhead)
+# =========================================================
 
 import pygame
 from typing import Optional
 from ..timeline_controller import TimelineController
-from .renderer_layers import BaseLayer
+from .layers import BaseLayer
 
 
 class TimelineLayer(BaseLayer):
     """
-    TimelineLayer – vrstva pre kreslenie timeline.
-    Nepoužíva žiadnu vlastnú logiku, iba deleguje kreslenie
-    na TimelineController.
+    TimelineLayer (v2.0.0)
+    ----------------------
+    - Vrstva pre kreslenie timeline
+    - Nepoužíva vlastnú logiku, iba deleguje kreslenie
+      na TimelineController
+    - Real‑time safe
+    - Pripravené na v3 (AI/TIMELINE)
     """
 
-    def __init__(self, controller: TimelineController):
-        super().__init__("timeline", visible=True)
+    def __init__(self, controller: TimelineController, z_index: int = 0):
+        super().__init__(z_index=z_index, visible=True)
         self.controller = controller
 
-    def draw(self, surface: pygame.Surface, context=None):
+    def draw(self, surface: pygame.Surface):
         """
         Kreslí timeline cez controller.
         Poradie:
@@ -33,11 +32,7 @@ class TimelineLayer(BaseLayer):
             2. Markers
             3. Playhead
         """
-        if self.controller is None:
-            return
-
-        # 🔒 Odporúčaná ochrana (pridané)
-        if surface is None:
+        if self.controller is None or surface is None:
             return
 
         try:
