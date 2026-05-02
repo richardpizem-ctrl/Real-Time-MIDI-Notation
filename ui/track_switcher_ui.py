@@ -1,3 +1,9 @@
+# =========================================================
+# TrackSwitcherUI v2.0.0
+# DAW‑štýlový vizuálny prepínač stôp s meterom, panom, volume,
+# record/mute/solo a highlight systémom.
+# =========================================================
+
 import pygame
 import math
 from .track_control_manager import TrackControlManager
@@ -174,102 +180,6 @@ class TrackSwitcherUI:
                 width=2,
                 border_radius=6 + i,
             )
-
-    def _draw_meter_background(self, surface, rect):
-        bg_rect = pygame.Rect(rect.x + 4, rect.y + 2, self.button_width - 8, self.METER_HEIGHT)
-        pygame.draw.rect(surface, self.COLOR_METER_BG, bg_rect, border_radius=4)
-
-    def _draw_meter(self, surface, rect, level):
-        if level <= 0:
-            return
-        meter_height = int(level * self.METER_HEIGHT)
-        meter_rect = pygame.Rect(
-            rect.x + 4,
-            rect.y + 2 + (self.METER_HEIGHT - meter_height),
-            self.button_width - 8,
-            meter_height,
-        )
-        pygame.draw.rect(surface, self.COLOR_METER, meter_rect, border_radius=3)
-
-    def _draw_peak(self, surface, rect, peak):
-        if peak <= 0:
-            return
-        peak_y = rect.y + 2 + int((1 - peak) * self.METER_HEIGHT)
-        peak_rect = pygame.Rect(rect.x + 4, peak_y, self.button_width - 8, 2)
-        pygame.draw.rect(surface, self.COLOR_PEAK, peak_rect, border_radius=2)
-
-    def _draw_volume_background(self, surface, rect):
-        frame_rect = pygame.Rect(
-            rect.x + 6,
-            rect.y + self.button_height - 55,
-            self.button_width - 12,
-            self.VOLUME_HEIGHT,
-        )
-        pygame.draw.rect(surface, self.COLOR_VOLUME_BG, frame_rect, border_radius=4)
-
-    def _draw_volume(self, surface, rect, vol):
-        try:
-            vol = max(0.0, min(1.0, float(vol)))
-        except Exception:
-            vol = 0.0
-
-        vol_h = int(vol * self.VOLUME_HEIGHT)
-        vol_rect = pygame.Rect(
-            rect.x + 6,
-            rect.y + self.button_height - 55 + (self.VOLUME_HEIGHT - vol_h),
-            self.button_width - 12,
-            vol_h,
-        )
-        pygame.draw.rect(surface, self.COLOR_VOLUME, vol_rect, border_radius=3)
-
-        if self.small_font:
-            txt = self.small_font.render("V", True, (0, 0, 0))
-            surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 60))
-
-    def _draw_pan_background(self, surface, rect):
-        pan_x = rect.x + self.button_width // 2
-        pan_y = rect.y + self.button_height - 70
-        bg_rect = pygame.Rect(pan_x - 10, pan_y - 10, 20, 20)
-        pygame.draw.rect(surface, self.COLOR_PAN_BG, bg_rect, border_radius=6)
-
-    def _draw_pan(self, surface, rect, pan_val):
-        try:
-            pan_val = max(-1.0, min(1.0, float(pan_val)))
-        except Exception:
-            pan_val = 0.0
-
-        pan_x = rect.x + self.button_width // 2
-        pan_y = rect.y + self.button_height - 70
-
-        pygame.draw.circle(surface, (50, 50, 50), (pan_x, pan_y), 6)
-
-        angle = pan_val * math.pi
-        line_x = pan_x + int(6 * math.sin(angle))
-        line_y = pan_y - int(6 * math.cos(angle))
-        pygame.draw.line(surface, (255, 255, 255), (pan_x, pan_y), (line_x, line_y), 2)
-
-        if self.small_font:
-            txt = self.small_font.render("P", True, (0, 0, 0))
-            surface.blit(txt, (rect.x + 2, rect.y + self.button_height - 75))
-
-    def _draw_button(self, surface, rect, active, color_on, color_off, label):
-        if active:
-            glow_rect = rect.inflate(4, 4)
-            pygame.draw.rect(surface, (255, 255, 255, 40), glow_rect, border_radius=6)
-        pygame.draw.rect(surface, color_on if active else color_off, rect, border_radius=6)
-        if self.small_font:
-            txt = self.small_font.render(label, True, (0, 0, 0))
-            surface.blit(txt, (rect.x + 2, rect.y + 1))
-
-    def _draw_name_separator(self, surface, rect):
-        y = rect.y + self.NAME_HEIGHT
-        pygame.draw.line(
-            surface,
-            self.COLOR_NAME_SEPARATOR,
-            (rect.x + 4, y),
-            (rect.x + rect.width - 4, y),
-            1,
-        )
 
     # ---------------------------------------------------------
     # DRAW
