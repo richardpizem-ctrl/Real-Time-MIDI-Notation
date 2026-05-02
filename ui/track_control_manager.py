@@ -1,3 +1,8 @@
+# =========================================================
+# TrackControlManager v2.0.0
+# Centrálna správa track visibility, selection a farieb
+# =========================================================
+
 from .track_visibility_controller import TrackVisibilityController
 from .track_selection_controller import TrackSelectionController
 from .track_color_map import TrackColorMap
@@ -5,15 +10,28 @@ from .track_color_map import TrackColorMap
 
 class TrackControlManager:
     """
+    TrackControlManager (v2.0.0)
+    ----------------------------
     Centrálna trieda pre správu všetkých track-related kontrolérov.
-    UI používa tento manager ako jednotné API.
-    Renderer si z neho číta stav.
+
+    Používajú ju:
+        - UI (Track Switcher, Track Selector, Inspector)
+        - Renderer (GraphicNotationRenderer)
+        - Timeline (track lanes)
+        - MIDI pipeline (routing)
+
+    Funkcie:
+        - výber aktívnej stopy
+        - prepínanie viditeľnosti
+        - poskytovanie farieb
+        - event hooky (track_selected, visibility_changed, color_changed)
+        - real‑time safe, stabilné, pripravené na v3
     """
 
     def __init__(self, track_count: int = 16):
         self.track_count = int(track_count)
 
-        # Tri základné controllery Fázy 4
+        # Tri základné controllery (v2.0.0)
         self.visibility = TrackVisibilityController(self.track_count)
         self.selection = TrackSelectionController(self.track_count)
         self.colors = TrackColorMap()
