@@ -1,18 +1,17 @@
-# notation_engine/symbol_manager.py
+# =========================================================
+# SymbolManager v2.0.0
+# Stabilný generátor vizuálnych/logických symbolov pre noty
+# =========================================================
 
 class SymbolManager:
     """
-    SymbolManager vytvára vizuálne a logické symboly pre noty.
-
-    Stabilizované (Fáza 4):
-    - ochrana pred None
-    - ochrana pred nevalidnými Note objektmi
-    - bezpečné čítanie pitch/duration/position
-    - fallback farby a hodnoty
+    SymbolManager (v2.0.0):
+    - bezpečné spracovanie Note objektov
+    - fallback hodnoty pri chybách
+    - farebná paleta podľa pitch-class (12-TET)
     """
 
     def __init__(self):
-        # Farebná paleta podľa výšky tónu (12-TET)
         self.pitch_colors = {
             0:  "#FF5555",   # C
             1:  "#FF8855",   # C#
@@ -35,10 +34,11 @@ class SymbolManager:
         """
         Vráti symbol pre danú notu.
 
-        Stabilizované:
+        Stabilizované (v2.0.0):
         - ochrana pred None
         - ochrana pred nevalidnými typmi
         - bezpečné čítanie pitch/duration/position
+        - fallback farby a labelu
         """
 
         # -----------------------------
@@ -61,7 +61,7 @@ class SymbolManager:
         try:
             pitch = int(note.pitch)
         except Exception:
-            pitch = 60  # fallback C4
+            pitch = 60
 
         try:
             pitch_class = pitch % 12
@@ -94,7 +94,7 @@ class SymbolManager:
         # -----------------------------
         # SYMBOL OUTPUT
         # -----------------------------
-        symbol = {
+        return {
             "pitch": pitch,
             "duration_ticks": duration_ticks,
             "rhythm": rhythm,
@@ -103,5 +103,3 @@ class SymbolManager:
             "color": color,
             "label": f"{pitch}-{rhythm}",
         }
-
-        return symbol
