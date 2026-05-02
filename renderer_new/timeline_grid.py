@@ -1,3 +1,8 @@
+# =========================================================
+# TimelineGrid v2.0.0
+# Stabilná mriežka pre timeline (beaty + takty)
+# =========================================================
+
 import pygame
 from typing import Tuple
 from ..core.logger import Logger
@@ -5,14 +10,12 @@ from ..core.logger import Logger
 
 class TimelineGrid:
     """
-    TimelineGrid (Časová os – mriežka)
-    ----------------------------------
-    FÁZA 4 – Stabilizovaná verzia
-
+    TimelineGrid (v2.0.0)
+    ---------------------
     Účel:
         - Vykresľuje beaty a takty na časovej osi
-        - Oddelené od TimelineRenderer pre čistú architektúru
-        - Pripravené pre PixelLayoutEngine
+        - Oddelené od TimelineController pre čistú architektúru
+        - Pripravené pre PixelLayoutEngine (v3)
 
     Vlastnosti:
         - Real‑time safe
@@ -30,23 +33,30 @@ class TimelineGrid:
         bar_color: Tuple[int, int, int] = (140, 140, 140)
     ) -> None:
 
-        self.width = width
-        self.height = height
+        try:
+            self.width = int(width)
+        except Exception:
+            self.width = 1600
 
-        self.beats_per_bar = beats_per_bar
-        self.pixels_per_beat = pixels_per_beat
+        try:
+            self.height = int(height)
+        except Exception:
+            self.height = 120
+
+        self.beats_per_bar = max(1, int(beats_per_bar))
+        self.pixels_per_beat = max(1, int(pixels_per_beat))
 
         self.beat_color = beat_color
         self.bar_color = bar_color
 
-        # Zoom & offset (doplnene pre TimelineLayoutEngine)
+        # Zoom & offset (pre TimelineLayoutEngine)
         self.zoom = 1.0
         self.offset_x = 0
 
-        Logger.info("TimelineGrid initialized.")
+        Logger.info("TimelineGrid initialized (v2.0.0).")
 
     # ---------------------------------------------------------
-    # EXTERNAL CONTROLS (PixelLayoutEngine / TimelineController)
+    # EXTERNAL CONTROLS
     # ---------------------------------------------------------
     def set_size(self, width: int, height: int) -> None:
         """Nastaví veľkosť gridu."""
@@ -75,19 +85,22 @@ class TimelineGrid:
     # ---------------------------------------------------------
     def render(self, surface: pygame.Surface) -> None:
         """
-        Vykreslí beaty a takty na daný surface (render grid).
+        Vykreslí beaty a takty na daný surface.
+        Real‑time safe.
         """
+        if surface is None:
+            return
+
         try:
             # Prepočítané PPB podľa zoomu
             scaled_ppb = int(self.pixels_per_beat * self.zoom)
+            if scaled_ppb <= 0:
+                return
 
             # -----------------------------
             # BEAT LINES
             # -----------------------------
-            # Začíname od prvého beatu, ktorý je viditeľný
             first_visible_beat = max(0, int(self.offset_x // scaled_ppb))
-
-            # Počet beatov, ktoré môžu byť viditeľné
             max_beats = (self.width // scaled_ppb) + 10
 
             for beat_index in range(first_visible_beat, first_visible_beat + max_beats):
@@ -99,6 +112,9 @@ class TimelineGrid:
             # BAR LINES (silnejšie čiary)
             # -----------------------------
             bar_width = self.beats_per_bar * scaled_ppb
+            if bar_width <= 0:
+                return
+
             first_visible_bar = max(0, int(self.offset_x // bar_width))
             max_bars = (self.width // bar_width) + 10
 
