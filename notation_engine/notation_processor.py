@@ -1,10 +1,14 @@
+# =========================================================
+# MidiNoteMapper v2.0.0
+# Stabilizovaný MIDI → Notation mapper pre Real-Time-MIDI-Notation
+# =========================================================
+
 from typing import Optional, Dict, Tuple
 
 
 # ---------------------------------------------------------
 # DATA STRUCTURES
 # ---------------------------------------------------------
-
 class Duration:
     def __init__(self, ticks: int, dotted: bool = False):
         try:
@@ -64,7 +68,11 @@ class Note:
         except Exception:
             self.channel = 0
 
-        self.position = position if isinstance(position, MeasurePosition) else MeasurePosition(0, 1.0)
+        self.position = (
+            position
+            if isinstance(position, MeasurePosition)
+            else MeasurePosition(0, 1.0)
+        )
 
     def __repr__(self):
         return (
@@ -75,12 +83,17 @@ class Note:
 
 
 # ---------------------------------------------------------
-# MIDI NOTE MAPPER (FÁZA 4)
+# MIDI NOTE MAPPER v2.0.0
 # ---------------------------------------------------------
-
 class MidiNoteMapper:
     """
-    Stabilizovaný MIDI → Notation mapper (Fáza 4).
+    MidiNoteMapper (v2.0.0) – stabilizovaný MIDI → Notation mapper.
+
+    - sleduje aktívne noty (note_on → note_off)
+    - konvertuje čas na ticks
+    - kvantizuje
+    - počíta measure/beat podľa time signature
+    - vytvára Note objekt
     """
 
     def __init__(self, ppq: int = 480, tempo_bpm: float = 120.0):
@@ -109,7 +122,6 @@ class MidiNoteMapper:
     # ---------------------------------------------------------
     # TIMING
     # ---------------------------------------------------------
-
     def set_timing(self, ppq: int, tempo_bpm: float):
         try:
             self.ppq = int(ppq)
@@ -184,7 +196,6 @@ class MidiNoteMapper:
     # ---------------------------------------------------------
     # MIDI EVENTS
     # ---------------------------------------------------------
-
     def handle_note_on(self, pitch: int, velocity: int, channel: int, timestamp: float):
         self._update_position(timestamp)
 
