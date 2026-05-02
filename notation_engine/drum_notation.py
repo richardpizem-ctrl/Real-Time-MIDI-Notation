@@ -1,13 +1,7 @@
-"""
-Drum Notation – profesionálny mapping bicích pre Real-Time-MIDI-Notation.
-
-Stabilizované (Fáza 4):
-- bezpečné spracovanie pitchov a velocity
-- fallback pri chybách
-- jednotné štruktúry pre renderer
-- podpora layering (offsety)
-- podpora ghost / accent úderov
-"""
+# =========================================================
+# Drum Notation v2.0.0
+# Profesionálny mapping bicích pre Real-Time-MIDI-Notation
+# =========================================================
 
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
@@ -264,8 +258,10 @@ def annotate_drum_timeline(timeline: List[Dict[str, Any]]) -> List[Dict[str, Any
 def update_color(track_index: int, color_hex: str):
     return
 
+
 def update_visibility(track_index: int, visible: bool):
     return
+
 
 def set_active_track(track_index: int):
     return
