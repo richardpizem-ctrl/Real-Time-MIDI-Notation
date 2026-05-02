@@ -1,4 +1,7 @@
-# test_chords_extended.py – Test všetkých základných durových a molových akordov
+# =========================================================
+# test_chords_extended.py – v2.0.0
+# Stabilný test všetkých základných durových a molových akordov
+# =========================================================
 
 from notation_engine.chord_detector import detect_chord
 
@@ -29,7 +32,7 @@ def test_chord(notes):
 
 
 def main():
-    print("=== TEST: EXTENDED CHORD DETECTION ===\n")
+    print("=== TEST: EXTENDED CHORD DETECTION (v2.0.0) ===\n")
 
     # -----------------------------------------
     # 12 MAJOR CHORDS
@@ -51,6 +54,7 @@ def main():
 
     print("--- MAJOR CHORDS ---")
     for name, notes in major_chords.items():
+        print(f"Testing {name} major:")
         test_chord(notes)
 
     print("\n")
@@ -75,6 +79,7 @@ def main():
 
     print("--- MINOR CHORDS ---")
     for name, notes in minor_chords.items():
+        print(f"Testing {name} minor:")
         test_chord(notes)
 
     print("\n=== END ===")
