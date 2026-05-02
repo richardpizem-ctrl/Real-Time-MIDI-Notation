@@ -1,16 +1,7 @@
-"""
-Harmony Engine – stabilná harmonická analýza pre Real-Time-MIDI-Notation.
-
-ÚLOHA:
-- dostať informáciu o kľúči (tonalite) a akorde
-- analyzovať MIDI pitch hodnoty
-- vrátiť harmonickú rolu:
-    - root
-    - chord_tone
-    - tension
-    - scale_tone
-    - outside
-"""
+# =========================================================
+# Harmony Engine v2.0.0
+# Stabilná harmonická analýza pre Real-Time-MIDI-Notation
+# =========================================================
 
 from typing import List, Dict, Optional
 
@@ -25,7 +16,15 @@ class HarmonyRole:
 
 class HarmonyEngine:
     """
-    Stabilizovaný harmonický engine (Fáza 4).
+    HarmonyEngine (v2.0.0) – stabilizovaný harmonický engine:
+    - analyzuje MIDI pitch hodnoty
+    - pracuje s informáciou o kľúči (tonalite) a akorde
+    - vracia harmonickú rolu:
+        - root
+        - chord_tone
+        - tension
+        - scale_tone
+        - outside
     """
 
     def __init__(self):
@@ -98,7 +97,7 @@ class HarmonyEngine:
                 roles[p] = HarmonyRole.OUTSIDE
                 continue
 
-            # 1) ROOT akordu
+            # 1) ROOT / CHORD_TONE / TENSION
             if chord_root_norm is not None:
                 try:
                     interval = (norm - chord_root_norm) % 12
@@ -118,7 +117,7 @@ class HarmonyEngine:
                     roles[p] = HarmonyRole.TENSION
                     continue
 
-            # 4) SCALE TONE vs OUTSIDE
+            # 2) SCALE TONE vs OUTSIDE
             if scale_pitches:
                 roles[p] = (
                     HarmonyRole.SCALE_TONE
@@ -180,8 +179,10 @@ class HarmonyEngine:
 def update_color(track_index: int, color_hex: str):
     return
 
+
 def update_visibility(track_index: int, visible: bool):
     return
+
 
 def set_active_track(track_index: int):
     return
