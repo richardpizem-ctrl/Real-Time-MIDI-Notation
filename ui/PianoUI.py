@@ -1,18 +1,28 @@
-"""
-PianoUI – Real‑Time Klavírna Vizualizácia (FÁZA 4+)
-
-Rozšírené o:
-- velocity‑based farby
-- poly‑aftertouch vizualizáciu
-- animácie pri NOTE ON
-- LED / gradient štýl kláves
-"""
+# =========================================================
+# PianoUI v2.0.0
+# Stabilná real‑time klavírna vizualizácia
+# =========================================================
 
 import pygame
 import time
 
 
 class PianoUI:
+    """
+    PianoUI (v2.0.0)
+    ----------------
+    Real‑time klavírna vizualizácia s podporou:
+        - velocity‑based farieb
+        - poly‑aftertouch
+        - NOTE‑ON flash animácie
+        - LED / gradient štýlu kláves
+    Pripravené na v3:
+        - RGB pulsing
+        - MPE X/Y/Z
+        - vibrato waveform
+        - 3D key‑press efekt
+    """
+
     WHITE_KEY_WIDTH = 22
     WHITE_KEY_HEIGHT = 140
     BLACK_KEY_WIDTH = 14
@@ -115,9 +125,7 @@ class PianoUI:
             int(40 + v * 0.3),   # B
         )
 
-    def _aftertouch_boost(
-        self, base_color: tuple[int, int, int], aftertouch: int
-    ) -> tuple[int, int, int]:
+    def _aftertouch_boost(self, base_color: tuple[int, int, int], aftertouch: int) -> tuple[int, int, int]:
         """Zvýraznenie farby podľa poly‑aftertouch."""
         a = max(0, min(127, int(aftertouch)))
         boost = int(a * 0.8)
@@ -136,9 +144,7 @@ class PianoUI:
     # ---------------------------------------------------------
     # HIGHLIGHT / UNHIGHLIGHT
     # ---------------------------------------------------------
-    def highlight_key(
-        self, midi_note: int, velocity: int = 100, aftertouch: int = 0
-    ) -> None:
+    def highlight_key(self, midi_note: int, velocity: int = 100, aftertouch: int = 0) -> None:
         """NOTE ON – zvýrazní klávesu s velocity a aftertouch."""
         if midi_note is None:
             return
@@ -202,7 +208,6 @@ class PianoUI:
                 pygame.draw.rect(surface, color, rect)
                 pygame.draw.rect(surface, (0, 0, 0), rect, 2)
 
-                # LED gradient (z cache)
                 if self._white_gradient is not None:
                     surface.blit(self._white_gradient, rect.topleft)
             else:
@@ -225,7 +230,6 @@ class PianoUI:
                 pygame.draw.rect(surface, color, rect)
                 pygame.draw.rect(surface, (30, 30, 30), rect, 1)
 
-                # LED shine (z cache)
                 if self._black_shine is not None:
                     surface.blit(self._black_shine, rect.topleft)
             else:
