@@ -1,3 +1,8 @@
+# =========================================================
+# MidiNoteMapper v2.0.0
+# Stabilizovaný MIDI → Notation mapper pre Real-Time-MIDI-Notation
+# =========================================================
+
 from typing import Optional, Dict, Tuple
 
 
@@ -60,7 +65,11 @@ class Note:
         except Exception:
             self.channel = 0
 
-        self.position = position if isinstance(position, MeasurePosition) else MeasurePosition(0, 1.0)
+        self.position = (
+            position
+            if isinstance(position, MeasurePosition)
+            else MeasurePosition(0, 1.0)
+        )
 
     def __repr__(self):
         return (
@@ -72,7 +81,7 @@ class Note:
 
 class MidiNoteMapper:
     """
-    Stabilizovaný MIDI → Notation mapper.
+    MidiNoteMapper (v2.0.0) – stabilizovaný MIDI → Notation mapper.
 
     - sleduje aktívne noty (note_on → note_off)
     - konvertuje čas na ticks
