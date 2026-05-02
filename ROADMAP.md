@@ -1,13 +1,13 @@
-# 🆕 Current Version: v1.3.0 — TimelineUI Finalization & Phase‑4 Completion
+# 🆕 Current Version: v2.0.0 — Architecture Stabilization & Renderer Upgrade
 
-This section describes:
-- what is **already completed** in v1.0.0, v1.1.0, and v1.2.0  
-- what **new improvements** are included in v1.3.0  
-- how the project will evolve after this release  
+This roadmap describes:
+- what is **already completed** in v1.x.x  
+- what is **new and stable** in v2.0.0  
+- what is **planned for v3.0.0 and beyond**  
 
 ---
 
-# ✅ What We Already Have (v1.0.0 → v1.2.0 Complete)
+# ✅ What We Already Have (v1.0.0 → v1.3.0 Complete)
 
 ### 🎨 GraphicNotationRenderer — 100%
 - full Yamaha 16‑track support  
@@ -20,7 +20,7 @@ This section describes:
 - safe rendering (no crashes without pygame/font)  
 - stable Phase‑4 module  
 
-### 🕒 TimelineUI — 100% (v1.2.0)
+### 🕒 TimelineUI — 100%
 - markers (drag, rename, recolor, type cycling)  
 - loop region  
 - snapping  
@@ -55,85 +55,85 @@ This section describes:
 
 ---
 
-# 🚀 Current Release: v1.3.0 — What It Contains
+# 🚀 Current Release: v2.0.0 — What It Contains
 
-## 🎯 1. TimelineUI Finalization (NEW)
-- completed all UI logic required for the 1.3.0 milestone  
-- stabilized marker system (drag, rename, snapping, color, type)  
-- stabilized loop region creation & resizing  
-- stabilized playhead seek behavior  
-- finalized scroll/zoom bar logic  
-- clean separation of:
-  - drawing  
-  - computation  
-  - event handling  
-- fully integrated with `TimelineController` and `GraphicNotationRenderer`  
-- zero breaking changes  
+## 🎯 1. Architecture Stabilization (NEW)
+- all modules upgraded to v2.0.0  
+- unified naming conventions  
+- consistent folder structure  
+- deprecated modules isolated  
+- real‑time safety improvements  
+- stable EventBus routing  
+- improved timing precision  
 
-## 🎚 2. Selection Pipeline (Stable)
-- fully compatible with TimelineUI 1.3.0  
-- stable behavior for:
-  - delete  
-  - move  
-  - transpose  
-  - velocity  
-  - stretch  
-- no API changes  
+## 🎨 2. Renderer_new Upgrade
+- new GraphicRenderer architecture  
+- PixelLayoutEngine v2  
+- cached grid rendering (dirty‑flag system)  
+- optimized chord grouping  
+- improved barline/grid sync  
+- ready for v3 engraving engine  
 
-## 🎨 3. UI Polish & Stability
-- improved timeline clarity  
-- refined marker lane visuals  
-- consistent behavior across zoom/scroll  
-- cleaned legacy fragments  
-- improved internal comments and structure  
+## 🧩 3. UI & Interaction Improvements
+- consistent zoom/scroll behavior  
+- improved marker lane visuals  
+- refined timeline clarity  
+- hover‑effect groundwork  
+- TextInput class prepared for v3 editing tools  
 
-## 🧩 4. Internal Improvements
+## ⚙ 4. Real‑Time Engine Enhancements
 - safer event routing  
-- improved marker synchronization  
-- micro‑optimizations for renderer interaction  
-- groundwork prepared for future layout engine upgrades  
+- timestamp micro‑optimizations  
+- burst‑safe event handling groundwork  
+- improved synchronization between modules  
+
+## 🧱 5. Codebase Cleanup
+- removed legacy 1.x.x fragments  
+- unified naming + structure  
+- improved internal comments  
+- consistent architecture across modules  
 
 ---
 
-# 🧱 Preparation for v2.0.0 (Already Completed Groundwork)
+# 🧱 Preparation for v3.0.0 (Already Completed Groundwork)
 
 ### ⭐ Core & Real‑Time Engine
-- EventBus prepared for deque‑based real‑time routing  
-- NotationProcessor stabilized for multi‑track real‑time processing  
-- TrackManager ready for extended editing operations  
-- PlaybackEngine prepared for low‑latency optimizations  
+- EventBus ready for deque‑based routing  
+- NotationProcessor stable for multi‑track processing  
+- TrackManager prepared for advanced editing  
+- PlaybackEngine optimized for low‑latency rendering  
 
 ### ⭐ Timeline & Editing System
-- groundwork prepared for:  
-  - Magnetic Markers (ALT‑drag ripple edit)  
-  - Ripple editing for notes and markers  
-  - Advanced editing modes (Standard, Magnetic, Ripple)  
+- groundwork for:  
+  - Magnetic Markers  
+  - Ripple Editing  
+  - Advanced Editing Modes  
   - Ghost snapping visualization  
   - Hover effects  
-  - TextInput class for professional UI interactions  
+  - TextInput for professional UI  
 
 ### ⭐ Renderer_new
-- prepared for Graphic Primitives separation  
-- ready for cached grid rendering (dirty‑flag system)  
-- optimized for large‑scale real‑time rendering  
+- ready for Graphic Primitives separation  
+- optimized for large‑scale rendering  
+- caching system prepared for engraving engine  
 
 ### ⭐ Real‑Time Performance
-- groundwork for burst‑safe event handling  
-- timestamp micro‑optimizations  
-- stability improvements for high‑density MIDI input  
+- burst‑safe event handling  
+- timestamp precision improvements  
+- stable under high‑density MIDI input  
 - optional multithreaded StreamHandler groundwork  
 
 ### ⭐ Architecture Clean‑Up
-- all legacy modules removed or isolated  
+- all legacy modules isolated  
 - no conflicts between 1.x.x and 2.0.0  
-- all CORE and UI modules stable and ready for expansion  
-- all Gemini recommendations stored and prepared for implementation  
+- CORE and UI modules stable  
+- all Gemini recommendations archived for v3  
 
 ---
 
-# 🗺 Future Roadmap After v1.3.0
+# 🗺 Future Roadmap
 
-### v2.0.0 — Advanced Layout Engine
+## v3.0.0 — Advanced Engraving Engine
 - multi‑voice notation  
 - polyphony  
 - advanced beams  
@@ -146,10 +146,11 @@ This section describes:
 - Graphic Primitives Layer  
 - Real‑Time Optimizations  
 
-### v3.0.0 — Professional Engraving
+## v4.0.0 — Professional Publishing
 - MuseScore/LilyPond‑level engraving  
 - full notation engine  
 - professional score preparation tools  
+- export to PDF / SVG / MusicXML  
 
 ---
 
@@ -158,8 +159,8 @@ This section describes:
 ### 🎼 1. Sheet Music for Musicians Who Play by Ear
 - real‑time capture  
 - automatic rhythmic + pitch analysis  
-- exportable notation (PNG/SVG/PDF in future)  
-- clean layout for musicians  
+- exportable notation  
+- clean engraving layout  
 
 ### 🎹 2. Bridge Between Amateur and Professional Worlds
 - amateurs record ideas  
@@ -186,7 +187,7 @@ This section describes:
 
 ---
 
-# 🔮 Summary of Vision
+# 🔮 Summary
 Real‑Time MIDI Notation is evolving from a **real‑time visualizer** into a **full musical toolchain**:
 
 - real‑time performance visualization  
