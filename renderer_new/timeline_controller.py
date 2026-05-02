@@ -1,3 +1,8 @@
+# =========================================================
+# TimelineController v2.0.0
+# Stabilný riadiaci modul pre timeline (grid, playhead, layout)
+# =========================================================
+
 import pygame
 from typing import Optional, List, Dict, Any
 from ..core.logger import Logger
@@ -9,12 +14,12 @@ from .timeline_layout_engine import TimelineLayoutEngine
 
 class TimelineController:
     """
-    TimelineController – FÁZA 4 (kompletná stabilizovaná verzia)
-
+    TimelineController (v2.0.0)
+    ---------------------------
     Účel:
         - Riadi timeline (grid, playhead, layout)
         - Poskytuje API pre zoom, scroll, update, markers
-        - Slúži ako zdroj pre TimelineLayer (renderer_new/layers/timeline_layer.py)
+        - Slúži ako zdroj pre TimelineLayer
         - Real‑time safe, bez blokujúcich operácií
     """
 
@@ -27,8 +32,15 @@ class TimelineController:
         pixels_per_beat: int = 100
     ) -> None:
 
-        self.width = width
-        self.height = height
+        try:
+            self.width = int(width)
+        except Exception:
+            self.width = 1600
+
+        try:
+            self.height = int(height)
+        except Exception:
+            self.height = 120
 
         # Layout engine (zoom, offset, pixel mapping)
         self.layout = TimelineLayoutEngine(
@@ -38,15 +50,15 @@ class TimelineController:
 
         # Grid (taktová a beatová mriežka)
         self.grid = TimelineGrid(
-            width=width,
-            height=height,
+            width=self.width,
+            height=self.height,
             beats_per_bar=beats_per_bar,
             pixels_per_beat=pixels_per_beat
         )
 
         # Playhead (prehrávacia hlava)
         self.playhead = Playhead(
-            height=height,
+            height=self.height,
             bpm=bpm,
             beats_per_bar=beats_per_bar,
             pixels_per_beat=pixels_per_beat
@@ -56,15 +68,18 @@ class TimelineController:
         self.markers: List[Dict[str, Any]] = []
 
         # Surface pre timeline
-        self.surface = pygame.Surface((self.width, self.height))
+        try:
+            self.surface = pygame.Surface((self.width, self.height))
+        except Exception:
+            self.surface = None
 
-        # Font pre ruler / markers
+        # Font pre marker names
         try:
             self.font = pygame.font.SysFont("Arial", 14)
         except Exception:
             self.font = None
 
-        Logger.info("TimelineController initialized (FÁZA 4).")
+        Logger.info("TimelineController initialized (v2.0.0).")
 
     # ---------------------------------------------------------
     # EXTERNAL LAYOUT UPDATES
@@ -112,7 +127,10 @@ class TimelineController:
     def set_markers(self, markers: List[Dict[str, Any]]) -> None:
         """Prijme markery z TimelineUI alebo rendereru."""
         if isinstance(markers, (list, tuple)):
-            self.markers = list(markers)
+            try:
+                self.markers = list(markers)
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # UPDATE TIMELINE STATE
@@ -200,6 +218,9 @@ class TimelineController:
         Fallback render – používa sa len ak TimelineLayer nie je aktívna.
         V LayerManager architektúre sa používa TimelineLayer.draw().
         """
+        if self.surface is None:
+            return None
+
         try:
             self.surface.fill((25, 25, 25))
 
