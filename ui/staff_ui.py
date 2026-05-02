@@ -1,3 +1,8 @@
+# =========================================================
+# StaffUI v2.0.0
+# Stabilná real‑time notová osnova (pygame)
+# =========================================================
+
 import pygame
 import time
 from typing import Dict, List, Tuple, Any
@@ -29,7 +34,7 @@ class StaffUI:
         self.scroll_speed = 2
 
     # ---------------------------------------------------------
-    # PUBLIC API (pre UIManager – bezpečné no-op metódy)
+    # PUBLIC API (UIManager-safe)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
         return
@@ -80,10 +85,7 @@ class StaffUI:
 
         # farba
         color = event.get("track_color", self.NOTE_COLOR)
-        if (
-            not isinstance(color, (tuple, list))
-            or len(color) != 3
-        ):
+        if not isinstance(color, (tuple, list)) or len(color) != 3:
             color = self.NOTE_COLOR
 
         self.notes[note_id] = {
