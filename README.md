@@ -1,12 +1,13 @@
 # 🎼 Real-Time MIDI Notation — SIRIUS Engine  
 ![SIRIUS Banner](SIRIUS%20PROGRAM%20S%20EM.png)
 
-<!-- SEO: real-time midi notation engine, python midi notation, pygame midi visualizer, multi-track midi, yamaha 16-track, live midi notation, midi to sheet music, real-time midi renderer -->
+<!-- SEO: real-time midi notation engine, python midi notation, pygame midi visualizer, multi-track midi, yamaha 16-track, live midi notation, midi to sheet music, real-time midi renderer, sirius engine -->
 
 ### ⭐ **SIRIUS — the brightest star in real‑time MIDI notation**  
 ### **A next‑generation real‑time multi‑track MIDI notation engine (Python + Pygame)**  
 
-A high‑performance **real‑time MIDI notation engine** with full Yamaha 16‑track support, advanced beams, velocity‑based dynamics, and a fully modular UI.  
+A high‑performance **real‑time MIDI notation engine** with full Yamaha 16‑track support, advanced beams,  
+velocity‑based dynamics, and a fully modular UI.  
 Designed for **live performance**, **music education**, **research**, and **next‑generation MIDI workflows**.
 
 ---
@@ -38,7 +39,8 @@ It converts incoming MIDI events into **live, readable notation**, including:
 - zoom & scroll  
 - modular UI components  
 
-The long‑term goal is to evolve into a **full real‑time engraving engine**, similar to MuseScore or LilyPond — but optimized for **live MIDI input**, not offline engraving.
+The long‑term goal is to evolve into a **full real‑time engraving engine**, similar to MuseScore or LilyPond —  
+but optimized for **live MIDI input**, not offline engraving.
 
 ---
 
@@ -53,7 +55,7 @@ Real‑time MIDI systems behave differently on every computer due to variations 
 - connected MIDI devices  
 - Python and library versions  
 
-Because of this, **no single developer can reliably test all possible configurations**.
+Because of this:
 
 ### ⭐ **Each user is responsible for testing the engine on their own system.**
 
