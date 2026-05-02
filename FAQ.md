@@ -1,4 +1,4 @@
-# ❓ Real-Time MIDI Notation — MEGA FAQ (Ultimate Edition, v1.3.0)
+# ❓ Real-Time MIDI Notation — FAQ (v2.0.0)
 
 A collection of the most common questions from users, testers, developers, and researchers.
 
@@ -13,6 +13,7 @@ If still not detected:
 - restart the OS  
 - check OS MIDI permissions  
 - ensure no other app is using the MIDI port  
+- try a wired USB connection instead of Bluetooth  
 
 ### **Q: Does this support Yamaha arranger keyboards?**
 Yes — the engine is built around the **Yamaha 16‑track standard**, including:
@@ -84,7 +85,7 @@ See **CONTRIBUTING.md** for:
 - contributor levels  
 
 ### **Q: Can I add new UI components?**
-Yes — UIManager is designed for extension.
+Yes — UIManager v2 is designed for extension.
 
 ### **Q: Can I use this in my own project?**
 Yes — the MIT License allows full reuse, including commercial use.
@@ -126,7 +127,7 @@ This can happen if:
 # 🧩 MISCELLANEOUS
 
 ### **Q: Is this project stable?**
-Yes — all core modules are complete and stable as of v1.3.0.
+Yes — all core modules are complete and stable as of v2.0.0.
 
 ### **Q: Is this suitable for education?**
 Absolutely — it is ideal for:
