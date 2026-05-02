@@ -1,17 +1,12 @@
-"""
-Key Detector – stabilná detekcia tóniny podľa Krumhansl-Schmuckler profilu.
-
-Stabilizované (Fáza 4):
-- ochrana pred None a nevalidnými pitchmi
-- bezpečné výpočty korelácie
-- fallback pri chybách
-- jednotné návratové hodnoty
-"""
+# =========================================================
+# Key Detector v2.0.0
+# Stabilná detekcia tóniny podľa Krumhansl–Schmuckler profilu
+# =========================================================
 
 from typing import Iterable, Optional
 import math
 
-# Krumhansl-Schmuckler key profiles
+# Krumhansl–Schmuckler key profiles
 MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
 MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
 
@@ -67,6 +62,7 @@ def detect_key(pitches: Iterable[int]) -> Optional[str]:
 
     histogram = [0] * 12
 
+    # Bezpečné naplnenie histogramu
     try:
         for p in pitches:
             if isinstance(p, (int, float)):
@@ -80,6 +76,7 @@ def detect_key(pitches: Iterable[int]) -> Optional[str]:
     best_key: Optional[str] = None
     best_score: float = -999.0
 
+    # Testujeme všetkých 12 rootov
     for i in range(12):
         try:
             major_rot = rotate(MAJOR_PROFILE, i)
@@ -100,3 +97,16 @@ def detect_key(pitches: Iterable[int]) -> Optional[str]:
             continue
 
     return best_key
+
+
+# ---------------------------------------------------------
+# NO-OP API (pre UIManager kompatibilitu)
+# ---------------------------------------------------------
+def update_color(track_index: int, color_hex: str):
+    return
+
+def update_visibility(track_index: int, visible: bool):
+    return
+
+def set_active_track(track_index: int):
+    return
