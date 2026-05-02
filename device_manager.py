@@ -1,4 +1,7 @@
-# DeviceManager – Fáza 4 verzia pre Real-Time-MIDI-Notation
+# =========================================================
+# DeviceManager v2.0.0 – Stabilný MIDI Device Manager
+# =========================================================
+
 import threading
 import mido
 from core.logger import Logger
@@ -8,12 +11,22 @@ from core.event_bus import EventBus
 
 class DeviceManager:
     """
-    Stabilný MIDI Device Manager (Fáza 4):
-    - bezpečné zisťovanie MIDI zariadení
-    - thread-safe refresh
-    - bezpečné otváranie / zatváranie portov
-    - Logger namiesto print()
-    - EventBus integrácia (voliteľná)
+    DeviceManager (v2.0.0)
+    ----------------------
+    Stabilný, bezpečný, thread‑safe MIDI Device Manager.
+
+    Funkcie:
+        - refresh_devices()
+        - list_devices()
+        - select_device(index)
+        - open_input()
+        - close_input()
+
+    Vlastnosti:
+        - ochrana pred Windows/ASIO locked‑port bugom
+        - žiadne výnimky nesmú preraziť
+        - EventBus integrácia
+        - pripravené pre v3 (AI/TIMELINE MIDI routing)
     """
 
     def __init__(self, event_bus: EventBus | None = None):
@@ -34,7 +47,7 @@ class DeviceManager:
         """Aktualizuje zoznam dostupných MIDI vstupov (thread-safe)."""
         with self._lock:
             try:
-                self.available_inputs = list(mido.get_input_names())
+                self.available_inputs = [name.strip() for name in mido.get_input_names()]
                 Logger.info(f"DeviceManager: Found {len(self.available_inputs)} MIDI inputs.")
             except Exception as e:
                 Logger.error(f"DeviceManager: Failed to refresh devices: {e}")
@@ -63,7 +76,7 @@ class DeviceManager:
                 Logger.warning(f"DeviceManager: Invalid device index {index}.")
                 return False
 
-            self.selected_input = self.available_inputs[index]
+            self.selected_input = str(self.available_inputs[index])
             Logger.info(f"DeviceManager: Selected device → {self.selected_input}")
             return True
 
@@ -86,9 +99,11 @@ class DeviceManager:
                 self.input_port = None
 
             try:
+                # Windows/ASIO bug: port môže byť "locked"
                 self.input_port = mido.open_input(self.selected_input)
                 Logger.info(f"DeviceManager: Opened input port → {self.selected_input}")
                 return self.input_port
+
             except Exception as e:
                 Logger.error(f"DeviceManager: Failed to open port: {e}")
                 self._publish_error(f"Failed to open MIDI port: {e}")
