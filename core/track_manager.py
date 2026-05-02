@@ -1,13 +1,21 @@
-"""
-TrackManager – vizuálna a logická vrstva pre renderer a UI.
-Prepája sa s TrackSystem (16 MIDI kanálov) cez dependency injection.
-"""
+# =========================================================
+# TrackManager v2.0.0
+# Stabilná vizuálna a logická vrstva pre renderer a UI
+# =========================================================
 
 from typing import Dict, Tuple, Optional, List
 from core.logger import Logger
 
 
 class TrackManager:
+    """
+    TrackManager (v2.0.0):
+    - vizuálna + logická vrstva pre renderer a UI
+    - prepája sa s TrackSystem cez dependency injection
+    - spravuje mute/solo/volume/pan/visibility/activity
+    - odolný voči chybným vstupom
+    """
+
     def __init__(self, track_system):
         self.track_system = track_system
 
