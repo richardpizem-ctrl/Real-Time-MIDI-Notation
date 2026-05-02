@@ -1,8 +1,9 @@
 # 🔐 Real-Time MIDI Notation — Security Policy  
-### Ultimate Edition (v1.3.0)
+### Version 2.0.0 — Stable Edition
 
 Security is a core priority of the **Real-Time MIDI Notation (SIRIUS Engine)** project.  
-This document explains how vulnerabilities should be reported, how they are handled, and what contributors can expect from the security process.
+This document explains how vulnerabilities should be reported, how they are handled,  
+and what contributors can expect from the security process.
 
 Our goal is to ensure that the project remains safe, stable, and trustworthy for all users.
 
@@ -14,7 +15,7 @@ The following versions currently receive security updates:
 
 | Version | Supported |
 |---------|-----------|
-| **Latest (v1.3.0)** | ✔ Yes |
+| **Latest (v2.0.0)** | ✔ Yes |
 | Older versions | ✖ No |
 
 Only the latest version receives security patches.  
