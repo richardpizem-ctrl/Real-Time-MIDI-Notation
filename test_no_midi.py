@@ -1,80 +1,54 @@
-# test_midi_listener_no_device.py – Test MIDIListener bez MIDI zariadení (v2.0.0)
+# =========================================================
+# test_no_midi.py v2.0.0
+# Test: systém musí fungovať aj bez MIDI zariadenia
+# =========================================================
 
-from core.logger import Logger
-from core.event_bus import EventBus
-from core.event_types import NOTE_RECORDED, ERROR_OCCURRED
-
-from core.track_manager import TrackManager
-from core.notation_processor import NotationProcessor
-from midi_input.midi_listener import MIDIListener
+import pytest
+from real_time_processing.midi_input import MidiInput
 
 
-def on_note_recorded(data):
-    Logger.info(f"[TEST] NOTE_RECORDED received: {data}")
+def test_midi_initialization_without_device():
+    """
+    Testuje, že MidiInput sa inicializuje aj keď nie je
+    pripojené žiadne MIDI zariadenie.
+    """
+    midi = None
+
+    try:
+        midi = MidiInput()
+    except Exception as e:
+        pytest.fail(f"MidiInput initialization failed without device: {e}")
+
+    assert midi is not None
+    assert hasattr(midi, "poll_events")
 
 
-def on_error(msg):
-    Logger.error(f"[TEST] ERROR_OCCURRED: {msg}")
+def test_poll_events_returns_list():
+    """
+    poll_events() musí vždy vrátiť list,
+    aj keď nie je žiadne MIDI zariadenie.
+    """
+    midi = MidiInput()
+
+    try:
+        events = midi.poll_events()
+    except Exception as e:
+        pytest.fail(f"poll_events() raised exception: {e}")
+
+    assert isinstance(events, list)
 
 
-def main():
-    Logger.info("=== TEST: MIDIListener WITHOUT MIDI DEVICE (v2.0.0) ===")
+def test_poll_events_safe_behavior():
+    """
+    poll_events() nesmie nikdy vyhodiť výnimku,
+    ani pri neexistujúcom MIDI zariadení.
+    """
+    midi = MidiInput()
 
-    # -----------------------------------------------------
-    # 1. EventBus
-    # -----------------------------------------------------
-    event_bus = EventBus()
-    event_bus.subscribe(NOTE_RECORDED, on_note_recorded)
-    event_bus.subscribe(ERROR_OCCURRED, on_error)
+    for _ in range(5):
+        try:
+            events = midi.poll_events()
+        except Exception as e:
+            pytest.fail(f"poll_events() threw exception: {e}")
 
-    # -----------------------------------------------------
-    # 2. TrackManager + NotationProcessor
-    # -----------------------------------------------------
-    track_manager = TrackManager(event_bus=event_bus)
-    notation_processor = NotationProcessor(
-        track_manager=track_manager,
-        event_bus=event_bus
-    )
-
-    # -----------------------------------------------------
-    # 3. MIDIListener (bez fyzického zariadenia)
-    # -----------------------------------------------------
-    midi_listener = MIDIListener(event_bus=event_bus)
-
-    # Simulujeme, že žiadne zariadenia nie sú dostupné
-    midi_listener.available_inputs = []
-    midi_listener.selected_input = None
-
-    Logger.info("[TEST] MIDIListener initialized with NO devices.")
-
-    # -----------------------------------------------------
-    # 4. Simulovaný NOTE_ON event
-    # -----------------------------------------------------
-    fake_note_on = {
-        "type": "note_on",
-        "note": 64,
-        "velocity": 90,
-        "time": 0.0
-    }
-
-    Logger.info("[TEST] Sending fake NOTE_ON event...")
-    midi_listener.handle_message(fake_note_on)
-
-    # -----------------------------------------------------
-    # 5. Simulovaný NOTE_OFF event
-    # -----------------------------------------------------
-    fake_note_off = {
-        "type": "note_off",
-        "note": 64,
-        "velocity": 0,
-        "time": 0.1
-    }
-
-    Logger.info("[TEST] Sending fake NOTE_OFF event...")
-    midi_listener.handle_message(fake_note_off)
-
-    Logger.info("=== TEST COMPLETED SUCCESSFULLY ===")
-
-
-if __name__ == "__main__":
-    main()
+        assert isinstance(events, list)
