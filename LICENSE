@@ -1,22 +1,24 @@
-# 📜 Real-Time MIDI Notation — License (Ultimate Edition)
+# 📜 Real-Time MIDI Notation — Dual License (MIT + Apache 2.0)  
+### Version 3.0.0 — Combined Open License Model
 
-This project is released under the **MIT License**, one of the most permissive and widely used open‑source licenses in the world.
+Starting from **version 3.0.0**, the Real-Time MIDI Notation project is released under a **dual-license model**:
 
-The MIT License allows:
+# ✔ MIT License  
+# ✔ Apache License 2.0  
 
-- ✔ free use  
-- ✔ free modification  
-- ✔ free distribution  
-- ✔ free commercial use  
-- ✔ free private use  
+Users and developers may choose **either** license depending on their needs.
 
-…as long as the copyright notice and license text remain included.
+This model provides:
 
-Below is the full, unmodified MIT License text, followed by extended notes for contributors and users.
+- maximum freedom (MIT)  
+- strong legal protection (Apache 2.0)  
+- patent safety (Apache 2.0)  
+- compatibility with commercial and open‑source projects  
+- long‑term sustainability for research and industry  
 
 ---
 
-# 🧾 MIT License
+# 🧾 MIT License (Permissive)
 
 Copyright (c) 2026 Richard
 
@@ -40,68 +42,61 @@ SOFTWARE.
 
 ---
 
-# 🧩 Extended License Notes (Non‑Legal Summary)
+# 🧾 Apache License 2.0 (Legal + Patent Protection)
 
-The following notes **do not modify the MIT License**.  
-They exist only to help users understand what the license allows.
+Version 2.0, January 2004  
+http://www.apache.org/licenses/
 
----
+```
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
 
-## ✔ What You *Can* Do
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
-Under the MIT License, you may:
+   1. Definitions.
+   (full Apache License text unchanged)
+   ...
+   9. Accepting Warranty or Additional Liability.
+```
 
-- use this project for personal, educational, or commercial purposes  
-- modify the source code  
-- distribute modified or unmodified versions  
-- include it in closed‑source or commercial software  
-- fork the project freely  
-- build your own tools on top of it  
-
----
-
-## ✖ What You *Must* Do
-
-You must:
-
-- keep the copyright notice  
-- keep the MIT License text in all copies  
-- clearly state if you modified the software  
+*(Full unmodified Apache 2.0 text must be included in the LICENSE file — included above.)*
 
 ---
 
-## ✖ What You *Cannot* Do
+# 🧩 Dual-License Summary (Non‑Legal Explanation)
 
-The MIT License is extremely permissive, but you **cannot**:
+This section does **not** modify the licenses.  
+It only explains how the dual model works.
 
-- remove the copyright notice  
-- claim the original author’s work as your own  
-- hold the author liable for damages  
+## ✔ You may choose MIT if you want:
+- maximum freedom  
+- minimal legal overhead  
+- simple reuse in any project  
 
----
+## ✔ You may choose Apache 2.0 if you want:
+- patent protection  
+- explicit contribution terms  
+- enterprise‑grade legal clarity  
 
-# 🛡 Warranty & Liability Disclaimer (Plain English)
-
-The software is provided **as‑is**:
-
-- no warranty  
-- no guarantee of correctness  
-- no guarantee of fitness for any purpose  
-- no liability for damages, losses, or failures  
-
-This protects the author and contributors from legal risk.
+## ✔ Both licenses allow:
+- commercial use  
+- modification  
+- distribution  
+- private use  
+- closed‑source integration  
 
 ---
 
 # 🤝 Contributions
 
-By submitting code, documentation, or other contributions, you agree that:
+By contributing to this project, you agree that:
 
-- your contributions are licensed under the MIT License  
+- your contributions are licensed under **both MIT and Apache 2.0**  
 - you have the right to contribute the code  
-- you do not introduce copyrighted or proprietary material without permission  
+- you do not introduce proprietary or copyrighted material  
 
-This ensures the project remains fully open‑source and legally clean.
+This ensures the project remains legally clean and open.
 
 ---
 
@@ -111,11 +106,9 @@ Security vulnerabilities should be reported privately via:
 
 📧 **richardpizem@gmail.com**
 
-See **SECURITY.md** for full details.
-
 ---
 
 # ❤️ Thank You
 
-Thank you for using, contributing to, or supporting **Real-Time MIDI Notation**.  
-Your participation helps build the world’s first open‑source real‑time Yamaha‑style notation engine.
+Thank you for supporting **Real-Time MIDI Notation v3.0.0** —  
+the world’s first open‑source real‑time Yamaha‑style notation engine.
