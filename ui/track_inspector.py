@@ -1,16 +1,25 @@
+# =========================================================
+# TrackInspector v2.0.0
+# Stabilný interaktívny panel pre správu stôp
+# =========================================================
+
 import pygame
 from typing import Optional, Tuple
 
 
 class TrackInspector:
     """
-    Track Inspector panel – interaktívny panel pre správu stôp.
+    Track Inspector (v2.0.0)
+    ------------------------
+    Interaktívny panel pre správu stôp.
 
-    - číta stav z track_manager a track_control
-    - umožňuje kliknúť na:
-        • riadok → nastaviť aktívnu stopu
-        • oko → toggle visibility
-        • volume bar → zmeniť hlasitosť
+    Funkcie:
+        - zobrazuje názvy stôp
+        - zobrazuje farby stôp
+        - zobrazuje viditeľnosť
+        - umožňuje kliknúť na riadok → nastaviť aktívnu stopu
+        - umožňuje kliknúť na oko → toggle visibility
+        - umožňuje meniť hlasitosť (ak track_manager podporuje)
     """
 
     def __init__(
