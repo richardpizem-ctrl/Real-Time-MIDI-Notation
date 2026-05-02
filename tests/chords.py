@@ -1,4 +1,7 @@
-# test_chords.py – základný test detekcie akordov
+# =========================================================
+# test_chords.py – v2.0.0
+# Stabilný test základnej detekcie akordov
+# =========================================================
 
 from notation_engine.chord_detector import detect_chord
 
@@ -29,8 +32,9 @@ def test_chord(notes):
 
 
 def main():
-    print("=== TEST: BASIC CHORD DETECTION ===")
+    print("=== TEST: BASIC CHORD DETECTION (v2.0.0) ===")
 
+    # Basic triads
     test_chord([60, 64, 67])   # C major
     test_chord([57, 60, 64])   # A minor
     test_chord([62, 65, 69])   # D major
