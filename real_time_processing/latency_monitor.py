@@ -1,12 +1,7 @@
-"""
-latency_monitor.py – Real-time latency monitoring (FÁZA 4)
-
-Poskytuje:
-- bezpečné meranie latencie medzi udalosťami
-- ochranu pred None a nevalidnými hodnotami
-- stabilné štatistiky (min, max, avg, last)
-- odolnosť voči chybám v real-time pipeline
-"""
+# =========================================================
+# LatencyMonitor v2.0.0
+# Stabilné meranie latencie pre real-time processing
+# =========================================================
 
 import time
 from collections import deque
@@ -16,15 +11,14 @@ from ..core.logger import Logger
 
 class LatencyMonitor:
     """
-    Simple real-time latency monitor.
-    Measures time between events and provides basic statistics.
+    LatencyMonitor (v2.0.0):
+    - bezpečné meranie latencie medzi udalosťami
+    - stabilné štatistiky (min, max, avg, last)
+    - odolnosť voči chybám v real-time pipeline
+    - pripravené na v3.0.0
     """
 
     def __init__(self, window_size: int = 100):
-        """
-        Initialize latency monitor with sliding window.
-        Ensures window_size is valid and logs initialization.
-        """
         try:
             self.window_size = max(1, int(window_size))
         except Exception:
@@ -74,7 +68,6 @@ class LatencyMonitor:
             self.max_latency = max(self.max_latency, latency)
             self.min_latency = latency if self.min_latency is None else min(self.min_latency, latency)
 
-            # Safe average
             if self.latencies:
                 self.avg_latency = sum(self.latencies) / len(self.latencies)
 
@@ -91,7 +84,7 @@ class LatencyMonitor:
     # ---------------------------------------------------------
     def get_stats(self) -> Dict[str, Any]:
         """
-        Return current latency statistics as a dict:
+        Return current latency statistics:
         {
             'last': float | None,
             'avg': float | None,
