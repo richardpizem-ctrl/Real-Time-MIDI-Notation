@@ -1,12 +1,7 @@
-"""
-timeline_events.py
-Event handling module for the Timeline UI.
-
-Defines all event types and dispatching logic used by:
-- timeline_ui.py
-- timeline_controller.py
-- timeline_renderer.py
-"""
+# =========================================================
+# timeline_events.py – v2.0.0
+# Stabilný event systém pre Timeline UI
+# =========================================================
 
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -37,7 +32,10 @@ class TimelineEventType(Enum):
 
 @dataclass(slots=True)
 class TimelineEvent:
-    """Generic event object passed between UI and controller."""
+    """
+    Generic event object passed between UI and controller.
+    V2.0.0 – stabilné, rýchle, typovo bezpečné.
+    """
     event_type: TimelineEventType
     position: Optional[Tuple[int, int]] = None   # (x, y) in timeline coordinates
     delta: Optional[Tuple[int, int]] = None      # movement delta for drag/scroll
@@ -55,12 +53,18 @@ class TimelineEventDispatcher:
     """
     Central dispatcher for timeline events.
     timeline_ui.py → TimelineEventDispatcher → timeline_controller.py
+
+    V2.0.0:
+        - rýchlejší dispatch (predpočítaná tabuľka)
+        - bezpečné volanie handlerov
+        - žiadne if‑elif reťazce
+        - pripravené na v3 (gesture events, multi-touch)
     """
 
     def __init__(self, controller: Any):
         self.controller = controller
 
-        # Pre‑computed dispatch table (rýchlejšie ako if‑elif reťazec)
+        # Pre‑computed dispatch table (najrýchlejší spôsob)
         self._handlers: Dict[TimelineEventType, Callable[[TimelineEvent], None]] = {
             TimelineEventType.CLICK: controller.on_click,
             TimelineEventType.DOUBLE_CLICK: controller.on_double_click,
@@ -79,7 +83,11 @@ class TimelineEventDispatcher:
         """Route event to the correct controller method."""
         handler = self._handlers.get(event.event_type)
 
-        if handler:
-            handler(event)
-        else:
+        if handler is None:
             print(f"[TimelineEventDispatcher] Unknown event: {event.event_type}")
+            return
+
+        try:
+            handler(event)
+        except Exception as e:
+            print(f"[TimelineEventDispatcher] Handler error for {event.event_type}: {e}")
