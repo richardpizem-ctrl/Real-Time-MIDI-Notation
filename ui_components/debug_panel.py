@@ -1,3 +1,8 @@
+# =========================================================
+# DebugPanel v2.0.0
+# Stabilné, bezpečné a real‑time friendly debug logovanie
+# =========================================================
+
 import pygame
 from typing import Any
 from ..core.logger import Logger
@@ -5,21 +10,16 @@ from ..core.logger import Logger
 
 class DebugPanel:
     """
-    DebugPanel (Debug Panel)
-    ------------------------
-    FÁZA 4 – Stabilizovaná verzia
-
-    Účel:
-        - Bezpečné logovanie MIDI udalostí
-        - Logovanie pipeline krokov
-        - Jednotné error logovanie
-        - Možnosť zapnúť/vypnúť debug mód
-        - Bezpečné formátovanie objektov
+    DebugPanel (v2.0.0)
+    -------------------
+    Bezpečné logovanie udalostí, pipeline krokov a chýb.
 
     Vlastnosti:
-        - Žiadne výnimky nesmú preraziť do UI
-        - Všetky chyby sú zachytené a zalogované
-        - Kompatibilné s real‑time slučkou
+        - žiadne výnimky nesmú preraziť do UI
+        - real‑time safe
+        - jednotné API
+        - bezpečné formátovanie objektov
+        - toggle debug módu
     """
 
     def __init__(self, enabled: bool = True, print_enabled: bool = True) -> None:
@@ -42,7 +42,7 @@ class DebugPanel:
     # MIDI EVENT LOGGING
     # ---------------------------------------------------------
     def log_midi_event(self, event: Any) -> None:
-        """Loguje MIDI udalosť (MIDI event)."""
+        """Loguje MIDI udalosť."""
         if not self.enabled:
             return
 
@@ -61,7 +61,7 @@ class DebugPanel:
     # PIPELINE LOGGING
     # ---------------------------------------------------------
     def log_pipeline(self, stage: str, data: Any) -> None:
-        """Loguje pipeline krok (pipeline stage)."""
+        """Loguje pipeline krok."""
         if not self.enabled:
             return
 
@@ -80,7 +80,7 @@ class DebugPanel:
     # ERROR LOGGING
     # ---------------------------------------------------------
     def log_error(self, message: Any) -> None:
-        """Loguje chybu (error)."""
+        """Loguje chybu."""
         try:
             safe_msg = self._safe_format(message)
 
@@ -96,7 +96,7 @@ class DebugPanel:
     # SAFE FORMATTER
     # ---------------------------------------------------------
     def _safe_format(self, obj: Any) -> str:
-        """Bezpečne konvertuje objekt na string (safe string conversion)."""
+        """Bezpečne konvertuje objekt na string."""
         try:
             return str(obj)
         except Exception:
