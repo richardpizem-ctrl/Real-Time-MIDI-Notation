@@ -1,138 +1,161 @@
-# MIDI Message Parser
+# =========================================================
+# EventRouter v2.0.0
+# Stabilný router MIDI udalostí pre Real-Time MIDI Engine
+# =========================================================
 
-import time
 from ..core.logger import Logger
 
 
-class MessageParser:
-    @staticmethod
-    def parse(msg):
+class EventRouter:
+    """
+    EventRouter (v2.0.0):
+    - prijíma MIDI eventy z MIDIListener
+    - smeruje ich do TrackSystem, UIManager, NotationProcessor a EventBus
+    - odolný voči chybným MIDI eventom
+    - bezpečný routing pre real-time spracovanie
+    """
+
+    def __init__(
+        self,
+        event_bus,
+        ui_manager=None,
+        notation_processor=None,
+        track_system=None,
+    ):
+        self.event_bus = event_bus
+        self.ui = ui_manager
+        self.notation = notation_processor
+        self.track_system = track_system
+
+        Logger.info("EventRouter initialized.")
+
+    # ---------------------------------------------------------
+    # ROUTING MIDI EVENTOV
+    # ---------------------------------------------------------
+    def route(self, midi_event: dict):
         """
-        Convert raw mido message into a structured dict.
-
-        Stabilizované (Fáza 4):
-        - ochrana pred None
-        - ochrana pred nevalidnými typmi
-        - bezpečné čítanie atribútov
-        - fallback pri chýbajúcich hodnotách
-        - clampovanie kanála
-        - clampovanie velocity
-        - pridanie timestampu
+        midi_event je dict:
+        {
+            "type": "note_on" / "note_off" / "control_change",
+            "note": int,
+            "velocity": int,
+            "channel": int,   # 0–15
+            "timestamp": float
+        }
         """
-
-        if msg is None:
-            Logger.warning("MessageParser.parse called with None")
-            return None
-
-        # msg musí mať aspoň atribút 'type'
-        msg_type = getattr(msg, "type", None)
-        if not isinstance(msg_type, str):
-            Logger.warning(f"MessageParser: missing or invalid msg.type in {msg}")
-            return None
+        if not isinstance(midi_event, dict):
+            Logger.warning(f"Invalid midi_event (not dict): {midi_event}")
+            return
 
         try:
-            # Normalizácia kanála (0–15)
-            channel = getattr(msg, "channel", 0)
+            event_type = midi_event.get("type")
+            note = midi_event.get("note")
+            velocity = midi_event.get("velocity", 0)
+            channel = midi_event.get("channel", 0)
+
+            if not isinstance(event_type, str):
+                Logger.warning(f"Missing or invalid event_type: {midi_event}")
+                return
+
+            # Normalize values
+            try:
+                velocity = int(velocity)
+            except Exception:
+                velocity = 0
+
             try:
                 channel = int(channel)
             except Exception:
                 channel = 0
-            channel = max(0, min(15, channel))
 
-            timestamp = time.time()
+            if channel < 0 or channel > 15:
+                channel = 0
 
-            # -----------------------------
-            # NOTE ON
-            # -----------------------------
-            if msg_type == "note_on":
-                note = getattr(msg, "note", None)
-                velocity = getattr(msg, "velocity", 0)
+            event = None
+
+            # ---------------------------------------------------------
+            # TRACK SYSTEM PREPOJENIE
+            # ---------------------------------------------------------
+            if self.track_system and event_type in ("note_on", "note_off"):
+                try:
+                    active_track = self.track_system.set_active_track_by_channel(channel)
+                except Exception as e:
+                    Logger.error(f"TrackSystem set_active_track_by_channel error: {e}")
+                    active_track = None
 
                 try:
-                    note = int(note) if note is not None else None
-                except Exception:
-                    note = None
+                    event = self.track_system.build_note_event_for_active_track(
+                        note=note,
+                        velocity=velocity,
+                        event_type=event_type,
+                    )
+                except Exception as e:
+                    Logger.error(f"TrackSystem build_note_event_for_active_track error: {e}")
+                    event = None
 
-                try:
-                    velocity = int(velocity)
-                except Exception:
-                    velocity = 0
+                if isinstance(event, dict):
+                    midi_event["track_id"] = event.get("track_id")
+                    midi_event["track_color"] = event.get("track_color")
 
-                velocity = max(0, min(127, velocity))
+                Logger.debug(
+                    f"Track routing: channel={channel}, active_track={active_track}, event={event}"
+                )
 
-                return {
-                    "type": "note_on",
-                    "note": note,
-                    "velocity": velocity,
-                    "channel": channel,
-                    "timestamp": timestamp,
-                }
+            # ---------------------------------------------------------
+            # NOTE ON / NOTE OFF
+            # ---------------------------------------------------------
+            if event_type in ("note_on", "note_off"):
 
-            # -----------------------------
-            # NOTE OFF
-            # -----------------------------
-            elif msg_type == "note_off":
-                note = getattr(msg, "note", None)
-                velocity = getattr(msg, "velocity", 0)
+                # EventBus
+                if self.event_bus:
+                    try:
+                        self.event_bus.publish("note_event", midi_event)
+                    except Exception as e:
+                        Logger.error(f"EventBus publish note_event error: {e}")
 
-                try:
-                    note = int(note) if note is not None else None
-                except Exception:
-                    note = None
+                # UIManager
+                if self.ui and isinstance(event, dict):
+                    try:
+                        if event_type == "note_on" and velocity > 0:
+                            self.ui.on_note_on(event)
+                        else:
+                            self.ui.on_note_off(event)
+                    except Exception as e:
+                        Logger.error(f"UIManager note handler error: {e}")
 
-                try:
-                    velocity = int(velocity)
-                except Exception:
-                    velocity = 0
+                # NotationProcessor
+                if self.notation:
+                    try:
+                        self.notation.process_midi_event(
+                            {
+                                "type": event_type,
+                                "note": note,
+                                "velocity": velocity,
+                                "time": midi_event.get("timestamp", 0.0),
+                                "channel": channel,
+                            }
+                        )
+                    except Exception as e:
+                        Logger.error(f"NotationProcessor process_midi_event error: {e}")
 
-                velocity = max(0, min(127, velocity))
-
-                return {
-                    "type": "note_off",
-                    "note": note,
-                    "velocity": velocity,
-                    "channel": channel,
-                    "timestamp": timestamp,
-                }
-
-            # -----------------------------
+            # ---------------------------------------------------------
             # CONTROL CHANGE
-            # -----------------------------
-            elif msg_type == "control_change":
-                control = getattr(msg, "control", None)
-                value = getattr(msg, "value", None)
+            # ---------------------------------------------------------
+            elif event_type == "control_change":
+                if self.event_bus:
+                    try:
+                        self.event_bus.publish("control_event", midi_event)
+                    except Exception as e:
+                        Logger.error(f"EventBus publish control_event error: {e}")
 
-                try:
-                    control = int(control) if control is not None else None
-                except Exception:
-                    control = None
-
-                try:
-                    value = int(value) if value is not None else None
-                except Exception:
-                    value = None
-
-                if value is not None:
-                    value = max(0, min(127, value))
-
-                return {
-                    "type": "control_change",
-                    "control": control,
-                    "value": value,
-                    "channel": channel,
-                    "timestamp": timestamp,
-                }
-
-            # -----------------------------
-            # UNKNOWN MESSAGE TYPE
-            # -----------------------------
+            # ---------------------------------------------------------
+            # UNKNOWN EVENT TYPE
+            # ---------------------------------------------------------
             else:
-                Logger.debug(f"MessageParser: unsupported message type '{msg_type}'")
-                return None
+                Logger.warning(f"Unknown MIDI event type: {event_type}")
 
         except Exception as e:
-            Logger.error(f"MessageParser error: {e}")
-            return None
+            Logger.error(f"EventRouter error: {e}")
 
     # ---------------------------------------------------------
     # NO-OP API (pre UIManager kompatibilitu)
