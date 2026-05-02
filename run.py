@@ -1,4 +1,7 @@
-# run.py – hlavný spúšťací súbor pre Real-Time MIDI Notation v2.0.0
+# =========================================================
+# run.py – Real-Time MIDI Notation v2.0.0
+# Stabilný hlavný spúšťací súbor
+# =========================================================
 
 import pygame
 import os
@@ -23,13 +26,13 @@ from ui.canvas_ui import CanvasUI
 
 
 # ---------------------------------------------------------
-# HLAVNÁ FUNKCIA
+# MAIN FUNCTION
 # ---------------------------------------------------------
 def main():
     Logger.info("=== REAL-TIME MIDI NOTATION v2.0.0 START ===")
 
     # -----------------------------------------------------
-    # 0. Inicializácia pygame
+    # 0. Pygame initialization
     # -----------------------------------------------------
     os.environ["SDL_VIDEO_CENTERED"] = "1"
 
@@ -71,10 +74,11 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 3. Renderer stack (PixelLayoutEngine + GraphicNotationRenderer)
+    # 3. Renderer stack
     # -----------------------------------------------------
     try:
         layout_engine = PixelLayoutEngine()
+
         renderer = GraphicNotationRenderer(
             layout_engine=layout_engine,
             track_manager=track_manager,
@@ -121,7 +125,7 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 6. HLAVNÁ SLUČKA
+    # 6. MAIN LOOP
     # -----------------------------------------------------
     running = True
 
