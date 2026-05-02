@@ -1,29 +1,27 @@
-# 🤝 Real-Time MIDI Notation — Code of Conduct (Ultimate Edition, v1.3.0)
+# 🤝 Real-Time MIDI Notation — Code of Conduct (v2.0.0)
 
-The **Real-Time MIDI Notation (SIRIUS Engine)** project is built by a diverse global community of developers, musicians, designers, researchers, and contributors.  
+The **Real-Time MIDI Notation (SIRIUS Engine)** project is built by a diverse global community of  
+developers, musicians, designers, researchers, and contributors.  
 Some are professionals, others are volunteers — all united by a shared mission:
 
 ### **To build an open, accessible, and high‑quality real‑time MIDI notation engine.**
 
-Diversity is one of our greatest strengths. It also means misunderstandings can happen.  
 This Code of Conduct ensures that every member of our community feels **safe, respected, and welcome**.
 
-This document applies equally to:
+It applies to:
 
-- founders  
 - maintainers  
 - contributors  
 - newcomers  
+- researchers  
 - anyone participating in project spaces  
 
-It is not an exhaustive list of rules — it is a set of guiding principles for a positive, productive, and inclusive environment.
-
-This Code of Conduct applies to all spaces managed by the project, including:
+This includes:
 
 - GitHub issues and pull requests  
 - Discussions and comments  
 - Documentation  
-- Community channels created by the project team  
+- Any community channels managed by the project  
 
 Violations outside these spaces may still affect a person’s ability to participate within them.
 
@@ -35,13 +33,13 @@ If you believe someone is violating this Code of Conduct, please report it to:
 # 🌟 Our Standards
 
 ## ✔️ Be friendly and patient  
-Everyone learns at a different pace. Everyone has different backgrounds.  
+People come from different backgrounds and skill levels.  
 Patience builds a stronger community.
 
 ---
 
 ## ✔️ Be welcoming  
-We strive to be a community that welcomes and supports people of all backgrounds and identities, including (but not limited to):
+We strive to be a community that welcomes and supports people of all backgrounds and identities, including:
 
 - race or ethnicity  
 - culture or national origin  
@@ -62,13 +60,12 @@ Your work will be used by others, and you will depend on the work of others.
 Every decision you make affects users and contributors.
 
 Remember:  
-**We are a global community — English may not be everyone’s first language.**
+**English may not be everyone’s first language.**
 
 ---
 
 ## ✔️ Be respectful  
-Disagreements happen. They are normal.  
-But disrespectful behavior is not acceptable.
+Disagreements happen — disrespect does not need to.
 
 Unacceptable behavior includes:
 
@@ -160,4 +157,5 @@ If you have questions or concerns about this Code of Conduct, please contact the
 
 📧 **richardpizem@gmail.com**
 
-Thank you for helping make **Real-Time MIDI Notation (SIRIUS Engine)** a safe, respectful, and welcoming community.
+Thank you for helping make **Real-Time MIDI Notation (SIRIUS Engine)**  
+a safe, respectful, and welcoming community.
