@@ -1,10 +1,7 @@
-"""
-PlaybackEngine – realtime prehrávací modul pre Real-Time-MIDI-Notation.
-
-- riadi čas a prehrávanie
-- synchronizuje GraphicNotationRenderer a CanvasUI
-- používa TrackManager na DAW-logiku (mute/solo/volume)
-"""
+# =========================================================
+# PlaybackEngine v2.0.0
+# Stabilný real-time prehrávací modul pre MIDI Engine
+# =========================================================
 
 import time
 from typing import List, Dict, Any, Optional
@@ -16,6 +13,14 @@ from core.logger import Logger
 
 
 class PlaybackEngine:
+    """
+    PlaybackEngine (v2.0.0):
+    - riadi čas a prehrávanie
+    - synchronizuje GraphicNotationRenderer a CanvasUI
+    - používa TrackManager na DAW-logiku (mute/solo/volume)
+    - odolný voči lagom a chybným dátam
+    """
+
     def __init__(
         self,
         track_manager: TrackManager,
