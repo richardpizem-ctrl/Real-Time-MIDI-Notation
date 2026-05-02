@@ -1,13 +1,8 @@
-"""
-error_handler.py – Centralized and safe error handling for real-time processing (FÁZA 4)
-
-Poskytuje:
-- jednotné logovanie
-- bezpečné volanie funkcií
-- dekorátor pre real-time pipeline
-- ochranu pred zlyhaním Loggera
-- konzistentné návratové hodnoty
-"""
+# =========================================================
+# ErrorHandler v2.0.0
+# Stabilné a bezpečné centrálne spracovanie chýb
+# pre Real-Time-MIDI-Notation
+# =========================================================
 
 from ..core.logger import Logger
 from typing import Any, Callable, Optional
@@ -15,39 +10,47 @@ from typing import Any, Callable, Optional
 
 class ErrorHandler:
     """
-    Centralized error handler for real-time processing.
-    Provides safe wrappers and unified logging for exceptions.
+    ErrorHandler (v2.0.0):
+    - jednotné logovanie
+    - bezpečné volanie funkcií
+    - ochrana pred zlyhaním Loggera
+    - konzistentné návratové hodnoty
+    - pripravené na real-time pipeline v3
     """
 
     @staticmethod
-    def handle(error: Exception,
-               context: Optional[str] = None,
-               raise_error: bool = False) -> None:
+    def handle(
+        error: Exception,
+        context: Optional[str] = None,
+        raise_error: bool = False
+    ) -> None:
         """
-        Handle an exception with optional context.
-        If raise_error=True → re-raises after logging.
+        Bezpečné spracovanie výnimky.
+        Ak raise_error=True → po zalogovaní re-raise.
         """
         try:
             ctx = f" | context={context}" if context else ""
             Logger.error(f"[ErrorHandler] {type(error).__name__}: {error}{ctx}")
         except Exception:
-            # Fallback if Logger itself fails
+            # Fallback ak Logger zlyhá
             print(f"[ErrorHandler] {type(error).__name__}: {error} (logging failed)")
 
         if raise_error:
             raise error
 
     @staticmethod
-    def safe_call(func: Callable,
-                  *args,
-                  context: Optional[str] = None,
-                  raise_error: bool = False,
-                  **kwargs) -> Any:
+    def safe_call(
+        func: Callable,
+        *args,
+        context: Optional[str] = None,
+        raise_error: bool = False,
+        **kwargs
+    ) -> Any:
         """
-        Safely call a function.
-        On exception:
-            - logs via ErrorHandler
-            - returns None (unless raise_error=True)
+        Bezpečné volanie funkcie.
+        Pri chybe:
+            - zaloguje
+            - vráti None (ak raise_error=False)
         """
         try:
             return func(*args, **kwargs)
@@ -58,8 +61,8 @@ class ErrorHandler:
 
 def safe_execute(func: Callable) -> Callable:
     """
-    Decorator for safe execution of functions in real-time pipeline.
-    Logs all exceptions via ErrorHandler and prevents hard crashes.
+    Dekorátor pre bezpečné vykonanie funkcie v real-time pipeline.
+    Zachytí všetky výnimky a zabráni pádu systému.
     """
 
     def wrapper(*args, **kwargs):
