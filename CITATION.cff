@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software in your research, please cite it as below."
-title: "Real-Time MIDI Notation: A High-Performance Real-Time 16-Track Real-Time Notation Engine"
-version: "1.3.0"
+title: "Real-Time MIDI Notation: A High-Performance Real-Time 16-Track Notation Engine"
+version: "2.0.0"
 
 authors:
   - family-names: "Pizem"
@@ -11,23 +11,26 @@ authors:
 keywords:
   - midi
   - real-time
+  - real-time-midi
   - music-notation
   - visualization
   - python
   - pygame
   - yamaha
   - multi-track
-  - real-time-midi
   - music-technology
   - digital-audio
   - notation-engine
   - live-notation
+  - timeline-ui
+  - real-time-processing
 
 abstract: >
   Real-Time MIDI Notation is a high-performance real-time 16-track MIDI notation
   and visualization engine written in Python. It provides real-time rendering of
   MIDI events, velocity dynamics, beams, stems, barlines, and multi-track
-  visualization optimized for Yamaha arranger keyboards and music research.
+  visualization optimized for Yamaha arranger keyboards, live performance, and
+  music research.
 
   This project introduces a completely new class of software that did not
   previously exist in music technology: a Real-Time Multi-Track MIDI Notation
@@ -36,11 +39,13 @@ abstract: >
   multi-track notation, Yamaha-style track processing, and dynamic rendering
   without pre-analysis or offline steps.
 
-  Version 1.3.0 finalizes the TimelineUI architecture, stabilizes the event
-  pipeline, and completes Phase‑4 of the real-time rendering system. It defines
-  a new category of tools for research, education, live performance, expressive
-  timing analysis, and next-generation MIDI workflows.
+  Version 2.0.0 stabilizes the entire architecture, introduces a unified
+  real-time processing pipeline, finalizes the UIManager v2 system, upgrades
+  the renderer and layout engine, and prepares the full codebase for the
+  upcoming v3.0.0 AI/TIMELINE expansion. It defines a new category of tools
+  for research, education, expressive timing analysis, and next-generation
+  MIDI workflows.
 
 repository-code: "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation"
 license: "MIT"
-date-released: "2026-04-29"
+date-released: "2026-05-02"
