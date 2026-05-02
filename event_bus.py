@@ -1,4 +1,7 @@
-# EventBus – Fáza 4 verzia pre Real-Time-MIDI-Notation
+# =========================================================
+# EventBus v2.0.0 – Stabilný, bezpečný, thread-safe event systém
+# =========================================================
+
 import threading
 from collections import defaultdict
 from typing import Callable, Any, Dict, List
@@ -8,16 +11,27 @@ from core.logger import Logger
 
 class EventBus:
     """
-    Stabilný, bezpečný, thread-safe EventBus (Fáza 4):
-    - subscribe(event_type, callback)
-    - unsubscribe(event_type, callback)
-    - publish(event_type, data)
-    - publish_async(event_type, data)
+    EventBus (v2.0.0)
+    -----------------
+    Stabilný, bezpečný, thread-safe event router pre celý projekt.
+
+    Funkcie:
+        - subscribe(event_type, callback)
+        - unsubscribe(event_type, callback)
+        - publish(event_type, data)
+        - publish_async(event_type, data)
+
+    Vlastnosti:
+        - žiadne výnimky nesmú preraziť
+        - callbacky sa volajú mimo locku (bez deadlockov)
+        - ochrana pred nevalidnými event typmi a callbackmi
+        - pripravené pre v3 (AI/TIMELINE event hooks)
     """
 
     def __init__(self):
         self._subscribers: Dict[str, List[Callable[[Any], None]]] = defaultdict(list)
         self._lock = threading.Lock()
+        Logger.info("EventBus initialized (v2.0.0).")
 
     # ---------------------------------------------------------
     # VALIDÁCIA
@@ -35,7 +49,7 @@ class EventBus:
         return True
 
     # ---------------------------------------------------------
-    # REGISTRÁCIA CALLBACKOV
+    # SUBSCRIBE
     # ---------------------------------------------------------
     def subscribe(self, event_type: str, callback: Callable[[Any], None]) -> None:
         """Zaregistruje callback pre daný typ udalosti."""
@@ -47,8 +61,11 @@ class EventBus:
         with self._lock:
             if callback not in self._subscribers[event_type]:
                 self._subscribers[event_type].append(callback)
-                Logger.debug(f"EventBus: subscribed to '{event_type}'")
+                Logger.debug(f"Subscribed to event '{event_type}'")
 
+    # ---------------------------------------------------------
+    # UNSUBSCRIBE
+    # ---------------------------------------------------------
     def unsubscribe(self, event_type: str, callback: Callable[[Any], None]) -> None:
         """Odstráni callback z daného typu udalosti."""
         if not self._validate_event_type(event_type):
@@ -59,7 +76,7 @@ class EventBus:
         with self._lock:
             if callback in self._subscribers[event_type]:
                 self._subscribers[event_type].remove(callback)
-                Logger.debug(f"EventBus: unsubscribed from '{event_type}'")
+                Logger.debug(f"Unsubscribed from event '{event_type}'")
 
             if not self._subscribers[event_type]:
                 del self._subscribers[event_type]
@@ -79,7 +96,7 @@ class EventBus:
             try:
                 callback(data)
             except Exception as e:
-                Logger.error(f"EventBus: error in callback for '{event_type}': {e}")
+                Logger.error(f"[EventBus] Error in callback for '{event_type}': {e}")
 
     # ---------------------------------------------------------
     # ASYNCHRÓNNE PUBLIKOVANIE
@@ -95,7 +112,8 @@ class EventBus:
             daemon=True
         )
         thread.start()
-        Logger.debug(f"EventBus: async publish scheduled for '{event_type}'")
+
+        Logger.debug(f"Async publish scheduled for event '{event_type}'")
 
     # ---------------------------------------------------------
     # NO-OP API (UI kompatibilita)
