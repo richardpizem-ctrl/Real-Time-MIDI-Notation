@@ -1,15 +1,7 @@
-"""
-stream_handler.py – Real-time MIDI Stream Handler (FÁZA 5)
-
-Poskytuje:
-- bezpečné čítanie MIDI eventov
-- ochranu pred None objektmi
-- ochranu pred nevalidnými MIDI dátami
-- burst‑safe spracovanie (limit správ na cyklus)
-- fallback pri chýbajúcom zariadení
-- bezpečné logovanie bez pádu
-- čistý shutdown (stop())
-"""
+# =========================================================
+# StreamHandler v2.0.0
+# Stabilný real‑time MIDI Stream Handler pre SIRIUS
+# =========================================================
 
 import time
 import pygame.midi
@@ -18,7 +10,14 @@ from typing import Optional, Dict, Any
 
 class StreamHandler:
     """
-    Stabilizovaný Real-time MIDI Stream Handler (FÁZA 5).
+    StreamHandler (v2.0.0):
+    - bezpečné čítanie MIDI eventov
+    - ochrana pred None objektmi
+    - ochrana pred nevalidnými MIDI dátami
+    - burst‑safe spracovanie (limit správ na cyklus)
+    - fallback pri chýbajúcom zariadení
+    - bezpečné logovanie bez pádu
+    - čistý shutdown (stop)
     """
 
     def __init__(self, ui_manager=None, event_router=None, perf=None):
