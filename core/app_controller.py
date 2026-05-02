@@ -1,10 +1,13 @@
-# Main application controller – orchestrates all core systems
+# =========================================================
+# AppController v2.0.0
+# Hlavný orchestrátor systému pre Real-Time MIDI Notation
+# =========================================================
 
 from .logger import Logger
 from .event_bus import EventBus
 from .config_manager import ConfigManager
 
-# Core functional modules
+# Core modules
 from .track_manager import TrackSystem
 from .notation_processor import NotationProcessor
 
@@ -22,11 +25,11 @@ from .event_types import (
 class AppController:
     """
     Centrálny kontrolér aplikácie.
-    Riadi:
-    - EventBus
-    - TrackSystem
-    - NotationProcessor
-    - systémové udalosti
+    Zodpovedá za:
+    - inicializáciu všetkých core modulov
+    - bezpečné spúšťanie a ukončovanie aplikácie
+    - publikovanie systémových udalostí
+    - spracovanie exportov a chýb
     """
 
     def __init__(self):
@@ -56,12 +59,7 @@ class AppController:
         # -----------------------------------------------------
         # EVENT SUBSCRIPTIONS
         # -----------------------------------------------------
-        if self.event_bus:
-            try:
-                self.event_bus.subscribe(MIDI_EXPORTED, self._on_midi_exported)
-                self.event_bus.subscribe(ERROR_OCCURRED, self._on_error)
-            except Exception as e:
-                Logger.error(f"Failed to subscribe to events: {e}")
+        self._subscribe_events()
 
         Logger.info("AppController initialized successfully.")
 
@@ -79,18 +77,36 @@ class AppController:
             return None
 
     # ---------------------------------------------------------
+    # EVENT SUBSCRIPTIONS
+    # ---------------------------------------------------------
+    def _subscribe_events(self):
+        """Bezpečne registruje event handlery."""
+        if not self.event_bus:
+            Logger.error("EventBus not available — cannot subscribe to events.")
+            return
+
+        try:
+            self.event_bus.subscribe(MIDI_EXPORTED, self._on_midi_exported)
+            self.event_bus.subscribe(ERROR_OCCURRED, self._on_error)
+        except Exception as e:
+            Logger.error(f"Failed to subscribe to events: {e}")
+
+    # ---------------------------------------------------------
     # START APPLICATION
     # ---------------------------------------------------------
     def start(self):
         """Štart aplikácie."""
         Logger.info("Application started.")
 
-        if self.event_bus:
-            try:
-                self.event_bus.publish(APP_STARTED)
-                self.event_bus.publish(STATUS_MESSAGE, "App is running")
-            except Exception as e:
-                Logger.error(f"Failed to publish start events: {e}")
+        if not self.event_bus:
+            Logger.error("EventBus missing — cannot publish APP_STARTED.")
+            return
+
+        try:
+            self.event_bus.publish(APP_STARTED)
+            self.event_bus.publish(STATUS_MESSAGE, "App is running")
+        except Exception as e:
+            Logger.error(f"Failed to publish start events: {e}")
 
     # ---------------------------------------------------------
     # STOP APPLICATION
@@ -99,11 +115,14 @@ class AppController:
         """Bezpečné ukončenie aplikácie."""
         Logger.info("Application stopped.")
 
-        if self.event_bus:
-            try:
-                self.event_bus.publish(APP_STOPPED)
-            except Exception as e:
-                Logger.error(f"Failed to publish stop event: {e}")
+        if not self.event_bus:
+            Logger.error("EventBus missing — cannot publish APP_STOPPED.")
+            return
+
+        try:
+            self.event_bus.publish(APP_STOPPED)
+        except Exception as e:
+            Logger.error(f"Failed to publish stop event: {e}")
 
     # ---------------------------------------------------------
     # EXPORT MIDI
@@ -134,23 +153,27 @@ class AppController:
     def _on_midi_exported(self, filename):
         Logger.info(f"MIDI exported successfully: {filename}")
 
-        if self.event_bus:
-            try:
-                self.event_bus.publish(
-                    STATUS_MESSAGE,
-                    f"MIDI exported: {filename}"
-                )
-            except Exception as e:
-                Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
+        if not self.event_bus:
+            return
+
+        try:
+            self.event_bus.publish(
+                STATUS_MESSAGE,
+                f"MIDI exported: {filename}"
+            )
+        except Exception as e:
+            Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
 
     def _on_error(self, error_message):
         Logger.error(f"Application error: {error_message}")
 
-        if self.event_bus:
-            try:
-                self.event_bus.publish(
-                    STATUS_MESSAGE,
-                    f"Error: {error_message}"
-                )
-            except Exception as e:
-                Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
+        if not self.event_bus:
+            return
+
+        try:
+            self.event_bus.publish(
+                STATUS_MESSAGE,
+                f"Error: {error_message}"
+            )
+        except Exception as e:
+            Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
