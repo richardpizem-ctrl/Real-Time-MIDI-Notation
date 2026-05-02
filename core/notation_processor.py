@@ -1,4 +1,7 @@
-# NotationProcessor – správa notových udalostí a export MIDI podľa trakov
+# =========================================================
+# NotationProcessor v2.0.0
+# Stabilný procesor notácie a MIDI exportu pre Real-Time MIDI Engine
+# =========================================================
 
 from typing import Dict, Any, Optional
 from mido import Message, MidiFile, MidiTrack, MetaMessage
@@ -9,11 +12,12 @@ from .event_types import MIDI_EXPORTED, ERROR_OCCURRED
 
 class NotationProcessor:
     """
-    Procesor notácie (Fáza 4):
+    Procesor notácie (v2.0.0):
     - pracuje s TrackSystem
     - exportuje MIDI podľa trakov (každý track = jedna MIDI stopa)
     - odolný voči chybným eventom
     - bezpečný export
+    - AI hook pripravený pre v3.0.0
     """
 
     def __init__(self, track_system, event_bus=None):
@@ -22,10 +26,10 @@ class NotationProcessor:
 
         # AI modul (voliteľný)
         self.ai = None
-        self.ai_enabled = False   # NOVÉ – AI sa dá zapnúť/vypnúť
+        self.ai_enabled = False
 
     # ---------------------------------------------------------
-    # AI ATTACH (NOVÉ – PRÍPRAVA NA v3.0.0)
+    # AI ATTACH (PRÍPRAVA NA v3.0.0)
     # ---------------------------------------------------------
     def attach_ai(self, ai_engine):
         """Pripojí AI modul k NotationProcessoru."""
@@ -64,28 +68,19 @@ class NotationProcessor:
                 mid.tracks.append(midi_track)
 
                 # Názov tracku
-                try:
-                    track_name = self.track_system.get_track_name(track_id)
-                    if not isinstance(track_name, str) or not track_name.strip():
-                        track_name = f"Track {track_id}"
-                except Exception:
-                    track_name = f"Track {track_id}"
-
+                track_name = self._safe_track_name(track_id)
                 try:
                     midi_track.append(MetaMessage("track_name", name=track_name, time=0))
                 except Exception:
                     Logger.error(f"Failed to write track name for track {track_id}")
 
                 # Eventy z TrackSystem
-                try:
-                    events = self.track_system.recorded_events.get(track_id, [])
-                except Exception:
-                    events = []
+                events = self._safe_get_events(track_id)
 
                 for event in events:
 
                     # ---------------------------------------------------------
-                    # AI HOOK (NOVÉ – PRÍPRAVA NA v3.0.0)
+                    # AI HOOK (PRÍPRAVA NA v3.0.0)
                     # ---------------------------------------------------------
                     if self.ai_enabled and self.ai:
                         try:
@@ -119,6 +114,29 @@ class NotationProcessor:
         except Exception as e:
             Logger.error(f"NotationProcessor: MIDI export failed → {e}")
             self._publish_error(str(e))
+
+    # ---------------------------------------------------------
+    # SAFE TRACK NAME
+    # ---------------------------------------------------------
+    def _safe_track_name(self, track_id: int) -> str:
+        """Bezpečne získa názov tracku."""
+        try:
+            name = self.track_system.get_track_name(track_id)
+            if not isinstance(name, str) or not name.strip():
+                return f"Track {track_id}"
+            return name
+        except Exception:
+            return f"Track {track_id}"
+
+    # ---------------------------------------------------------
+    # SAFE EVENT RETRIEVAL
+    # ---------------------------------------------------------
+    def _safe_get_events(self, track_id: int):
+        """Bezpečne získa eventy z TrackSystem."""
+        try:
+            return self.track_system.recorded_events.get(track_id, [])
+        except Exception:
+            return []
 
     # ---------------------------------------------------------
     # KONVERZIA EVENTU NA MIDO MESSAGE
