@@ -1,7 +1,25 @@
+# =========================================================
+# TransportUI v2.0.0
+# Stabilný transport panel pre DAW (play/stop/loop/BPM/time)
+# =========================================================
+
 import pygame
 
 
 class TransportUI:
+    """
+    TransportUI (v2.0.0)
+    --------------------
+    Jednoduchý, stabilný transport panel pre DAW.
+
+    Funkcie:
+        - play / stop / rewind
+        - loop toggle
+        - BPM +/- 
+        - time display
+        - UIManager-kompatibilné API
+    """
+
     def __init__(self, width=1400, height=50):
         self.width = int(width)
         self.height = int(height)
@@ -29,7 +47,7 @@ class TransportUI:
         self.is_playing = False
 
     # ---------------------------------------------------------
-    # PUBLIC API (pre UIManager kompatibilitu)
+    # PUBLIC API (UIManager kompatibilita)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
         return
