@@ -1,3 +1,8 @@
+# =========================================================
+# StatusBar v2.0.0
+# Stabilný, bezpečný a real‑time friendly status panel
+# =========================================================
+
 import pygame
 from typing import Tuple, Optional, Any
 from ..core.logger import Logger
@@ -5,20 +10,17 @@ from ..core.logger import Logger
 
 class StatusBar:
     """
-    StatusBar (Status Bar)
-    ----------------------
-    FÁZA 4 – Stabilizovaná verzia
-
-    Účel:
-        - Zobrazuje stavové správy (status messages)
-        - Používa sa na informácie o pipeline, MIDI, trackoch, systéme
-        - Real‑time safe, neblokuje renderovaciu slučku
+    StatusBar (v2.0.0)
+    ------------------
+    Jednoduchý, stabilný textový panel pre zobrazovanie
+    stavových správ v real‑time slučke.
 
     Vlastnosti:
-        - Jednoduchý textový UI prvok
-        - Bezpečné vykresľovanie
-        - Možnosť zapnúť/vypnúť
-        - Automatické skracovanie textu pri pretečení
+        - real‑time safe
+        - žiadne výnimky nesmú preraziť do UI
+        - bezpečné skracovanie textu
+        - toggle viditeľnosti
+        - pripravené pre v3 (AI/TIMELINE hooks)
     """
 
     def __init__(
@@ -62,12 +64,11 @@ class StatusBar:
     # SET MESSAGE
     # ---------------------------------------------------------
     def set_message(self, message: Any) -> None:
-        """Nastaví novú správu (set status message)."""
+        """Nastaví novú správu (safe)."""
         try:
             safe_message = self._safe_format(message)
             self.current_message = safe_message
             Logger.info(f"StatusBar message set: {safe_message}")
-
         except Exception as e:
             Logger.error(f"StatusBar set_message error: {e}")
 
@@ -75,7 +76,7 @@ class StatusBar:
     # RENDER
     # ---------------------------------------------------------
     def render(self) -> Optional[pygame.Surface]:
-        """Vykreslí status bar a vráti surface (render status bar)."""
+        """Vykreslí status bar a vráti surface."""
         if not self.enabled:
             return None
 
@@ -99,7 +100,7 @@ class StatusBar:
     # SAFE FORMATTER
     # ---------------------------------------------------------
     def _safe_format(self, obj: Any) -> str:
-        """Bezpečne konvertuje objekt na text (safe string conversion)."""
+        """Bezpečne konvertuje objekt na text."""
         try:
             return str(obj)
         except Exception:
@@ -109,8 +110,8 @@ class StatusBar:
     # TRUNCATE LONG TEXT
     # ---------------------------------------------------------
     def _truncate(self, text: str) -> str:
-        """Skráti text, ak je príliš dlhý (truncate long text)."""
-        max_chars = max(4, int(self.width / 10))  # bezpečný limit
+        """Skráti text, ak je príliš dlhý."""
+        max_chars = max(4, int(self.width / 10))
         if len(text) > max_chars:
             return text[:max_chars - 3] + "..."
         return text
