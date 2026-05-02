@@ -1,3 +1,8 @@
+# =========================================================
+# PianoRollUI v2.0.0
+# Stabilná real‑time klavírna vizualizácia (pygame)
+# =========================================================
+
 import pygame
 import time
 from typing import Dict, Tuple, List
@@ -31,7 +36,7 @@ class PianoRollUI:
         self._calculate_key_positions()
 
     # ---------------------------------------------------------
-    # PUBLIC API (pre UIManager – bezpečné no-op metódy)
+    # PUBLIC API (UIManager-safe)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
         return
@@ -153,7 +158,7 @@ class PianoRollUI:
                     text = self.font.render(label, True, (0, 0, 0))
                     surface.blit(text, (rect.x + 2, rect.y + self.WHITE_KEY_HEIGHT - 18))
 
-        # --- HORIZONTAL SEPARATOR (opravené) ---
+        # --- HORIZONTAL SEPARATOR ---
         h = surface.get_height()
         pygame.draw.line(
             surface,
