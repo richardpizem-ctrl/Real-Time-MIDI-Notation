@@ -1,18 +1,7 @@
-"""
-Chord Detector – stabilná detekcia základných triád.
-
-Podporované:
-- dur (major)
-- mol (minor)
-- dim (diminished)
-- aug (augmented)
-
-Stabilizované (Fáza 4):
-- ochrana pred None
-- ochrana pred nevalidnými hodnotami
-- bezpečné spracovanie pitch-classov
-- fallback pri chybách
-"""
+# =========================================================
+# Chord Detector v2.0.0
+# Stabilná detekcia základných triád pre MIDI Engine
+# =========================================================
 
 from typing import Iterable, Optional
 
@@ -41,11 +30,13 @@ TRIAD_PATTERNS = {
 
 def detect_chord(pitches: Iterable[int]) -> Optional[str]:
     """
-    Stabilizovaná detekcia akordov.
-    - Bezpečné spracovanie vstupu
-    - Ochrana pred None
-    - Ochrana pred nevalidnými hodnotami
-    - Podpora základných triád
+    Stabilizovaná detekcia akordov (v2.0.0):
+    - bezpečné spracovanie vstupu
+    - ochrana pred None
+    - ochrana pred nevalidnými hodnotami
+    - bezpečné spracovanie pitch-classov
+    - fallback pri chybách
+    - podpora základných triád
     """
 
     if pitches is None:
