@@ -1,4 +1,10 @@
+# =========================================================
+# CanvasUI v2.0.0
+# Stabilná real‑time piano‑roll vizualizácia (Tkinter)
+# =========================================================
+
 import tkinter as tk
+import time
 
 
 class CanvasUI:
@@ -17,7 +23,7 @@ class CanvasUI:
         self.offset_y = 40.0
         self.zoom = 1.0
 
-        # Playhead (v „časových jednotkách“ CanvasUI, nie priamo v ms)
+        # Playhead
         self.playhead_time = 1000.0
         self.playhead_color = "#ff4444"
         self.playhead_width = 2
@@ -59,23 +65,34 @@ class CanvasUI:
         self.color_mode = "heatmap"
 
         # Bind events
-        self.canvas.bind("<ButtonPress-1>", self._on_mouse_down)
-        self.canvas.bind("<ButtonRelease-1>", self._on_mouse_up)
-        self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
-        self.canvas.bind("<MouseWheel>", self._on_mouse_wheel)
-        self.canvas.bind("<Button-4>", self._on_mouse_wheel)
-        self.canvas.bind("<Button-5>", self._on_mouse_wheel)
-
-        # Right mouse → velocity edit
-        self.canvas.bind("<ButtonPress-3>", self._on_right_mouse_down)
-        self.canvas.bind("<B3-Motion>", self._on_right_mouse_drag)
-        self.canvas.bind("<ButtonRelease-3>", self._on_right_mouse_up)
+        self._bind_events()
 
         # Redraw loop
         self._schedule_redraw()
 
     # ---------------------------------------------------------
-    # PUBLIC API (pre UIManager – bezpečné no-op metódy)
+    # EVENT BINDING
+    # ---------------------------------------------------------
+    def _bind_events(self) -> None:
+        c = self.canvas
+
+        # Left mouse
+        c.bind("<ButtonPress-1>", self._on_mouse_down)
+        c.bind("<ButtonRelease-1>", self._on_mouse_up)
+        c.bind("<B1-Motion>", self._on_mouse_drag)
+
+        # Mouse wheel (Windows / Linux / macOS)
+        c.bind("<MouseWheel>", self._on_mouse_wheel)
+        c.bind("<Button-4>", self._on_mouse_wheel)
+        c.bind("<Button-5>", self._on_mouse_wheel)
+
+        # Right mouse → velocity edit
+        c.bind("<ButtonPress-3>", self._on_right_mouse_down)
+        c.bind("<B3-Motion>", self._on_right_mouse_drag)
+        c.bind("<ButtonRelease-3>", self._on_right_mouse_up)
+
+    # ---------------------------------------------------------
+    # PUBLIC API (UIManager-safe)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str) -> None:
         return
@@ -351,7 +368,7 @@ class CanvasUI:
         )
 
     # ---------------------------------------------------------
-    # PLACEHOLDER HANDLERS (aby bol súbor kompletný)
+    # PLACEHOLDER HANDLERS (v2.0.0 – bezpečné no-op)
     # ---------------------------------------------------------
     def _on_mouse_down(self, event) -> None:
         pass
@@ -375,9 +392,7 @@ class CanvasUI:
         pass
 
     def _center_playhead_if_needed(self) -> None:
-        """Placeholder – implementuješ podľa toho, ako chceš správať viewport."""
         pass
 
     def _draw_note(self, note: dict, preview: bool = False) -> None:
-        """Placeholder – reálna implementácia je v tvojej verzii."""
         pass
