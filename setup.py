@@ -1,11 +1,16 @@
+# =========================================================
+# pyproject.toml — Real-Time MIDI Notation v2.0.0
+# Stabilná build konfigurácia pre Python 3.10+
+# =========================================================
+
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "real-time-midi-notation"
-version = "1.3.0"
-description = "Real-time multi-track MIDI notation engine with Yamaha 16-track support, advanced rendering, and finalized TimelineUI architecture."
+version = "2.0.0"
+description = "Real-time multi-track MIDI notation engine with Yamaha 16-track support, advanced rendering pipeline, TimelineUI v2, and real-time processing core."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -29,13 +34,15 @@ keywords = [
     "digital-audio",
     "midi-visualizer",
     "notation-engine",
-    "live-notation"
+    "live-notation",
+    "timeline-ui",
+    "real-time-processing"
 ]
 
 dependencies = [
-    "pygame",
-    "mido",
-    "python-rtmidi"
+    "pygame>=2.1.0",
+    "mido>=1.3.0",
+    "python-rtmidi>=1.5.0"
 ]
 
 [project.urls]
