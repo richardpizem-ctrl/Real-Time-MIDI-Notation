@@ -1,22 +1,25 @@
+# =========================================================
+# TextRenderer v2.0.0
+# Stabilné, bezpečné a real‑time friendly textové logovanie
+# =========================================================
+
 from typing import Any
 from ..core.logger import Logger
 
 
 class TextRenderer:
     """
-    TextRenderer (Text Renderer)
-    ----------------------------
-    FÁZA 4 – Stabilizovaná verzia
-
-    Účel:
-        - Jednoduché a bezpečné zobrazovanie textových informácií
-        - Používa sa na debug text, status správy, notáciu v textovej forme
-        - Všetky chyby sú zachytené a zalogované
+    TextRenderer (v2.0.0)
+    ---------------------
+    Jednoduchý, stabilný textový renderer pre debug, status
+    a textovú notáciu.
 
     Vlastnosti:
-        - Real‑time safe (žiadne blokovanie)
-        - Bezpečné formátovanie objektov
-        - Možnosť zapnúť/vypnúť výstup
+        - real‑time safe
+        - žiadne výnimky nesmú preraziť do UI
+        - bezpečné formátovanie objektov
+        - toggle výstupu
+        - pripravené pre v3 (AI/TIMELINE hooks)
     """
 
     def __init__(self, enabled: bool = True, print_enabled: bool = True) -> None:
@@ -39,7 +42,7 @@ class TextRenderer:
     # DISPLAY TEXT
     # ---------------------------------------------------------
     def display(self, text: Any) -> None:
-        """Bezpečne zobrazí text (display text)."""
+        """Bezpečne zobrazí text."""
         if not self.enabled:
             return
 
@@ -60,7 +63,7 @@ class TextRenderer:
     # SAFE FORMATTER
     # ---------------------------------------------------------
     def _safe_format(self, obj: Any) -> str:
-        """Bezpečne konvertuje objekt na string (safe string conversion)."""
+        """Bezpečne konvertuje objekt na string."""
         try:
             return str(obj)
         except Exception:
