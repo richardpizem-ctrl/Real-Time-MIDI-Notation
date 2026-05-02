@@ -1,12 +1,28 @@
+# =========================================================
+# TrackColorMap v2.0.0
+# Stabilné mapovanie farieb pre 16 MIDI stôp (Yamaha štandard)
+# =========================================================
+
 class TrackColorMap:
     """
-    Mapovanie farieb pre 16 MIDI stôp podľa Yamaha štandardu.
-    UI aj Renderer používajú tieto farby na konzistentné zobrazenie.
+    TrackColorMap (v2.0.0)
+    ----------------------
+    Poskytuje konzistentné farby pre 16 MIDI stôp podľa Yamaha štandardu.
+    Používa sa v:
+        - UI (PianoUI, PianoRollUI, StaffUI, TimelineUI)
+        - Renderer (GraphicNotationRenderer)
+        - MIDI pipeline (track routing)
+
+    Vlastnosti:
+        - tuple = nemenné, rýchle, bezpečné
+        - real‑time safe
+        - fallback farba pri nevalidnom indexe
+        - kompatibilné s UIManager API (no‑op metódy)
+        - pripravené na v3 (AI/TIMELINE color assist)
     """
 
     def __init__(self):
-        # Farby sú v hex formáte (#RRGGBB)
-        # Tuple = rýchlejšie, nemenné, bezpečné
+        # Farby v hex formáte (#RRGGBB)
         self.colors = (
             "#FF4B4B",  # Track 1 - Red
             "#FF8A33",  # Track 2 - Orange
@@ -26,6 +42,8 @@ class TrackColorMap:
             "#FF334B",  # Track 16 - Red-Pink
         )
 
+        self.fallback = "#FFFFFF"
+
     # ---------------------------------------------------------
     # PUBLIC API
     # ---------------------------------------------------------
@@ -35,16 +53,17 @@ class TrackColorMap:
         Ak index nie je platný, vráti fallback farbu.
         """
         try:
-            track = int(track)
-            if 0 <= track < len(self.colors):
-                return self.colors[track]
+            idx = int(track)
         except Exception:
-            pass
+            return self.fallback
 
-        return "#FFFFFF"  # fallback farba
+        if 0 <= idx < len(self.colors):
+            return self.colors[idx]
+
+        return self.fallback
 
     # ---------------------------------------------------------
-    # NO-OP API (pre UIManager kompatibilitu)
+    # NO-OP API (UIManager kompatibilita)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
         """TrackColorMap farby nemení – bezpečný no-op."""
