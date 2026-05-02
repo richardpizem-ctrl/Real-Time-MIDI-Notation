@@ -1,11 +1,18 @@
+# =========================================================
+# Event Types v2.0.0
+# Centrálne definované typy udalostí pre celý projekt
+# Stabilné, konzistentné, bezpečné API pre EventBus
+# =========================================================
+
 """
 Centrálne definované typy udalostí pre celý projekt.
 
-Stabilizované (Fáza 4):
-- jednotná štruktúra
+Stabilizované (v2.0.0):
+- jednotná štruktúra názvov
 - žiadne duplicity
 - bezpečné, konzistentné názvy
 - pripravené pre EventBus, UIManager, TrackSystem, NotationProcessor
+- kompatibilné s real-time spracovaním
 """
 
 # ---------------------------------------------------------
