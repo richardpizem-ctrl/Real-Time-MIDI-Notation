@@ -1,7 +1,25 @@
+# =========================================================
+# TrackSelectionController v2.0.0
+# Stabilný controller pre správu aktívnej MIDI stopy
+# =========================================================
+
 class TrackSelectionController:
     """
-    Controller pre správu aktívnej MIDI stopy.
-    UI volá select(track), renderer si stav iba číta.
+    TrackSelectionController (v2.0.0)
+    ---------------------------------
+    Jednoduchý, stabilný controller pre správu aktívnej MIDI stopy.
+
+    Používajú ho:
+        - TrackControlManager
+        - UI (Track Switcher, Inspector)
+        - Renderer (na čítanie aktívnej stopy)
+
+    Vlastnosti:
+        - real‑time safe
+        - žiadne výnimky
+        - rýchle clamping
+        - jednotné API
+        - pripravené na v3 (multi‑track focus, AI assist)
     """
 
     def __init__(self, track_count: int = 16):
