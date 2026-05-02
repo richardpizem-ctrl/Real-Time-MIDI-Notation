@@ -1,9 +1,26 @@
+# =========================================================
+# UIWindow v2.0.0
+# Stabilné hlavné okno pre Real-Time MIDI Notation Engine
+# =========================================================
+
 import pygame
 from ui_manager import UIManager
 from real_time_processing.midi_input import MidiInput
 
 
 class UIWindow:
+    """
+    UIWindow (v2.0.0)
+    -----------------
+    Hlavné okno aplikácie:
+        - inicializuje pygame
+        - vytvára UIManager
+        - spracúva MIDI eventy
+        - spracúva UI eventy
+        - vykresľuje UI
+        - drží stabilnú hlavnú slučku (60 FPS)
+    """
+
     def __init__(self, width: int = 1200, height: int = 1080):
         pygame.init()
         pygame.display.set_caption("Real-Time MIDI Notation")
@@ -17,6 +34,8 @@ class UIWindow:
 
         # MIDI + UI
         self.midi = MidiInput()
+
+        # UIManager v2.0.0
         self.ui = UIManager(
             self.width,
             self.height,
@@ -72,6 +91,7 @@ class UIWindow:
             pygame.display.flip()
             self.clock.tick_busy_loop(60)
 
+        # --- CLEANUP ---
         try:
             if hasattr(self.midi, "close"):
                 self.midi.close()
@@ -84,3 +104,4 @@ class UIWindow:
 if __name__ == "__main__":
     window = UIWindow()
     window.run()
+
