@@ -1,4 +1,7 @@
-# Event bus – centrálne smerovanie udalostí v aplikácii
+# =========================================================
+# EventBus v2.0.0
+# Stabilný, thread-safe event router pre celý MIDI Engine
+# =========================================================
 
 import threading
 from collections import defaultdict
@@ -8,7 +11,7 @@ from .logger import Logger
 
 class EventBus:
     """
-    Stabilný, thread-safe event bus pre celý projekt (Fáza 4).
+    Stabilný, thread-safe event bus (v2.0.0).
 
     Funkcie:
     - subscribe(event_type, callback)
@@ -20,6 +23,7 @@ class EventBus:
     - bezpečné volanie callbackov
     - žiadne deadlocky (callbacky sa volajú mimo locku)
     - ochrana proti výnimkám v callbackoch
+    - bezpečné odoberanie callbackov
     """
 
     def __init__(self):
@@ -40,23 +44,34 @@ class EventBus:
             Logger.error("subscribe() called with non-callable callback")
             return
 
-        with self._lock:
-            if callback not in self._subscribers[event_type]:
-                self._subscribers[event_type].append(callback)
-                Logger.debug(f"Subscribed to event '{event_type}': {callback}")
+        try:
+            with self._lock:
+                if callback not in self._subscribers[event_type]:
+                    self._subscribers[event_type].append(callback)
+                    Logger.debug(f"Subscribed to event '{event_type}': {callback}")
+        except Exception as e:
+            Logger.error(f"EventBus subscribe() error: {e}")
 
+    # ---------------------------------------------------------
+    # ODHLÁSENIE CALLBACKOV
+    # ---------------------------------------------------------
     def unsubscribe(self, event_type: str, callback: Callable[[Any], None]) -> None:
         """Odstráni callback z daného typu udalosti."""
         if not isinstance(event_type, str):
             return
 
-        with self._lock:
-            if callback in self._subscribers.get(event_type, []):
-                self._subscribers[event_type].remove(callback)
-                Logger.debug(f"Unsubscribed from event '{event_type}': {callback}")
+        try:
+            with self._lock:
+                if callback in self._subscribers.get(event_type, []):
+                    self._subscribers[event_type].remove(callback)
+                    Logger.debug(f"Unsubscribed from event '{event_type}': {callback}")
 
-            if not self._subscribers.get(event_type):
-                self._subscribers.pop(event_type, None)
+                # Odstráni prázdny zoznam
+                if not self._subscribers.get(event_type):
+                    self._subscribers.pop(event_type, None)
+
+        except Exception as e:
+            Logger.error(f"EventBus unsubscribe() error: {e}")
 
     # ---------------------------------------------------------
     # SYNCHRÓNNE PUBLIKOVANIE
@@ -67,8 +82,12 @@ class EventBus:
             Logger.error("publish() called with non-string event_type")
             return
 
-        with self._lock:
-            callbacks = list(self._subscribers.get(event_type, []))
+        try:
+            with self._lock:
+                callbacks = list(self._subscribers.get(event_type, []))
+        except Exception as e:
+            Logger.error(f"EventBus publish() lock error: {e}")
+            return
 
         Logger.debug(f"Publishing event '{event_type}' to {len(callbacks)} subscribers.")
 
@@ -87,14 +106,17 @@ class EventBus:
             Logger.error("publish_async() called with non-string event_type")
             return
 
-        thread = threading.Thread(
-            target=self.publish,
-            args=(event_type, data),
-            daemon=True
-        )
-        thread.start()
+        try:
+            thread = threading.Thread(
+                target=self.publish,
+                args=(event_type, data),
+                daemon=True
+            )
+            thread.start()
 
-        Logger.debug(f"Async publish scheduled for event '{event_type}'.")
+            Logger.debug(f"Async publish scheduled for event '{event_type}'.")
+        except Exception as e:
+            Logger.error(f"EventBus publish_async() error: {e}")
 
     # ---------------------------------------------------------
     # NO-OP API (pre UIManager kompatibilitu)
