@@ -1,7 +1,8 @@
-# 🎼 Real-Time MIDI Notation — Project Overview (Ultimate Edition, v1.3.0)
+# 🎼 Real-Time MIDI Notation — Project Overview (v2.0.0)
 
-This document serves as the **official architecture guide, technical overview, and system documentation** for the  
-**Real-Time MIDI Notation (SIRIUS Engine)** — a professional real‑time multi‑track MIDI visualization and notation engine.
+This document serves as the **official architecture overview, technical summary, and system description**  
+for the **Real-Time MIDI Notation (SIRIUS Engine)** — a professional real‑time multi‑track MIDI  
+visualization and notation engine.
 
 The goal of the project is to create a tool that:
 
@@ -11,15 +12,22 @@ The goal of the project is to create a tool that:
 - provides DAW‑style 16‑track control  
 - enables playback, visualization, and future export  
 - supports Yamaha‑style arranger workflows  
+- maintains a modular, scalable architecture ready for v3.0.0  
 
 ---
 
 # 🆕 A New Class of Real‑Time MIDI Engine
 
-**SIRIUS / Real‑Time MIDI Notation** does not belong to any existing category of music software.  
-It is not a MIDI visualizer, not an offline notation editor, not a DAW plugin, and not a traditional MIDI library.
+**SIRIUS / Real‑Time MIDI Notation** does not belong to any existing category of music software.
 
-It represents a **completely new class of software**:
+It is NOT:
+
+- a MIDI visualizer  
+- an offline notation editor  
+- a DAW plugin  
+- a traditional MIDI library  
+
+It represents a **new class of software**:
 
 ## ⭐ Real‑Time Multi‑Track MIDI Notation Engine
 
@@ -33,7 +41,8 @@ This engine combines features that have never existed together before:
 - architecture optimized for **research, education, live performance, and studio workflows**  
 - no preprocessing, no look‑ahead, no offline steps  
 
-SIRIUS defines a **new category** of real‑time MIDI tools, complementing traditional offline notation systems (MuseScore, LilyPond, Dorico) and enabling:
+SIRIUS defines a **new category** of real‑time MIDI tools, complementing traditional offline notation systems  
+and enabling:
 
 - live notation  
 - real‑time performance analysis  
@@ -49,8 +58,8 @@ The project is organized into modular directories, each with a clear responsibil
 
 | Directory | Purpose |
 |----------|---------|
-| **core/** | TrackManager, PlaybackEngine, Logger, timing logic |
-| **renderer/** | GraphicNotationRenderer — real‑time notation rendering |
+| **core/** | TrackManager, PlaybackEngine, timing logic |
+| **renderer_new/** | v2 renderer stack (GraphicRenderer, PixelLayoutEngine) |
 | **ui/** | CanvasUI, UIManager — visual interface and interaction |
 | **track_system/** | 16‑channel MIDI track system (Yamaha standard) |
 | **notation_processor/** | MIDI → notes → rhythm → visualization pipeline |
@@ -64,7 +73,7 @@ This modular structure ensures:
 - clean separation of concerns  
 - easy debugging  
 - scalable architecture  
-- future expansion (export, advanced notation, DAW integration)  
+- future expansion (export, advanced notation, AI/TIMELINE v3)  
 
 ---
 
@@ -74,20 +83,18 @@ This modular structure ensures:
 - 16‑track Yamaha‑style system  
 - mute / solo / volume / pan  
 - record arm  
-- real‑time activity (peak meter)  
-- DAW‑style routing logic  
+- real‑time activity  
 - track color + visibility management  
 
 ---
 
-## **GraphicNotationRenderer (`renderer/graphic_notation_renderer.py`)**
+## **GraphicNotationRenderer (`renderer_new/graphic_renderer.py`)**
 - real‑time note rendering  
 - velocity shading  
 - barlines, grid, timeline ruler  
 - real‑time playhead  
 - chord grouping  
 - beam detection  
-- dynamic stems  
 - zoom + scroll  
 - optimized staff caching  
 
@@ -186,25 +193,25 @@ Each step is isolated, modular, and replaceable — ideal for future expansion.
 
 ---
 
-# ▶️ 4. How to Run the Project
+# ▶️ 4. Running the Project
 
 Run the application with:
 
 ```
-python run.py
+python main.py
 ```
 
-`run.py`:
+This initializes:
 
-- initializes all modules  
-- creates the UI  
-- starts the PlaybackEngine  
-- starts the main render loop  
-- connects MIDI input → processor → renderer → UI  
+- all v2 modules  
+- UIManager + CanvasUI  
+- PlaybackEngine  
+- real‑time renderer  
+- MIDI input pipeline  
 
 ---
 
-# 🚀 5. Future Extensions
+# 🚀 5. Future Extensions (v2 → v3)
 
 Planned features include:
 
@@ -217,112 +224,23 @@ Planned features include:
 - tempo automation  
 - track inspector panel  
 - advanced engraving (articulations, dynamics, slurs)  
+- AI/TIMELINE predictive layout (v3)  
 
 ---
 
-# 🏁 6. Project Status (v1.3.0)
+# 🏁 6. Project Status (v2.0.0)
 
-All major modules are **finished and stable**:
+All major modules are **stable and complete**:
 
-- CanvasUI — ✔ final  
-- GraphicNotationRenderer — ✔ final  
-- TrackManager — ✔ final  
-- PlaybackEngine — ✔ final  
-- run.py — ✔ final integration  
-- TimelineUI — ✔ finalized in v1.3.0  
+- CanvasUI — ✔  
+- GraphicNotationRenderer — ✔  
+- TrackManager — ✔  
+- PlaybackEngine — ✔  
+- main.py — ✔  
+- TimelineUI — ✔ (from v1.3 foundation)  
 
-The project is ready for large‑scale testing and expansion.
-
----
-
-# 🕹️ 7. User Guide
-
-## ▶️ Launching the Application
-Run:
-
-```
-python run.py
-```
-
-The main pygame window will open automatically.
+The project is ready for large‑scale testing and v3 expansion.
 
 ---
 
-## 🎹 MIDI Input
-When a MIDI device is connected:
-
-- StreamHandler detects it  
-- EventRouter routes events  
-- NotationProcessor analyzes them  
-- Renderer draws them in real time  
-
-Every note is processed instantly.
-
----
-
-## 🎼 Playback (PlaybackEngine)
-PlaybackEngine controls:
-
-- time  
-- playhead  
-- active notes  
-- BPM  
-- meter  
-- scroll speed  
-
-Playback starts automatically when MIDI arrives.
-
----
-
-## 🎚 Track System
-TrackSystem + TrackManager provide:
-
-- mute / solo  
-- volume  
-- pan  
-- record arm  
-- track colors  
-- activity meter (coming soon)  
-
-Each note has a `track_id` → renderer uses the track’s color.
-
----
-
-## 🖥 UI (CanvasUI + UIManager)
-UI components:
-
-- main pygame window  
-- CanvasUI (renderer surface)  
-- UIManager (interaction layer)  
-
-UIManager handles:
-
-- mouse  
-- keyboard  
-- track interactions  
-- MIDI visualization  
-
----
-
-## 🎨 Renderer
-GraphicNotationRenderer:
-
-- draws notes along the timeline  
-- uses velocity shading  
-- displays barlines  
-- scrolls notes with the playhead  
-- groups chords and beams  
-
----
-
-## 💾 Export (planned)
-Future export options:
-
-- PNG  
-- SVG  
-- PDF  
-- MIDI  
-
----
-
-# 🔚 End of Documentation
+# 🔚 End of Project Overview (v2.0.0)
