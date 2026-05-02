@@ -1,3 +1,8 @@
+# =========================================================
+# TrackSelectorUI v2.0.0
+# Stabilný horizontálny prepínač MIDI stôp
+# =========================================================
+
 import pygame
 from typing import Optional, Tuple
 from .track_control_manager import TrackControlManager
@@ -5,11 +10,16 @@ from .track_control_manager import TrackControlManager
 
 class TrackSelectorUI:
     """
+    TrackSelectorUI (v2.0.0)
+    ------------------------
     Horizontálny prepínač stôp.
-    - zobrazuje farby stôp
-    - umožňuje kliknutím vybrať aktívnu stopu
-    - highlight aktívnej stopy
-    - farby a viditeľnosť číta z TrackControlManager
+
+    Funkcie:
+        - zobrazuje farby stôp
+        - umožňuje kliknutím vybrať aktívnu stopu
+        - highlight aktívnej stopy
+        - farby a viditeľnosť číta z TrackControlManager
+        - real‑time safe, stabilné, pripravené na v3
     """
 
     def __init__(self, track_control_manager: TrackControlManager, width: int, height: int):
