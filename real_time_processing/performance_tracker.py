@@ -1,15 +1,8 @@
-"""
-performance_tracker.py – Real-time performance tracker (FÁZA 4)
-
-Poskytuje:
-- bezpečné meranie FPS, frame time, render time
-- MIDI latency tracking
-- event throughput (events per second)
-- pipeline latency (event, UI, total)
-- CPU usage cez psutil (ak je dostupný)
-- ochranu pred None a nevalidnými hodnotami
-- fallback pri chybách
-"""
+# =========================================================
+# PerformanceTracker v2.0.0
+# Stabilné meranie FPS, latency, throughput a CPU load
+# pre Real-Time-MIDI-Notation
+# =========================================================
 
 import time
 import collections
@@ -23,7 +16,14 @@ except ImportError:
 
 class PerformanceTracker:
     """
-    Real-time performance tracker for the entire pipeline.
+    PerformanceTracker (v2.0.0):
+    - FPS / frame time
+    - render time
+    - MIDI latency
+    - event throughput
+    - pipeline latency (event/UI/total)
+    - CPU usage (ak psutil dostupný)
+    - stabilné fallbacky a bezpečné výpočty
     """
 
     def __init__(self, history_size: int = 300):
@@ -65,7 +65,6 @@ class PerformanceTracker:
     # ---------------------------------------------------------
     # INTERNAL SAFE INTERVAL RECORDER
     # ---------------------------------------------------------
-
     @staticmethod
     def _record_interval(start: Optional[float], target_deque: collections.deque) -> None:
         if start is None:
@@ -79,7 +78,6 @@ class PerformanceTracker:
     # ---------------------------------------------------------
     # FRAME / FPS
     # ---------------------------------------------------------
-
     def frame_start(self) -> None:
         self.last_frame_start = time.perf_counter()
 
@@ -107,7 +105,6 @@ class PerformanceTracker:
     # ---------------------------------------------------------
     # RENDER TIME
     # ---------------------------------------------------------
-
     def render_start(self) -> None:
         self.last_render_start = time.perf_counter()
 
@@ -126,7 +123,6 @@ class PerformanceTracker:
     # ---------------------------------------------------------
     # MIDI LATENCY
     # ---------------------------------------------------------
-
     def midi_event_received(self) -> None:
         self.last_midi_event_time = time.perf_counter()
 
@@ -145,7 +141,6 @@ class PerformanceTracker:
     # ---------------------------------------------------------
     # EVENT THROUGHPUT
     # ---------------------------------------------------------
-
     def event_processed(self) -> None:
         now = time.perf_counter()
         try:
@@ -169,7 +164,6 @@ class PerformanceTracker:
     # ---------------------------------------------------------
     # PIPELINE METRICS
     # ---------------------------------------------------------
-
     def record_event_latency(self, pipeline_ms: float) -> None:
         try:
             self.pipeline_latencies.append(float(pipeline_ms))
@@ -211,7 +205,6 @@ class PerformanceTracker:
     # ---------------------------------------------------------
     # CPU LOAD
     # ---------------------------------------------------------
-
     def get_cpu_usage_percent(self) -> Optional[float]:
         if self.process is None:
             return None
@@ -226,7 +219,6 @@ class PerformanceTracker:
     # ---------------------------------------------------------
     # SUMMARY
     # ---------------------------------------------------------
-
     def get_summary(self) -> Dict[str, Any]:
         try:
             return {
