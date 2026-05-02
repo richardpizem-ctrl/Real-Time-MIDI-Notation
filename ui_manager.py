@@ -1,4 +1,7 @@
-# RhythmAnalyzer – Fáza 4 verzia pre Real-Time MIDI Notation v2.0.0
+# =========================================================
+# RhythmAnalyzer v2.0.0
+# Stabilný real‑time analyzátor rytmu pre MIDI note_on udalosti
+# =========================================================
 
 import time
 from collections import deque
@@ -7,25 +10,27 @@ from core.logger import Logger
 
 class RhythmAnalyzer:
     """
-    Stabilný analyzátor rytmu (v2.0.0):
-    - sleduje čas medzi note_on udalosťami
-    - odhaduje tempo (BPM)
-    - sleduje stabilitu rytmu
-    - chráni pred extrémnymi intervalmi (20 ms – 3 s)
-    - clampuje BPM do realistického rozsahu (20–300)
-    - resetuje BPM po dlhom tichu
-    - odstraňuje extrémne odľahlé intervaly (5 %) pre stabilnejší výpočet
-    - bezpečný pre real-time (žiadne výnimky neunikajú)
+    RhythmAnalyzer (v2.0.0)
+    -----------------------
+    Stabilný analyzátor rytmu pre real‑time MIDI vstup.
+
+    Funkcie:
+        - sleduje intervaly medzi note_on udalosťami
+        - odhaduje BPM (20–300)
+        - resetuje BPM po dlhom tichu
+        - odstraňuje extrémne odľahlé intervaly (5 %)
+        - poskytuje ukazovateľ stability rytmu (0–1)
+        - real‑time safe (žiadne výnimky nesmú preraziť)
     """
 
     def __init__(self, max_events: int = 32, silence_timeout: float = 2.0):
         self.intervals = deque(maxlen=max_events)
         self.last_event_time = None
         self.current_bpm = None
-        self.silence_timeout = silence_timeout
+        self.silence_timeout = float(silence_timeout)
 
     # ---------------------------------------------------------
-    # SPRACOVANIE MIDI EVENTU
+    # PROCESS MIDI EVENT
     # ---------------------------------------------------------
     def process_midi_event(self, event):
         """Spracuje MIDI event a aktualizuje rytmickú analýzu."""
@@ -39,7 +44,7 @@ class RhythmAnalyzer:
 
             event_time = event.get("time") or time.time()
 
-            # Reset BPM pri dlhom tichu
+            # Reset BPM po dlhom tichu
             if self.last_event_time is not None:
                 silence = event_time - self.last_event_time
                 if silence > self.silence_timeout:
@@ -63,7 +68,7 @@ class RhythmAnalyzer:
             Logger.error(f"RhythmAnalyzer: process_midi_event error: {e}")
 
     # ---------------------------------------------------------
-    # PREPOČET BPM
+    # BPM CALCULATION
     # ---------------------------------------------------------
     def _update_bpm(self):
         """Prepočíta BPM na základe priemerného intervalu."""
@@ -72,7 +77,6 @@ class RhythmAnalyzer:
                 self.current_bpm = None
                 return
 
-            # Odstránenie extrémnych odľahlých hodnôt (5 % najvyšších a najnižších)
             sorted_intervals = sorted(self.intervals)
             trim = max(1, len(sorted_intervals) // 20)  # 5 %
 
@@ -104,7 +108,7 @@ class RhythmAnalyzer:
         return self.current_bpm
 
     # ---------------------------------------------------------
-    # STABILITA RYTMU
+    # STABILITY
     # ---------------------------------------------------------
     def get_stability(self):
         """
