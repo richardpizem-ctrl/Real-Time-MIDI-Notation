@@ -1,13 +1,7 @@
-"""
-selection_actions.py – FÁZA 4
-Modul pre operácie nad vybranými notami:
-    - delete
-    - move
-    - transpose
-    - velocity adjust
-    - stretch
-Bez zásahu do NotesLayer – pracuje len s dátovou štruktúrou nôt.
-"""
+# =========================================================
+# selection_actions.py v2.0.0
+# Stabilné operácie nad vybranými notami (immutable workflow)
+# =========================================================
 
 from typing import List, Dict, Any, Tuple
 
@@ -23,7 +17,10 @@ def clone_note(note: Dict[str, Any]) -> Dict[str, Any]:
 # -------------------------------------------------------------
 # DELETE
 # -------------------------------------------------------------
-def delete_selected_notes(notes: List[Dict[str, Any]], selected_indices: List[int]) -> List[Dict[str, Any]]:
+def delete_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int]
+) -> List[Dict[str, Any]]:
     """Vymaže noty podľa indexov. Vracia nový zoznam nôt."""
     if not notes or not selected_indices:
         return notes
