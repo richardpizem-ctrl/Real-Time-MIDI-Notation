@@ -1,3 +1,8 @@
+# =========================================================
+# LayoutEngine v2.0.0
+# Stabilný layout notácie pre Real-Time-MIDI-Notation
+# =========================================================
+
 from typing import List, Dict, Any
 from ..core.logger import Logger
 from .drum_notation import annotate_drum_timeline
@@ -33,8 +38,10 @@ class LayoutConfig:
 
 class LayoutEngine:
     """
-    Takes a sequence of notation symbols (notes, rests, barlines, etc.)
-    and produces a line-based layout with spacing and bar grouping.
+    LayoutEngine (v2.0.0):
+    - berie sekvenciu symbolov (noty, pomlky, taktové čiary, ...)
+    - produkuje riadkový layout s rozostupmi a skupinami taktov
+    - stabilné spracovanie, bezpečné fallbacky
     """
 
     def __init__(self, config: LayoutConfig | None = None):
@@ -337,8 +344,10 @@ class LayoutEngine:
 
         base = dur * 8.0
         return max(self.config.min_spacing, min(self.config.max_spacing, base))
+
+
 # -------------------------------------------------------------------------
-# GRAFICKÝ LAYOUT PRE RENDERER (x/y pozície)
+# PixelLayoutEngine v2.0.0 – grafický layout pre renderer (x/y pozície)
 # -------------------------------------------------------------------------
 class PixelLayoutEngine:
     def __init__(
