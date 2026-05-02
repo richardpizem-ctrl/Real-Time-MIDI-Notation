@@ -1,3 +1,8 @@
+# =========================================================
+# ConfigManager v2.0.0
+# Stabilný a bezpečný správca konfigurácie pre MIDI Engine
+# =========================================================
+
 import json
 import os
 from .logger import Logger
@@ -5,7 +10,7 @@ from .logger import Logger
 
 class ConfigManager:
     """
-    Stabilný konfigurák (Fáza 4):
+    Stabilný konfigurák (v2.0.0):
     - bezpečné načítanie JSON
     - bezpečné ukladanie (atomic write)
     - fallback pri chybných súboroch
@@ -92,6 +97,7 @@ class ConfigManager:
     # GET
     # ---------------------------------------------------------
     def get(self, key, default=None):
+        """Bezpečné získanie hodnoty z konfigurácie."""
         try:
             return self.config.get(key, default)
         except Exception:
