@@ -1,3 +1,10 @@
+# =========================================================
+# NotationProcessor v2.0.0
+# Centrálna pipeline pre Real-Time-MIDI-Notation
+# MIDI → Mapper → Rhythm → Symbols → Renderer
+# Stabilizovaná verzia pre v2.0.0
+# =========================================================
+
 from .midi_note_mapper import MidiNoteMapper, Note
 from .rhythm_analyzer import RhythmAnalyzer
 from .symbol_manager import SymbolManager
@@ -7,8 +14,11 @@ from .key_detector import detect_key
 
 class NotationProcessor:
     """
-    Centrálna pipeline:
-    MIDI → MidiNoteMapper → RhythmAnalyzer → SymbolManager → Renderer
+    NotationProcessor (v2.0.0):
+    - centrálna pipeline pre MIDI → vizuálnu notáciu
+    - stabilné spracovanie MIDI udalostí
+    - bezpečné fallbacky
+    - pripravené na AI/TIMELINE v3.0.0
     """
 
     def __init__(self):
@@ -39,7 +49,7 @@ class NotationProcessor:
         }
 
     # ---------------------------------------------------------
-    # PREPOJENIE EXTERNÉHO RENDERERA
+    # PREPOJENIE RENDERERA
     # ---------------------------------------------------------
     def bind_renderer(self, renderer):
         if renderer is not None:
