@@ -1,14 +1,28 @@
-# device_manager.py – MIDI Device Manager
+# =========================================================
+# DeviceManager v2.0.0
+# Stabilný MIDI Device Manager pre real‑time pipeline
+# =========================================================
 
 import mido
 from ..core.logger import Logger
 
 
 class DeviceManager:
+    """
+    DeviceManager (v2.0.0)
+    ----------------------
+    Účel:
+        - Spravuje MIDI zariadenia (scan, select, open)
+        - Real‑time safe
+        - Ošetruje Windows/ASIO locked‑port bug
+        - Ošetruje whitespace v názvoch zariadení
+        - Pripravené na v3 (AI/TIMELINE MIDI routing)
+    """
+
     def __init__(self):
         self.devices = []
         self.selected_device = None
-        Logger.info("DeviceManager initialized.")
+        Logger.info("DeviceManager initialized (v2.0.0).")
 
     # ---------------------------------------------------------
     # SCAN DEVICES
@@ -16,8 +30,10 @@ class DeviceManager:
     def scan_devices(self):
         """Scan available MIDI input devices."""
         try:
-            # Strip whitespace – niektoré drivery vracajú trailing spaces
-            self.devices = [d.strip() for d in mido.get_input_names()]
+            raw = mido.get_input_names()
+
+            # Niektoré drivery vracajú trailing spaces → strip
+            self.devices = [d.strip() for d in raw]
 
             if not self.devices:
                 Logger.info("No MIDI devices found.")
@@ -65,9 +81,13 @@ class DeviceManager:
                 return None
 
             try:
+                # Windows/ASIO bug: port môže byť locked → IOError
                 port = mido.open_input(self.selected_device)
             except IOError:
                 Logger.error("Device busy or locked by another application.")
+                return None
+            except Exception as e:
+                Logger.error(f"MIDI open_input error: {e}")
                 return None
 
             Logger.info(f"MIDI device opened: {self.selected_device}")
