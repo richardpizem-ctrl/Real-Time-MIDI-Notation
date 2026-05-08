@@ -1,7 +1,9 @@
 # 🎼 Real-Time MIDI Notation — SIRIUS Engine  
 ![SIRIUS Banner](SIRIUS%20PROGRAM%20S%20EM.png)
 
-<!-- SEO: real-time midi notation engine, python midi notation, pygame midi visualizer, multi-track midi, yamaha 16-track, live midi notation, midi to sheet music, real-time midi renderer, sirius engine -->
+<!--  
+SEO: real-time midi notation engine, python midi notation, pygame midi visualizer, multi-track midi, yamaha 16-track, live midi notation, midi to sheet music, real-time midi renderer, sirius engine, real-time midi software, midi notation python, midi sheet generator, live midi score, midi performance analysis, midi engraving engine, open-source midi notation, real-time music notation, midi research tool, yamaha midi arranger notation, midi multi-track renderer, python music engine  
+-->
 
 ### ⭐ **SIRIUS — the brightest star in real‑time MIDI notation**  
 ### **A next‑generation real‑time multi‑track MIDI notation engine (Python + Pygame)**  
