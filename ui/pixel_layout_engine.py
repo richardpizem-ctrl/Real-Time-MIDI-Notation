@@ -1,5 +1,5 @@
 # =========================================================
-# PixelLayoutEngine v2.0.0
+# PixelLayoutEngine v4.0.0
 # Stabilný, deterministický layout engine pre UI panely
 # =========================================================
 
@@ -16,12 +16,15 @@ class Rect:
 
 class PixelLayoutEngine:
     """
-    PixelLayoutEngine (v2.0.0)
+    PixelLayoutEngine (v4.0.0)
     --------------------------
     Centrálne miesto pre výpočet layoutu UI podľa veľkosti okna.
 
-    Tento engine je "single source of truth" pre všetky UI panely.
-    Layout je deterministický, stabilný a pripravený na v3 (dynamic panels).
+    Vlastnosti:
+        - deterministický top‑down flow
+        - stabilné rozmery panelov
+        - bezpečné výpočty (žiadne negatívne hodnoty)
+        - pripravené pre dynamické panely v5
     """
 
     def __init__(
@@ -85,7 +88,7 @@ class PixelLayoutEngine:
         y += self.transport_height
 
         # -----------------------------------------------------
-        # TIMELINE (pevná výška)
+        # TIMELINE
         # -----------------------------------------------------
         layout["timeline"] = Rect(x0, y, w_main, self.timeline_height)
         y += self.timeline_height
