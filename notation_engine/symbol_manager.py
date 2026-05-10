@@ -1,11 +1,11 @@
 # =========================================================
-# SymbolManager v2.0.0
+# SymbolManager v4.0.0
 # Stabilný generátor vizuálnych/logických symbolov pre noty
 # =========================================================
 
 class SymbolManager:
     """
-    SymbolManager (v2.0.0):
+    SymbolManager (v4.0.0):
     - bezpečné spracovanie Note objektov
     - fallback hodnoty pri chybách
     - farebná paleta podľa pitch-class (12-TET)
@@ -34,16 +34,12 @@ class SymbolManager:
         """
         Vráti symbol pre danú notu.
 
-        Stabilizované (v2.0.0):
+        Stabilizované (v4.0.0):
         - ochrana pred None
-        - ochrana pred nevalidnými typmi
         - bezpečné čítanie pitch/duration/position
         - fallback farby a labelu
         """
 
-        # -----------------------------
-        # VALIDÁCIA VSTUPU
-        # -----------------------------
         if note is None or rhythm is None:
             return {
                 "pitch": 60,
