@@ -1,1 +1,14 @@
+"""
+UI Package (v4.0.0)
+
+Tento balík združuje všetky UI komponenty projektu:
+- PianoUI (real‑time klavírna vizualizácia)
+- Timeline UI vrstvy
+- Renderer UI moduly
+- Interaktívne vizualizačné prvky
+
+UI vrstva je oddelená od logiky a real‑time pipeline.
+"""
+
+__all__ = []
 
