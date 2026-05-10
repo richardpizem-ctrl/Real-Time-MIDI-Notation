@@ -1,5 +1,5 @@
 # =========================================================
-# Key Detector v2.0.0
+# Key Detector v4.0.0
 # Stabilná detekcia tóniny podľa Krumhansl–Schmuckler profilu
 # =========================================================
 
@@ -53,7 +53,7 @@ def correlation(a, b):
 # ---------------------------------------------------------
 def detect_key(pitches: Iterable[int]) -> Optional[str]:
     """
-    Detekcia tóniny podľa histogramu pitch-classov.
+    Detekcia tóniny podľa histogramu pitch-classov (v4.0.0).
     Vráti napr. "C", "G#", "Am", "F#m".
     """
 
@@ -97,16 +97,3 @@ def detect_key(pitches: Iterable[int]) -> Optional[str]:
             continue
 
     return best_key
-
-
-# ---------------------------------------------------------
-# NO-OP API (pre UIManager kompatibilitu)
-# ---------------------------------------------------------
-def update_color(track_index: int, color_hex: str):
-    return
-
-def update_visibility(track_index: int, visible: bool):
-    return
-
-def set_active_track(track_index: int):
-    return
