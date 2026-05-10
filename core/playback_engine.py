@@ -1,114 +1,101 @@
 # =========================================================
-# PlaybackEngine v2.0.0
-# Stabilný real-time prehrávací modul pre MIDI Engine
+# PlaybackEngine v4.0.0-ready
+# Real-Time, AI-ready, Engraving-ready playback engine
 # =========================================================
 
 import time
+import threading
 from typing import List, Dict, Any, Optional
 
-from core.track_manager import TrackManager
-from renderer.graphic_renderer import GraphicNotationRenderer
-from ui.canvas_ui import CanvasUI
 from core.logger import Logger
+from core.event_types import (
+    RT_TICK,
+    RT_STARTED,
+    RT_STOPPED,
+    RT_LATENCY_WARNING,
+    ENGRAVING_UPDATE,
+    AI_EVENT
+)
 
 
 class PlaybackEngine:
     """
-    PlaybackEngine (v2.0.0):
-    - riadi čas a prehrávanie
-    - synchronizuje GraphicNotationRenderer a CanvasUI
-    - používa TrackManager na DAW-logiku (mute/solo/volume)
-    - odolný voči lagom a chybným dátam
+    PlaybackEngine v4-ready:
+    - real-time thread
+    - drift-free timing
+    - AI hook
+    - engraving engine hook
+    - EventBus routing
+    - batch-safe active note scanning
     """
 
     def __init__(
         self,
-        track_manager: TrackManager,
-        renderer: GraphicNotationRenderer,
-        canvas_ui: CanvasUI,
+        track_manager,
+        renderer,
+        canvas_ui,
+        event_bus=None,
+        ai_engine=None,
+        engraving_engine=None,
         bpm: float = 120.0,
         beats_per_bar: int = 4,
     ):
         self.track_manager = track_manager
         self.renderer = renderer
         self.canvas_ui = canvas_ui
+        self.event_bus = event_bus
+
+        self.ai_engine = ai_engine
+        self.engraving_engine = engraving_engine
 
         # Tempo / meter
-        self.bpm: float = max(1.0, float(bpm))
-        self.beats_per_bar: int = max(1, int(beats_per_bar))
+        self.bpm = max(1.0, float(bpm))
+        self.beats_per_bar = max(1, int(beats_per_bar))
 
         # Playback state
-        self.playing: bool = False
-        self.position_sec: float = 0.0
-        self._last_time: float = time.time()
+        self.playing = False
+        self.position_sec = 0.0
+        self._last_time = time.time()
 
-        # Timeline notes
+        # Notes
         self.notes: List[Dict[str, Any]] = []
 
-        self._sync_renderer_tempo()
-        Logger.info("PlaybackEngine initialized.")
+        # Real-time thread
+        self._running = True
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+
+        Logger.info("PlaybackEngine initialized (v4-ready).")
 
     # ---------------------------------------------------------
-    # INTERNAL: TEMPO SYNC
+    # REAL-TIME LOOP (v4)
     # ---------------------------------------------------------
-    def _sync_renderer_tempo(self):
-        """Synchronizuje BPM a meter do rendereru."""
-        if not self.renderer:
-            return
+    def _loop(self):
+        """Real-time playback loop."""
+        if self.event_bus:
+            self.event_bus.publish(RT_STARTED)
 
-        try:
-            self.renderer.bpm = float(self.bpm)
-        except Exception:
-            Logger.warning("Renderer rejected BPM value.")
+        while self._running:
+            start = time.time()
 
-        try:
-            self.renderer.beats_per_bar = int(self.beats_per_bar)
-        except Exception:
-            Logger.warning("Renderer rejected beats_per_bar value.")
+            if self.playing:
+                self.update()
 
-    # ---------------------------------------------------------
-    # TEMPO / METER API
-    # ---------------------------------------------------------
-    def set_bpm(self, bpm: float):
-        try:
-            bpm = float(bpm)
-        except Exception:
-            return
+            # RT tick event
+            if self.event_bus:
+                self.event_bus.publish(RT_TICK, self.position_sec)
 
-        if bpm <= 0:
-            return
+            # Drift-free sleep
+            elapsed = time.time() - start
+            sleep_time = max(0.0, 0.016 - elapsed)  # ~60 FPS
 
-        self.bpm = bpm
-        self._sync_renderer_tempo()
+            if sleep_time < 0.001 and self.event_bus:
+                self.event_bus.publish(RT_LATENCY_WARNING, elapsed)
 
-    def set_beats_per_bar(self, beats: int):
-        try:
-            beats = int(beats)
-        except Exception:
-            return
+            time.sleep(sleep_time)
 
-        if beats < 1:
-            return
-
-        self.beats_per_bar = beats
-        self._sync_renderer_tempo()
-
-    # ---------------------------------------------------------
-    # NOTES TIMELINE
-    # ---------------------------------------------------------
-    def set_notes(self, notes: List[Dict[str, Any]]):
-        """Nastaví kompletný zoznam nôt pre prehrávanie."""
-        if not isinstance(notes, (list, tuple)):
-            self.notes = []
-            return
-
-        cleaned: List[Dict[str, Any]] = []
-        for n in notes:
-            if isinstance(n, dict):
-                cleaned.append(dict(n))
-
-        cleaned.sort(key=lambda n: float(n.get("timestamp", 0.0)))
-        self.notes = cleaned
+        if self.event_bus:
+            self.event_bus.publish(RT_STOPPED)
 
     # ---------------------------------------------------------
     # PLAYBACK CONTROL
@@ -127,19 +114,17 @@ class PlaybackEngine:
         self.position_sec = 0.0
         Logger.info("Playback stopped.")
 
-    def seek(self, position_sec: float):
-        try:
-            position_sec = float(position_sec)
-        except Exception:
+    # ---------------------------------------------------------
+    # NOTES TIMELINE
+    # ---------------------------------------------------------
+    def set_notes(self, notes: List[Dict[str, Any]]):
+        if not isinstance(notes, (list, tuple)):
+            self.notes = []
             return
 
-        if position_sec < 0:
-            position_sec = 0.0
-
-        self.position_sec = position_sec
-
-    def is_playing(self) -> bool:
-        return self.playing
+        cleaned = [dict(n) for n in notes if isinstance(n, dict)]
+        cleaned.sort(key=lambda n: float(n.get("timestamp", 0.0)))
+        self.notes = cleaned
 
     # ---------------------------------------------------------
     # INTERNAL: TIME UPDATE
@@ -149,7 +134,6 @@ class PlaybackEngine:
         dt = now - self._last_time
         self._last_time = now
 
-        # Ochrana pred extrémnymi hodnotami (freeze, lag)
         if dt < 0 or dt > 1.0:
             dt = 0.0
 
@@ -159,40 +143,25 @@ class PlaybackEngine:
                 self.position_sec = 0.0
 
     # ---------------------------------------------------------
-    # ACTIVE NOTES SELECTION
+    # ACTIVE NOTES (batch-safe)
     # ---------------------------------------------------------
     def _collect_active_notes(self) -> List[Dict[str, Any]]:
-        """Vyberie noty, ktoré sú aktívne v čase self.position_sec."""
-        active: List[Dict[str, Any]] = []
+        active = []
         t_now = self.position_sec
 
         for note in self.notes:
-            try:
-                start = float(note.get("timestamp", 0.0))
-            except Exception:
-                start = 0.0
-
-            try:
-                duration = float(note.get("duration", 0.0))
-            except Exception:
-                duration = 0.0
-
-            if duration <= 0:
-                duration = 0.05
-
+            start = float(note.get("timestamp", 0.0))
+            duration = float(note.get("duration", 0.05))
             end = start + duration
 
             if not (start <= t_now <= end):
                 continue
 
             track_id = note.get("track_id")
-            if track_id is None:
-                continue
-
             pitch = note.get("pitch", note.get("note"))
             velocity = note.get("velocity", 100)
 
-            if pitch is None:
+            if track_id is None or pitch is None:
                 continue
 
             try:
@@ -201,6 +170,7 @@ class PlaybackEngine:
             except Exception:
                 continue
 
+            # TrackManager transform
             if self.track_manager:
                 try:
                     transformed = self.track_manager.apply_midi_transform(track_id, pitch_int, vel_int)
@@ -210,43 +180,46 @@ class PlaybackEngine:
                 if transformed is None:
                     continue
 
-                new_pitch, new_vel = transformed
-            else:
-                new_pitch, new_vel = pitch_int, vel_int
+                pitch_int, vel_int = transformed
 
-            active.append(
-                {
-                    "timestamp": start,
-                    "track_id": track_id,
-                    "pitch": new_pitch,
-                    "velocity": new_vel,
-                }
-            )
+            active.append({
+                "timestamp": start,
+                "track_id": track_id,
+                "pitch": pitch_int,
+                "velocity": vel_int,
+            })
 
         return active
 
     # ---------------------------------------------------------
-    # MAIN UPDATE LOOP
+    # MAIN UPDATE (v4)
     # ---------------------------------------------------------
-    def update(self) -> Optional[Any]:
-        """
-        Hlavný tick:
-        - aktualizuje čas
-        - vyberie aktívne noty
-        - zavolá renderer.draw(active_notes)
-        - posunie playhead v CanvasUI
-        """
+    def update(self):
         self._update_time()
 
-        # Sync playhead do CanvasUI
+        # Playhead → UI
         if self.canvas_ui:
             try:
                 self.canvas_ui.set_playhead_time(int(self.position_sec * 1000))
             except Exception:
                 Logger.warning("CanvasUI rejected playhead update.")
 
-        # Aktívne noty
+        # Active notes
         active_notes = self._collect_active_notes()
+
+        # AI hook
+        if self.ai_engine:
+            try:
+                active_notes = self.ai_engine.process_active_notes(active_notes)
+            except Exception as e:
+                Logger.error(f"AI error: {e}")
+
+        # Engraving engine hook
+        if self.engraving_engine:
+            try:
+                self.engraving_engine.update_active_notes(active_notes)
+            except Exception as e:
+                Logger.error(f"Engraving error: {e}")
 
         # Renderer
         surface = None
@@ -259,13 +232,12 @@ class PlaybackEngine:
         return surface
 
     # ---------------------------------------------------------
-    # NO-OP API (pre UIManager kompatibilitu)
+    # SHUTDOWN (v4)
     # ---------------------------------------------------------
-    def update_color(self, track_index: int, color_hex: str):
-        return
-
-    def update_visibility(self, track_index: int, visible: bool):
-        return
-
-    def set_active_track(self, track_index: int):
-        return
+    def shutdown(self):
+        Logger.info("PlaybackEngine shutdown...")
+        self._running = False
+        try:
+            self._thread.join(timeout=1.0)
+        except Exception:
+            pass
