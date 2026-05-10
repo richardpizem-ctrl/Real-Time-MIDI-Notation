@@ -1,5 +1,5 @@
 # =========================================================
-# StaffUI v2.0.0
+# StaffUI v4.0.0
 # Stabilná real‑time notová osnova (pygame)
 # =========================================================
 
@@ -26,7 +26,7 @@ class StaffUI:
 
         # note_id -> {x, y, color, highlight}
         self.notes: Dict[str, Dict[str, Any]] = {}
-        self.note_order: List[str] = []  # stabilné poradie nôt
+        self.note_order: List[str] = []
 
         # scrolling
         self.scroll_x = 0
@@ -68,7 +68,7 @@ class StaffUI:
         except Exception:
             return
 
-        # unikátne ID
+        # Stabilnejšie ID (čas v ms + index)
         note_id = f"{track}_{midi_int}_{int(t * 1000)}_{len(self.note_order)}"
 
         if note_id in self.notes:
@@ -113,7 +113,6 @@ class StaffUI:
 
         prefix = f"{track}_{midi_int}_{int(t * 1000)}"
 
-        # nájdeme všetky ID začínajúce prefixom
         to_remove = [nid for nid in self.note_order if nid.startswith(prefix)]
 
         for nid in to_remove:
