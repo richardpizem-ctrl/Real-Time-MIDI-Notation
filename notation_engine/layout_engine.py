@@ -1,5 +1,5 @@
 # =========================================================
-# LayoutEngine v2.0.0
+# LayoutEngine v4.0.0
 # Stabilný layout notácie pre Real-Time-MIDI-Notation
 # =========================================================
 
@@ -38,7 +38,7 @@ class LayoutConfig:
 
 class LayoutEngine:
     """
-    LayoutEngine (v2.0.0):
+    LayoutEngine (v4.0.0):
     - berie sekvenciu symbolov (noty, pomlky, taktové čiary, ...)
     - produkuje riadkový layout s rozostupmi a skupinami taktov
     - stabilné spracovanie, bezpečné fallbacky
@@ -46,7 +46,7 @@ class LayoutEngine:
 
     def __init__(self, config: LayoutConfig | None = None):
         self.config = config or LayoutConfig()
-        Logger.info("LayoutEngine initialized with full layout configuration.")
+        Logger.info("LayoutEngine initialized with full layout configuration (v4-ready).")
 
     # ---------------------------------------------------------
     # PUBLIC API
@@ -347,7 +347,7 @@ class LayoutEngine:
 
 
 # -------------------------------------------------------------------------
-# PixelLayoutEngine v2.0.0 – grafický layout pre renderer (x/y pozície)
+# PixelLayoutEngine v4.0.0 – grafický layout pre renderer (x/y pozície)
 # -------------------------------------------------------------------------
 class PixelLayoutEngine:
     def __init__(
