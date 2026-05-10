@@ -1,5 +1,5 @@
 # =========================================================
-# TimelineLayoutEngine v2.0.0
+# TimelineLayoutEngine v4.0.0
 # Stabilný engine pre prepočet pixelov na timeline
 # =========================================================
 
@@ -9,18 +9,19 @@ from ..core.logger import Logger
 
 class TimelineLayoutEngine:
     """
-    TimelineLayoutEngine (v2.0.0)
+    TimelineLayoutEngine (v4.0.0)
     -----------------------------
     Účel:
         - Prepočítava pixely pre timeline (grid, playhead, eventy)
         - Riadi zoom, offset a škálovanie
         - Oddelené od renderovania pre čistú architektúru
-        - Pripravené pre PixelLayoutEngine (v3)
+        - Pripravené pre PixelLayoutEngine (v4)
 
     Vlastnosti:
         - Real‑time safe
         - Žiadne blokujúce operácie
-        - Jednoduché API: compute_x_position(), set_zoom(), set_offset()
+        - Jednoduché API: compute_x_position(), compute_beat_from_x(),
+          set_zoom(), set_offset(), get_pixels_per_beat()
     """
 
     def __init__(
@@ -43,7 +44,7 @@ class TimelineLayoutEngine:
         self.zoom: float = 1.0
         self.offset_x: int = 0
 
-        Logger.info("TimelineLayoutEngine initialized (v2.0.0).")
+        Logger.info("TimelineLayoutEngine initialized (v4.0.0).")
 
     # ---------------------------------------------------------
     # ZOOM CONTROL
@@ -91,7 +92,7 @@ class TimelineLayoutEngine:
         beat_index môže byť float (napr. 3.5 = pol beat).
         """
         try:
-            base_px = beat_index * self.pixels_per_beat
+            base_px = float(beat_index) * self.pixels_per_beat
             zoomed_px = base_px * self.zoom
             final_px = int(zoomed_px - self.offset_x)
             return final_px
@@ -105,10 +106,35 @@ class TimelineLayoutEngine:
     def compute_beat_from_x(self, x: int) -> float:
         """Prepočíta pixelovú pozíciu späť na beat index."""
         try:
-            adjusted = (x + self.offset_x)
+            adjusted = (float(x) + self.offset_x)
             adjusted /= max(self.zoom, 0.0001)
             beat = adjusted / self.pixels_per_beat
-            return beat
+            return float(beat)
         except Exception as e:
             Logger.error(f"TimelineLayoutEngine reverse compute error: {e}")
+            return 0.0
+
+    # ---------------------------------------------------------
+    # GENERICKÝ TIME → PIXELS (kompatibilita pre markery)
+    # ---------------------------------------------------------
+    def time_to_x(self, time_value: float) -> int:
+        """
+        Prepočet časovej hodnoty na X pozíciu.
+        Interpretácia time_value je na volajúcom (často beat index).
+        """
+        try:
+            return self.compute_x_position(float(time_value))
+        except Exception as e:
+            Logger.error(f"TimelineLayoutEngine time_to_x error: {e}")
+            return 0
+
+    def x_to_time(self, x: int) -> float:
+        """
+        Inverzný prepočet X pozície na časovú hodnotu.
+        Vracia hodnotu v rovnakom priestore ako time_value v time_to_x().
+        """
+        try:
+            return self.compute_beat_from_x(x)
+        except Exception as e:
+            Logger.error(f"TimelineLayoutEngine x_to_time error: {e}")
             return 0.0
