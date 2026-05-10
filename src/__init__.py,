@@ -1,5 +1,5 @@
 """
-Real-Time MIDI Notation – Source Root Package
+Real-Time MIDI Notation – Source Root Package (v4.0.0)
 
 Tento balík združuje všetky hlavné moduly systému:
 - core (jadro real-time pipeline)
@@ -25,5 +25,5 @@ __all__ = [
     "renderer_new",
 ]
 
-__version__ = "3.0.0"
-
+# Hlavná verzia architektúry
+__version__ = "4.0.0"
