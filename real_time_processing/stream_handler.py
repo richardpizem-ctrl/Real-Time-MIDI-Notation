@@ -1,5 +1,5 @@
 # =========================================================
-# StreamHandler v2.0.0
+# StreamHandler v4.0.0
 # Stabilný real‑time MIDI Stream Handler pre SIRIUS
 # =========================================================
 
@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any
 
 class StreamHandler:
     """
-    StreamHandler (v2.0.0):
+    StreamHandler (v4.0.0):
     - bezpečné čítanie MIDI eventov
     - ochrana pred None objektmi
     - ochrana pred nevalidnými MIDI dátami
