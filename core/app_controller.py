@@ -1,5 +1,5 @@
 # =========================================================
-# AppController v2.0.0
+# AppController v3.0.0
 # Hlavný orchestrátor systému pre Real-Time MIDI Notation
 # =========================================================
 
@@ -35,19 +35,19 @@ class AppController:
     def __init__(self):
         Logger.info("Initializing AppController...")
 
+        self.is_running = False
+
         # -----------------------------------------------------
         # INITIALIZATION OF CORE SYSTEMS
         # -----------------------------------------------------
         self.event_bus = self._safe_init(EventBus, "EventBus")
         self.config = self._safe_init(ConfigManager, "ConfigManager")
 
-        # Track system prepojený s EventBusom
         self.track_system = self._safe_init(
             lambda: TrackSystem(event_bus=self.event_bus),
             "TrackSystem"
         )
 
-        # Notation processor prepojený s EventBusom
         self.notation_processor = self._safe_init(
             lambda: NotationProcessor(
                 track_system=self.track_system,
@@ -96,7 +96,12 @@ class AppController:
     # ---------------------------------------------------------
     def start(self):
         """Štart aplikácie."""
+        if self.is_running:
+            Logger.info("Application already running.")
+            return
+
         Logger.info("Application started.")
+        self.is_running = True
 
         if not self.event_bus:
             Logger.error("EventBus missing — cannot publish APP_STARTED.")
@@ -113,7 +118,12 @@ class AppController:
     # ---------------------------------------------------------
     def stop(self):
         """Bezpečné ukončenie aplikácie."""
+        if not self.is_running:
+            Logger.info("Application already stopped.")
+            return
+
         Logger.info("Application stopped.")
+        self.is_running = False
 
         if not self.event_bus:
             Logger.error("EventBus missing — cannot publish APP_STOPPED.")
@@ -125,14 +135,18 @@ class AppController:
             Logger.error(f"Failed to publish stop event: {e}")
 
     # ---------------------------------------------------------
+    # SHUTDOWN (pre budúci real-time engine)
+    # ---------------------------------------------------------
+    def shutdown(self):
+        """Úplné vypnutie systému (pripravené pre 4.0.0)."""
+        Logger.info("Shutting down system...")
+        self.stop()
+
+    # ---------------------------------------------------------
     # EXPORT MIDI
     # ---------------------------------------------------------
     def export_midi(self, filename="export.mid"):
-        """
-        Export MIDI:
-        - pošle event MIDI_EXPORT_REQUEST
-        - spustí export cez NotationProcessor
-        """
+        """Spustí MIDI export cez event aj priamo cez procesor."""
         Logger.info(f"Export MIDI requested: {filename}")
 
         if self.event_bus:
