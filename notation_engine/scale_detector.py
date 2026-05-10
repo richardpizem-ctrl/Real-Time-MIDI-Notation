@@ -1,34 +1,22 @@
-"""
-Scale Detector – stabilná detekcia stupnice podľa pitch-classov.
-
-ÚLOHA:
-- analyzovať MIDI pitch hodnoty
-- odhadnúť stupnicu (dur/mol)
-- poskytnúť informáciu o:
-    - root (0–11)
-    - is_major (True/False)
-    - name (napr. "C major", "A minor")
-    - pitch-classes v stupnici
-    - mapovanie pitch -> in_scale / outside
-
-Stabilizované:
-- ochrana pred None a nevalidnými pitchmi
-- bezpečné spracovanie iterovateľných vstupov
-- fallback pri chybách
-- jednotné návratové hodnoty
-"""
+# =========================================================
+# ScaleDetector v4.0.0
+# Stabilná detekcia stupnice podľa pitch-classov
+# =========================================================
 
 from typing import Iterable, Optional, Dict, Set, Any
 
-
-NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F",
-              "F#", "G", "G#", "A", "A#", "B"]
-
+NOTE_NAMES = [
+    "C", "C#", "D", "D#", "E", "F",
+    "F#", "G", "G#", "A", "A#", "B"
+]
 
 MAJOR_PATTERN = [0, 2, 4, 5, 7, 9, 11]
 MINOR_PATTERN = [0, 2, 3, 5, 7, 8, 10]
 
 
+# ---------------------------------------------------------
+# SAFE HELPERS
+# ---------------------------------------------------------
 def _safe_iter_pitches(pitches: Any) -> Iterable[int]:
     if pitches is None:
         return []
@@ -53,13 +41,23 @@ def _build_scale(root: int, is_major: bool) -> Set[int]:
     return {(root + step) % 12 for step in pattern}
 
 
+# ---------------------------------------------------------
+# SCALE DETECTOR v4.0.0
+# ---------------------------------------------------------
 class ScaleDetector:
     """
-    Stabilizovaný detektor stupnice.
+    ScaleDetector (v4.0.0):
+    - analyzuje MIDI pitch-classy
+    - odhaduje stupnicu (dur/mol)
+    - vracia:
+        root (0–11)
+        is_major (bool)
+        name ("C major", "A minor")
+        scale_pcs (set)
+        coverage (0.0–1.0)
     """
 
     def __init__(self):
-        # predpočítané stupnice pre všetky rooty
         self.scales = []
         for root in range(12):
             self.scales.append({
@@ -76,23 +74,9 @@ class ScaleDetector:
             })
 
     # ---------------------------------------------------------
-    # HLAVNÁ DETEKCIA STUPNICE
+    # DETEKCIA STUPNICE
     # ---------------------------------------------------------
     def detect_scale(self, pitches: Iterable[int]) -> Optional[Dict[str, Any]]:
-        """
-        Vstup:
-            pitches – iterovateľné MIDI pitch hodnoty (0–127, int/float)
-
-        Výstup:
-            dict alebo None:
-                {
-                    "root": int (0–11),
-                    "is_major": bool,
-                    "name": str,
-                    "scale_pcs": set[int],
-                    "coverage": float (0.0–1.0),
-                }
-        """
         pcs = set(_safe_iter_pitches(pitches))
         if not pcs:
             return None
@@ -132,15 +116,7 @@ class ScaleDetector:
         scale_root: Optional[int] = None,
         is_major: bool = True,
     ) -> Dict[int, str]:
-        """
-        Vstup:
-            pitches    – iterovateľné MIDI pitch hodnoty
-            scale_root – ak None, použije sa detect_scale
-            is_major   – ak scale_root nie je None, určuje typ stupnice
 
-        Výstup:
-            dict: pitch -> "in_scale" / "outside"
-        """
         pcs_list = list(_safe_iter_pitches(pitches))
         roles: Dict[int, str] = {}
 
@@ -158,9 +134,6 @@ class ScaleDetector:
             scale_pcs = _build_scale(scale_root, is_major)
 
         for p in pcs_list:
-            if p in scale_pcs:
-                roles[p] = "in_scale"
-            else:
-                roles[p] = "outside"
+            roles[p] = "in_scale" if p in scale_pcs else "outside"
 
         return roles
