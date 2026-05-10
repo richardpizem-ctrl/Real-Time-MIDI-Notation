@@ -1,168 +1,208 @@
 # =========================================================
-# SelectionLayer v2.0.0
-# Stabilná overlay vrstva pre výber nôt (selection box + highlight)
+# selection_actions.py v4.0.0
+# Stabilné operácie nad vybranými notami (immutable workflow)
 # =========================================================
 
-import pygame
-from typing import List, Tuple, Optional
-from .layers import BaseLayer
+from typing import List, Dict, Any, Tuple
 
 
-class SelectionLayer(BaseLayer):
-    """
-    SelectionLayer (v2.0.0)
-    -----------------------
-    - Výber nôt pomocou selection boxu
-    - Highlight vybraných nôt
-    - Nezasahuje do NotesLayer (čistý overlay)
-    - Real‑time safe
-    - Pripravené na v3 (AI/TIMELINE editácia)
-    """
+# -------------------------------------------------------------
+# HELPERS
+# -------------------------------------------------------------
+def clone_note(note: Dict[str, Any]) -> Dict[str, Any]:
+    """Bezpečne klonuje notu (immutable workflow)."""
+    try:
+        return dict(note)
+    except Exception:
+        return {}
 
-    def __init__(self, controller, z_index: int = 4):
-        super().__init__(z_index=z_index, visible=True)
 
-        self.controller = controller
+def _safe_indices(selected_indices: List[int], length: int) -> List[int]:
+    """Bezpečne normalizuje indexy (odstráni nevalidné)."""
+    try:
+        return [i for i in selected_indices if isinstance(i, int) and 0 <= i < length]
+    except Exception:
+        return []
 
-        # Selection state
-        self.is_selecting = False
-        self.start_pos: Optional[Tuple[int, int]] = None
-        self.current_pos: Optional[Tuple[int, int]] = None
 
-        # Výsledok výberu
-        self.selected_notes: List[int] = []
+# -------------------------------------------------------------
+# DELETE
+# -------------------------------------------------------------
+def delete_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int]
+) -> List[Dict[str, Any]]:
+    """Vymaže noty podľa indexov. Vracia nový zoznam nôt."""
+    if not notes or not selected_indices:
+        return notes
 
-        # Cache pre selection box
-        self._box_surface = None
+    valid = set(_safe_indices(selected_indices, len(notes)))
+    return [n for i, n in enumerate(notes) if i not in valid]
 
-    # ---------------------------------------------------------
-    # INPUT EVENTS
-    # ---------------------------------------------------------
-    def on_mouse_down(self, x: int, y: int):
-        try:
-            self.is_selecting = True
-            self.start_pos = (x, y)
-            self.current_pos = (x, y)
-        except Exception:
-            pass
 
-    def on_mouse_drag(self, x: int, y: int):
-        if self.is_selecting:
+# -------------------------------------------------------------
+# MOVE
+# -------------------------------------------------------------
+def move_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    dx: int,
+    dy: int
+) -> List[Dict[str, Any]]:
+    """Posunie vybrané noty o dx, dy. Vracia nový zoznam nôt."""
+    if not notes or not selected_indices:
+        return notes
+
+    valid = set(_safe_indices(selected_indices, len(notes)))
+    new_notes: List[Dict[str, Any]] = []
+
+    for i, note in enumerate(notes):
+        if i in valid:
+            nn = clone_note(note)
             try:
-                self.current_pos = (x, y)
+                nn["x"] = int(note.get("x", 0)) + int(dx)
+                nn["y"] = int(note.get("y", 0)) + int(dy)
             except Exception:
-                pass
+                nn["x"] = note.get("x", 0)
+                nn["y"] = note.get("y", 0)
+            new_notes.append(nn)
+        else:
+            new_notes.append(note)
 
-    def on_mouse_up(self, x: int, y: int, notes: List[dict]):
-        if not self.is_selecting:
-            return
+    return new_notes
 
-        try:
-            self.current_pos = (x, y)
-            self.is_selecting = False
-        except Exception:
-            return
 
-        rect = self._get_selection_rect()
-        if rect is None:
-            return
+# -------------------------------------------------------------
+# TRANSPOSE
+# -------------------------------------------------------------
+def transpose_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    semitones: int
+) -> List[Dict[str, Any]]:
+    """Transponuje pitch vybraných nôt."""
+    if not notes or not selected_indices:
+        return notes
 
-        sx, sy, sw, sh = rect
-        sel_rect = pygame.Rect(sx, sy, sw, sh)
+    valid = set(_safe_indices(selected_indices, len(notes)))
+    new_notes: List[Dict[str, Any]] = []
 
-        self.selected_notes.clear()
-
-        # Hit-test
-        for i, note in enumerate(notes):
+    for i, note in enumerate(notes):
+        if i in valid:
+            nn = clone_note(note)
             try:
-                nx = note.get("x")
-                ny = note.get("y")
-                nw = note.get("width", 8)
-                nh = note.get("height", 8)
-
-                if nx is None or ny is None:
-                    continue
-
-                if sel_rect.colliderect(pygame.Rect(nx, ny, nw, nh)):
-                    self.selected_notes.append(i)
-
+                nn["pitch"] = int(note.get("pitch", 60)) + int(semitones)
             except Exception:
-                continue
+                nn["pitch"] = note.get("pitch", 60)
+            new_notes.append(nn)
+        else:
+            new_notes.append(note)
 
-    # ---------------------------------------------------------
-    # SELECTION RECT
-    # ---------------------------------------------------------
-    def _get_selection_rect(self) -> Optional[Tuple[int, int, int, int]]:
-        if not self.start_pos or not self.current_pos:
-            return None
+    return new_notes
 
-        try:
-            x1, y1 = self.start_pos
-            x2, y2 = self.current_pos
 
-            sx = min(x1, x2)
-            sy = min(y1, y2)
-            sw = abs(x2 - x1)
-            sh = abs(y2 - y1)
+# -------------------------------------------------------------
+# VELOCITY
+# -------------------------------------------------------------
+def velocity_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    delta: int
+) -> List[Dict[str, Any]]:
+    """Zmení velocity vybraných nôt (1–127)."""
+    if not notes or not selected_indices:
+        return notes
 
-            return (sx, sy, sw, sh)
-        except Exception:
-            return None
+    valid = set(_safe_indices(selected_indices, len(notes)))
+    new_notes: List[Dict[str, Any]] = []
 
-    # ---------------------------------------------------------
-    # PUBLIC API
-    # ---------------------------------------------------------
-    def get_selected_notes(self) -> List[int]:
-        return list(self.selected_notes)
+    for i, note in enumerate(notes):
+        if i in valid:
+            nn = clone_note(note)
+            try:
+                vel = int(note.get("velocity", 100)) + int(delta)
+                nn["velocity"] = max(1, min(127, vel))
+            except Exception:
+                nn["velocity"] = note.get("velocity", 100)
+            new_notes.append(nn)
+        else:
+            new_notes.append(note)
 
-    def clear_selection(self):
-        self.selected_notes.clear()
+    return new_notes
 
-    # ---------------------------------------------------------
-    # DRAW
-    # ---------------------------------------------------------
-    def draw(self, surface: pygame.Surface):
-        if surface is None:
-            return
 
-        # 1. Selection box
-        if self.is_selecting and self.start_pos and self.current_pos:
-            rect = self._get_selection_rect()
-            if rect:
-                sx, sy, sw, sh = rect
+# -------------------------------------------------------------
+# STRETCH
+# -------------------------------------------------------------
+def stretch_selected_notes(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    factor: float
+) -> List[Dict[str, Any]]:
+    """Natiahne alebo skráti duration vybraných nôt."""
+    if not notes or not selected_indices:
+        return notes
 
-                try:
-                    # Polopriesvitný overlay
-                    box = pygame.Surface((sw, sh), pygame.SRCALPHA)
-                    box.fill((0, 180, 255, 40))
-                    surface.blit(box, (sx, sy))
+    valid = set(_safe_indices(selected_indices, len(notes)))
+    new_notes: List[Dict[str, Any]] = []
 
-                    # Obrys
-                    pygame.draw.rect(surface, (0, 180, 255), (sx, sy, sw, sh), 1)
-                except Exception:
-                    pass
+    for i, note in enumerate(notes):
+        if i in valid:
+            nn = clone_note(note)
+            try:
+                dur = float(note.get("duration", 1.0))
+                nn["duration"] = max(0.05, dur * float(factor))
+            except Exception:
+                nn["duration"] = note.get("duration", 1.0)
+            new_notes.append(nn)
+        else:
+            new_notes.append(note)
 
-        # 2. Highlight vybraných nôt
-        try:
-            notes = getattr(self.controller, "notes", None)
-            if not notes:
-                return
+    return new_notes
 
-            for i in self.selected_notes:
-                try:
-                    note = notes[i]
-                    nx = note.get("x")
-                    ny = note.get("y")
-                    nw = note.get("width", 8)
-                    nh = note.get("height", 8)
 
-                    if nx is None or ny is None:
-                        continue
+# -------------------------------------------------------------
+# MULTI-ACTION PIPELINE
+# -------------------------------------------------------------
+def apply_actions(
+    notes: List[Dict[str, Any]],
+    selected_indices: List[int],
+    actions: List[Tuple]
+) -> List[Dict[str, Any]]:
+    """
+    Umožňuje aplikovať viac akcií naraz.
+    actions = [
+        ("move", dx, dy),
+        ("transpose", semitones),
+        ("velocity", delta),
+        ("stretch", factor),
+        ("delete",),
+    ]
+    """
+    if not notes or not actions:
+        return notes
 
-                    pygame.draw.rect(surface, (0, 255, 180), (nx, ny, nw, nh), 2)
+    result = notes
 
-                except Exception:
-                    continue
+    for action in actions:
+        if not isinstance(action, tuple) or not action:
+            continue
 
-        except Exception:
-            pass
+        name = action[0]
+
+        if name == "move" and len(action) == 3:
+            result = move_selected_notes(result, selected_indices, action[1], action[2])
+
+        elif name == "transpose" and len(action) == 2:
+            result = transpose_selected_notes(result, selected_indices, action[1])
+
+        elif name == "velocity" and len(action) == 2:
+            result = velocity_selected_notes(result, selected_indices, action[1])
+
+        elif name == "stretch" and len(action) == 2:
+            result = stretch_selected_notes(result, selected_indices, action[1])
+
+        elif name == "delete":
+            result = delete_selected_notes(result, selected_indices)
+
+    return result
