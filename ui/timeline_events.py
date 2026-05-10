@@ -1,5 +1,5 @@
 # =========================================================
-# timeline_events.py – v2.0.0
+# timeline_events.py – v4.0.0
 # Stabilný event systém pre Timeline UI
 # =========================================================
 
@@ -24,6 +24,9 @@ class TimelineEventType(Enum):
     MARKER_RENAME = auto()
     ZOOM = auto()
     SCROLL = auto()
+    # v4-ready: gesture events (future)
+    PINCH = auto()
+    LONG_PRESS = auto()
 
 
 # ------------------------------------------------------------
@@ -34,15 +37,17 @@ class TimelineEventType(Enum):
 class TimelineEvent:
     """
     Generic event object passed between UI and controller.
-    V2.0.0 – stabilné, rýchle, typovo bezpečné.
+    v4.0.0 – stabilné, rýchle, typovo bezpečné, rozšíriteľné.
     """
     event_type: TimelineEventType
-    position: Optional[Tuple[int, int]] = None   # (x, y) in timeline coordinates
-    delta: Optional[Tuple[int, int]] = None      # movement delta for drag/scroll
-    marker_id: Optional[int] = None              # affected marker
-    text: Optional[str] = None                   # rename text, etc.
-    zoom_factor: Optional[float] = None          # zoom in/out
-    raw_event: Optional[Any] = None              # original UI event (mouse, key, etc.)
+    position: Optional[Tuple[int, int]] = None     # (x, y) in timeline coordinates
+    delta: Optional[Tuple[int, int]] = None        # movement delta for drag/scroll
+    marker_id: Optional[int] = None                # affected marker
+    text: Optional[str] = None                     # rename text, etc.
+    zoom_factor: Optional[float] = None            # zoom in/out
+    raw_event: Optional[Any] = None                # original UI event (mouse, key, etc.)
+    pressure: Optional[float] = None               # v4: stylus pressure / gesture strength
+    fingers: Optional[int] = None                  # v4: multi-touch count
 
 
 # ------------------------------------------------------------
@@ -54,11 +59,11 @@ class TimelineEventDispatcher:
     Central dispatcher for timeline events.
     timeline_ui.py → TimelineEventDispatcher → timeline_controller.py
 
-    V2.0.0:
-        - rýchlejší dispatch (predpočítaná tabuľka)
+    v4.0.0:
+        - ultra‑rýchly dispatch (predpočítaná tabuľka)
         - bezpečné volanie handlerov
-        - žiadne if‑elif reťazce
-        - pripravené na v3 (gesture events, multi-touch)
+        - fallback pre neimplementované eventy
+        - pripravené na gesture events, multi-touch, stylus
     """
 
     def __init__(self, controller: Any):
@@ -77,6 +82,9 @@ class TimelineEventDispatcher:
             TimelineEventType.MARKER_RENAME: controller.on_marker_rename,
             TimelineEventType.ZOOM: controller.on_zoom,
             TimelineEventType.SCROLL: controller.on_scroll,
+            # v4 future handlers (optional)
+            TimelineEventType.PINCH: getattr(controller, "on_pinch", lambda e: None),
+            TimelineEventType.LONG_PRESS: getattr(controller, "on_long_press", lambda e: None),
         }
 
     def dispatch(self, event: TimelineEvent):
