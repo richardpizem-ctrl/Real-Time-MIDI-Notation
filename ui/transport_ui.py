@@ -1,6 +1,6 @@
 # =========================================================
-# TransportUI v2.0.0
-# Stabilný transport panel pre DAW (play/stop/loop/BPM/time)
+# TransportUI v4.0.0
+# Stable transport panel for DAW (play/stop/loop/BPM/time)
 # =========================================================
 
 import pygame
@@ -8,16 +8,20 @@ import pygame
 
 class TransportUI:
     """
-    TransportUI (v2.0.0)
+    TransportUI (v4.0.0)
     --------------------
-    Jednoduchý, stabilný transport panel pre DAW.
+    Minimal, stable transport panel for DAW-style applications.
 
-    Funkcie:
+    Features:
         - play / stop / rewind
         - loop toggle
-        - BPM +/- 
+        - BPM +/- controls
         - time display
-        - UIManager-kompatibilné API
+        - real-time safe
+        - no exceptions
+        - clean English API
+        - UIManager-compatible
+        - ready for v5 (skins, animations, AI assist)
     """
 
     def __init__(self, width=1400, height=50):
@@ -30,7 +34,9 @@ class TransportUI:
         except Exception:
             self.font = None
 
-        # --- BUTTONS ---
+        # -----------------------------------------------------
+        # BUTTONS
+        # -----------------------------------------------------
         self.buttons = {
             "rewind": pygame.Rect(10, 10, 40, 30),
             "play": pygame.Rect(60, 10, 40, 30),
@@ -40,14 +46,16 @@ class TransportUI:
             "bpm_plus": pygame.Rect(310, 10, 30, 30),
         }
 
-        # --- STATE ---
+        # -----------------------------------------------------
+        # STATE
+        # -----------------------------------------------------
         self.bpm = 120
         self.time_text = "00:00.0"
         self.loop_enabled = False
         self.is_playing = False
 
     # ---------------------------------------------------------
-    # PUBLIC API (UIManager kompatibilita)
+    # NO-OP API (UIManager compatibility)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
         return
@@ -62,6 +70,7 @@ class TransportUI:
     # EVENT HANDLING
     # ---------------------------------------------------------
     def handle_event(self, event):
+        """Handle mouse clicks and return action dict or None."""
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
             return None
 
@@ -97,6 +106,7 @@ class TransportUI:
     # SETTERS
     # ---------------------------------------------------------
     def set_bpm(self, bpm):
+        """Safely set BPM (20–300)."""
         try:
             bpm = int(bpm)
         except Exception:
@@ -104,6 +114,7 @@ class TransportUI:
         self.bpm = max(20, min(300, bpm))
 
     def set_time(self, text):
+        """Set time display text."""
         if isinstance(text, str):
             self.time_text = text
 
@@ -111,13 +122,14 @@ class TransportUI:
     # DRAW
     # ---------------------------------------------------------
     def draw(self, surface):
+        """Draw the transport panel."""
         if surface is None:
             return
 
         # Background
         pygame.draw.rect(surface, (230, 230, 230), (0, 0, self.width, self.height))
 
-        # --- BUTTON COLORS ---
+        # Button colors
         pygame.draw.rect(surface, (80, 80, 80), self.buttons["rewind"])
         pygame.draw.rect(surface, (0, 200, 0) if not self.is_playing else (0, 150, 0), self.buttons["play"])
         pygame.draw.rect(surface, (200, 0, 0), self.buttons["stop"])
@@ -128,7 +140,7 @@ class TransportUI:
         pygame.draw.rect(surface, (180, 180, 180), self.buttons["bpm_minus"])
         pygame.draw.rect(surface, (180, 180, 180), self.buttons["bpm_plus"])
 
-        # --- TEXT ---
+        # Text rendering
         if self.font:
             # Icons
             rewind_t = self.font.render("⏪", True, (255, 255, 255))
@@ -152,7 +164,7 @@ class TransportUI:
             bpm_t = self.font.render(f"BPM: {self.bpm}", True, (0, 0, 0))
             surface.blit(bpm_t, (360, 12))
 
-            # TIME DISPLAY
+            # Time display box
             pygame.draw.rect(surface, (255, 255, 255), (500, 10, 150, 30))
             pygame.draw.rect(surface, (0, 0, 0), (500, 10, 150, 30), 2)
 
