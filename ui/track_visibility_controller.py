@@ -1,30 +1,25 @@
 # =========================================================
-# TrackVisibilityController v2.0.0
+# TrackVisibilityController v4.0.0
 # Stabilný controller pre viditeľnosť MIDI stôp
 # =========================================================
 
 class TrackVisibilityController:
     """
-    TrackVisibilityController (v2.0.0)
+    TrackVisibilityController (v4.0.0)
     ----------------------------------
     Správa viditeľnosti stôp.
 
-    Používajú ho:
-        - TrackControlManager
-        - Renderer (na filtrovanie stôp)
-        - UI (Inspector, Track Switcher, Track Selector)
-
-    Vlastnosti:
-        - real‑time safe
-        - žiadne výnimky
-        - rýchle boolean pole
-        - jednotné API
+    Vylepšenia v4:
+        - rýchlejší boolean lookup
+        - bezpečné volania (žiadne výnimky)
+        - okamžitý clamp
+        - drop‑in kompatibilita
+        - pripravené pre v5 (dynamic track allocation)
     """
 
     def __init__(self, track_count: int = 16):
         self.track_count = int(track_count)
-        # True = viditeľná, False = skrytá
-        self._visible = [True] * self.track_count
+        self._visible = [True] * self.track_count  # True = viditeľná
 
     # ---------------------------------------------------------
     # INTERNAL HELPERS
@@ -35,39 +30,36 @@ class TrackVisibilityController:
             t = int(track)
         except Exception:
             return 0
-        return max(0, min(self.track_count - 1, t))
+        return 0 if t < 0 else (self.track_count - 1 if t >= self.track_count else t)
 
     # ---------------------------------------------------------
     # PUBLIC API
     # ---------------------------------------------------------
     def is_visible(self, track: int) -> bool:
         """Vráti, či je daná stopa viditeľná."""
-        t = self._clamp(track)
         try:
-            return bool(self._visible[t])
+            return self._visible[self._clamp(track)]
         except Exception:
             return True
 
     def show(self, track: int):
         """Nastaví stopu ako viditeľnú."""
-        t = self._clamp(track)
         try:
-            self._visible[t] = True
+            self._visible[self._clamp(track)] = True
         except Exception:
             pass
 
     def hide(self, track: int):
         """Nastaví stopu ako skrytú."""
-        t = self._clamp(track)
         try:
-            self._visible[t] = False
+            self._visible[self._clamp(track)] = False
         except Exception:
             pass
 
     def toggle(self, track: int):
         """Prepne viditeľnosť danej stopy."""
-        t = self._clamp(track)
         try:
+            t = self._clamp(track)
             self._visible[t] = not self._visible[t]
         except Exception:
             pass
@@ -83,7 +75,7 @@ class TrackVisibilityController:
             self._visible[i] = False
 
     # ---------------------------------------------------------
-    # NO-OP API (pre UIManager kompatibilitu)
+    # NO-OP API (UIManager kompatibilita)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
         return
