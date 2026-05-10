@@ -1,5 +1,5 @@
 # =========================================================
-# AppController v3.0.0
+# AppController v4-ready
 # Hlavný orchestrátor systému pre Real-Time MIDI Notation
 # =========================================================
 
@@ -24,18 +24,19 @@ from .event_types import (
 
 class AppController:
     """
-    Centrálny kontrolér aplikácie.
-    Zodpovedá za:
-    - inicializáciu všetkých core modulov
-    - bezpečné spúšťanie a ukončovanie aplikácie
-    - publikovanie systémových udalostí
-    - spracovanie exportov a chýb
+    Centrálny kontrolér aplikácie (v4-ready).
+    Pripravený na:
+    - AI engine
+    - Real-time engine
+    - rozšíriteľnú architektúru
     """
 
     def __init__(self):
-        Logger.info("Initializing AppController...")
+        Logger.info("Initializing AppController (v4-ready)...")
 
         self.is_running = False
+        self.ai_engine = None
+        self.realtime_engine = None
 
         # -----------------------------------------------------
         # INITIALIZATION OF CORE SYSTEMS
@@ -61,13 +62,12 @@ class AppController:
         # -----------------------------------------------------
         self._subscribe_events()
 
-        Logger.info("AppController initialized successfully.")
+        Logger.info("AppController initialized successfully (v4-ready).")
 
     # ---------------------------------------------------------
     # SAFE INITIALIZATION WRAPPER
     # ---------------------------------------------------------
     def _safe_init(self, constructor, name):
-        """Bezpečne inicializuje modul a zachytí chyby."""
         try:
             instance = constructor()
             Logger.info(f"{name} initialized.")
@@ -80,7 +80,6 @@ class AppController:
     # EVENT SUBSCRIPTIONS
     # ---------------------------------------------------------
     def _subscribe_events(self):
-        """Bezpečne registruje event handlery."""
         if not self.event_bus:
             Logger.error("EventBus not available — cannot subscribe to events.")
             return
@@ -92,10 +91,36 @@ class AppController:
             Logger.error(f"Failed to subscribe to events: {e}")
 
     # ---------------------------------------------------------
+    # AI / REAL-TIME HOOKS (v4-ready)
+    # ---------------------------------------------------------
+    def register_ai_engine(self, ai_engine):
+        self.ai_engine = ai_engine
+        Logger.info("AI engine registered.")
+
+    def register_realtime_engine(self, realtime_engine):
+        self.realtime_engine = realtime_engine
+        Logger.info("Real-time engine registered.")
+
+    def start_realtime(self):
+        if self.realtime_engine:
+            try:
+                self.realtime_engine.start()
+                Logger.info("Real-time engine started.")
+            except Exception as e:
+                Logger.error(f"Failed to start real-time engine: {e}")
+
+    def stop_realtime(self):
+        if self.realtime_engine:
+            try:
+                self.realtime_engine.stop()
+                Logger.info("Real-time engine stopped.")
+            except Exception as e:
+                Logger.error(f"Failed to stop real-time engine: {e}")
+
+    # ---------------------------------------------------------
     # START APPLICATION
     # ---------------------------------------------------------
     def start(self):
-        """Štart aplikácie."""
         if self.is_running:
             Logger.info("Application already running.")
             return
@@ -103,21 +128,20 @@ class AppController:
         Logger.info("Application started.")
         self.is_running = True
 
-        if not self.event_bus:
-            Logger.error("EventBus missing — cannot publish APP_STARTED.")
-            return
+        if self.event_bus:
+            try:
+                self.event_bus.publish(APP_STARTED)
+                self.event_bus.publish(STATUS_MESSAGE, "App is running")
+            except Exception as e:
+                Logger.error(f"Failed to publish start events: {e}")
 
-        try:
-            self.event_bus.publish(APP_STARTED)
-            self.event_bus.publish(STATUS_MESSAGE, "App is running")
-        except Exception as e:
-            Logger.error(f"Failed to publish start events: {e}")
+        # v4-ready: automatické spustenie real-time engine
+        self.start_realtime()
 
     # ---------------------------------------------------------
     # STOP APPLICATION
     # ---------------------------------------------------------
     def stop(self):
-        """Bezpečné ukončenie aplikácie."""
         if not self.is_running:
             Logger.info("Application already stopped.")
             return
@@ -125,28 +149,40 @@ class AppController:
         Logger.info("Application stopped.")
         self.is_running = False
 
-        if not self.event_bus:
-            Logger.error("EventBus missing — cannot publish APP_STOPPED.")
-            return
+        # v4-ready: najprv zastaviť real-time engine
+        self.stop_realtime()
 
-        try:
-            self.event_bus.publish(APP_STOPPED)
-        except Exception as e:
-            Logger.error(f"Failed to publish stop event: {e}")
+        if self.event_bus:
+            try:
+                self.event_bus.publish(APP_STOPPED)
+            except Exception as e:
+                Logger.error(f"Failed to publish stop event: {e}")
 
     # ---------------------------------------------------------
-    # SHUTDOWN (pre budúci real-time engine)
+    # SHUTDOWN (v4-ready)
     # ---------------------------------------------------------
     def shutdown(self):
-        """Úplné vypnutie systému (pripravené pre 4.0.0)."""
         Logger.info("Shutting down system...")
         self.stop()
+
+        # v4-ready: korektné vypnutie modulov
+        for name, module in [
+            ("AI engine", self.ai_engine),
+            ("Real-time engine", self.realtime_engine),
+            ("NotationProcessor", self.notation_processor),
+            ("TrackSystem", self.track_system),
+        ]:
+            if hasattr(module, "shutdown") and callable(module.shutdown):
+                try:
+                    module.shutdown()
+                    Logger.info(f"{name} shutdown completed.")
+                except Exception as e:
+                    Logger.error(f"Failed to shutdown {name}: {e}")
 
     # ---------------------------------------------------------
     # EXPORT MIDI
     # ---------------------------------------------------------
     def export_midi(self, filename="export.mid"):
-        """Spustí MIDI export cez event aj priamo cez procesor."""
         Logger.info(f"Export MIDI requested: {filename}")
 
         if self.event_bus:
@@ -161,33 +197,36 @@ class AppController:
             except Exception as e:
                 Logger.error(f"NotationProcessor export failed: {e}")
 
+        # v4-ready: AI post-export hook
+        if self.ai_engine and hasattr(self.ai_engine, "on_midi_exported"):
+            try:
+                self.ai_engine.on_midi_exported(filename)
+            except Exception as e:
+                Logger.error(f"AI engine post-export hook failed: {e}")
+
     # ---------------------------------------------------------
     # EVENT HANDLERS
     # ---------------------------------------------------------
     def _on_midi_exported(self, filename):
         Logger.info(f"MIDI exported successfully: {filename}")
 
-        if not self.event_bus:
-            return
-
-        try:
-            self.event_bus.publish(
-                STATUS_MESSAGE,
-                f"MIDI exported: {filename}"
-            )
-        except Exception as e:
-            Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
+        if self.event_bus:
+            try:
+                self.event_bus.publish(
+                    STATUS_MESSAGE,
+                    f"MIDI exported: {filename}"
+                )
+            except Exception as e:
+                Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
 
     def _on_error(self, error_message):
         Logger.error(f"Application error: {error_message}")
 
-        if not self.event_bus:
-            return
-
-        try:
-            self.event_bus.publish(
-                STATUS_MESSAGE,
-                f"Error: {error_message}"
-            )
-        except Exception as e:
-            Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
+        if self.event_bus:
+            try:
+                self.event_bus.publish(
+                    STATUS_MESSAGE,
+                    f"Error: {error_message}"
+                )
+            except Exception as e:
+                Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
