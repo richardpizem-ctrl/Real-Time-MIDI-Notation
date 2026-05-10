@@ -1,5 +1,5 @@
 # =========================================================
-# TimelineRenderer v2.0.0
+# TimelineRenderer v4.0.0
 # Stabilný fallback renderer pre timeline (grid + markers + playhead)
 # =========================================================
 
@@ -11,13 +11,13 @@ from .timeline_controller import TimelineController
 
 class TimelineRenderer:
     """
-    TimelineRenderer (v2.0.0)
+    TimelineRenderer (v4.0.0)
     -------------------------
     Účel:
         - Fallback renderer pre timeline (mimo LayerManager)
         - Deleguje kreslenie na TimelineController
         - Používa sa v TimelineUI alebo pri testovaní
-        - Pripravené pre PixelLayoutEngine (v3)
+        - Pripravené pre PixelLayoutEngine (v4)
 
     Vlastnosti:
         - Real‑time safe
@@ -36,12 +36,12 @@ class TimelineRenderer:
     ) -> None:
 
         try:
-            self.width = int(width)
+            self.width = max(1, int(width))
         except Exception:
             self.width = 1600
 
         try:
-            self.height = int(height)
+            self.height = max(1, int(height))
         except Exception:
             self.height = 120
 
@@ -70,7 +70,7 @@ class TimelineRenderer:
         self.zoom = 1.0
         self.scroll_x = 0.0
 
-        Logger.info("TimelineRenderer initialized (v2.0.0).")
+        Logger.info("TimelineRenderer initialized (v4.0.0).")
 
     # ---------------------------------------------------------
     # EXTERNAL LAYOUT (PixelLayoutEngine)
