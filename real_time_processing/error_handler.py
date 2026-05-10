@@ -1,5 +1,5 @@
 # =========================================================
-# ErrorHandler v2.0.0
+# ErrorHandler v4.0.0
 # Stabilné a bezpečné centrálne spracovanie chýb
 # pre Real-Time-MIDI-Notation
 # =========================================================
@@ -10,12 +10,12 @@ from typing import Any, Callable, Optional
 
 class ErrorHandler:
     """
-    ErrorHandler (v2.0.0):
+    ErrorHandler (v4.0.0):
     - jednotné logovanie
     - bezpečné volanie funkcií
     - ochrana pred zlyhaním Loggera
     - konzistentné návratové hodnoty
-    - pripravené na real-time pipeline v3
+    - stabilné pre real-time pipeline v4
     """
 
     @staticmethod
