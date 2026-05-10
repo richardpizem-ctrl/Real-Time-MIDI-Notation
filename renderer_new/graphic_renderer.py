@@ -1,5 +1,5 @@
 # =========================================================
-# GraphicNotationRenderer v2.0.0
+# GraphicNotationRenderer v4.0.0
 # Stabilný renderer pre multi‑track grafickú notáciu
 # Integrovaný LayerManager + RenderContext
 # =========================================================
@@ -13,7 +13,7 @@ except Exception:
     pygame = None
 
 # ------------------------------------------------------------
-# LAYER SYSTEM – tvoje reálne vrstvy
+# LAYER SYSTEM – reálne vrstvy
 # ------------------------------------------------------------
 from .layers import LayerManager
 from .layers.timeline_layer import TimelineLayer
@@ -38,12 +38,12 @@ class RenderContext:
 
 class GraphicNotationRenderer:
     """
-    GraphicNotationRenderer (v2.0.0)
+    GraphicNotationRenderer (v4.0.0)
     - stabilný
     - real‑time safe
     - kompatibilný s TimelineController
     - používa LayerManager
-    - pripravený na v3 (AI/TIMELINE)
+    - pripravený na AI/TIMELINE v4
     """
 
     def __init__(self, width: int, height: int, track_manager, track_control=None):
@@ -129,7 +129,7 @@ class GraphicNotationRenderer:
         self.color_mode = "heatmap"
 
         # ------------------------------------------------------------
-        # LAYER MANAGER – tvoje reálne vrstvy
+        # LAYER MANAGER – reálne vrstvy
         # ------------------------------------------------------------
         self.layers = LayerManager()
 
@@ -288,6 +288,8 @@ class GraphicNotationRenderer:
         )
 
         try:
+            # Ak LayerManager podporuje context, môžeš neskôr zmeniť na:
+            # self.layers.render(self.surface, context)
             self.layers.render(self.surface)
         except Exception:
             pass
