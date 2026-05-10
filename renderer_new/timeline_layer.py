@@ -1,5 +1,5 @@
 # =========================================================
-# TimelineLayer v2.0.0
+# TimelineLayer v4.0.0
 # Stabilná vrstva pre kreslenie timeline (grid + markers + playhead)
 # =========================================================
 
@@ -11,13 +11,13 @@ from .layers import BaseLayer
 
 class TimelineLayer(BaseLayer):
     """
-    TimelineLayer (v2.0.0)
+    TimelineLayer (v4.0.0)
     ----------------------
     - Vrstva pre kreslenie timeline
     - Nepoužíva vlastnú logiku, iba deleguje kreslenie
       na TimelineController
     - Real‑time safe
-    - Pripravené na v3 (AI/TIMELINE)
+    - Pripravené pre AI/TIMELINE v4
     """
 
     def __init__(self, controller: TimelineController, z_index: int = 0):
