@@ -1,5 +1,5 @@
 # =========================================================
-# PerformanceTracker v2.0.0
+# PerformanceTracker v4.0.0
 # Stabilné meranie FPS, latency, throughput a CPU load
 # pre Real-Time-MIDI-Notation
 # =========================================================
@@ -16,7 +16,7 @@ except ImportError:
 
 class PerformanceTracker:
     """
-    PerformanceTracker (v2.0.0):
+    PerformanceTracker (v4.0.0):
     - FPS / frame time
     - render time
     - MIDI latency
