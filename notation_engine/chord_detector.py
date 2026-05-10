@@ -1,5 +1,5 @@
 # =========================================================
-# Chord Detector v2.0.0
+# Chord Detector v4.0.0
 # Stabilná detekcia základných triád pre MIDI Engine
 # =========================================================
 
@@ -30,10 +30,9 @@ TRIAD_PATTERNS = {
 
 def detect_chord(pitches: Iterable[int]) -> Optional[str]:
     """
-    Stabilizovaná detekcia akordov (v2.0.0):
+    Stabilizovaná detekcia akordov (v4.0.0):
     - bezpečné spracovanie vstupu
-    - ochrana pred None
-    - ochrana pred nevalidnými hodnotami
+    - ochrana pred None a nevalidnými hodnotami
     - bezpečné spracovanie pitch-classov
     - fallback pri chybách
     - podpora základných triád
@@ -81,16 +80,3 @@ def detect_chord(pitches: Iterable[int]) -> Optional[str]:
                 return None
 
     return None
-
-
-# ---------------------------------------------------------
-# NO-OP API (pre UIManager kompatibilitu)
-# ---------------------------------------------------------
-def update_color(track_index: int, color_hex: str):
-    return
-
-def update_visibility(track_index: int, visible: bool):
-    return
-
-def set_active_track(track_index: int):
-    return
