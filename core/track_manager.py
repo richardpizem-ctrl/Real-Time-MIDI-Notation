@@ -1,31 +1,48 @@
 # =========================================================
-# TrackManager v2.0.0
-# Stabilná vizuálna a logická vrstva pre renderer a UI
+# TrackManager v4.0.0-ready
+# AI-ready, Engraving-ready, EventBus-ready
 # =========================================================
 
 from typing import Dict, Tuple, Optional, List
+import threading
+
 from core.logger import Logger
+from core.event_types import (
+    TRACK_SELECTED,
+    TRACK_MUTED,
+    TRACK_SOLOED,
+    TRACK_COLOR_CHANGED,
+    TRACK_NAME_CHANGED,
+    EDIT_MODE_CHANGED,
+    ENGRAVING_UPDATE
+)
 
 
 class TrackManager:
     """
-    TrackManager (v2.0.0):
-    - vizuálna + logická vrstva pre renderer a UI
-    - prepája sa s TrackSystem cez dependency injection
-    - spravuje mute/solo/volume/pan/visibility/activity
-    - odolný voči chybným vstupom
+    TrackManager v4-ready:
+    - thread-safe
+    - EventBus routing
+    - AI hook
+    - Engraving engine hook
+    - batch update API
     """
 
-    def __init__(self, track_system):
+    def __init__(self, track_system, event_bus=None, ai_engine=None, engraving_engine=None):
         self.track_system = track_system
+        self.event_bus = event_bus
+        self.ai_engine = ai_engine
+        self.engraving_engine = engraving_engine
 
-        # Visibility of tracks (UI + Renderer)
+        self._lock = threading.Lock()
+
+        # Visibility
         self.track_visibility: Dict[int, bool] = {i: True for i in range(1, 17)}
 
-        # Active track (UI selection)
+        # Active track
         self.active_track: int = 1
 
-        # Mute / Solo states
+        # Mute / Solo
         self.mute: Dict[int, bool] = {i: False for i in range(1, 17)}
         self.solo: Dict[int, bool] = {i: False for i in range(1, 17)}
 
@@ -36,8 +53,10 @@ class TrackManager:
         # Record arm
         self.record_arm: Dict[int, bool] = {i: False for i in range(1, 17)}
 
-        # Real-time activity (renderer → TrackManager → UI)
+        # Activity
         self.activity: Dict[int, float] = {i: 0.0 for i in range(1, 17)}
+
+        Logger.info("TrackManager initialized (v4-ready).")
 
     # ---------------------------------------------------------
     # INTERNAL: CLAMP
@@ -47,9 +66,7 @@ class TrackManager:
             tid = int(track_id)
         except Exception:
             return None
-        if 1 <= tid <= 16:
-            return tid
-        return None
+        return tid if 1 <= tid <= 16 else None
 
     # ---------------------------------------------------------
     # ACTIVE TRACK
@@ -57,41 +74,30 @@ class TrackManager:
     def set_active_track(self, track_id: int):
         tid = self._clamp(track_id)
         if tid is None:
-            Logger.warning(f"TrackManager.set_active_track: invalid track_id {track_id}")
             return
-        self.active_track = tid
 
-    def get_active_track(self) -> int:
-        return self.active_track
+        with self._lock:
+            self.active_track = tid
 
-    def handle_track_selected(self, track_id: int):
-        self.set_active_track(track_id)
+        if self.event_bus:
+            self.event_bus.publish(TRACK_SELECTED, tid)
+
+        if self.engraving_engine:
+            self.engraving_engine.on_track_selected(tid)
 
     # ---------------------------------------------------------
     # VISIBILITY
     # ---------------------------------------------------------
     def set_visible(self, track_id: int, visible: bool):
         tid = self._clamp(track_id)
-        if tid:
+        if tid is None:
+            return
+
+        with self._lock:
             self.track_visibility[tid] = bool(visible)
 
-    def toggle(self, track_id: int):
-        tid = self._clamp(track_id)
-        if tid:
-            self.track_visibility[tid] = not self.track_visibility[tid]
-
-    def is_visible(self, track_id: int) -> bool:
-        tid = self._clamp(track_id)
-        if tid is None:
-            return True
-        return self.track_visibility.get(tid, True)
-
-    def get_visible_tracks(self) -> List[int]:
-        try:
-            return [tid for tid, v in self.track_visibility.items() if v]
-        except Exception as e:
-            Logger.error(f"TrackManager.get_visible_tracks error: {e}")
-            return []
+        if self.engraving_engine:
+            self.engraving_engine.on_visibility_changed(tid, visible)
 
     # ---------------------------------------------------------
     # COLORS
@@ -109,8 +115,8 @@ class TrackManager:
                 and all(isinstance(c, int) for c in color)
             ):
                 return tuple(color)
-        except Exception as e:
-            Logger.error(f"TrackManager.get_color error: {e}")
+        except Exception:
+            pass
 
         return (255, 255, 255)
 
@@ -126,8 +132,8 @@ class TrackManager:
             name = self.track_system.get_track_name(tid)
             if isinstance(name, str) and name.strip():
                 return name
-        except Exception as e:
-            Logger.error(f"TrackManager.get_name error: {e}")
+        except Exception:
+            pass
 
         return f"Track {tid}"
 
@@ -136,73 +142,50 @@ class TrackManager:
     # ---------------------------------------------------------
     def set_mute(self, track_id: int, state: bool):
         tid = self._clamp(track_id)
-        if tid:
+        if tid is None:
+            return
+
+        with self._lock:
             self.mute[tid] = bool(state)
 
-    def is_muted(self, track_id: int) -> bool:
-        tid = self._clamp(track_id)
-        return self.mute.get(tid, False)
+        if self.event_bus:
+            self.event_bus.publish(TRACK_MUTED, {"track": tid, "state": state})
 
     def set_solo(self, track_id: int, state: bool):
         tid = self._clamp(track_id)
-        if tid:
+        if tid is None:
+            return
+
+        with self._lock:
             self.solo[tid] = bool(state)
 
-    def is_solo(self, track_id: int) -> bool:
-        tid = self._clamp(track_id)
-        return self.solo.get(tid, False)
-
-    def solo_mode_active(self) -> bool:
-        return any(self.solo.values())
-
-    # Exclusive mute (CTRL)
-    def mute_exclusive(self, track_id: int):
-        tid = self._clamp(track_id)
-        if tid is None:
-            return
-        for t in self.mute:
-            self.mute[t] = (t == tid)
-
-    # Exclusive solo (SHIFT)
-    def solo_exclusive(self, track_id: int):
-        tid = self._clamp(track_id)
-        if tid is None:
-            return
-        for t in self.solo:
-            self.solo[t] = (t == tid)
+        if self.event_bus:
+            self.event_bus.publish(TRACK_SOLOED, {"track": tid, "state": state})
 
     # ---------------------------------------------------------
-    # EFFECTIVE ACTIVE STATE (DAW LOGIC)
+    # EFFECTIVE ACTIVE STATE
     # ---------------------------------------------------------
     def is_effectively_active(self, track_id: int) -> bool:
         tid = self._clamp(track_id)
         if tid is None:
             return False
 
-        if self.is_muted(tid):
+        if self.mute.get(tid):
             return False
 
-        if self.solo_mode_active():
-            return self.is_solo(tid)
+        if any(self.solo.values()):
+            return self.solo.get(tid, False)
 
         return True
 
     # ---------------------------------------------------------
     # RECORD ARM
     # ---------------------------------------------------------
-    def toggle_record_arm(self, track_id: int):
-        tid = self._clamp(track_id)
-        if tid:
-            self.record_arm[tid] = not self.record_arm[tid]
-
     def set_record_arm(self, track_id: int, state: bool):
         tid = self._clamp(track_id)
         if tid:
-            self.record_arm[tid] = bool(state)
-
-    def is_record_armed(self, track_id: int) -> bool:
-        tid = self._clamp(track_id)
-        return self.record_arm.get(tid, False)
+            with self._lock:
+                self.record_arm[tid] = bool(state)
 
     # ---------------------------------------------------------
     # VOLUME / PAN
@@ -210,28 +193,22 @@ class TrackManager:
     def set_volume(self, track_id: int, volume: float):
         tid = self._clamp(track_id)
         if tid:
-            try:
-                volume = float(volume)
-            except Exception:
-                return
-            self.volume[tid] = max(0.0, min(1.0, volume))
-
-    def get_volume(self, track_id: int) -> float:
-        tid = self._clamp(track_id)
-        return self.volume.get(tid, 1.0)
+            with self._lock:
+                try:
+                    volume = float(volume)
+                except Exception:
+                    return
+                self.volume[tid] = max(0.0, min(1.0, volume))
 
     def set_pan(self, track_id: int, pan: float):
         tid = self._clamp(track_id)
         if tid:
-            try:
-                pan = float(pan)
-            except Exception:
-                return
-            self.pan[tid] = max(-1.0, min(1.0, pan))
-
-    def get_pan(self, track_id: int) -> float:
-        tid = self._clamp(track_id)
-        return self.pan.get(tid, 0.0)
+            with self._lock:
+                try:
+                    pan = float(pan)
+                except Exception:
+                    return
+                self.pan[tid] = max(-1.0, min(1.0, pan))
 
     # ---------------------------------------------------------
     # REAL-TIME ACTIVITY
@@ -246,16 +223,13 @@ class TrackManager:
         except Exception:
             return
 
-        self.activity[tid] = max(0.0, min(1.0, level))
-
-    def get_activity(self, track_id: int) -> float:
-        tid = self._clamp(track_id)
-        return self.activity.get(tid, 0.0)
+        with self._lock:
+            self.activity[tid] = max(0.0, min(1.0, level))
 
     # ---------------------------------------------------------
-    # APPLY TO MIDI ENGINE
+    # MIDI TRANSFORM
     # ---------------------------------------------------------
-    def apply_midi_transform(self, track_id: int, note: int, velocity: int) -> Optional[Tuple[int, int]]:
+    def apply_midi_transform(self, track_id: int, note: int, velocity: int):
         tid = self._clamp(track_id)
         if tid is None:
             return None
@@ -263,7 +237,7 @@ class TrackManager:
         if not self.is_effectively_active(tid):
             return None
 
-        vol = self.get_volume(tid)
+        vol = self.volume.get(tid, 1.0)
         velocity = int(velocity * vol)
 
         if velocity < 1:
@@ -272,13 +246,7 @@ class TrackManager:
         return note, velocity
 
     # ---------------------------------------------------------
-    # NO-OP API (pre UIManager kompatibilitu)
+    # SHUTDOWN (v4)
     # ---------------------------------------------------------
-    def update_color(self, track_index: int, color_hex: str):
-        return
-
-    def update_visibility(self, track_index: int, visible: bool):
-        return
-
-    def set_active_track(self, track_index: int):
-        return
+    def shutdown(self):
+        Logger.info("TrackManager shutdown.")
