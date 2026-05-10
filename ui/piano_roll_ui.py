@@ -1,5 +1,5 @@
 # =========================================================
-# PianoRollUI v2.0.0
+# PianoRollUI v4.0.0
 # Stabilná real‑time klavírna vizualizácia (pygame)
 # =========================================================
 
@@ -100,8 +100,7 @@ class PianoRollUI:
         except Exception:
             return
 
-        if midi in self.active_keys:
-            del self.active_keys[midi]
+        self.active_keys.pop(midi, None)
 
     # ---------------------------------------------------------
     # DRAW
@@ -119,7 +118,8 @@ class PianoRollUI:
 
             if midi_note in self.active_keys:
                 color, t = self.active_keys[midi_note]
-                fade = max(0.0, 1.0 - (now - t) * 1.5)
+                fade = max(0.0, 1.0 - (now - t) * 1.35)
+
                 color = (
                     int(color[0] * fade + base_color[0] * (1 - fade)),
                     int(color[1] * fade + base_color[1] * (1 - fade)),
@@ -137,7 +137,8 @@ class PianoRollUI:
 
             if midi_note in self.active_keys:
                 color, t = self.active_keys[midi_note]
-                fade = max(0.0, 1.0 - (now - t) * 1.5)
+                fade = max(0.0, 1.0 - (now - t) * 1.35)
+
                 color = (
                     int(color[0] * fade),
                     int(color[1] * fade),
