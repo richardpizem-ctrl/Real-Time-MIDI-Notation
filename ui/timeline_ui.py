@@ -1,7 +1,7 @@
     # ---------------------------------------------------------
-    # EVENTS (v2.0.0 – stabilná verzia)
+    # EVENTS (v4.0.0 – stabilná, optimalizovaná verzia)
     # ---------------------------------------------------------
-    def handle_event(self, event) -> Optional[None]:
+    def handle_event(self, event) -> None:
         mx, my = pygame.mouse.get_pos()
         self.mouse_x, self.mouse_y = mx, my
 
@@ -10,8 +10,7 @@
         # -----------------------------------------------------
         self.hover_marker_index = None
         for i, marker in enumerate(self.markers):
-            rect = self._compute_marker_rect(marker)
-            if rect.collidepoint((mx, my)):
+            if self._compute_marker_rect(marker).collidepoint((mx, my)):
                 self.hover_marker_index = i
                 break
 
@@ -19,15 +18,13 @@
         # MOUSE DOWN
         # -----------------------------------------------------
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # LEFT CLICK
             if event.button == 1:
-                # 1) Marker rename commit
+                # 1) Commit rename if active
                 if self.marker_rename_index is not None:
                     self._commit_marker_rename()
 
-                # 2) Click on marker → drag or rename
+                # 2) Marker click (drag or rename)
                 if self.hover_marker_index is not None:
-                    # Double-click → rename
                     now = pygame.time.get_ticks()
                     if (
                         self._last_click_marker_index == self.hover_marker_index
@@ -41,7 +38,7 @@
                     self._last_click_time = now
                     return
 
-                # 3) Click on loop handles
+                # 3) Loop handles
                 loop_rect = self._compute_loop_rect()
                 if loop_rect:
                     handle_w = 4
@@ -55,33 +52,30 @@
                         self.loop_resizing_right = True
                         return
                     if loop_rect.collidepoint((mx, my)):
+                        beat = self.controller.layout.pixel_to_beat(mx - self.x + self.scroll_x)
                         self.loop_dragging = True
-                        self.loop_drag_offset = (
-                            self.controller.layout.pixel_to_beat(mx - self.x + self.scroll_x)
-                            - self.loop_start_beat
-                        )
+                        self.loop_drag_offset = beat - self.loop_start_beat
                         return
 
-                # 4) Click on scroll handle
+                # 4) Scroll handle
                 handle = self._compute_handle_rect()
                 if handle.collidepoint((mx, my)):
                     self._start_handle_drag(mx)
                     return
 
-                # 5) Click on scroll bar
+                # 5) Scroll bar
                 if self.scroll_bar_rect.collidepoint((mx, my)):
                     self._start_handle_drag(mx)
                     return
 
-                # 6) Click on zoom bar
+                # 6) Zoom bar
                 if self.zoom_bar_rect.collidepoint((mx, my)):
                     rel = (mx - self.zoom_bar_rect.x) / max(1, self.zoom_bar_rect.w)
                     self.zoom = max(0.3, min(4.0, rel * 4.0))
                     return
 
-                # 7) Click on ruler → set playhead
-                ruler_bottom = self.y + self.ruler_height
-                if self.y <= my <= ruler_bottom:
+                # 7) Ruler → playhead
+                if self.y <= my <= self.y + self.ruler_height:
                     beat = self.controller.layout.pixel_to_beat(mx - self.x + self.scroll_x)
                     beat = max(0.0, beat)
                     if hasattr(self.controller, "set_playhead_beat"):
@@ -91,7 +85,7 @@
                             pass
                     return
 
-                # 8) Click on empty grid → start loop
+                # 8) Empty grid → start loop
                 grid_top = self.y + self.ruler_height + self.loop_height + self.marker_lane_height
                 grid_bottom = self.y + self.height - (self.zoom_bar_rect.h + self.scroll_bar_rect.h)
                 if grid_top <= my <= grid_bottom:
@@ -110,18 +104,15 @@
         # -----------------------------------------------------
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
-                # finalize marker drag
                 if self.marker_dragging is not None:
                     self._end_marker_drag()
 
-                # finalize loop
                 if self.loop_resizing_left or self.loop_resizing_right or self.loop_dragging:
                     self.loop_resizing_left = False
                     self.loop_resizing_right = False
                     self.loop_dragging = False
                     self._finalize_loop()
 
-                # finalize handle drag
                 if self.handle_dragging:
                     self._end_handle_drag()
 
@@ -132,25 +123,24 @@
         # MOUSE MOTION
         # -----------------------------------------------------
         if event.type == pygame.MOUSEMOTION:
-            # marker drag
+            # Marker drag
             if self.marker_dragging is not None:
                 self._update_marker_drag(mx)
                 return
 
-            # loop resize
+            # Loop resize left
             if self.loop_resizing_left:
-                beat = self.controller.layout.pixel_to_beat(mx - self.x + self.scroll_x)
-                beat = self._snap_beat(beat)
+                beat = self._snap_beat(self.controller.layout.pixel_to_beat(mx - self.x + self.scroll_x))
                 self.loop_start_beat = max(0.0, beat)
                 return
 
+            # Loop resize right
             if self.loop_resizing_right:
-                beat = self.controller.layout.pixel_to_beat(mx - self.x + self.scroll_x)
-                beat = self._snap_beat(beat)
+                beat = self._snap_beat(self.controller.layout.pixel_to_beat(mx - self.x + self.scroll_x))
                 self.loop_end_beat = max(0.0, beat)
                 return
 
-            # loop drag
+            # Loop drag
             if self.loop_dragging:
                 beat = self.controller.layout.pixel_to_beat(mx - self.x + self.scroll_x)
                 new_start = beat - self.loop_drag_offset
@@ -160,12 +150,12 @@
                     self.loop_end_beat = new_end
                 return
 
-            # scroll handle drag
+            # Scroll handle drag
             if self.handle_dragging:
                 self._update_handle_drag(mx)
                 return
 
-            # drag scroll (right mouse)
+            # Right‑mouse drag scroll
             if self.dragging:
                 dx = mx - self.drag_start_x
                 self.scroll_x = max(0, self.drag_initial_scroll - dx)
