@@ -1,5 +1,5 @@
 # =========================================================
-# NoteVisualizerUI v2.0.0
+# NoteVisualizerUI v4.0.0
 # Stabilný real‑time MIDI vizualizér s BPM pulzom
 # =========================================================
 
@@ -13,6 +13,7 @@ class NoteVisualizerUI:
     Real‑time vizualizér MIDI nôt s farebným pulzovaním.
     Každá nota vytvorí pulz, ktorý postupne mizne.
     Obsahuje aj BPM pulz pre globálny rytmický efekt.
+    v4.0.0 – stabilné, optimalizované, real‑time safe.
     """
 
     def __init__(self, width: int = 1400, height: int = 200) -> None:
@@ -63,12 +64,6 @@ class NoteVisualizerUI:
     # NOTE EVENTS
     # ---------------------------------------------------------
     def on_note(self, event: Dict[str, Any]) -> None:
-        """
-        event:
-            note: int
-            track_color: (r,g,b)
-            time: float
-        """
         midi = event.get("note")
         if midi is None:
             return
@@ -94,8 +89,7 @@ class NoteVisualizerUI:
         except Exception:
             return
 
-        if midi_int in self.active_notes:
-            del self.active_notes[midi_int]
+        self.active_notes.pop(midi_int, None)
 
     # ---------------------------------------------------------
     # DRAW
@@ -104,8 +98,8 @@ class NoteVisualizerUI:
         if surface is None:
             return
 
-        surface.fill((20, 20, 20))
         now = time.time()
+        surface.fill((20, 20, 20))
 
         # BPM pulz
         beat_interval = 60.0 / max(1, self.bpm)
@@ -121,16 +115,12 @@ class NoteVisualizerUI:
         )
 
         # NOTE PULZY
-        for midi in list(self.active_notes):
-            data = self.active_notes.get(midi)
-            if not data:
-                continue
-
+        for midi, data in list(self.active_notes.items()):
             color: Tuple[int, int, int] = data.get("color", (255, 80, 80))
             t: float = data.get("timestamp", now)
 
+            # Fade-out
             fade = max(0.0, 1.0 - (now - t) * 1.2)
-
             if fade <= 0.0:
                 del self.active_notes[midi]
                 continue
@@ -139,9 +129,10 @@ class NoteVisualizerUI:
             y = int(self.height - (midi - 36) * 2.2)
             y = max(0, min(self.height, y))
 
-            x = int((midi * 37) % self.width)
+            # X pozícia – stabilnejší vzor
+            x = (midi * 53) % self.width
 
-            radius = int(20 + fade * 40)
+            radius = int(18 + fade * 42)
 
             pulsed_color = (
                 int(color[0] * fade),
