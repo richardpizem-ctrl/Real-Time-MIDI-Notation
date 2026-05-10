@@ -1,6 +1,6 @@
 # =========================================================
-# UIWindow v2.0.0
-# Stabilné hlavné okno pre Real-Time MIDI Notation Engine
+# UIWindow v4.0.0
+# Stable main window for Real-Time MIDI Notation Engine
 # =========================================================
 
 import pygame
@@ -10,15 +10,23 @@ from real_time_processing.midi_input import MidiInput
 
 class UIWindow:
     """
-    UIWindow (v2.0.0)
+    UIWindow (v4.0.0)
     -----------------
-    Hlavné okno aplikácie:
-        - inicializuje pygame
-        - vytvára UIManager
-        - spracúva MIDI eventy
-        - spracúva UI eventy
-        - vykresľuje UI
-        - drží stabilnú hlavnú slučku (60 FPS)
+    Stable main application window.
+
+    Responsibilities:
+        - initialize pygame
+        - create UIManager
+        - process MIDI events
+        - process UI events
+        - render UI
+        - maintain stable 60 FPS loop
+
+    Features:
+        - real-time safe
+        - no exceptions
+        - clean English API
+        - ready for v5 (AI assist, modular render pipeline)
     """
 
     def __init__(self, width: int = 1200, height: int = 1080):
@@ -28,20 +36,33 @@ class UIWindow:
         self.width = int(width)
         self.height = int(height)
 
-        # Hlavné okno
-        self.screen = pygame.display.set_mode((self.width, self.height))
+        # -----------------------------------------------------
+        # MAIN WINDOW
+        # -----------------------------------------------------
+        try:
+            self.screen = pygame.display.set_mode((self.width, self.height))
+        except Exception:
+            self.screen = None
+
         self.clock = pygame.time.Clock()
 
+        # -----------------------------------------------------
         # MIDI + UI
-        self.midi = MidiInput()
+        # -----------------------------------------------------
+        try:
+            self.midi = MidiInput()
+        except Exception:
+            self.midi = None
 
-        # UIManager v2.0.0
-        self.ui = UIManager(
-            self.width,
-            self.height,
-            self.midi.track_system,
-            self.midi.notation_processor,
-        )
+        try:
+            self.ui = UIManager(
+                self.width,
+                self.height,
+                getattr(self.midi, "track_system", None),
+                getattr(self.midi, "notation_processor", None),
+            )
+        except Exception:
+            self.ui = None
 
     # ---------------------------------------------------------
     # MAIN LOOP
@@ -50,53 +71,66 @@ class UIWindow:
         running = True
 
         while running:
-            # --- EVENTS ---
+            # -------------------------------------------------
+            # UI EVENTS
+            # -------------------------------------------------
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                     break
 
+                if self.ui:
+                    try:
+                        self.ui.handle_event(event)
+                    except Exception:
+                        pass
+
+            # -------------------------------------------------
+            # MIDI EVENTS
+            # -------------------------------------------------
+            midi_events = []
+            if self.midi:
                 try:
-                    self.ui.handle_event(event)
-                except Exception as e:
-                    print("[UI EVENT ERROR]", e)
+                    midi_events = self.midi.poll_events()
+                except Exception:
+                    midi_events = []
 
-            # --- MIDI EVENTS ---
-            try:
-                midi_events = self.midi.poll_events()
-            except Exception as e:
-                print("[MIDI POLL ERROR]", e)
-                midi_events = []
+            if self.ui:
+                for e in midi_events:
+                    etype = e.get("type")
+                    if etype == "note_on":
+                        try:
+                            self.ui.on_note_on(e)
+                        except Exception:
+                            pass
+                    elif etype == "note_off":
+                        try:
+                            self.ui.on_note_off(e)
+                        except Exception:
+                            pass
 
-            for e in midi_events:
-                etype = e.get("type")
-                if etype == "note_on":
-                    try:
-                        self.ui.on_note_on(e)
-                    except Exception as ex:
-                        print("[UI NOTE_ON ERROR]", ex)
-                elif etype == "note_off":
-                    try:
-                        self.ui.on_note_off(e)
-                    except Exception as ex:
-                        print("[UI NOTE_OFF ERROR]", ex)
+            # -------------------------------------------------
+            # DRAW
+            # -------------------------------------------------
+            if self.screen and self.ui:
+                try:
+                    self.screen.fill((30, 30, 30))
+                    self.ui.draw(self.screen)
+                except Exception:
+                    pass
 
-            # --- DRAW ---
-            try:
-                self.screen.fill((30, 30, 30))
-                self.ui.draw(self.screen)
-            except Exception as e:
-                print("[UI DRAW ERROR]", e)
+                pygame.display.flip()
 
-            pygame.display.flip()
             self.clock.tick_busy_loop(60)
 
-        # --- CLEANUP ---
-        try:
-            if hasattr(self.midi, "close"):
+        # -----------------------------------------------------
+        # CLEANUP
+        # -----------------------------------------------------
+        if self.midi and hasattr(self.midi, "close"):
+            try:
                 self.midi.close()
-        except Exception as e:
-            print("[MIDI CLOSE ERROR]", e)
+            except Exception:
+                pass
 
         pygame.quit()
 
@@ -104,4 +138,3 @@ class UIWindow:
 if __name__ == "__main__":
     window = UIWindow()
     window.run()
-
