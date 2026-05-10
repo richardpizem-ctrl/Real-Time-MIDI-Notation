@@ -1,55 +1,55 @@
 # =========================================================
-# TrackSelectionController v2.0.0
-# Stabilný controller pre správu aktívnej MIDI stopy
+# TrackSelectionController v4.0.0
+# Stable controller for managing the active MIDI track
 # =========================================================
 
 class TrackSelectionController:
     """
-    TrackSelectionController (v2.0.0)
+    TrackSelectionController (v4.0.0)
     ---------------------------------
-    Jednoduchý, stabilný controller pre správu aktívnej MIDI stopy.
+    Minimal, stable controller for managing the active MIDI track.
 
-    Používajú ho:
+    Used by:
         - TrackControlManager
         - UI (Track Switcher, Inspector)
-        - Renderer (na čítanie aktívnej stopy)
+        - Renderer (active track lookup)
 
-    Vlastnosti:
+    Features:
         - real‑time safe
-        - žiadne výnimky
-        - rýchle clamping
-        - jednotné API
-        - pripravené na v3 (multi‑track focus, AI assist)
+        - no exceptions
+        - fast clamping
+        - clean English API
+        - ready for v5 (multi‑track focus, AI assist)
     """
 
     def __init__(self, track_count: int = 16):
         self.track_count = int(track_count)
-        self.active_track = 0  # predvolená aktívna stopa
+        self.active_track = 0  # default active track (0-based)
 
     # ---------------------------------------------------------
     # INTERNAL HELPERS
     # ---------------------------------------------------------
     def _clamp(self, track: int) -> int:
-        """Zabezpečí, že index je v rozsahu 0–track_count-1."""
+        """Clamp track index to the valid range 0–track_count-1."""
         try:
             t = int(track)
         except Exception:
             return 0
-        return max(0, min(self.track_count - 1, t))
+        return 0 if t < 0 else (self.track_count - 1 if t >= self.track_count else t)
 
     # ---------------------------------------------------------
     # PUBLIC API
     # ---------------------------------------------------------
     def select(self, track: int):
-        """Nastaví aktívnu stopu, ak je v rozsahu."""
+        """Set the active track (0-based index)."""
         self.active_track = self._clamp(track)
 
     def get_active_track(self) -> int:
-        """Vráti index aktuálne aktívnej stopy."""
+        """Return the currently active track index."""
         return self.active_track
 
     # ---------------------------------------------------------
-    # NO-OP API (pre UIManager kompatibilitu)
+    # NO-OP API (UIManager compatibility)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
         return
@@ -58,5 +58,5 @@ class TrackSelectionController:
         return
 
     def set_active_track(self, track_index: int):
-        """Alias pre select() – UIManager volá túto metódu."""
+        """Alias for select() – used by UIManager."""
         self.select(track_index)
