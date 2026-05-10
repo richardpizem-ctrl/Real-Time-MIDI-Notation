@@ -1,5 +1,5 @@
 # =========================================================
-# RhythmAnalyzer v2.0.0
+# RhythmAnalyzer v4.0.0
 # Stabilná analýza rytmu, swingu, groove a patternov
 # pre Real-Time-MIDI-Notation
 # =========================================================
@@ -57,7 +57,7 @@ class RhythmAnalyzerConfig:
 
 class RhythmAnalyzer:
     """
-    RhythmAnalyzer (v2.0.0):
+    RhythmAnalyzer (v4.0.0):
     - kvantizácia
     - timing deviation
     - velocity analýza
@@ -69,7 +69,7 @@ class RhythmAnalyzer:
 
     def __init__(self, config=None):
         self.config = config or RhythmAnalyzerConfig()
-        Logger.info("RhythmAnalyzer initialized with config.")
+        Logger.info("RhythmAnalyzer initialized (v4-ready).")
 
     # ---------------------------------------------------------
     # PUBLIC API
