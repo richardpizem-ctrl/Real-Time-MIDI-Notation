@@ -1,5 +1,5 @@
 # =========================================================
-# NotationRenderer v2.0.0
+# NotationRenderer v4.0.0
 # Stabilný textový renderer pre debug a fallback režim
 # =========================================================
 
@@ -8,7 +8,7 @@ from typing import Callable, Optional, Dict, Any
 
 class NotationRenderer:
     """
-    NotationRenderer (v2.0.0)
+    NotationRenderer (v4.0.0)
     -------------------------
     Jednoduchý textový renderer pre real‑time MIDI pipeline.
     Poskytuje:
