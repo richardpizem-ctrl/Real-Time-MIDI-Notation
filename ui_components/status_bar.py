@@ -1,6 +1,6 @@
 # =========================================================
-# StatusBar v2.0.0
-# Stabilný, bezpečný a real‑time friendly status panel
+# StatusBar v4.0.0
+# Stable, safe and real‑time friendly status panel
 # =========================================================
 
 import pygame
@@ -10,17 +10,18 @@ from ..core.logger import Logger
 
 class StatusBar:
     """
-    StatusBar (v2.0.0)
+    StatusBar (v4.0.0)
     ------------------
-    Jednoduchý, stabilný textový panel pre zobrazovanie
-    stavových správ v real‑time slučke.
+    Minimal, stable text panel for displaying status messages
+    inside a real‑time rendering loop.
 
-    Vlastnosti:
+    Features:
         - real‑time safe
-        - žiadne výnimky nesmú preraziť do UI
-        - bezpečné skracovanie textu
-        - toggle viditeľnosti
-        - pripravené pre v3 (AI/TIMELINE hooks)
+        - no exceptions
+        - safe text truncation
+        - toggle visibility
+        - clean English API
+        - ready for v5 (AI hooks, timeline integration)
     """
 
     def __init__(
@@ -46,38 +47,50 @@ class StatusBar:
             self.font = pygame.font.Font(None, font_size)
 
         self.current_message: str = ""
-        self.surface = pygame.Surface((self.width, self.height))
+
+        try:
+            self.surface = pygame.Surface((self.width, self.height))
+        except Exception:
+            self.surface = None
 
         if self.enabled:
-            Logger.info("StatusBar initialized.")
+            try:
+                Logger.info("StatusBar initialized.")
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # ENABLE / DISABLE
     # ---------------------------------------------------------
     def toggle(self) -> bool:
-        """Prepína viditeľnosť status baru a vráti nový stav."""
+        """Toggle visibility and return new state."""
         self.enabled = not self.enabled
-        Logger.info(f"StatusBar toggled: {self.enabled}")
+        try:
+            Logger.info(f"StatusBar toggled: {self.enabled}")
+        except Exception:
+            pass
         return self.enabled
 
     # ---------------------------------------------------------
     # SET MESSAGE
     # ---------------------------------------------------------
     def set_message(self, message: Any) -> None:
-        """Nastaví novú správu (safe)."""
+        """Set a new status message (safe)."""
         try:
-            safe_message = self._safe_format(message)
-            self.current_message = safe_message
-            Logger.info(f"StatusBar message set: {safe_message}")
-        except Exception as e:
-            Logger.error(f"StatusBar set_message error: {e}")
+            self.current_message = self._safe_format(message)
+            Logger.info(f"StatusBar message set: {self.current_message}")
+        except Exception:
+            try:
+                Logger.error("StatusBar set_message failure")
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # RENDER
     # ---------------------------------------------------------
     def render(self) -> Optional[pygame.Surface]:
-        """Vykreslí status bar a vráti surface."""
-        if not self.enabled:
+        """Render the status bar and return its surface."""
+        if not self.enabled or self.surface is None:
             return None
 
         try:
@@ -92,15 +105,18 @@ class StatusBar:
             self.surface.blit(text_surface, (6, 3))
             return self.surface
 
-        except Exception as e:
-            Logger.error(f"StatusBar render error: {e}")
+        except Exception:
+            try:
+                Logger.error("StatusBar render failure")
+            except Exception:
+                pass
             return None
 
     # ---------------------------------------------------------
     # SAFE FORMATTER
     # ---------------------------------------------------------
     def _safe_format(self, obj: Any) -> str:
-        """Bezpečne konvertuje objekt na text."""
+        """Safely convert object to string."""
         try:
             return str(obj)
         except Exception:
@@ -110,7 +126,7 @@ class StatusBar:
     # TRUNCATE LONG TEXT
     # ---------------------------------------------------------
     def _truncate(self, text: str) -> str:
-        """Skráti text, ak je príliš dlhý."""
+        """Truncate text if too long for the bar."""
         max_chars = max(4, int(self.width / 10))
         if len(text) > max_chars:
             return text[:max_chars - 3] + "..."
