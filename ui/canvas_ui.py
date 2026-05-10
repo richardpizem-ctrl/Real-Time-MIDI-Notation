@@ -1,5 +1,5 @@
 # =========================================================
-# CanvasUI v2.0.0
+# CanvasUI v4.0.0
 # Stabilná real‑time piano‑roll vizualizácia (Tkinter)
 # =========================================================
 
@@ -8,6 +8,25 @@ import time
 
 
 class CanvasUI:
+    """
+    CanvasUI (v4.0.0)
+    -----------------
+    Real‑time piano‑roll vizualizácia s podporou:
+        - velocity‑based farieb
+        - heatmap / glow / classic režimov
+        - snap + quantization + swing
+        - selection box
+        - playhead tracking
+        - bezpečné transformácie
+        - optimalizovaný redraw loop (60 FPS)
+
+    Pripravené pre v5:
+        - multi‑track rendering
+        - ghost notes
+        - region editing
+        - AI‑assisted drawing
+    """
+
     GRID_STEP_TIME = 100
     ROW_HEIGHT = 16
     MIN_ZOOM = 0.25
@@ -368,7 +387,7 @@ class CanvasUI:
         )
 
     # ---------------------------------------------------------
-    # PLACEHOLDER HANDLERS (v2.0.0 – bezpečné no-op)
+    # PLACEHOLDER HANDLERS (v4.0.0 – bezpečné no-op)
     # ---------------------------------------------------------
     def _on_mouse_down(self, event) -> None:
         pass
