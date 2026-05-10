@@ -1,5 +1,5 @@
 # =========================================================
-# Drum Notation v2.0.0
+# Drum Notation v4.0.0
 # Profesionálny mapping bicích pre Real-Time-MIDI-Notation
 # =========================================================
 
@@ -250,18 +250,3 @@ def annotate_drum_timeline(timeline: List[Dict[str, Any]]) -> List[Dict[str, Any
         assign_layer_offsets_to_group(g)
 
     return annotated
-
-
-# ---------------------------------------------------------
-# NO-OP API (pre UIManager kompatibilitu)
-# ---------------------------------------------------------
-def update_color(track_index: int, color_hex: str):
-    return
-
-
-def update_visibility(track_index: int, visible: bool):
-    return
-
-
-def set_active_track(track_index: int):
-    return
