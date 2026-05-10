@@ -1,5 +1,5 @@
 # =========================================================
-# TimelineGrid v2.0.0
+# TimelineGrid v4.0.0
 # Stabilná mriežka pre timeline (beaty + takty)
 # =========================================================
 
@@ -10,17 +10,18 @@ from ..core.logger import Logger
 
 class TimelineGrid:
     """
-    TimelineGrid (v2.0.0)
+    TimelineGrid (v4.0.0)
     ---------------------
     Účel:
         - Vykresľuje beaty a takty na časovej osi
         - Oddelené od TimelineController pre čistú architektúru
-        - Pripravené pre PixelLayoutEngine (v3)
+        - Pripravené pre PixelLayoutEngine v4
 
     Vlastnosti:
         - Real‑time safe
         - Žiadne blokujúce operácie
         - Jednoduché API: render(surface)
+        - Stabilné fallbacky
     """
 
     def __init__(
@@ -34,17 +35,24 @@ class TimelineGrid:
     ) -> None:
 
         try:
-            self.width = int(width)
+            self.width = max(1, int(width))
         except Exception:
             self.width = 1600
 
         try:
-            self.height = int(height)
+            self.height = max(1, int(height))
         except Exception:
             self.height = 120
 
-        self.beats_per_bar = max(1, int(beats_per_bar))
-        self.pixels_per_beat = max(1, int(pixels_per_beat))
+        try:
+            self.beats_per_bar = max(1, int(beats_per_bar))
+        except Exception:
+            self.beats_per_bar = 4
+
+        try:
+            self.pixels_per_beat = max(1, int(pixels_per_beat))
+        except Exception:
+            self.pixels_per_beat = 100
 
         self.beat_color = beat_color
         self.bar_color = bar_color
@@ -53,7 +61,7 @@ class TimelineGrid:
         self.zoom = 1.0
         self.offset_x = 0
 
-        Logger.info("TimelineGrid initialized (v2.0.0).")
+        Logger.info("TimelineGrid initialized (v4.0.0).")
 
     # ---------------------------------------------------------
     # EXTERNAL CONTROLS
