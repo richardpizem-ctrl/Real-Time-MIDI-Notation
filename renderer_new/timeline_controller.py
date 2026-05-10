@@ -1,5 +1,5 @@
 # =========================================================
-# TimelineController v2.0.0
+# TimelineController v4.0.0
 # Stabilný riadiaci modul pre timeline (grid, playhead, layout)
 # =========================================================
 
@@ -14,7 +14,7 @@ from .timeline_layout_engine import TimelineLayoutEngine
 
 class TimelineController:
     """
-    TimelineController (v2.0.0)
+    TimelineController (v4.0.0)
     ---------------------------
     Účel:
         - Riadi timeline (grid, playhead, layout)
@@ -32,23 +32,30 @@ class TimelineController:
         pixels_per_beat: int = 100
     ) -> None:
 
+        # -----------------------------------------------------
+        # SAFE INIT
+        # -----------------------------------------------------
         try:
-            self.width = int(width)
+            self.width = max(1, int(width))
         except Exception:
             self.width = 1600
 
         try:
-            self.height = int(height)
+            self.height = max(1, int(height))
         except Exception:
             self.height = 120
 
-        # Layout engine (zoom, offset, pixel mapping)
+        # -----------------------------------------------------
+        # LAYOUT ENGINE (zoom, offset, pixel mapping)
+        # -----------------------------------------------------
         self.layout = TimelineLayoutEngine(
             pixels_per_beat=pixels_per_beat,
             beats_per_bar=beats_per_bar
         )
 
-        # Grid (taktová a beatová mriežka)
+        # -----------------------------------------------------
+        # GRID (taktová a beatová mriežka)
+        # -----------------------------------------------------
         self.grid = TimelineGrid(
             width=self.width,
             height=self.height,
@@ -56,7 +63,9 @@ class TimelineController:
             pixels_per_beat=pixels_per_beat
         )
 
-        # Playhead (prehrávacia hlava)
+        # -----------------------------------------------------
+        # PLAYHEAD
+        # -----------------------------------------------------
         self.playhead = Playhead(
             height=self.height,
             bpm=bpm,
@@ -64,22 +73,28 @@ class TimelineController:
             pixels_per_beat=pixels_per_beat
         )
 
-        # Markery
+        # -----------------------------------------------------
+        # MARKERS
+        # -----------------------------------------------------
         self.markers: List[Dict[str, Any]] = []
 
-        # Surface pre timeline
+        # -----------------------------------------------------
+        # SURFACE
+        # -----------------------------------------------------
         try:
             self.surface = pygame.Surface((self.width, self.height))
         except Exception:
             self.surface = None
 
-        # Font pre marker names
+        # -----------------------------------------------------
+        # FONT
+        # -----------------------------------------------------
         try:
             self.font = pygame.font.SysFont("Arial", 14)
         except Exception:
             self.font = None
 
-        Logger.info("TimelineController initialized (v2.0.0).")
+        Logger.info("TimelineController initialized (v4.0.0).")
 
     # ---------------------------------------------------------
     # EXTERNAL LAYOUT UPDATES
@@ -106,9 +121,10 @@ class TimelineController:
         try:
             self.layout.set_zoom(zoom)
 
-            # Grid + playhead musia poznať nové pixels_per_beat
-            self.grid.set_pixels_per_beat(self.layout.pixels_per_beat)
-            self.playhead.set_pixels_per_beat(self.layout.pixels_per_beat)
+            # Sync pixels_per_beat
+            ppb = self.layout.pixels_per_beat
+            self.grid.set_pixels_per_beat(ppb)
+            self.playhead.set_pixels_per_beat(ppb)
 
         except Exception:
             Logger.error("TimelineController set_zoom error.")
@@ -140,11 +156,11 @@ class TimelineController:
         try:
             self.playhead.update(time_seconds)
 
-            # Grid sync
+            # Sync grid
             self.grid.set_zoom(self.layout.zoom)
             self.grid.set_offset(self.layout.offset_x)
 
-            # Playhead sync
+            # Sync playhead
             self.playhead.set_pixels_per_beat(self.layout.pixels_per_beat)
 
         except Exception as e:
@@ -154,21 +170,18 @@ class TimelineController:
     # DRAW HELPERS (pre TimelineLayer)
     # ---------------------------------------------------------
     def draw_grid(self, surface):
-        """Kreslí beaty, takty, subdivízie."""
         try:
             self.grid.render(surface)
         except Exception:
             pass
 
     def draw_playhead(self, surface):
-        """Kreslí playhead."""
         try:
             self.playhead.render(surface)
         except Exception:
             pass
 
     def draw_markers(self, surface):
-        """Kreslí markery na timeline."""
         if pygame is None or surface is None:
             return
 
@@ -180,7 +193,6 @@ class TimelineController:
             if t is None:
                 continue
 
-            # prepočet času na X pozíciu cez layout engine
             try:
                 x = self.layout.time_to_x(t)
             except Exception:
@@ -189,7 +201,7 @@ class TimelineController:
             if not (0 <= x <= self.width):
                 continue
 
-            # marker line
+            # Marker line
             try:
                 pygame.draw.line(
                     surface,
@@ -201,7 +213,7 @@ class TimelineController:
             except Exception:
                 pass
 
-            # marker name
+            # Marker name
             name = m.get("name", "")
             if self.font and name:
                 try:
