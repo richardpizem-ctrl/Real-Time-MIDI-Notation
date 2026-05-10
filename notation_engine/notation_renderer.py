@@ -1,8 +1,8 @@
 # =========================================================
-# NotationProcessor v2.0.0
+# NotationProcessor v4.0.0
 # Centrálna pipeline pre Real-Time-MIDI-Notation
 # MIDI → Mapper → Rhythm → Symbols → Renderer
-# Stabilizovaná verzia pre v2.0.0
+# Stabilizovaná verzia pre v4.0.0
 # =========================================================
 
 from .midi_note_mapper import MidiNoteMapper, Note
@@ -14,11 +14,11 @@ from .key_detector import detect_key
 
 class NotationProcessor:
     """
-    NotationProcessor (v2.0.0):
+    NotationProcessor (v4.0.0):
     - centrálna pipeline pre MIDI → vizuálnu notáciu
     - stabilné spracovanie MIDI udalostí
     - bezpečné fallbacky
-    - pripravené na AI/TIMELINE v3.0.0
+    - pripravené na AI/TIMELINE v4.x
     """
 
     def __init__(self):
@@ -219,7 +219,7 @@ class NotationProcessor:
                     pitch=pitch,
                     velocity=velocity,
                     channel=channel,
-                    timestamp=timestamp
+                    timestamp=timestamp,
                 )
             except Exception:
                 pass
@@ -250,7 +250,7 @@ class NotationProcessor:
                 self.note_mapper.handle_note_off(
                     pitch=pitch,
                     channel=channel,
-                    timestamp=timestamp
+                    timestamp=timestamp,
                 )
             except Exception:
                 return None
@@ -291,7 +291,7 @@ class NotationProcessor:
                 bar_item = {
                     "type": "barline",
                     "start": created_note.start_time,
-                    "measure": current_measure
+                    "measure": current_measure,
                 }
                 self.timeline.append(bar_item)
 
@@ -309,7 +309,7 @@ class NotationProcessor:
             try:
                 symbol = self.symbol_manager.get_symbol(
                     note=created_note,
-                    rhythm=rhythmic_name
+                    rhythm=rhythmic_name,
                 )
             except Exception:
                 symbol = {}
@@ -349,7 +349,7 @@ class NotationProcessor:
                         "duration": visual_duration,
                         "track_type": track_type,
                         "track_color": track_color,
-                    }
+                    },
                 }
                 self.timeline.append(slur_item)
 
