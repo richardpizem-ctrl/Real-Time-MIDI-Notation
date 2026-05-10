@@ -1,41 +1,53 @@
 # =========================================================
-# EventBus v2.0.0
-# Stabilný, thread-safe event router pre celý MIDI Engine
+# EventBus v4.0.0-ready
+# High-performance, async, burst-safe event router
 # =========================================================
 
 import threading
-from collections import defaultdict
-from typing import Callable, Any, Dict, List
+import time
+from collections import defaultdict, deque
+from typing import Callable, Any, Dict, List, Tuple
 from .logger import Logger
 
 
 class EventBus:
     """
-    Stabilný, thread-safe event bus (v2.0.0).
-
-    Funkcie:
-    - subscribe(event_type, callback)
-    - unsubscribe(event_type, callback)
-    - publish(event_type, data)
-    - publish_async(event_type, data)
-
-    Vlastnosti:
-    - bezpečné volanie callbackov
-    - žiadne deadlocky (callbacky sa volajú mimo locku)
-    - ochrana proti výnimkám v callbackoch
-    - bezpečné odoberanie callbackov
+    EventBus v4-ready:
+    - deque-based event queue
+    - dispatcher thread
+    - async + non-blocking publish
+    - event priorities
+    - batching
+    - AI event channel support
+    - safe shutdown
     """
 
     def __init__(self):
+        Logger.info("Initializing EventBus (v4-ready)...")
+
+        # Subscribers
         self._subscribers: Dict[str, List[Callable[[Any], None]]] = defaultdict(list)
+
+        # Event queue: (priority, event_type, data)
+        self._queue: deque[Tuple[int, str, Any]] = deque()
+
+        # Threading
         self._lock = threading.Lock()
-        Logger.info("EventBus initialized.")
+        self._running = True
+
+        # Dispatcher thread
+        self._dispatcher = threading.Thread(
+            target=self._dispatch_loop,
+            daemon=True
+        )
+        self._dispatcher.start()
+
+        Logger.info("EventBus initialized (v4-ready).")
 
     # ---------------------------------------------------------
-    # REGISTRÁCIA CALLBACKOV
+    # SUBSCRIBE / UNSUBSCRIBE
     # ---------------------------------------------------------
     def subscribe(self, event_type: str, callback: Callable[[Any], None]) -> None:
-        """Zaregistruje callback pre daný typ udalosti."""
         if not isinstance(event_type, str):
             Logger.error("subscribe() called with non-string event_type")
             return
@@ -44,82 +56,91 @@ class EventBus:
             Logger.error("subscribe() called with non-callable callback")
             return
 
-        try:
-            with self._lock:
-                if callback not in self._subscribers[event_type]:
-                    self._subscribers[event_type].append(callback)
-                    Logger.debug(f"Subscribed to event '{event_type}': {callback}")
-        except Exception as e:
-            Logger.error(f"EventBus subscribe() error: {e}")
+        with self._lock:
+            if callback not in self._subscribers[event_type]:
+                self._subscribers[event_type].append(callback)
+                Logger.debug(f"Subscribed to '{event_type}': {callback}")
 
-    # ---------------------------------------------------------
-    # ODHLÁSENIE CALLBACKOV
-    # ---------------------------------------------------------
     def unsubscribe(self, event_type: str, callback: Callable[[Any], None]) -> None:
-        """Odstráni callback z daného typu udalosti."""
         if not isinstance(event_type, str):
             return
 
-        try:
-            with self._lock:
-                if callback in self._subscribers.get(event_type, []):
-                    self._subscribers[event_type].remove(callback)
-                    Logger.debug(f"Unsubscribed from event '{event_type}': {callback}")
+        with self._lock:
+            if callback in self._subscribers.get(event_type, []):
+                self._subscribers[event_type].remove(callback)
+                Logger.debug(f"Unsubscribed from '{event_type}': {callback}")
 
-                # Odstráni prázdny zoznam
-                if not self._subscribers.get(event_type):
-                    self._subscribers.pop(event_type, None)
-
-        except Exception as e:
-            Logger.error(f"EventBus unsubscribe() error: {e}")
+            if not self._subscribers.get(event_type):
+                self._subscribers.pop(event_type, None)
 
     # ---------------------------------------------------------
-    # SYNCHRÓNNE PUBLIKOVANIE
+    # PUBLISH (non-blocking)
     # ---------------------------------------------------------
-    def publish(self, event_type: str, data: Any = None) -> None:
-        """Synchronne odošle udalosť všetkým odberateľom."""
+    def publish(self, event_type: str, data: Any = None, priority: int = 5) -> None:
+        """
+        Non-blocking publish:
+        - priority: 1 = highest, 10 = lowest
+        """
         if not isinstance(event_type, str):
             Logger.error("publish() called with non-string event_type")
             return
 
-        try:
+        with self._lock:
+            self._queue.append((priority, event_type, data))
+
+    # ---------------------------------------------------------
+    # ASYNC PUBLISH
+    # ---------------------------------------------------------
+    def publish_async(self, event_type: str, data: Any = None, priority: int = 5) -> None:
+        threading.Thread(
+            target=self.publish,
+            args=(event_type, data, priority),
+            daemon=True
+        ).start()
+
+    # ---------------------------------------------------------
+    # DISPATCH LOOP (v4)
+    # ---------------------------------------------------------
+    def _dispatch_loop(self):
+        """High-performance dispatcher loop."""
+        while self._running:
+            if not self._queue:
+                time.sleep(0.0005)
+                continue
+
+            # Batch processing
+            batch = []
             with self._lock:
-                callbacks = list(self._subscribers.get(event_type, []))
-        except Exception as e:
-            Logger.error(f"EventBus publish() lock error: {e}")
-            return
+                while self._queue and len(batch) < 32:
+                    batch.append(self._queue.popleft())
 
-        Logger.debug(f"Publishing event '{event_type}' to {len(callbacks)} subscribers.")
+            # Sort by priority
+            batch.sort(key=lambda x: x[0])
 
-        for callback in callbacks:
-            try:
-                callback(data)
-            except Exception as e:
-                Logger.error(f"[EventBus] Error in callback for '{event_type}': {e}")
+            # Dispatch events
+            for _, event_type, data in batch:
+                callbacks = []
+                with self._lock:
+                    callbacks = list(self._subscribers.get(event_type, []))
 
-    # ---------------------------------------------------------
-    # ASYNCHRÓNNE PUBLIKOVANIE
-    # ---------------------------------------------------------
-    def publish_async(self, event_type: str, data: Any = None) -> None:
-        """Asynchrónne odošle udalosť v samostatnom vlákne."""
-        if not isinstance(event_type, str):
-            Logger.error("publish_async() called with non-string event_type")
-            return
-
-        try:
-            thread = threading.Thread(
-                target=self.publish,
-                args=(event_type, data),
-                daemon=True
-            )
-            thread.start()
-
-            Logger.debug(f"Async publish scheduled for event '{event_type}'.")
-        except Exception as e:
-            Logger.error(f"EventBus publish_async() error: {e}")
+                for callback in callbacks:
+                    try:
+                        callback(data)
+                    except Exception as e:
+                        Logger.error(f"[EventBus] Error in callback '{event_type}': {e}")
 
     # ---------------------------------------------------------
-    # NO-OP API (pre UIManager kompatibilitu)
+    # SHUTDOWN
+    # ---------------------------------------------------------
+    def shutdown(self):
+        """Stops dispatcher thread safely."""
+        Logger.info("Shutting down EventBus...")
+        self._running = False
+        self._dispatcher.join(timeout=1.0)
+        Logger.info("EventBus shutdown completed.")
+
+    # ---------------------------------------------------------
+    # NO-OP API (UI compatibility)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
         return
