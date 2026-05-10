@@ -1,5 +1,5 @@
 # =========================================================
-# EventRouter v2.0.0
+# EventRouter v4.0.0
 # Stabilný router MIDI udalostí pre Real-Time MIDI Engine
 # =========================================================
 
@@ -8,11 +8,12 @@ from ..core.logger import Logger
 
 class EventRouter:
     """
-    EventRouter (v2.0.0):
+    EventRouter (v4.0.0):
     - prijíma MIDI eventy z MIDIListener
     - smeruje ich do TrackSystem, UIManager, NotationProcessor a EventBus
     - odolný voči chybným MIDI eventom
     - bezpečný routing pre real-time spracovanie
+    - kompatibilný s architektúrou verzie 4
     """
 
     def __init__(
@@ -27,7 +28,7 @@ class EventRouter:
         self.notation = notation_processor
         self.track_system = track_system
 
-        Logger.info("EventRouter initialized.")
+        Logger.info("EventRouter initialized (v4-ready).")
 
     # ---------------------------------------------------------
     # ROUTING MIDI EVENTOV
@@ -74,7 +75,7 @@ class EventRouter:
             event = None
 
             # ---------------------------------------------------------
-            # TRACK SYSTEM PREPOJENIE
+            # TRACK SYSTEM PREPOJENIE (v4 kompatibilné)
             # ---------------------------------------------------------
             if self.track_system and event_type in ("note_on", "note_off"):
                 try:
