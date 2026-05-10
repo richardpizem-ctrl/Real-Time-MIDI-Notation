@@ -1,5 +1,5 @@
 # =========================================================
-# Harmony Engine v2.0.0
+# Harmony Engine v4.0.0
 # Stabilná harmonická analýza pre Real-Time-MIDI-Notation
 # =========================================================
 
@@ -16,7 +16,7 @@ class HarmonyRole:
 
 class HarmonyEngine:
     """
-    HarmonyEngine (v2.0.0) – stabilizovaný harmonický engine:
+    HarmonyEngine (v4.0.0) – stabilizovaný harmonický engine:
     - analyzuje MIDI pitch hodnoty
     - pracuje s informáciou o kľúči (tonalite) a akorde
     - vracia harmonickú rolu:
@@ -171,18 +171,3 @@ class HarmonyEngine:
                 result[n] = HarmonyRole.OUTSIDE
 
         return result
-
-
-# ---------------------------------------------------------
-# NO-OP API (pre UIManager kompatibilitu)
-# ---------------------------------------------------------
-def update_color(track_index: int, color_hex: str):
-    return
-
-
-def update_visibility(track_index: int, visible: bool):
-    return
-
-
-def set_active_track(track_index: int):
-    return
