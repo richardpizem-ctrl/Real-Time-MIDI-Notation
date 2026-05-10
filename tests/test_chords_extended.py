@@ -1,5 +1,5 @@
 # =========================================================
-# test_chords_extended.py – v2.0.0
+# test_chords_extended.py – v4.0.0
 # Stabilný test všetkých základných durových a molových akordov
 # =========================================================
 
@@ -32,7 +32,7 @@ def test_chord(notes):
 
 
 def main():
-    print("=== TEST: EXTENDED CHORD DETECTION (v2.0.0) ===\n")
+    print("=== TEST: EXTENDED CHORD DETECTION (v4.0.0) ===\n")
 
     # -----------------------------------------
     # 12 MAJOR CHORDS
