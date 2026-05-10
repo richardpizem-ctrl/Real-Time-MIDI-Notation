@@ -1,5 +1,5 @@
 # =========================================================
-# LatencyMonitor v2.0.0
+# LatencyMonitor v4.0.0
 # Stabilné meranie latencie pre real-time processing
 # =========================================================
 
@@ -11,11 +11,11 @@ from ..core.logger import Logger
 
 class LatencyMonitor:
     """
-    LatencyMonitor (v2.0.0):
+    LatencyMonitor (v4.0.0):
     - bezpečné meranie latencie medzi udalosťami
     - stabilné štatistiky (min, max, avg, last)
     - odolnosť voči chybám v real-time pipeline
-    - pripravené na v3.0.0
+    - optimalizované pre architektúru v4
     """
 
     def __init__(self, window_size: int = 100):
