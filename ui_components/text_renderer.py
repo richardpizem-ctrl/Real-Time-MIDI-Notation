@@ -1,6 +1,6 @@
 # =========================================================
-# TextRenderer v2.0.0
-# Stabilné, bezpečné a real‑time friendly textové logovanie
+# TextRenderer v4.0.0
+# Stable, safe and real‑time friendly text renderer
 # =========================================================
 
 from typing import Any
@@ -9,17 +9,18 @@ from ..core.logger import Logger
 
 class TextRenderer:
     """
-    TextRenderer (v2.0.0)
+    TextRenderer (v4.0.0)
     ---------------------
-    Jednoduchý, stabilný textový renderer pre debug, status
-    a textovú notáciu.
+    Minimal, stable text renderer for debug output,
+    status messages and text-based notation.
 
-    Vlastnosti:
+    Features:
         - real‑time safe
-        - žiadne výnimky nesmú preraziť do UI
-        - bezpečné formátovanie objektov
-        - toggle výstupu
-        - pripravené pre v3 (AI/TIMELINE hooks)
+        - no exceptions
+        - safe object formatting
+        - toggleable output
+        - clean English API
+        - ready for v5 (AI/TIMELINE hooks)
     """
 
     def __init__(self, enabled: bool = True, print_enabled: bool = True) -> None:
@@ -27,28 +28,34 @@ class TextRenderer:
         self.print_enabled = bool(print_enabled)
 
         if self.enabled:
-            Logger.info("TextRenderer initialized.")
+            try:
+                Logger.info("TextRenderer initialized.")
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # ENABLE / DISABLE
     # ---------------------------------------------------------
     def toggle(self) -> bool:
-        """Prepína stav textového renderera a vráti nový stav."""
+        """Toggle renderer state and return new state."""
         self.enabled = not self.enabled
-        Logger.info(f"TextRenderer toggled: {self.enabled}")
+        try:
+            Logger.info(f"TextRenderer toggled: {self.enabled}")
+        except Exception:
+            pass
         return self.enabled
 
     # ---------------------------------------------------------
     # DISPLAY TEXT
     # ---------------------------------------------------------
     def display(self, text: Any) -> None:
-        """Bezpečne zobrazí text."""
+        """Safely display text."""
         if not self.enabled:
             return
 
         try:
             safe_text = self._safe_format(text)
-            if not safe_text or safe_text.strip() == "":
+            if not safe_text or not safe_text.strip():
                 return
 
             if self.print_enabled:
@@ -56,14 +63,17 @@ class TextRenderer:
 
             Logger.info(f"Rendered text: {safe_text}")
 
-        except Exception as e:
-            Logger.error(f"TextRenderer error: {e}")
+        except Exception:
+            try:
+                Logger.error("TextRenderer display failure")
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # SAFE FORMATTER
     # ---------------------------------------------------------
     def _safe_format(self, obj: Any) -> str:
-        """Bezpečne konvertuje objekt na string."""
+        """Safely convert object to string."""
         try:
             return str(obj)
         except Exception:
