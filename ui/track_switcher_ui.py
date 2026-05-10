@@ -1,5 +1,5 @@
 # =========================================================
-# TrackSwitcherUI v2.0.0
+# TrackSwitcherUI v4.0.0
 # DAW‑štýlový vizuálny prepínač stôp s meterom, panom, volume,
 # record/mute/solo a highlight systémom.
 # =========================================================
@@ -109,11 +109,11 @@ class TrackSwitcherUI:
     # ---------------------------------------------------------
     def _draw_gradient(self, surface, rect, base_color):
         r, g, b = base_color
-        height = rect.height
-        if height <= 0:
+        h = rect.height
+        if h <= 0:
             return
-        for y in range(height):
-            factor = y / height
+        for y in range(h):
+            factor = y / h
             shade = (
                 int(r * (1 - factor * 0.3)),
                 int(g * (1 - factor * 0.3)),
@@ -202,23 +202,24 @@ class TrackSwitcherUI:
         tooltip_text = None
         tooltip_pos = None
 
-        get_color = None
+        get_color_rgb = None
         if self.track_control_manager is not None:
-            get_color = self.track_control_manager.get_color
+            get_color_rgb = self.track_control_manager.get_color_rgb
 
         for i in range(self.track_count):
             tid = i + 1
 
+            # Farba stopy (RGB)
             try:
-                if get_color is not None:
-                    hex_color = get_color(i)
+                if get_color_rgb is not None:
+                    base_color = get_color_rgb(i)
                 else:
                     hex_color = self.track_colors[i % len(self.track_colors)]
-
-                r = int(hex_color[1:3], 16)
-                g = int(hex_color[3:5], 16)
-                b = int(hex_color[5:7], 16)
-                base_color = (r, g, b)
+                    base_color = (
+                        int(hex_color[1:3], 16),
+                        int(hex_color[3:5], 16),
+                        int(hex_color[5:7], 16),
+                    )
             except Exception:
                 base_color = (120, 120, 120)
 
@@ -229,9 +230,11 @@ class TrackSwitcherUI:
                 self.button_height,
             )
 
+            # Gradient + highlight
             self._draw_gradient(surface, rect, base_color)
             self._draw_inner_highlight(surface, rect)
 
+            # SOLO / MUTE overlay
             try:
                 if tm.is_muted(tid):
                     overlay = (120, 120, 120)
@@ -253,21 +256,25 @@ class TrackSwitcherUI:
             if is_active:
                 pygame.draw.rect(surface, (255, 255, 255), rect.inflate(-2, -2), 1, border_radius=6)
 
+            # Meter
             activity = tm.get_activity(tid)
             self._draw_meter_background(surface, rect)
             self._draw_meter(surface, rect, activity)
             self._draw_peak(surface, rect, self.peak_hold[i])
 
+            # Pan
             pan_val = tm.get_pan(tid)
             self._draw_pan_background(surface, rect)
             self._draw_pan(surface, rect, pan_val)
             self._draw_separator(surface, rect, self.button_height - 65)
 
+            # Volume
             volume = tm.get_volume(tid)
             self._draw_volume_background(surface, rect)
             self._draw_volume(surface, rect, volume)
             self._draw_separator(surface, rect, self.button_height - 25)
 
+            # Record / Mute / Solo buttons
             rec_rect = pygame.Rect(rect.x + 4, rect.y + self.button_height - 85, self.button_width - 8, 10)
             rec_active = tm.is_record_armed(tid)
             self._draw_button(surface, rec_rect, rec_active, (255, 0, 0), (80, 0, 0), "R")
@@ -282,6 +289,7 @@ class TrackSwitcherUI:
             solo_active = tm.is_solo(tid)
             self._draw_button(surface, solo_rect, solo_active, (255, 255, 80), (100, 100, 40), "S")
 
+            # Tooltip detection
             if rect.collidepoint(mx, my):
                 local_y = my - rect.y
                 if self.button_height - 85 <= local_y < self.button_height - 75:
@@ -296,6 +304,7 @@ class TrackSwitcherUI:
                     tooltip_text = "Solo"
                 tooltip_pos = (mx + 8, my - 18)
 
+            # Track name
             try:
                 name = tm.get_name(tid)
             except Exception:
@@ -315,6 +324,7 @@ class TrackSwitcherUI:
 
             self._draw_shadow(surface, rect)
 
+        # Tooltip
         if tooltip_text and self.small_font:
             tip_surf = self.small_font.render(tooltip_text, True, (0, 0, 0))
             bg_rect = tip_surf.get_rect(topleft=tooltip_pos).inflate(6, 4)
@@ -357,7 +367,6 @@ class TrackSwitcherUI:
         return None
 
     def handle_click(self, x, y):
-        """Spracuje kliknutie myšou a aktivuje príslušnú akciu."""
         for i in range(self.track_count):
             rect = pygame.Rect(self.x + i * self.button_width, self.y, self.button_width, self.button_height)
             if rect.collidepoint(x, y):
@@ -367,16 +376,13 @@ class TrackSwitcherUI:
         return None
 
     def set_active_track(self, tid):
-        """Externé API pre UIManager."""
         if self.track_control_manager is not None:
             self.track_control_manager.set_active_track(tid - 1)
 
     def refresh(self):
-        """Externé API – UIManager môže zavolať pri zmene stavu."""
         self._emit_audible_state()
 
     def handle_event(self, event):
-        """Spracuje pygame event a premapuje ho na kliknutie."""
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
             return self.handle_click(x, y)
