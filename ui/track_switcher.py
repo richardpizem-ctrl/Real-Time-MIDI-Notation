@@ -1,5 +1,5 @@
 # =========================================================
-# ui_track_switcher.py – v2.0.0
+# ui_track_switcher.py – v4.0.0
 # Stabilná logická vrstva pre prepínanie MIDI stôp
 # =========================================================
 
@@ -16,16 +16,16 @@ class TrackSwitchEvent:
 
 class TrackSwitcherLogic:
     """
-    TrackSwitcherLogic (v2.0.0)
+    TrackSwitcherLogic (v4.0.0)
     ---------------------------
     Čistá logická vrstva pre prepínanie stôp.
 
-    Funkcie:
-        - nastavuje aktívnu stopu
-        - voliteľne prepína viditeľnosť (ak je controller pripojený)
-        - poskytuje farby stôp
-        - UI callback systém (bezpečný, real‑time safe)
-        - žiadne kreslenie (to robí track_switcher_ui.py)
+    Vylepšenia v4:
+        - okamžitý HEX aj RGB lookup (ak color_map podporuje)
+        - bezpečné volanie controllerov
+        - stabilný callback systém
+        - drop‑in kompatibilita s v2 UI
+        - pripravené pre v5 (hover, inspector sync)
     """
 
     def __init__(self, selection_controller, visibility_controller=None, color_map=None):
@@ -41,6 +41,8 @@ class TrackSwitcherLogic:
     # ------------------------------------------------------------
     def register_callback(self, track_id: int, callback: Callable[[TrackSwitchEvent], None]):
         """Registruje UI callback pre daný track button."""
+        if not callable(callback):
+            return
         self._callbacks[track_id] = callback
 
     # ------------------------------------------------------------
@@ -50,7 +52,7 @@ class TrackSwitcherLogic:
         """
         Logika prepnutia stopy.
         - nastaví aktívnu stopu
-        - neprepína viditeľnosť (to je voliteľné)
+        - voliteľne prepína viditeľnosť
         """
 
         # 1) Nastav aktívnu stopu
@@ -75,8 +77,6 @@ class TrackSwitcherLogic:
             except Exception:
                 pass
 
-        print(f"[TrackSwitcherLogic] Track {track_id} selected (active={is_active})")
-
     # ------------------------------------------------------------
     # OPTIONAL VISIBILITY TOGGLE
     # ------------------------------------------------------------
@@ -94,10 +94,14 @@ class TrackSwitcherLogic:
     # COLOR ACCESS
     # ------------------------------------------------------------
     def get_track_color(self, track_id: int):
-        """Vráti farbu stopy (hex)."""
+        """Vráti farbu stopy (HEX alebo RGB podľa mapy)."""
         if self.color_map is None:
             return "#FFFFFF"
+
+        # Podpora HEX aj RGB
         try:
+            if hasattr(self.color_map, "get_color_rgb"):
+                return self.color_map.get_color_rgb(track_id)
             return self.color_map.get_color(track_id)
         except Exception:
             return "#FFFFFF"
