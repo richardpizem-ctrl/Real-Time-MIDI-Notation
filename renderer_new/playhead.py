@@ -1,5 +1,5 @@
 # =========================================================
-# Playhead v2.0.0
+# Playhead v4.0.0
 # Stabilná real‑time prehrávacia hlava pre Timeline Renderer
 # =========================================================
 
@@ -10,7 +10,7 @@ from ..core.logger import Logger
 
 class Playhead:
     """
-    Playhead (v2.0.0)
+    Playhead (v4.0.0)
     -----------------
     Účel:
         - Vertikálna čiara ukazujúca aktuálnu pozíciu prehrávania
@@ -21,7 +21,7 @@ class Playhead:
         - Real‑time safe
         - Žiadne blokujúce operácie
         - Glow cache pre výkon
-        - Pripravené pre PixelLayoutEngine (v3)
+        - Pripravené pre PixelLayoutEngine v4
     """
 
     def __init__(
@@ -66,7 +66,7 @@ class Playhead:
         self._glow_surface: pygame.Surface | None = None
         self._rebuild_glow_surface()
 
-        Logger.info("Playhead initialized (v2.0.0).")
+        Logger.info("Playhead initialized (v4.0.0).")
 
     # ---------------------------------------------------------
     # INTERNAL HELPERS
