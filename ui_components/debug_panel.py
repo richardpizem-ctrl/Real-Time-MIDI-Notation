@@ -1,25 +1,25 @@
 # =========================================================
-# DebugPanel v2.0.0
-# Stabilné, bezpečné a real‑time friendly debug logovanie
+# DebugPanel v4.0.0
+# Stable, safe and real‑time friendly debug logger
 # =========================================================
 
-import pygame
 from typing import Any
 from ..core.logger import Logger
 
 
 class DebugPanel:
     """
-    DebugPanel (v2.0.0)
+    DebugPanel (v4.0.0)
     -------------------
-    Bezpečné logovanie udalostí, pipeline krokov a chýb.
+    Safe debug logging for MIDI events, pipeline stages and errors.
 
-    Vlastnosti:
-        - žiadne výnimky nesmú preraziť do UI
+    Features:
         - real‑time safe
-        - jednotné API
-        - bezpečné formátovanie objektov
-        - toggle debug módu
+        - no exceptions
+        - clean English API
+        - safe object formatting
+        - toggleable debug mode
+        - UIManager compatible
     """
 
     def __init__(self, enabled: bool = True, print_enabled: bool = True) -> None:
@@ -33,16 +33,19 @@ class DebugPanel:
     # ENABLE / DISABLE
     # ---------------------------------------------------------
     def toggle(self) -> bool:
-        """Prepína stav debug panelu a vráti nový stav."""
+        """Toggle debug mode and return new state."""
         self.enabled = not self.enabled
-        Logger.info(f"DebugPanel toggled: {self.enabled}")
+        try:
+            Logger.info(f"DebugPanel toggled: {self.enabled}")
+        except Exception:
+            pass
         return self.enabled
 
     # ---------------------------------------------------------
     # MIDI EVENT LOGGING
     # ---------------------------------------------------------
     def log_midi_event(self, event: Any) -> None:
-        """Loguje MIDI udalosť."""
+        """Log a MIDI event."""
         if not self.enabled:
             return
 
@@ -52,16 +55,19 @@ class DebugPanel:
             if self.print_enabled:
                 print(f"[MIDI EVENT] {safe_event}")
 
-            Logger.info(f"Debug MIDI event: {safe_event}")
+            Logger.info(f"MIDI event: {safe_event}")
 
-        except Exception as e:
-            Logger.error(f"DebugPanel MIDI error: {e}")
+        except Exception:
+            try:
+                Logger.error("DebugPanel MIDI logging failure")
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # PIPELINE LOGGING
     # ---------------------------------------------------------
     def log_pipeline(self, stage: str, data: Any) -> None:
-        """Loguje pipeline krok."""
+        """Log a pipeline stage."""
         if not self.enabled:
             return
 
@@ -71,32 +77,38 @@ class DebugPanel:
             if self.print_enabled:
                 print(f"[PIPELINE] {stage}: {safe_data}")
 
-            Logger.info(f"Debug pipeline {stage}: {safe_data}")
+            Logger.info(f"Pipeline {stage}: {safe_data}")
 
-        except Exception as e:
-            Logger.error(f"DebugPanel pipeline error: {e}")
+        except Exception:
+            try:
+                Logger.error("DebugPanel pipeline logging failure")
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # ERROR LOGGING
     # ---------------------------------------------------------
     def log_error(self, message: Any) -> None:
-        """Loguje chybu."""
+        """Log an error message."""
         try:
             safe_msg = self._safe_format(message)
 
             if self.print_enabled:
                 print(f"[ERROR] {safe_msg}")
 
-            Logger.error(f"DebugPanel error: {safe_msg}")
+            Logger.error(f"Error: {safe_msg}")
 
-        except Exception as e:
-            Logger.error(f"DebugPanel logging failure: {e}")
+        except Exception:
+            try:
+                Logger.error("DebugPanel error logging failure")
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # SAFE FORMATTER
     # ---------------------------------------------------------
     def _safe_format(self, obj: Any) -> str:
-        """Bezpečne konvertuje objekt na string."""
+        """Safely convert object to string."""
         try:
             return str(obj)
         except Exception:
