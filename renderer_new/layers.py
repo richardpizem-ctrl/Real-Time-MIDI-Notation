@@ -1,5 +1,5 @@
 # =========================================================
-# layers.py – Layer System v2.0.0
+# layers.py – Layer System v4.0.0
 # Stabilný, modulárny, bezpečný systém vrstiev pre renderer
 # =========================================================
 
@@ -19,11 +19,11 @@ from .marker_layer import MarkerLayer
 
 class BaseLayer:
     """
-    BaseLayer (v2.0.0)
+    BaseLayer (v4.0.0)
     - Každá vrstva musí implementovať draw(surface)
     - Má vlastný z_index (poradie vykresľovania)
     - Má visible flag (zapnutie/vypnutie)
-    - Stabilné, bezpečné, pripravené na v3
+    - Stabilné, bezpečné, pripravené na v4
     """
 
     def __init__(self, z_index: int = 0, visible: bool = True):
@@ -44,11 +44,11 @@ class BaseLayer:
 
 class LayerManager:
     """
-    LayerManager (v2.0.0)
+    LayerManager (v4.0.0)
     - riadi všetky vrstvy renderera
     - stabilné z-index triedenie
     - bezpečné vykresľovanie
-    - pripravené na dynamické vrstvy vo v3
+    - pripravené na dynamické vrstvy v4
     """
 
     def __init__(self):
