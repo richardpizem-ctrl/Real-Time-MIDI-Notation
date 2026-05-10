@@ -1,5 +1,5 @@
 # =========================================================
-# PlaybackEngine v2.0.0
+# PlaybackEngine v4.0.0
 # Stabilný real‑time prehrávací motor pre Timeline Renderer
 # =========================================================
 
@@ -12,13 +12,13 @@ from ..renderer_new.timeline_controller import TimelineController
 
 class PlaybackEngine:
     """
-    PlaybackEngine (v2.0.0)
+    PlaybackEngine (v4.0.0)
     -----------------------
     Účel:
         - Riadi čas prehrávania (time_seconds)
         - Volá update() a render() pre timeline
         - Slúži ako centrálny prehrávací motor pre notáciu
-        - Pripravené pre budúcu integráciu s audio/MIDI playback (v3)
+        - Pripravené pre budúcu integráciu s audio/MIDI playback
 
     Vlastnosti:
         - Real‑time safe
@@ -33,6 +33,7 @@ class PlaybackEngine:
         bpm: float = 120.0
     ) -> None:
 
+        # Safe initialization
         try:
             self.width = int(width)
         except Exception:
@@ -71,7 +72,7 @@ class PlaybackEngine:
             self.surface = None
             Logger.error("PlaybackEngine: Failed to create pygame Surface.")
 
-        Logger.info("PlaybackEngine initialized (v2.0.0).")
+        Logger.info("PlaybackEngine initialized (v4.0.0).")
 
     # ---------------------------------------------------------
     # PLAYBACK CONTROL
