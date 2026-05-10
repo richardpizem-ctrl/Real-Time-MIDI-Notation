@@ -1,6 +1,7 @@
+# =========================================================
+# Real-Time MIDI Notation – Real-Time Processing Module v4.0.0
+# =========================================================
 """
-Real-Time MIDI Notation – Real-Time Processing Module
-
 Tento balík zabezpečuje:
 - spracovanie MIDI udalostí v reálnom čase
 - monitorovanie latencie a výkonu
@@ -25,5 +26,4 @@ __all__ = [
     "StreamHandler",
 ]
 
-__version__ = "3.0.0"
-
+__version__ = "4.0.0"
