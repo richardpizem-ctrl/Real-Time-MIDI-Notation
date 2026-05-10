@@ -1,5 +1,5 @@
 # =========================================================
-# selection_actions.py v2.0.0
+# selection_actions.py v4.0.0
 # Stabilné operácie nad vybranými notami (immutable workflow)
 # =========================================================
 
@@ -11,7 +11,18 @@ from typing import List, Dict, Any, Tuple
 # -------------------------------------------------------------
 def clone_note(note: Dict[str, Any]) -> Dict[str, Any]:
     """Bezpečne klonuje notu (immutable workflow)."""
-    return dict(note) if isinstance(note, dict) else {}
+    try:
+        return dict(note)
+    except Exception:
+        return {}
+
+
+def _safe_indices(selected_indices: List[int], length: int) -> List[int]:
+    """Bezpečne normalizuje indexy (odstráni nevalidné)."""
+    try:
+        return [i for i in selected_indices if isinstance(i, int) and 0 <= i < length]
+    except Exception:
+        return []
 
 
 # -------------------------------------------------------------
@@ -25,8 +36,8 @@ def delete_selected_notes(
     if not notes or not selected_indices:
         return notes
 
-    selected_set = set(selected_indices)
-    return [n for i, n in enumerate(notes) if i not in selected_set]
+    valid = set(_safe_indices(selected_indices, len(notes)))
+    return [n for i, n in enumerate(notes) if i not in valid]
 
 
 # -------------------------------------------------------------
@@ -42,14 +53,18 @@ def move_selected_notes(
     if not notes or not selected_indices:
         return notes
 
+    valid = set(_safe_indices(selected_indices, len(notes)))
     new_notes: List[Dict[str, Any]] = []
-    selected_set = set(selected_indices)
 
     for i, note in enumerate(notes):
-        if i in selected_set:
+        if i in valid:
             nn = clone_note(note)
-            nn["x"] = int(note.get("x", 0)) + dx
-            nn["y"] = int(note.get("y", 0)) + dy
+            try:
+                nn["x"] = int(note.get("x", 0)) + int(dx)
+                nn["y"] = int(note.get("y", 0)) + int(dy)
+            except Exception:
+                nn["x"] = note.get("x", 0)
+                nn["y"] = note.get("y", 0)
             new_notes.append(nn)
         else:
             new_notes.append(note)
@@ -69,13 +84,16 @@ def transpose_selected_notes(
     if not notes or not selected_indices:
         return notes
 
+    valid = set(_safe_indices(selected_indices, len(notes)))
     new_notes: List[Dict[str, Any]] = []
-    selected_set = set(selected_indices)
 
     for i, note in enumerate(notes):
-        if i in selected_set:
+        if i in valid:
             nn = clone_note(note)
-            nn["pitch"] = int(note.get("pitch", 60)) + semitones
+            try:
+                nn["pitch"] = int(note.get("pitch", 60)) + int(semitones)
+            except Exception:
+                nn["pitch"] = note.get("pitch", 60)
             new_notes.append(nn)
         else:
             new_notes.append(note)
@@ -95,14 +113,17 @@ def velocity_selected_notes(
     if not notes or not selected_indices:
         return notes
 
+    valid = set(_safe_indices(selected_indices, len(notes)))
     new_notes: List[Dict[str, Any]] = []
-    selected_set = set(selected_indices)
 
     for i, note in enumerate(notes):
-        if i in selected_set:
+        if i in valid:
             nn = clone_note(note)
-            vel = int(note.get("velocity", 100)) + delta
-            nn["velocity"] = max(1, min(127, vel))
+            try:
+                vel = int(note.get("velocity", 100)) + int(delta)
+                nn["velocity"] = max(1, min(127, vel))
+            except Exception:
+                nn["velocity"] = note.get("velocity", 100)
             new_notes.append(nn)
         else:
             new_notes.append(note)
@@ -122,14 +143,17 @@ def stretch_selected_notes(
     if not notes or not selected_indices:
         return notes
 
+    valid = set(_safe_indices(selected_indices, len(notes)))
     new_notes: List[Dict[str, Any]] = []
-    selected_set = set(selected_indices)
 
     for i, note in enumerate(notes):
-        if i in selected_set:
+        if i in valid:
             nn = clone_note(note)
-            dur = float(note.get("duration", 1.0))
-            nn["duration"] = max(0.05, dur * factor)
+            try:
+                dur = float(note.get("duration", 1.0))
+                nn["duration"] = max(0.05, dur * float(factor))
+            except Exception:
+                nn["duration"] = note.get("duration", 1.0)
             new_notes.append(nn)
         else:
             new_notes.append(note)
