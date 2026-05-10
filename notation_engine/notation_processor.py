@@ -1,9 +1,9 @@
 # =========================================================
-# MidiNoteMapper v2.0.0
+# MidiNoteMapper v4.0.0
 # Stabilizovaný MIDI → Notation mapper pre Real-Time-MIDI-Notation
 # =========================================================
 
-from typing import Optional, Dict, Tuple
+from typing import Dict, Tuple
 
 
 # ---------------------------------------------------------
@@ -83,17 +83,18 @@ class Note:
 
 
 # ---------------------------------------------------------
-# MIDI NOTE MAPPER v2.0.0
+# MIDI NOTE MAPPER v4.0.0
 # ---------------------------------------------------------
 class MidiNoteMapper:
     """
-    MidiNoteMapper (v2.0.0) – stabilizovaný MIDI → Notation mapper.
+    MidiNoteMapper (v4.0.0):
 
     - sleduje aktívne noty (note_on → note_off)
     - konvertuje čas na ticks
-    - kvantizuje
+    - kvantizuje podľa quantize_resolution
     - počíta measure/beat podľa time signature
     - vytvára Note objekt
+    - stabilné spracovanie, bezpečné fallbacky
     """
 
     def __init__(self, ppq: int = 480, tempo_bpm: float = 120.0):
