@@ -1,5 +1,5 @@
 # =========================================================
-# NoteMapper v2.0.0
+# NoteMapper v4.0.0
 # Stabilný prevod MIDI čísla (0–127) na názov noty (napr. C4)
 # =========================================================
 
@@ -17,36 +17,31 @@ class NoteMapper:
         Prevod MIDI čísla (0–127) na názov noty.
         Napr. 60 -> C4, 61 -> C#4, 62 -> D4
 
-        Stabilizované (v2.0.0):
+        Stabilizované (v4.0.0):
         - ochrana pred None
-        - ochrana pred nevalidnými typmi
+        - bezpečný cast na int
         - ochrana pred rozsahom mimo 0–127
         - bezpečný výpočet oktávy
         - odolné voči floatom, stringom, NaN
         """
 
-        # None → nič nevraciame
         if midi_number is None:
             return None
 
-        # bezpečný cast
         try:
             midi_number = int(midi_number)
         except Exception:
             return None
 
-        # rozsah MIDI
         if midi_number < 0 or midi_number > 127:
             return None
 
-        # index v rámci oktávy
         try:
             note_index = midi_number % 12
             note_name = self.NOTE_NAMES[note_index]
         except Exception:
             return None
 
-        # výpočet oktávy (MIDI štandard: 60 = C4)
         try:
             octave = (midi_number // 12) - 1
         except Exception:
