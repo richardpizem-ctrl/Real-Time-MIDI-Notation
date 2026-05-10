@@ -1,11 +1,11 @@
 # =========================================================
-# Event Types v4.0.0-ready
+# Event Types v4.0.0
 # Centrálne definované typy udalostí pre celý projekt
 # Pripravené pre AI, Real-Time Engine, Engraving Engine
 # =========================================================
 
 """
-Verzia 4.0.0-ready:
+Verzia 4.0.0:
 
 - AI eventy
 - Real-time engine eventy
