@@ -1,5 +1,5 @@
 # =========================================================
-# test_chords.py – v2.0.0
+# test_chords.py – v4.0.0
 # Stabilný test základnej detekcie akordov
 # =========================================================
 
@@ -32,7 +32,7 @@ def test_chord(notes):
 
 
 def main():
-    print("=== TEST: BASIC CHORD DETECTION (v2.0.0) ===")
+    print("=== TEST: BASIC CHORD DETECTION (v4.0.0) ===")
 
     # Basic triads
     test_chord([60, 64, 67])   # C major
