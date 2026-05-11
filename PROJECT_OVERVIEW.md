@@ -1,7 +1,7 @@
-# 🎼 Real-Time MIDI Notation — Project Overview (v2.0.0)
+# 🎼 Real‑Time MIDI Notation — Project Overview (v4.0.0)
 
 This document serves as the **official architecture overview, technical summary, and system description**  
-for the **Real-Time MIDI Notation (SIRIUS Engine)** — a professional real‑time multi‑track MIDI  
+for the **Real‑Time MIDI Notation (SIRIUS Engine)** — a professional real‑time multi‑track MIDI  
 visualization and notation engine.
 
 The goal of the project is to create a tool that:
@@ -12,7 +12,7 @@ The goal of the project is to create a tool that:
 - provides DAW‑style 16‑track control  
 - enables playback, visualization, and future export  
 - supports Yamaha‑style arranger workflows  
-- maintains a modular, scalable architecture ready for v3.0.0  
+- maintains a modular, scalable architecture (v4‑ready)  
 
 ---
 
@@ -41,8 +41,7 @@ This engine combines features that have never existed together before:
 - architecture optimized for **research, education, live performance, and studio workflows**  
 - no preprocessing, no look‑ahead, no offline steps  
 
-SIRIUS defines a **new category** of real‑time MIDI tools, complementing traditional offline notation systems  
-and enabling:
+SIRIUS defines a **new category** of real‑time MIDI tools, enabling:
 
 - live notation  
 - real‑time performance analysis  
@@ -52,19 +51,18 @@ and enabling:
 
 ---
 
-# 🧩 1. Project Architecture
+# 🧩 1. Project Architecture (v4.0.0)
 
 The project is organized into modular directories, each with a clear responsibility:
 
 | Directory | Purpose |
 |----------|---------|
-| **core/** | TrackManager, PlaybackEngine, timing logic |
-| **renderer_new/** | v2 renderer stack (GraphicRenderer, PixelLayoutEngine) |
-| **ui/** | CanvasUI, UIManager — visual interface and interaction |
-| **track_system/** | 16‑channel MIDI track system (Yamaha standard) |
+| **core/** | TrackManager, PlaybackEngine, EventBus v4, timing logic |
+| **renderer_new/** | v4 renderer stack (GraphicRenderer, PixelLayoutEngine v4) |
+| **ui/** | CanvasUI, TimelineUI, UIManager v4 |
+| **track_system/** | 16‑channel Yamaha‑style track system |
 | **notation_processor/** | MIDI → notes → rhythm → visualization pipeline |
-| **event_bus/** | Publish/subscribe communication between modules |
-| **midi_input/** | MIDI input, EventRouter, device detection |
+| **midi_input/** | DeviceManager v4, EventRouter |
 | **real_time_processing/** | StreamHandler — real‑time MIDI pipeline |
 | **docs/** | Documentation and technical references |
 
@@ -73,11 +71,11 @@ This modular structure ensures:
 - clean separation of concerns  
 - easy debugging  
 - scalable architecture  
-- future expansion (export, advanced notation, AI/TIMELINE v3)  
+- future expansion (engraving engine v5)  
 
 ---
 
-# 🎼 2. Main Modules and Their Purpose
+# 🎼 2. Main Modules and Their Purpose (v4.0.0)
 
 ## **TrackManager (`core/track_manager.py`)**
 - 16‑track Yamaha‑style system  
@@ -97,6 +95,7 @@ This modular structure ensures:
 - beam detection  
 - zoom + scroll  
 - optimized staff caching  
+- v4 rendering pipeline  
 
 ---
 
@@ -115,6 +114,7 @@ This modular structure ensures:
 - synchronizes playhead with UI  
 - applies BPM and meter  
 - drives the entire render loop  
+- v4 real‑time safety  
 
 ---
 
@@ -124,13 +124,7 @@ This modular structure ensures:
 - handles mouse + keyboard input  
 - integrates TrackSwitcherUI  
 - communicates with EventBus  
-
----
-
-## **TrackSystem (`track_system/track_system.py`)**
-- 16 MIDI channels  
-- track attributes (color, name, visibility)  
-- channel → track mapping  
+- injects renderer + CanvasUI into PlaybackEngine  
 
 ---
 
@@ -139,18 +133,22 @@ This modular structure ensures:
 - generates note objects  
 - performs rhythmic analysis  
 - prepares data for the renderer  
+- stable v4 pipeline  
 
 ---
 
-## **EventBus (`event_bus/event_bus.py`)**
+## **EventBus (`core/event_bus.py`)**
 - publish/subscribe system  
-- decouples modules  
-- ensures clean communication between:  
-  - MIDI input  
-  - UI  
-  - Processor  
-  - Renderer  
-  - TrackManager  
+- thread‑safe v4 implementation  
+- no‑exception guarantees  
+- decouples modules cleanly  
+
+---
+
+## **DeviceManager (`midi_input/device_manager.py`)**
+- safe MIDI device detection  
+- Windows/ASIO locked‑port protection  
+- v4 error routing  
 
 ---
 
@@ -167,7 +165,7 @@ This modular structure ensures:
 
 ---
 
-# 🔄 3. Real-Time Pipeline
+# 🔄 3. Real‑Time Pipeline (v4.0.0)
 
 ```
 MIDI Input  
@@ -176,15 +174,15 @@ StreamHandler
    ↓  
 EventRouter  
    ↓  
-EventBus  
+EventBus v4  
    ↓  
 TrackSystem + NotationProcessor  
    ↓  
-PlaybackEngine  
+PlaybackEngine v4  
    ↓  
-GraphicNotationRenderer  
+GraphicNotationRenderer v4  
    ↓  
-CanvasUI + UIManager  
+CanvasUI + UIManager v4  
    ↓  
 Pygame Window (final output)
 ```
@@ -203,32 +201,28 @@ python main.py
 
 This initializes:
 
-- all v2 modules  
-- UIManager + CanvasUI  
-- PlaybackEngine  
+- all v4 modules  
+- UIManager v4  
+- PlaybackEngine v4  
 - real‑time renderer  
 - MIDI input pipeline  
 
 ---
 
-# 🚀 5. Future Extensions (v2 → v3)
+# 🚀 5. Future Extensions (v4 → v5)
 
 Planned features include:
 
-- toolbar (Play / Pause / Stop / Seek)  
-- MIDI file loader (.mid import)  
-- peak meter visualization  
-- metronome  
-- export to PDF / PNG / SVG  
-- recording mode  
-- tempo automation  
-- track inspector panel  
-- advanced engraving (articulations, dynamics, slurs)  
-- AI/TIMELINE predictive layout (v3)  
+- engraving engine (slurs, ties, articulations)  
+- MusicXML export  
+- advanced spacing algorithms  
+- collision avoidance  
+- performance analytics  
+- predictive layout (v5)  
 
 ---
 
-# 🏁 6. Project Status (v2.0.0)
+# 🏁 6. Project Status (v4.0.0)
 
 All major modules are **stable and complete**:
 
@@ -236,11 +230,13 @@ All major modules are **stable and complete**:
 - GraphicNotationRenderer — ✔  
 - TrackManager — ✔  
 - PlaybackEngine — ✔  
-- main.py — ✔  
-- TimelineUI — ✔ (from v1.3 foundation)  
+- UIManager v4 — ✔  
+- TimelineUI — ✔  
+- DeviceManager v4 — ✔  
+- EventBus v4 — ✔  
 
-The project is ready for large‑scale testing and v3 expansion.
+The project is ready for **professional use**, research, education, and future v5 expansion.
 
 ---
 
-# 🔚 End of Project Overview (v2.0.0)
+# 🔚 End of Project Overview (v4.0.0)
