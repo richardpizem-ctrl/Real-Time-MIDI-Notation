@@ -1,7 +1,8 @@
-# 📜 Real-Time MIDI Notation — Dual License (MIT + Apache 2.0)  
-### Version 3.0.0 — Combined Open License Model
+# 📜 Real‑Time MIDI Notation — Dual License (MIT + Apache 2.0)  
+### Version 4.0.0 — Combined Open License Model
 
-Starting from **version 3.0.0**, the Real-Time MIDI Notation project is released under a **dual-license model**:
+Starting from **version 3.0.0**, and continuing in **version 4.0.0**,  
+the Real‑Time MIDI Notation (SIRIUS Engine) project is released under a **dual‑license model**:
 
 # ✔ MIT License  
 # ✔ Apache License 2.0  
@@ -14,7 +15,7 @@ This model provides:
 - strong legal protection (Apache 2.0)  
 - patent safety (Apache 2.0)  
 - compatibility with commercial and open‑source projects  
-- long‑term sustainability for research and industry  
+- long‑term sustainability for research, education, and industry  
 
 ---
 
@@ -64,17 +65,17 @@ http://www.apache.org/licenses/
 
 ---
 
-# 🧩 Dual-License Summary (Non‑Legal Explanation)
+# 🧩 Dual‑License Summary (Non‑Legal Explanation)
 
 This section does **not** modify the licenses.  
 It only explains how the dual model works.
 
-## ✔ You may choose MIT if you want:
+## ✔ Choose MIT if you want:
 - maximum freedom  
 - minimal legal overhead  
 - simple reuse in any project  
 
-## ✔ You may choose Apache 2.0 if you want:
+## ✔ Choose Apache 2.0 if you want:
 - patent protection  
 - explicit contribution terms  
 - enterprise‑grade legal clarity  
@@ -93,10 +94,10 @@ It only explains how the dual model works.
 By contributing to this project, you agree that:
 
 - your contributions are licensed under **both MIT and Apache 2.0**  
-- you have the right to contribute the code  
+- you have the legal right to contribute the code  
 - you do not introduce proprietary or copyrighted material  
 
-This ensures the project remains legally clean and open.
+This ensures the project remains legally clean, open, and safe for long‑term development.
 
 ---
 
@@ -110,5 +111,6 @@ Security vulnerabilities should be reported privately via:
 
 # ❤️ Thank You
 
-Thank you for supporting **Real-Time MIDI Notation v3.0.0** —  
-the world’s first open‑source real‑time Yamaha‑style notation engine.
+Thank you for supporting **Real‑Time MIDI Notation v4.0.0** —  
+the world’s first open‑source real‑time Yamaha‑style notation engine  
+with a fully modular v4 architecture.
