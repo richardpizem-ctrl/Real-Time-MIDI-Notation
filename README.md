@@ -207,4 +207,3 @@ SIRIUS is:
 - modular, stable, and ready for expansion  
 - visually branded under **SIRIUS**  
 - the foundation of a **full real‑time engraving engine**
-
