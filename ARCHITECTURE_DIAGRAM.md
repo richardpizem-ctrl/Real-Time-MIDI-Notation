@@ -1,7 +1,7 @@
-# 🏗️ Real-Time MIDI Notation — ARCHITECTURE DIAGRAM (v2.0.0)
+# 🏗️ Real‑Time MIDI Notation — ARCHITECTURE DIAGRAM (v4.0.0)
 
-This document provides a complete, high-level overview of the system architecture for  
-**SIRIUS / Real-Time MIDI Notation v2.0.0**, including real-time MIDI flow, module responsibilities,  
+This document provides a complete, high‑level overview of the system architecture for  
+**SIRIUS / Real‑Time MIDI Notation v4.0.0**, including real‑time MIDI flow, module responsibilities,  
 and communication pathways.
 
 It is designed for developers, contributors, researchers, and engineers studying the internal structure  
@@ -9,7 +9,7 @@ of the engine.
 
 ---
 
-# 🆕 A New Class of Real-Time MIDI Engine
+# 🆕 A New Class of Real‑Time MIDI Engine
 
 **SIRIUS** does not belong to any existing category of music software.
 
@@ -21,23 +21,23 @@ It is NOT:
 
 It represents a **new class of software**:
 
-## 🎼 Real-Time Multi-Track MIDI Notation Engine
+## 🎼 Real‑Time Multi‑Track MIDI Notation Engine
 
 This engine combines features that have never been seen together:
 
-- fully **real-time** MIDI processing  
-- **16‑track Yamaha‑compatible** multi-track architecture  
+- fully **real‑time** MIDI processing  
+- **16‑track Yamaha‑compatible** multi‑track architecture  
 - instant graphical notation (beams, stems, barlines)  
-- velocity‑based real-time dynamics  
+- velocity‑based real‑time dynamics  
 - modular graphic renderer (Python + Pygame)  
 - architecture optimized for **research, education, live performance, and studio work**  
 - no preprocessing, no lookahead, no offline steps  
 
-SIRIUS defines a **new category of real-time MIDI tools**, complementing traditional offline notation systems.
+SIRIUS defines a **new category of real‑time MIDI tools**, complementing traditional offline notation systems.
 
 ---
 
-# 🎹 1. High-Level System Overview
+# 🎹 1. High‑Level System Overview (v4.0.0)
 
 ```
 🎹 MIDI Device (Keyboard / Yamaha Arranger / Virtual MIDI)
@@ -49,23 +49,23 @@ SIRIUS defines a **new category of real-time MIDI tools**, complementing traditi
 🔀 midi_input/EventRouter
                 │
                 ▼
-📡 event_bus/EventBus  ───────────────────────────────────────────────┐
-                │                                                     │
-                ├──────────────► 🎚 track_system/TrackSystem          │
-                │                                                     │
-                ├──────────────► 🧠 notation_processor/NotationProcessor
-                │                                                     │
-                ▼                                                     │
-⏱ core/PlaybackEngine                                                 │
-                │                                                     │
-                ▼                                                     │
-🎨 renderer/GraphicNotationRenderer                                   │
-                │                                                     │
-                ▼                                                     │
-🖼 ui/CanvasUI                                                         │
-                │                                                     │
-                ▼                                                     │
-🧩 ui/UIManager  ◄────────────────────────────────────────────────────┘
+📡 core/EventBus v4 ───────────────────────────────────────────────────────────────┐
+                │                                                                  │
+                ├──────────────► 🎚 track_system/TrackSystem                       │
+                │                                                                  │
+                ├──────────────► 🧠 notation_processor/NotationProcessor            │
+                │                                                                  │
+                ▼                                                                  │
+⏱ core/PlaybackEngine v4                                                           │
+                │                                                                  │
+                ▼                                                                  │
+🎨 renderer_new/GraphicNotationRenderer v4                                          │
+                │                                                                  │
+                ▼                                                                  │
+🖼 ui/CanvasUI                                                                       │
+                │                                                                  │
+                ▼                                                                  │
+🧩 ui/UIManager v4 ◄────────────────────────────────────────────────────────────────┘
                 │
                 ▼
 🪟 Pygame Window (Final Output)
@@ -73,7 +73,7 @@ SIRIUS defines a **new category of real-time MIDI tools**, complementing traditi
 
 ---
 
-# 🧩 2. Module Responsibilities
+# 🧩 2. Module Responsibilities (v4.0.0)
 
 ## 🎹 MIDI Input Layer
 
@@ -81,18 +81,21 @@ SIRIUS defines a **new category of real-time MIDI tools**, complementing traditi
 - Detects MIDI devices  
 - Reads MIDI events in real time  
 - Sends raw events to EventRouter  
+- Burst‑safe processing  
 
 ### `midi_input/EventRouter`
 - Normalizes MIDI events  
-- Routes them into EventBus  
+- Routes them into EventBus v4  
 - Handles channel/track mapping  
+- Prevents malformed event propagation  
 
 ---
 
 ## 📡 Event Communication Layer
 
-### `event_bus/EventBus`
-- Publish/Subscribe system  
+### `core/EventBus v4`
+- Thread‑safe publish/subscribe system  
+- Zero‑exception routing  
 - Decouples all modules  
 - Enables communication between:
   - UI  
@@ -109,10 +112,11 @@ SIRIUS defines a **new category of real-time MIDI tools**, complementing traditi
 - 16‑track Yamaha‑style architecture  
 - Track attributes (name, color, visibility)  
 
-### `core/TrackManager`
+### `core/TrackManager v4`
 - Mute / Solo / Volume / Pan  
 - Record arm  
-- Real-time activity meter  
+- Real‑time activity meter  
+- Safe track switching  
 
 ---
 
@@ -123,30 +127,33 @@ SIRIUS defines a **new category of real-time MIDI tools**, complementing traditi
 - Rhythm analysis  
 - Timing + velocity extraction  
 - Prepares data for renderer  
+- Integrated RhythmAnalyzer v4  
 
 ---
 
 ## ⏱ Playback Engine
 
-### `core/PlaybackEngine`
+### `core/PlaybackEngine v4`
 - Controls global time  
 - Moves playhead  
 - Applies BPM + meter  
 - Selects active notes  
 - Drives the render loop  
+- Predictive timing‑safe updates  
 
 ---
 
 ## 🎨 Rendering Engine
 
-### `renderer/GraphicNotationRenderer`
-- Real-time note rendering  
+### `renderer_new/GraphicNotationRenderer v4`
+- Real‑time note rendering  
 - Beams, stems, barlines  
 - Velocity shading  
 - Chord grouping  
 - Grid + timeline  
 - Zoom + scroll  
 - Staff caching  
+- PixelLayoutEngine v4 integration  
 
 ---
 
@@ -157,15 +164,16 @@ SIRIUS defines a **new category of real-time MIDI tools**, complementing traditi
 - Playhead rendering  
 - Scroll + zoom  
 
-### `ui/UIManager`
+### `ui/UIManager v4`
 - Handles user input  
 - Manages UI components  
 - Integrates TrackSwitcherUI  
-- Communicates with EventBus  
+- Communicates with EventBus v4  
+- Central UI orchestrator  
 
 ---
 
-# 🔄 3. Full Real-Time Pipeline (Detailed)
+# 🔄 3. Full Real‑Time Pipeline (Detailed v4.0.0)
 
 ```
 🎹 MIDI Device
@@ -177,23 +185,23 @@ SIRIUS defines a **new category of real-time MIDI tools**, complementing traditi
 🔀 EventRouter
       │  (normalized events)
       ▼
-📡 EventBus
+📡 EventBus v4
       │
       ├────────► TrackSystem (track attributes)
       │
       ├────────► NotationProcessor (note objects)
       │
       ▼
-⏱ PlaybackEngine
+⏱ PlaybackEngine v4
       │  (timing + active notes)
       ▼
-🎨 GraphicNotationRenderer
+🎨 GraphicNotationRenderer v4
       │  (visual objects)
       ▼
 🖼 CanvasUI
       │
       ▼
-🧩 UIManager
+🧩 UIManager v4
       │
       ▼
 🪟 Pygame Window
@@ -201,27 +209,31 @@ SIRIUS defines a **new category of real-time MIDI tools**, complementing traditi
 
 ---
 
-# 🧱 4. Architectural Principles
+# 🧱 4. Architectural Principles (v4.0.0)
 
 - **Modular** — each component is isolated  
 - **Extensible** — new UI, processors, or renderers can be added  
-- **Real-time safe** — no blocking operations  
-- **Event-driven** — EventBus ensures clean communication  
-- **DAW-inspired** — TrackManager mirrors professional workflows  
-- **Renderer-first** — optimized for real-time drawing  
+- **Real‑time safe** — no blocking operations  
+- **Event‑driven** — EventBus v4 ensures clean communication  
+- **DAW‑inspired** — TrackManager mirrors professional workflows  
+- **Renderer‑first** — optimized for real‑time drawing  
+- **Predictable timing** — PlaybackEngine v4 ensures stable frame pacing  
+- **Safe device handling** — DeviceManager v4 prevents port‑locking issues  
 
 ---
 
-# 🔮 5. Future Architecture Extensions
+# 🔮 5. Future Architecture Extensions (v5+)
 
-- Audio engine integration  
-- MIDI file loader  
-- Export pipeline (PNG, SVG, PDF)  
-- Advanced engraving engine  
-- Multi-voice notation  
-- Track inspector panel  
-- Toolbar (Play/Pause/Stop/Seek)  
+- Full engraving engine  
+- Multi‑voice notation  
+- Polyphony  
+- Articulations, slurs, ties  
+- Collision avoidance  
+- Spacing engine  
+- MusicXML export  
+- Predictive layout (AI‑assisted)  
+- Advanced performance analytics  
 
 ---
 
-# 🎉 End of Architecture Diagram (v2.0.0)
+# 🎉 End of Architecture Diagram (v4.0.0)
