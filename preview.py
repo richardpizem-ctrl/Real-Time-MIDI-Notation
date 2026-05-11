@@ -1,6 +1,6 @@
 # =========================================================
-# preview.py – Real-Time MIDI Notation v2.0.0
-# Stabilný vizuálny náhľad renderera (Tkinter)
+# preview.py – Real-Time MIDI Notation v4.0.0
+# Stable renderer preview (Tkinter)
 # =========================================================
 
 import tkinter as tk
@@ -10,24 +10,20 @@ from core.logger import Logger
 
 def build_demo_timeline():
     """
-    Demo timeline pre vizuálny náhľad renderera.
-    Real‑time safe: žiadne výnimky nesmú preraziť.
+    Build a demo timeline for renderer preview.
+    Real‑time safe: no exceptions allowed.
     """
     try:
         timeline = []
 
-        # -----------------------------------------------------
-        # Takt 1 – barline + akord
-        # -----------------------------------------------------
+        # Barline + chord
         timeline.append({
             "type": "barline",
             "start": 0.0,
             "chord": "Cmaj7"
         })
 
-        # -----------------------------------------------------
-        # Melody (horná linka)
-        # -----------------------------------------------------
+        # Melody
         timeline.append({
             "type": "note",
             "track_type": "melody",
@@ -45,9 +41,7 @@ def build_demo_timeline():
             "color": "#FFFFFF",
         })
 
-        # -----------------------------------------------------
-        # Bass (spodná linka)
-        # -----------------------------------------------------
+        # Bass
         timeline.append({
             "type": "note",
             "track_type": "bass",
@@ -57,9 +51,7 @@ def build_demo_timeline():
             "color": "#FFFFFF",
         })
 
-        # -----------------------------------------------------
-        # Drums (perkusie)
-        # -----------------------------------------------------
+        # Drums
         timeline.append({
             "type": "note",
             "track_type": "drums",
@@ -79,17 +71,20 @@ def build_demo_timeline():
 
         return timeline
 
-    except Exception as e:
-        Logger.error(f"Preview timeline build error: {e}")
+    except Exception:
+        try:
+            Logger.error("Preview timeline build failure")
+        except Exception:
+            pass
         return []
 
 
 def main():
-    Logger.info("=== PREVIEW MODE v2.0.0 ===")
+    Logger.info("=== PREVIEW MODE v4.0.0 ===")
 
     try:
         root = tk.Tk()
-        root.title("Real-Time MIDI Notation – Preview v2.0.0")
+        root.title("Real-Time MIDI Notation – Preview v4.0.0")
 
         canvas = tk.Canvas(root, width=1200, height=400, bg="#202020")
         canvas.pack(fill="both", expand=True)
@@ -100,7 +95,7 @@ def main():
         # Demo timeline
         timeline = build_demo_timeline()
 
-        # Dummy akord objekt (renderer očakáva .name)
+        # Dummy chord object (renderer expects .name)
         class DummyChord:
             def __init__(self, name):
                 self.name = name
@@ -110,13 +105,19 @@ def main():
         # Render
         try:
             renderer.render(timeline, current_chord=current_chord)
-        except Exception as e:
-            Logger.error(f"Preview render error: {e}")
+        except Exception:
+            try:
+                Logger.error("Preview render failure")
+            except Exception:
+                pass
 
         root.mainloop()
 
-    except Exception as e:
-        Logger.error(f"Preview initialization error: {e}")
+    except Exception:
+        try:
+            Logger.error("Preview initialization failure")
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
