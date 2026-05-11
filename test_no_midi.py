@@ -1,6 +1,6 @@
 # =========================================================
-# test_no_midi.py v2.0.0
-# Test: systém musí fungovať aj bez MIDI zariadenia
+# test_no_midi.py v4.0.0
+# Test: system must work even without a MIDI device
 # =========================================================
 
 import pytest
@@ -9,8 +9,7 @@ from real_time_processing.midi_input import MidiInput
 
 def test_midi_initialization_without_device():
     """
-    Testuje, že MidiInput sa inicializuje aj keď nie je
-    pripojené žiadne MIDI zariadenie.
+    Ensure MidiInput initializes even when no MIDI device is present.
     """
     midi = None
 
@@ -25,8 +24,8 @@ def test_midi_initialization_without_device():
 
 def test_poll_events_returns_list():
     """
-    poll_events() musí vždy vrátiť list,
-    aj keď nie je žiadne MIDI zariadenie.
+    poll_events() must always return a list,
+    even when no MIDI device is connected.
     """
     midi = MidiInput()
 
@@ -40,8 +39,8 @@ def test_poll_events_returns_list():
 
 def test_poll_events_safe_behavior():
     """
-    poll_events() nesmie nikdy vyhodiť výnimku,
-    ani pri neexistujúcom MIDI zariadení.
+    poll_events() must never raise an exception,
+    even when no MIDI device exists.
     """
     midi = MidiInput()
 
