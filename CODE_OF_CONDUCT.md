@@ -1,6 +1,6 @@
-# 🤝 Real-Time MIDI Notation — Code of Conduct (v2.0.0)
+# 🤝 Real‑Time MIDI Notation — Code of Conduct (v4.0.0)
 
-The **Real-Time MIDI Notation (SIRIUS Engine)** project is built by a diverse global community of  
+The **Real‑Time MIDI Notation (SIRIUS Engine)** project is built by a diverse global community of  
 developers, musicians, designers, researchers, and contributors.  
 Some are professionals, others are volunteers — all united by a shared mission:
 
@@ -157,5 +157,5 @@ If you have questions or concerns about this Code of Conduct, please contact the
 
 📧 **richardpizem@gmail.com**
 
-Thank you for helping make **Real-Time MIDI Notation (SIRIUS Engine)**  
+Thank you for helping make **Real‑Time MIDI Notation (SIRIUS Engine)**  
 a safe, respectful, and welcoming community.
