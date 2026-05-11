@@ -1,6 +1,6 @@
 # =========================================================
-# RhythmAnalyzer v2.0.0
-# Stabilný real‑time analyzátor rytmu pre MIDI note_on udalosti
+# RhythmAnalyzer v4.0.0
+# Stable real‑time rhythm analyzer for MIDI note_on events
 # =========================================================
 
 import time
@@ -10,17 +10,19 @@ from core.logger import Logger
 
 class RhythmAnalyzer:
     """
-    RhythmAnalyzer (v2.0.0)
+    RhythmAnalyzer (v4.0.0)
     -----------------------
-    Stabilný analyzátor rytmu pre real‑time MIDI vstup.
+    Stable real‑time rhythm analyzer for MIDI input.
 
-    Funkcie:
-        - sleduje intervaly medzi note_on udalosťami
-        - odhaduje BPM (20–300)
-        - resetuje BPM po dlhom tichu
-        - odstraňuje extrémne odľahlé intervaly (5 %)
-        - poskytuje ukazovateľ stability rytmu (0–1)
-        - real‑time safe (žiadne výnimky nesmú preraziť)
+    Features:
+        - tracks intervals between note_on events
+        - estimates BPM (20–300)
+        - resets BPM after silence
+        - trims extreme outliers (5%)
+        - provides rhythm stability (0–1)
+        - real‑time safe (no exceptions)
+        - clean English API
+        - ready for v5 (groove/swing analysis)
     """
 
     def __init__(self, max_events: int = 32, silence_timeout: float = 2.0):
@@ -33,7 +35,7 @@ class RhythmAnalyzer:
     # PROCESS MIDI EVENT
     # ---------------------------------------------------------
     def process_midi_event(self, event):
-        """Spracuje MIDI event a aktualizuje rytmickú analýzu."""
+        """Process a MIDI event and update rhythm analysis."""
         try:
             if not isinstance(event, dict):
                 Logger.warning(f"RhythmAnalyzer: invalid event {event}")
@@ -44,77 +46,77 @@ class RhythmAnalyzer:
 
             event_time = event.get("time") or time.time()
 
-            # Reset BPM po dlhom tichu
+            # Silence reset
             if self.last_event_time is not None:
                 silence = event_time - self.last_event_time
                 if silence > self.silence_timeout:
                     self.intervals.clear()
                     self.current_bpm = None
                     self.last_event_time = event_time
-                    return  # prvý úder po tichu nepočítame
+                    return
 
-            # Výpočet intervalu
+            # Interval calculation
             if self.last_event_time is not None:
                 interval = event_time - self.last_event_time
 
-                # Ochrana pred extrémnymi intervalmi
+                # Valid interval range
                 if 0.02 < interval < 3.0:
                     self.intervals.append(interval)
                     self._update_bpm()
 
             self.last_event_time = event_time
 
-        except Exception as e:
-            Logger.error(f"RhythmAnalyzer: process_midi_event error: {e}")
+        except Exception:
+            try:
+                Logger.error("RhythmAnalyzer: process_midi_event failure")
+            except Exception:
+                pass
 
     # ---------------------------------------------------------
     # BPM CALCULATION
     # ---------------------------------------------------------
     def _update_bpm(self):
-        """Prepočíta BPM na základe priemerného intervalu."""
+        """Recalculate BPM based on trimmed average interval."""
         try:
             if not self.intervals:
                 self.current_bpm = None
                 return
 
-            sorted_intervals = sorted(self.intervals)
-            trim = max(1, len(sorted_intervals) // 20)  # 5 %
+            data = sorted(self.intervals)
+            trim = max(1, len(data) // 20)  # 5%
 
-            if len(sorted_intervals) > 4:
-                trimmed = sorted_intervals[trim:-trim]
-                if not trimmed:
-                    trimmed = sorted_intervals
+            if len(data) > 4:
+                trimmed = data[trim:-trim] or data
             else:
-                trimmed = sorted_intervals
+                trimmed = data
 
             avg_interval = sum(trimmed) / len(trimmed)
 
             if avg_interval > 0:
                 bpm = 60.0 / avg_interval
-                bpm = max(20.0, min(300.0, bpm))  # clamp
-                self.current_bpm = bpm
+                self.current_bpm = max(20.0, min(300.0, bpm))
             else:
                 self.current_bpm = None
 
-        except Exception as e:
-            Logger.error(f"RhythmAnalyzer: BPM calculation error: {e}")
+        except Exception:
+            try:
+                Logger.error("RhythmAnalyzer: BPM calculation failure")
+            except Exception:
+                pass
             self.current_bpm = None
 
     # ---------------------------------------------------------
     # GET BPM
     # ---------------------------------------------------------
     def get_bpm(self):
-        """Vráti aktuálne odhadované BPM (alebo None)."""
+        """Return current BPM estimate (or None)."""
         return self.current_bpm
 
     # ---------------------------------------------------------
     # STABILITY
     # ---------------------------------------------------------
     def get_stability(self):
-        """
-        Jednoduchý ukazovateľ stability rytmu (0–1).
-        Používa varianciu intervalov.
-        """
+        """Return rhythm stability (0–1) based on interval variance."""
         try:
             if len(self.intervals) < 3:
                 return None
@@ -125,6 +127,9 @@ class RhythmAnalyzer:
             stability = 1.0 / (1.0 + variance * 50.0)
             return max(0.0, min(1.0, stability))
 
-        except Exception as e:
-            Logger.error(f"RhythmAnalyzer: stability calc error: {e}")
+        except Exception:
+            try:
+                Logger.error("RhythmAnalyzer: stability calculation failure")
+            except Exception:
+                pass
             return None
