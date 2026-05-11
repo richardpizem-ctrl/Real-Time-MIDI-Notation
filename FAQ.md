@@ -1,4 +1,4 @@
-# ❓ Real-Time MIDI Notation — FAQ (v2.0.0)
+# ❓ Real‑Time MIDI Notation — FAQ (v4.0.0)
 
 A collection of the most common questions from users, testers, developers, and researchers.
 
@@ -14,6 +14,7 @@ If still not detected:
 - check OS MIDI permissions  
 - ensure no other app is using the MIDI port  
 - try a wired USB connection instead of Bluetooth  
+- verify DeviceManager v4 logs  
 
 ### **Q: Does this support Yamaha arranger keyboards?**
 Yes — the engine is built around the **Yamaha 16‑track standard**, including:
@@ -39,6 +40,7 @@ Possible causes:
 - background CPU load  
 - USB hub bottlenecks  
 - low‑quality MIDI interface  
+- OS power‑saving modes  
 
 ### **Q: Why do some beams not appear?**
 Beam grouping depends on rhythmic analysis.  
@@ -49,7 +51,7 @@ Colors represent **tracks** (Yamaha 16‑track standard).
 Each track has its own color.
 
 ### **Q: Why does the renderer scroll automatically?**
-Scrolling follows the **playhead**, controlled by the PlaybackEngine.
+Scrolling follows the **playhead**, controlled by the PlaybackEngine v4.
 
 ---
 
@@ -61,7 +63,7 @@ Yes — every part of the system is isolated:
 - Renderer  
 - UI  
 - TrackManager  
-- EventBus  
+- EventBus v4  
 - StreamHandler  
 
 ### **Q: Can I replace the renderer with my own?**
@@ -85,20 +87,21 @@ See **CONTRIBUTING.md** for:
 - contributor levels  
 
 ### **Q: Can I add new UI components?**
-Yes — UIManager v2 is designed for extension.
+Yes — UIManager v4 is designed for extension.
 
 ### **Q: Can I use this in my own project?**
-Yes — the MIT License allows full reuse, including commercial use.
+Yes — the project is dual‑licensed (MIT + Apache 2.0), allowing full reuse, including commercial use.
 
 ---
 
 # 📦 EXPORT & FILES
 
 ### **Q: Can I export notation?**
-Export is planned for:
+Export is planned for v5:
 - PNG  
 - SVG  
 - PDF  
+- MusicXML  
 
 ### **Q: Can I load MIDI files?**
 MIDI file import is planned for a future version.
@@ -114,6 +117,7 @@ Try:
 - reducing window size  
 - disabling background processes  
 - using a wired MIDI interface instead of Bluetooth  
+- ensuring hardware acceleration is enabled  
 
 ### **Q: Why does the playhead drift?**
 This can happen if:
@@ -127,7 +131,7 @@ This can happen if:
 # 🧩 MISCELLANEOUS
 
 ### **Q: Is this project stable?**
-Yes — all core modules are complete and stable as of v2.0.0.
+Yes — all core modules are complete and stable as of v4.0.0.
 
 ### **Q: Is this suitable for education?**
 Absolutely — it is ideal for:
