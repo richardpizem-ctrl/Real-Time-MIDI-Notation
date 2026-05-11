@@ -1,6 +1,6 @@
 # =========================================================
-# run.py – Real-Time MIDI Notation v2.0.0
-# Stabilný hlavný spúšťací súbor
+# run.py — Real-Time MIDI Notation v4.0.0
+# Stable main launcher
 # =========================================================
 
 import pygame
@@ -29,7 +29,7 @@ from ui.canvas_ui import CanvasUI
 # MAIN FUNCTION
 # ---------------------------------------------------------
 def main():
-    Logger.info("=== REAL-TIME MIDI NOTATION v2.0.0 START ===")
+    Logger.info("=== REAL-TIME MIDI NOTATION v4.0.0 START ===")
 
     # -----------------------------------------------------
     # 0. Pygame initialization
@@ -38,7 +38,7 @@ def main():
 
     try:
         pygame.init()
-        pygame.display.set_caption("Real-Time MIDI Notation | v2.0.0")
+        pygame.display.set_caption("Real-Time MIDI Notation | v4.0.0")
 
         screen = pygame.display.set_mode(
             (1600, 1000),
@@ -46,8 +46,8 @@ def main():
         )
         clock = pygame.time.Clock()
 
-    except Exception as e:
-        Logger.error(f"Pygame initialization error: {e}")
+    except Exception:
+        Logger.error("Pygame initialization failure")
         return
 
     # -----------------------------------------------------
@@ -56,7 +56,10 @@ def main():
     event_bus = EventBus()
 
     def on_error(msg):
-        Logger.error(f"[ERROR] {msg}")
+        try:
+            Logger.error(f"[ERROR] {msg}")
+        except Exception:
+            pass
 
     event_bus.subscribe(ERROR_OCCURRED, on_error)
 
@@ -69,8 +72,8 @@ def main():
             track_manager=track_manager,
             event_bus=event_bus
         )
-    except Exception as e:
-        Logger.error(f"Failed to initialize TrackManager or NotationProcessor: {e}")
+    except Exception:
+        Logger.error("Failed to initialize TrackManager or NotationProcessor")
         return
 
     # -----------------------------------------------------
@@ -85,8 +88,8 @@ def main():
             width=1600,
             height=300
         )
-    except Exception as e:
-        Logger.error(f"Failed to initialize renderer stack: {e}")
+    except Exception:
+        Logger.error("Failed to initialize renderer stack")
         return
 
     # -----------------------------------------------------
@@ -105,8 +108,8 @@ def main():
             height=500,
             renderer=renderer
         )
-    except Exception as e:
-        Logger.error(f"Failed to initialize UI: {e}")
+    except Exception:
+        Logger.error("Failed to initialize UI")
         return
 
     # -----------------------------------------------------
@@ -120,8 +123,8 @@ def main():
             bpm=120.0,
             beats_per_bar=4
         )
-    except Exception as e:
-        Logger.error(f"Failed to initialize PlaybackEngine: {e}")
+    except Exception:
+        Logger.error("Failed to initialize PlaybackEngine")
         return
 
     # -----------------------------------------------------
@@ -130,36 +133,45 @@ def main():
     running = True
 
     while running:
-        dt = clock.tick(60) / 1000.0
+        dt = clock.tick_busy_loop(60) / 1000.0
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
             # UI event handling
-            timeline_ui.handle_event(event)
-            canvas_ui.handle_event(event)
+            try:
+                timeline_ui.handle_event(event)
+                canvas_ui.handle_event(event)
+            except Exception:
+                pass
 
             # Playback toggle
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                try:
                     if playback.is_playing():
                         playback.pause()
                         Logger.info("Playback paused.")
                     else:
                         playback.play()
                         Logger.info("Playback started.")
+                except Exception:
+                    pass
 
         # Update
-        playback_surface = playback.update(dt)
+        try:
+            playback_surface = playback.update(dt)
+        except Exception:
+            playback_surface = None
 
         # Render
-        screen.fill((20, 20, 20))
-
-        timeline_ui.render(screen)
-        canvas_ui.render(screen, playback_surface)
-
-        pygame.display.flip()
+        try:
+            screen.fill((20, 20, 20))
+            timeline_ui.render(screen)
+            canvas_ui.render(screen, playback_surface)
+            pygame.display.flip()
+        except Exception:
+            pass
 
     pygame.quit()
     Logger.info("=== END ===")
