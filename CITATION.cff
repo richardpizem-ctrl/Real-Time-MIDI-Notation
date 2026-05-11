@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software in your research, please cite it as below."
 title: "Real-Time MIDI Notation: A High-Performance Real-Time 16-Track Notation Engine"
-version: "2.0.0"
+version: "4.0.0"
 
 authors:
   - family-names: "Pizem"
@@ -24,6 +24,9 @@ keywords:
   - live-notation
   - timeline-ui
   - real-time-processing
+  - pixel-layout-engine
+  - eventbus-v4
+  - sirius-engine
 
 abstract: >
   Real-Time MIDI Notation is a high-performance real-time 16-track MIDI notation
@@ -39,13 +42,13 @@ abstract: >
   multi-track notation, Yamaha-style track processing, and dynamic rendering
   without pre-analysis or offline steps.
 
-  Version 2.0.0 stabilizes the entire architecture, introduces a unified
-  real-time processing pipeline, finalizes the UIManager v2 system, upgrades
-  the renderer and layout engine, and prepares the full codebase for the
-  upcoming v3.0.0 AI/TIMELINE expansion. It defines a new category of tools
-  for research, education, expressive timing analysis, and next-generation
-  MIDI workflows.
+  Version 4.0.0 finalizes the professional architecture of the engine, including
+  EventBus v4, DeviceManager v4, UIManager v4, PixelLayoutEngine v4, and a fully
+  stabilized real-time processing pipeline. This release establishes a robust
+  foundation for the upcoming v5 engraving engine and advanced analysis tools,
+  enabling next-generation research, education, expressive timing analysis, and
+  real-time MIDI workflows.
 
 repository-code: "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation"
-license: "MIT"
-date-released: "2026-05-02"
+license: "MIT AND Apache-2.0"
+date-released: "2026-05-11"
