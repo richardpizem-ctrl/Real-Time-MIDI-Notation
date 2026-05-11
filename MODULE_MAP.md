@@ -1,49 +1,50 @@
-# MODULE MAP — Real-Time MIDI Notation (v2.0.0 Architecture)
+# MODULE MAP — Real-Time MIDI Notation (v4.0.0 Architecture)
 
 This document provides a complete overview of all modules in the Real-Time MIDI Notation project.  
 It defines each module’s purpose, responsibilities, and relationships within the system.
 
 ---
 
-## 1. CORE — Central Logic Layer
+# 1. CORE — Central Logic Layer (v4.0.0)
 **Purpose:** Core data structures, processing logic, and real‑time synchronization.
 
 **Responsibilities:**
-- EventBus (routing of internal events)
-- TrackManager (track creation, deletion, metadata)
-- NotationProcessor (real‑time note processing)
-- PlaybackEngine (timing, transport, synchronization)
-- Data models (notes, tracks, markers, layout metadata)
+- **EventBus v4** (thread‑safe routing of internal events)
+- **TrackManager v4** (track creation, deletion, metadata, visibility, color)
+- **NotationProcessor v4** (real‑time note processing + rhythmic analysis)
+- **PlaybackEngine v4** (timing, transport, synchronization, playhead)
+- **Data models** (notes, tracks, markers, layout metadata)
+- **Logger v4** (safe logging with fallback)
 
 ---
 
-## 2. UI — User Interface Layer
+# 2. UI — User Interface Layer (v4.0.0)
 **Purpose:** Visual interaction, editing tools, and timeline visualization.
 
 **Responsibilities:**
-- TimelineUI (markers, loops, playhead, zoom/scroll)
-- PianoUI (keyboard visualization)
-- CanvasUI (rendering surface)
-- NoteVisualizerUI (note highlights, animations)
-- Interaction logic (mouse, keyboard, gestures)
-- Editing groundwork (selection, snapping, hover effects)
+- **UIManager v4** (central UI orchestrator)
+- **TimelineUI** (markers, loops, playhead, zoom/scroll)
+- **CanvasUI** (rendering surface for notation)
+- **TrackSwitcher / TrackSelector** (track visibility + selection)
+- **Interaction logic** (mouse, keyboard, gestures)
+- **Editing groundwork** (selection, snapping, hover effects)
 
 ---
 
-## 3. renderer_new — High‑Performance Rendering Engine
+# 3. renderer_new — High‑Performance Rendering Engine (v4.0.0)
 **Purpose:** Pixel‑accurate rendering pipeline for real‑time notation.
 
 **Responsibilities:**
-- PixelLayoutEngine v2
+- **PixelLayoutEngine v4**
 - Cached grid rendering (dirty‑flag system)
 - Graphic primitives preparation
 - High‑performance drawing routines
 - Separation of layout vs. rendering
-- Preparation for v3 engraving engine
+- Ready for v5 engraving engine (slurs, ties, articulations)
 
 ---
 
-## 4. timeline — Editing & Navigation Layer
+# 4. timeline — Editing & Navigation Layer
 **Purpose:** Time‑based editing, markers, and playback navigation.
 
 **Responsibilities:**
@@ -52,10 +53,11 @@ It defines each module’s purpose, responsibilities, and relationships within t
 - Playhead logic (seek, follow, sync)
 - Zoom/scroll behavior
 - TimelineController integration
+- Editing groundwork for v5
 
 ---
 
-## 5. runtime — Real‑Time Processing Layer
+# 5. runtime — Real‑Time Processing Layer (v4.0.0)
 **Purpose:** High‑frequency event routing and stream handling.
 
 **Responsibilities:**
@@ -63,10 +65,11 @@ It defines each module’s purpose, responsibilities, and relationships within t
 - Real‑time MIDI stream handling
 - Timestamp synchronization
 - Low‑latency routing between modules
+- Stable under heavy MIDI load
 
 ---
 
-## 6. filesystem — Project I/O Layer
+# 6. filesystem — Project I/O Layer
 **Purpose:** Safe loading, saving, and serialization of project data.
 
 **Responsibilities:**
@@ -74,10 +77,11 @@ It defines each module’s purpose, responsibilities, and relationships within t
 - Project save/load
 - Serialization of tracks, markers, metadata
 - Error handling and recovery
+- Ready for v5 export engine (PDF, SVG, MusicXML)
 
 ---
 
-## 7. commands — Command Pattern Layer
+# 7. commands — Command Pattern Layer
 **Purpose:** Unified command execution system.
 
 **Responsibilities:**
@@ -85,10 +89,11 @@ It defines each module’s purpose, responsibilities, and relationships within t
 - Undo/redo groundwork
 - Action routing
 - Editing operations encapsulation
+- Future integration with timeline editing tools
 
 ---
 
-## 8. tests — Automated Testing Layer
+# 8. tests — Automated Testing Layer
 **Purpose:** Stability, regression protection, and validation.
 
 **Responsibilities:**
@@ -96,44 +101,53 @@ It defines each module’s purpose, responsibilities, and relationships within t
 - UI behavior tests
 - Renderer performance tests
 - Timeline logic tests
+- Stress tests for real‑time engine
 
 ---
 
-## 9. plugins — Extension Layer
+# 9. plugins — Extension Layer
 **Purpose:** Optional modular extensions.
 
 **Responsibilities:**
 - Plugin API groundwork
 - Optional feature modules
 - External integrations
+- Future AI/analysis plugins (v5+)
 
 ---
 
-## 10. Future Modules (v3+ Roadmap)
-**Engraving Engine (v3.0.0+)**
-- Multi‑voice notation
-- Polyphony
-- Beams, articulations
-- Collision avoidance
-- Professional spacing engine
+# 10. Future Modules (v5+ Roadmap)
+**Engraving Engine (v5.0.0+)**
+- Multi‑voice notation  
+- Polyphony  
+- Beams, articulations  
+- Collision avoidance  
+- Professional spacing engine  
 
-**Self‑Repair Layer (v4.0.0+)**
-- Automatic diagnostics
-- Module health checks
-- Self‑repair routines
+**AI/Analysis Layer (v5.0.0+)**
+- Predictive layout  
+- Expressive timing analysis  
+- Harmonic analysis  
+- Performance analytics  
+
+**Self‑Repair Layer (v5.0.0+)**
+- Automatic diagnostics  
+- Module health checks  
+- Self‑repair routines  
 
 ---
 
-## Module Relationships (High‑Level)
+# Module Relationships (High‑Level)
 - **CORE → UI:** Provides data for visualization  
 - **CORE → renderer_new:** Provides layout metadata  
 - **UI → renderer_new:** Requests drawing operations  
 - **runtime → CORE:** Sends real‑time events  
 - **timeline → UI:** Controls navigation and editing  
 - **filesystem → CORE/UI:** Loads and saves project state  
+- **midi_input → EventBus:** Routes MIDI events into the system  
 
 ---
 
-## Summary
-This MODULE_MAP.md defines the full architecture of the Real-Time MIDI Notation project as of version 2.0.0.  
-It ensures clarity, maintainability, and scalability for future development.
+# Summary
+This MODULE_MAP.md defines the full architecture of the Real-Time MIDI Notation project as of version **4.0.0**.  
+It ensures clarity, maintainability, and scalability for future development, including the upcoming v5 engraving engine and AI analysis layer.
