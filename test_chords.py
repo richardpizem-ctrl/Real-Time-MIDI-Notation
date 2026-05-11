@@ -1,6 +1,6 @@
 # =========================================================
-# test_chords.py v2.0.0
-# Stabilný test detekcie akordov pre Real-Time MIDI Notation
+# test_chords.py v4.0.0
+# Stable chord detection test for Real-Time MIDI Notation
 # =========================================================
 
 from notation_engine.chord_detector import detect_chord
@@ -9,8 +9,8 @@ from core.logger import Logger
 
 def test_chord(notes):
     """
-    Bezpečne otestuje detekciu akordu pre danú množinu MIDI tónov.
-    Real‑time safe: žiadne výnimky nesmú preraziť.
+    Safely test chord detection for a given MIDI note set.
+    Real-time safe: no exceptions allowed.
     """
     try:
         if not isinstance(notes, (list, tuple)):
@@ -29,16 +29,12 @@ def test_chord(notes):
 
 
 def main():
-    Logger.info("=== TEST: CHORD DETECTION v2.0.0 ===")
+    Logger.info("=== TEST: CHORD DETECTION v4.0.0 ===")
 
-    # C major (C–E–G)
-    test_chord([60, 64, 67])
-
-    # A minor (A–C–E)
-    test_chord([57, 60, 64])
-
-    # D major (D–F#–A)
-    test_chord([62, 65, 69])
+    # Basic triads
+    test_chord([60, 64, 67])   # C major
+    test_chord([57, 60, 64])   # A minor
+    test_chord([62, 65, 69])   # D major
 
     # Edge cases
     test_chord([])               # empty
