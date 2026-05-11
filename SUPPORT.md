@@ -1,7 +1,7 @@
-# 🆘 Real-Time MIDI Notation — Support Guide (Ultimate Edition, v1.3.0)
+# 🆘 Real‑Time MIDI Notation — Support Guide (v4.0.0, Professional Edition)
 
-Thank you for your interest in **Real‑Time MIDI Notation (SIRIUS Engine)**!  
-This project is under active development, and community support is essential for improving stability, performance, and cross‑platform compatibility.
+Thank you for using **Real‑Time MIDI Notation (SIRIUS Engine)**!  
+The project is now in its **v4.0.0 architecture era**, with a stable core, unified modules, and a professional rendering/UI pipeline.
 
 This guide explains how to get help, report issues, test the engine, and contribute effectively.
 
@@ -36,7 +36,7 @@ For private or sensitive questions, you may contact the maintainer directly:
 
 ---
 
-# 🧪 2. Testing the Project
+# 🧪 2. Testing the Project (v4.0.0)
 
 Because this is a **real‑time MIDI engine**, testing on different systems is extremely valuable.
 
@@ -48,6 +48,7 @@ Please test:
 - rendering performance  
 - UI responsiveness  
 - timing accuracy  
+- stability under heavy MIDI load  
 - unexpected behavior or crashes  
 
 If you test the project, consider reporting your results in the **Issues** tab to help improve cross‑platform stability.
@@ -69,7 +70,7 @@ Clear, detailed reports help us fix problems faster and ensure consistent behavi
 
 ---
 
-# 🤝 4. Contributing
+# 🤝 4. Contributing (v4‑Ready)
 
 If you want to contribute code, documentation, or ideas, please read:
 
