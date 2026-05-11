@@ -1,5 +1,5 @@
-# 🤝 Contributing to Real-Time MIDI Notation  
-### Version 2.0.0 — Stable Edition
+# 🤝 Contributing to Real‑Time MIDI Notation  
+### Version 4.0.0 — Professional Edition
 
 Thank you for your interest in contributing to **Real‑Time MIDI Notation (SIRIUS Engine)** —  
 the world’s first open‑source real‑time multi‑track Yamaha‑style notation engine.
@@ -10,7 +10,7 @@ who wants to help improve the project.
 
 ---
 
-# 🌍 Global Testing Appeal (v2.0.0)
+# 🌍 Global Testing Appeal (v4.0.0)
 
 Real‑time MIDI behavior varies dramatically across:
 
@@ -72,7 +72,7 @@ We welcome all improvements — from small fixes to major features.
 
 ### PR Guidelines:
 - keep code clean and readable  
-- follow the existing project structure  
+- follow the existing v4 architecture  
 - comment complex logic  
 - avoid unnecessary dependencies  
 - test your changes before submitting  
@@ -81,28 +81,29 @@ We welcome all improvements — from small fixes to major features.
   - rendering  
   - TimelineUI  
   - TrackManager  
-  - playback timing  
+  - PlaybackEngine  
+  - UIManager  
 
 ---
 
-# 🧩 Architecture Overview (v2.0.0)
+# 🧩 Architecture Overview (v4.0.0)
 
 ### 🔧 Core Engine
-- **NotationProcessor** → `core/notation_processor.py`  
-- **RhythmAnalyzer** → `rhythm_analyzer.py`  
-- **EventBus** → `core/event_bus.py`  
-- **DeviceManager** → `device_manager.py`  
+- **NotationProcessor v4** → `notation_processor/notation_processor.py`  
+- **RhythmAnalyzer v4** → `rhythm_analyzer.py`  
+- **EventBus v4** → `core/event_bus.py`  
+- **DeviceManager v4** → `midi_input/device_manager.py`  
 
 ### 🎚 Track System
-- **TrackSystem** → `core/track_system.py`  
-- **TrackManager** → `core/track_manager.py`  
+- **TrackSystem** → `track_system/track_system.py`  
+- **TrackManager v4** → `core/track_manager.py`  
 
 ### 🎨 Rendering
-- **GraphicNotationRenderer** → `renderer_new/graphic_renderer.py`  
-- **PixelLayoutEngine** → `renderer_new/pixel_layout_engine.py`  
+- **GraphicNotationRenderer v4** → `renderer_new/graphic_renderer.py`  
+- **PixelLayoutEngine v4** → `renderer_new/pixel_layout_engine.py`  
 
 ### 🖥 UI Layer
-- **UIManager** → `ui/ui_manager.py`  
+- **UIManager v4** → `ui/ui_manager.py`  
 - **CanvasUI** → `ui/canvas_ui.py`  
 - **TimelineUI** → `ui/timeline_ui.py`  
 
@@ -125,6 +126,7 @@ For contributors with some experience:
 - add layer toggles (grid, barlines, stems, beams)  
 - improve track highlighting  
 - refine playhead rendering  
+- improve caching behavior  
 
 ## 🟥 Advanced Tasks
 For experienced developers:
@@ -134,7 +136,7 @@ For experienced developers:
 - extreme MIDI stress testing  
 - performance profiling (CPU/GPU)  
 - memory footprint optimization  
-- advanced engraving logic  
+- advanced engraving logic (v5 groundwork)  
 
 ---
 
@@ -155,6 +157,7 @@ We especially welcome ideas related to:
 - performance optimizations  
 - advanced harmony analysis  
 - export formats (PDF/PNG/MusicXML)  
+- engraving engine (v5)  
 
 ---
 
