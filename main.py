@@ -1,6 +1,6 @@
 # =========================================================
-# main.py – Real-Time MIDI Notation v2.0.0
-# Stabilný hlavný spúšťací súbor pre SIRIUS MIDI Engine
+# main.py – Real-Time MIDI Notation v4.0.0
+# Stable main launcher for SIRIUS MIDI Engine
 # =========================================================
 
 import os
@@ -13,14 +13,14 @@ from core.track_manager import TrackManager
 from core.notation_processor import NotationProcessor
 from core.playback_engine import PlaybackEngine
 
-from ui.ui_manager import UIManager  # nový UI wrapper v2
+from ui.ui_manager import UIManager  # UI wrapper v4
 
 
 # ---------------------------------------------------------
 # MAIN FUNCTION
 # ---------------------------------------------------------
 def main():
-    Logger.info("=== REAL-TIME MIDI NOTATION START (v2.0.0) ===")
+    Logger.info("=== REAL-TIME MIDI NOTATION START (v4.0.0) ===")
 
     # -----------------------------------------------------
     # 0. Pygame initialization
@@ -38,12 +38,12 @@ def main():
             (screen_width, screen_height),
             pygame.DOUBLEBUF | pygame.HWSURFACE,
         )
-        pygame.display.set_caption("SIRIUS MIDI Engine | v2.0.0")
+        pygame.display.set_caption("SIRIUS MIDI Engine | v4.0.0")
 
         clock = pygame.time.Clock()
 
-    except Exception as e:
-        Logger.error(f"Pygame initialization error: {e}")
+    except Exception:
+        Logger.error("Pygame initialization failure")
         return
 
     # -----------------------------------------------------
@@ -52,7 +52,10 @@ def main():
     event_bus = EventBus()
 
     def on_error(msg):
-        Logger.error(f"[ERROR] {msg}")
+        try:
+            Logger.error(f"[ERROR] {msg}")
+        except Exception:
+            pass
 
     event_bus.subscribe(ERROR_OCCURRED, on_error)
 
@@ -65,8 +68,8 @@ def main():
             track_manager=track_manager,
             event_bus=event_bus
         )
-    except Exception as e:
-        Logger.error(f"Failed to initialize TrackManager or NotationProcessor: {e}")
+    except Exception:
+        Logger.error("Failed to initialize TrackManager or NotationProcessor")
         return
 
     # -----------------------------------------------------
@@ -75,17 +78,17 @@ def main():
     try:
         playback_engine = PlaybackEngine(
             track_manager=track_manager,
-            renderer=None,      # renderer sa doplní v UIManager v2
-            canvas_ui=None,     # UIManager v2 poskytuje CanvasUI
+            renderer=None,      # UIManager v4 injects renderer
+            canvas_ui=None,     # UIManager v4 injects CanvasUI
             bpm=120.0,
             beats_per_bar=4,
         )
-    except Exception as e:
-        Logger.error(f"Failed to initialize PlaybackEngine: {e}")
+    except Exception:
+        Logger.error("Failed to initialize PlaybackEngine")
         return
 
     # -----------------------------------------------------
-    # 4. UI Manager (v2.0.0)
+    # 4. UI Manager (v4.0.0)
     # -----------------------------------------------------
     try:
         ui = UIManager(
@@ -95,8 +98,8 @@ def main():
             screen_width=screen_width,
             screen_height=screen_height,
         )
-    except Exception as e:
-        Logger.error(f"Failed to initialize UIManager: {e}")
+    except Exception:
+        Logger.error("Failed to initialize UIManager")
         return
 
     # -----------------------------------------------------
@@ -105,32 +108,42 @@ def main():
     running = True
 
     while running:
-        dt = clock.tick(60) / 1000.0
+        dt = clock.tick_busy_loop(60) / 1000.0
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
             # UI event handling
-            ui.handle_event(event)
+            try:
+                ui.handle_event(event)
+            except Exception:
+                pass
 
             # Playback toggle
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                try:
                     if playback_engine.is_playing():
                         playback_engine.pause()
                         Logger.info("Playback paused.")
                     else:
                         playback_engine.play()
                         Logger.info("Playback started.")
+                except Exception:
+                    pass
 
         # Update
-        surface = playback_engine.update()
+        try:
+            surface = playback_engine.update()
+        except Exception:
+            surface = None
 
         # Render
-        ui.render(screen, dt, surface)
-
-        pygame.display.flip()
+        try:
+            ui.render(screen, dt, surface)
+            pygame.display.flip()
+        except Exception:
+            pass
 
     Logger.info("=== REAL-TIME MIDI NOTATION END ===")
     pygame.quit()
