@@ -1,5 +1,5 @@
 # =========================================================
-# DeviceManager v2.0.0 – Stabilný MIDI Device Manager
+# DeviceManager v4.0.0 – Stable MIDI Device Manager
 # =========================================================
 
 import threading
@@ -11,22 +11,22 @@ from core.event_bus import EventBus
 
 class DeviceManager:
     """
-    DeviceManager (v2.0.0)
+    DeviceManager (v4.0.0)
     ----------------------
-    Stabilný, bezpečný, thread‑safe MIDI Device Manager.
+    Stable, safe, thread‑safe MIDI Device Manager.
 
-    Funkcie:
+    Features:
         - refresh_devices()
         - list_devices()
         - select_device(index)
         - open_input()
         - close_input()
 
-    Vlastnosti:
-        - ochrana pred Windows/ASIO locked‑port bugom
-        - žiadne výnimky nesmú preraziť
-        - EventBus integrácia
-        - pripravené pre v3 (AI/TIMELINE MIDI routing)
+    Properties:
+        - protects against Windows/ASIO locked‑port bug
+        - no exceptions leak out
+        - EventBus integration
+        - ready for v5 (AI/TIMELINE MIDI routing)
     """
 
     def __init__(self, event_bus: EventBus | None = None):
@@ -44,11 +44,15 @@ class DeviceManager:
     # REFRESH DEVICE LIST
     # ---------------------------------------------------------
     def refresh_devices(self) -> None:
-        """Aktualizuje zoznam dostupných MIDI vstupov (thread-safe)."""
+        """Refresh list of available MIDI inputs (thread‑safe)."""
         with self._lock:
             try:
-                self.available_inputs = [name.strip() for name in mido.get_input_names()]
-                Logger.info(f"DeviceManager: Found {len(self.available_inputs)} MIDI inputs.")
+                self.available_inputs = [
+                    name.strip() for name in mido.get_input_names()
+                ]
+                Logger.info(
+                    f"DeviceManager: Found {len(self.available_inputs)} MIDI inputs."
+                )
             except Exception as e:
                 Logger.error(f"DeviceManager: Failed to refresh devices: {e}")
                 self.available_inputs = []
@@ -58,7 +62,7 @@ class DeviceManager:
     # LIST DEVICES
     # ---------------------------------------------------------
     def list_devices(self) -> list[str]:
-        """Vráti zoznam dostupných MIDI vstupov."""
+        """Return list of available MIDI inputs."""
         with self._lock:
             return list(self.available_inputs)
 
@@ -66,7 +70,7 @@ class DeviceManager:
     # SELECT DEVICE
     # ---------------------------------------------------------
     def select_device(self, index: int) -> bool:
-        """Vyberie MIDI zariadenie podľa indexu."""
+        """Select MIDI device by index."""
         with self._lock:
             if not self.available_inputs:
                 Logger.warning("DeviceManager: No MIDI devices found.")
@@ -84,13 +88,13 @@ class DeviceManager:
     # OPEN INPUT PORT
     # ---------------------------------------------------------
     def open_input(self):
-        """Otvorí vstupný MIDI port (bezpečne)."""
+        """Open selected MIDI input port safely."""
         with self._lock:
             if not self.selected_input:
                 Logger.warning("DeviceManager: No device selected.")
                 return None
 
-            # Ak už je otvorený, zatvoríme ho
+            # Close existing port if open
             if self.input_port:
                 try:
                     self.input_port.close()
@@ -99,7 +103,7 @@ class DeviceManager:
                 self.input_port = None
 
             try:
-                # Windows/ASIO bug: port môže byť "locked"
+                # Windows/ASIO bug: port may be locked
                 self.input_port = mido.open_input(self.selected_input)
                 Logger.info(f"DeviceManager: Opened input port → {self.selected_input}")
                 return self.input_port
@@ -114,7 +118,7 @@ class DeviceManager:
     # CLOSE INPUT PORT
     # ---------------------------------------------------------
     def close_input(self) -> None:
-        """Zatvorí vstupný port, ak je otvorený."""
+        """Close input port if open."""
         with self._lock:
             if self.input_port:
                 try:
@@ -136,7 +140,7 @@ class DeviceManager:
                 pass
 
     # ---------------------------------------------------------
-    # NO-OP API (UI kompatibilita)
+    # NO-OP API (UI compatibility)
     # ---------------------------------------------------------
     def update_color(self, track_index: int, color_hex: str):
         return
