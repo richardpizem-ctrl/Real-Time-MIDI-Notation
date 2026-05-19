@@ -5,9 +5,10 @@ This roadmap describes:
 - what was **stabilized and unified** in v2.0.0  
 - what was **extended and refined** in v3.0.0  
 - what is **now available in v4.0.0**  
+- what is **planned for v5.x.x and v6.x.x**  
 
-> Focus: everything up to and including **v4.0.0**.  
-> AI and experimental features are intentionally **beyond this roadmap**.
+> Focus: everything up to and including **v4.0.0**, with a clear roadmap for the next major generations.  
+> AI and experimental features remain **beyond the core roadmap**.
 
 ---
 
@@ -153,12 +154,12 @@ Groundwork for advanced editing features:
   - real‑time engine  
   - renderer stack  
   - UI components  
-- safer event handling in the main loop (no hard crashes)  
+- safer event handling in the main loop  
 - consistent behavior for playback, space‑bar control, and window lifecycle  
 
 ## 🎨 3. Renderer & Preview v4
-- `preview.py v4` for fast renderer inspection (Tkinter)  
-- stable demo timeline builder for visual testing  
+- `preview.py v4` for fast renderer inspection  
+- stable demo timeline builder  
 - safe rendering calls (no exceptions leaking to UI)  
 - ready for professional engraving rules in future versions  
 
@@ -169,57 +170,134 @@ Groundwork for advanced editing features:
 - modules designed to fail‑soft instead of fail‑hard  
 
 ## 📂 5. Packaging & Project Metadata
-- `pyproject.toml v4.0.0`:
-  - updated description for v4 architecture  
-  - improved keywords for discoverability  
-  - clean, modern build configuration  
-- roadmap, architecture notes, and versioning aligned to v4  
+- `pyproject.toml v4.0.0` with modern metadata  
+- improved discoverability  
+- roadmap and architecture aligned to v4  
 
 ---
 
-# 🌟 Long‑Term Vision (Beyond v4, High‑Level Only)
+# 🛠️ v4.x.x — Stabilization & Pre‑Engraving Phase
 
-> The following is **conceptual** and intentionally not bound to a specific version number here.
+> These versions refine v4 and prepare the system for the engraving engine.
 
-### 🎼 1. Sheet Music for Musicians Who Play by Ear
-- real‑time capture of performance  
-- automatic rhythmic + pitch analysis  
-- exportable notation  
-- clean engraving layout  
+### 🔧 v4.1.0 — Renderer & UI Polishing
+- improved spacing logic  
+- refined staff rendering  
+- timeline performance improvements  
+- safer device hot‑plug handling  
 
-### 🎹 2. Bridge Between Amateur and Professional Worlds
-- amateurs record ideas  
-- engine converts them into readable notation  
-- professionals refine, orchestrate, arrange  
+### 🔧 v4.2.0 — Editing Tools Foundation
+- selection model v2  
+- region editing groundwork  
+- improved snapping logic  
+- hover + ghost primitives  
 
-### 🧪 3. Music Research Platform
-- timing deviation analysis  
-- expressive performance studies  
-- educational visualization  
-- MIDI‑based research tools  
+### 🔧 v4.3.0 — Performance & Diagnostics
+- renderer micro‑optimizations  
+- real‑time loop profiling  
+- diagnostics panel v1  
+- improved error recovery  
 
-### 📄 4. Export & Sharing Ecosystem
-- snapshots  
-- sheet exports  
-- timeline exports  
-- multi‑track score exports  
+### 🔧 v4.4.0 — Pre‑Engraving Layout Engine
+- spacing primitives  
+- collision‑detection prototypes  
+- engraving rule definitions  
+- preparation for v5 engraving engine  
 
-### 🎼 5. Future Engraving Engine
-- spacing algorithms  
-- collision avoidance  
+---
+
+# 🏛️ v5.0.0 — Full Engraving Engine
+
+> This is the largest upgrade in the project’s history.
+
+### 🎼 1. Engraving Engine v1
+- multi‑voice notation  
+- polyphony support  
 - slurs, ties, articulations  
-- professional publishing quality  
+- beam groups with engraving rules  
+- spacing engine v1  
+- collision avoidance v1  
+
+### 🎨 2. Renderer v5
+- engraving‑grade primitives  
+- typographic spacing  
+- professional stem/beam rules  
+- layout passes (horizontal + vertical)  
+
+### 📄 3. Export Engine v1
+- PDF export  
+- SVG export  
+- MusicXML export  
+- snapshot export  
+
+### 🧠 4. Analysis Layer v1
+- harmonic analysis  
+- expressive timing analysis  
+- performance deviation mapping  
+
+### 🛠️ 5. Editing Tools v5
+- region editing  
+- multi‑voice editing  
+- engraving‑aware selection  
+- timeline engraving preview  
+
+---
+
+# 🧬 v5.x.x — Intelligent Notation & Predictive Layout
+
+### 🤖 v5.1.0 — Predictive Layout
+- AI‑assisted spacing suggestions  
+- automatic collision resolution  
+- phrase‑aware engraving  
+
+### 🎹 v5.2.0 — Performance‑Aware Notation
+- expressive timing → engraving mapping  
+- dynamic shaping suggestions  
+- articulation inference  
+
+### 🧪 v5.3.0 — Research Tools
+- timing deviation heatmaps  
+- performance analytics  
+- comparative playback visualization  
+
+---
+
+# 🏛️ v6.0.0 — Autonomous Notation System
+
+> v6 is where the engine becomes **self‑correcting, self‑analyzing, and self‑optimizing**.
+
+### 🧠 1. Self‑Repair Layer
+- automatic detection of inconsistent states  
+- self‑healing routines  
+- module‑level integrity checks  
+
+### 🔍 2. Diagnostics v3
+- full tracing  
+- event‑level profiling  
+- renderer performance maps  
+
+### 🎼 3. Engraving Engine v2
+- phrase‑level spacing  
+- global layout optimization  
+- multi‑page engraving  
+- publishing‑grade output  
+
+### 🤖 4. Intelligent Editing
+- context‑aware editing tools  
+- automatic layout regeneration  
+- predictive engraving corrections  
 
 ---
 
 # 🔮 Summary
 
-Up to **v4.0.0**, Real‑Time MIDI Notation has evolved from a **real‑time visualizer** into a **structured, publishing‑ready engine**:
+Up to **v4.0.0**, Real‑Time MIDI Notation has evolved from a **real‑time visualizer** into a **structured, publishing‑ready engine**.
 
-- real‑time performance visualization  
-- stable multi‑track processing  
-- robust device and event management  
-- renderer and UI architecture v4  
-- groundwork for professional engraving and research tools  
+With **v5.x.x** and **v6.x.x**, it becomes:
 
-Everything beyond this point (AI, deep analysis, generative tools) lives **after v4** and can be defined in a dedicated future roadmap.
+- a professional engraving system  
+- an intelligent notation engine  
+- a research‑grade analysis tool  
+- a self‑correcting, self‑optimizing platform  
+
+The future is not incremental — it is **transformational**.
