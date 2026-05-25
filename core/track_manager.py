@@ -1,9 +1,9 @@
 # =========================================================
-# TrackManager v4.0.0-ready
-# AI-ready, Engraving-ready, EventBus-ready
+# TrackManager v4.1.0
+# Stabilná CORE verzia pre Runtime 4.x–5.x
 # =========================================================
 
-from typing import Dict, Tuple, Optional, List
+from typing import Dict, Tuple, Optional
 import threading
 
 from core.logger import Logger
@@ -13,26 +13,22 @@ from core.event_types import (
     TRACK_SOLOED,
     TRACK_COLOR_CHANGED,
     TRACK_NAME_CHANGED,
-    EDIT_MODE_CHANGED,
-    ENGRAVING_UPDATE
 )
 
 
 class TrackManager:
     """
-    TrackManager v4-ready:
+    TrackManager v4.1.0:
     - thread-safe
-    - EventBus routing
-    - AI hook
-    - Engraving engine hook
-    - batch update API
+    - čistý CORE modul
+    - bez AI hookov
+    - bez Engraving hookov
+    - bez Real-Time pipeline
     """
 
-    def __init__(self, track_system, event_bus=None, ai_engine=None, engraving_engine=None):
+    def __init__(self, track_system, event_bus=None):
         self.track_system = track_system
         self.event_bus = event_bus
-        self.ai_engine = ai_engine
-        self.engraving_engine = engraving_engine
 
         self._lock = threading.Lock()
 
@@ -50,13 +46,7 @@ class TrackManager:
         self.volume: Dict[int, float] = {i: 1.0 for i in range(1, 17)}
         self.pan: Dict[int, float] = {i: 0.0 for i in range(1, 17)}
 
-        # Record arm
-        self.record_arm: Dict[int, bool] = {i: False for i in range(1, 17)}
-
-        # Activity
-        self.activity: Dict[int, float] = {i: 0.0 for i in range(1, 17)}
-
-        Logger.info("TrackManager initialized (v4-ready).")
+        Logger.info("TrackManager initialized (v4.1.0).")
 
     # ---------------------------------------------------------
     # INTERNAL: CLAMP
@@ -82,9 +72,6 @@ class TrackManager:
         if self.event_bus:
             self.event_bus.publish(TRACK_SELECTED, tid)
 
-        if self.engraving_engine:
-            self.engraving_engine.on_track_selected(tid)
-
     # ---------------------------------------------------------
     # VISIBILITY
     # ---------------------------------------------------------
@@ -95,9 +82,6 @@ class TrackManager:
 
         with self._lock:
             self.track_visibility[tid] = bool(visible)
-
-        if self.engraving_engine:
-            self.engraving_engine.on_visibility_changed(tid, visible)
 
     # ---------------------------------------------------------
     # COLORS
@@ -179,15 +163,6 @@ class TrackManager:
         return True
 
     # ---------------------------------------------------------
-    # RECORD ARM
-    # ---------------------------------------------------------
-    def set_record_arm(self, track_id: int, state: bool):
-        tid = self._clamp(track_id)
-        if tid:
-            with self._lock:
-                self.record_arm[tid] = bool(state)
-
-    # ---------------------------------------------------------
     # VOLUME / PAN
     # ---------------------------------------------------------
     def set_volume(self, track_id: int, volume: float):
@@ -211,23 +186,7 @@ class TrackManager:
                 self.pan[tid] = max(-1.0, min(1.0, pan))
 
     # ---------------------------------------------------------
-    # REAL-TIME ACTIVITY
-    # ---------------------------------------------------------
-    def update_activity(self, track_id: int, level: float):
-        tid = self._clamp(track_id)
-        if tid is None:
-            return
-
-        try:
-            level = float(level)
-        except Exception:
-            return
-
-        with self._lock:
-            self.activity[tid] = max(0.0, min(1.0, level))
-
-    # ---------------------------------------------------------
-    # MIDI TRANSFORM
+    # MIDI TRANSFORM (CORE SAFE)
     # ---------------------------------------------------------
     def apply_midi_transform(self, track_id: int, note: int, velocity: int):
         tid = self._clamp(track_id)
@@ -246,7 +205,7 @@ class TrackManager:
         return note, velocity
 
     # ---------------------------------------------------------
-    # SHUTDOWN (v4)
+    # SHUTDOWN
     # ---------------------------------------------------------
     def shutdown(self):
         Logger.info("TrackManager shutdown.")
