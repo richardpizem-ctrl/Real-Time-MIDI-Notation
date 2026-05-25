@@ -1,6 +1,7 @@
 # =========================================================
-# AppController v4.0.0-ready
+# AppController v4.1.0
 # Hlavný orchestrátor systému pre Real-Time MIDI Notation
+# Pripravené pre Runtime 5.x (KG, Envoy, System Agent)
 # =========================================================
 
 from .logger import Logger
@@ -11,27 +12,33 @@ from .config_manager import ConfigManager
 from .track_manager import TrackSystem
 from .notation_processor import NotationProcessor
 
+# Event types
+from .event_types import (
+    APP_STARTED,
+    APP_STOPPED,
+    STATUS_MESSAGE,
+    MIDI_EXPORT_REQUEST,
+    MIDI_EXPORTED,
+    ERROR_OCCURRED,
+)
+
 
 class AppController:
     """
-    Centrálny kontrolér aplikácie (v4-ready).
-    Pripravený na:
-    - AI engine
-    - Real-time engine
-    - EngravingEngine v4
-    - rozšíriteľnú architektúru
+    Centrálny kontrolér aplikácie (v4.1.0).
+
+    Zodpovedá za:
+    - inicializáciu core modulov
+    - bezpečné spúšťanie a ukončovanie aplikácie
+    - publikovanie systémových udalostí
+    - spracovanie exportov a chýb
+    - prípravu na Runtime 5.x (KG, Envoy, System Agent)
     """
 
-    def __init__(self, mode="classic"):
-        Logger.info("Initializing AppController (v4-ready)...")
+    def __init__(self):
+        Logger.info("Initializing AppController (v4.1.0)...")
 
         self.is_running = False
-        self.mode = mode  # classic / ai / headless
-
-        # Dynamické moduly
-        self.ai_engine = None
-        self.realtime_engine = None
-        self.engraving_engine = None
 
         # -----------------------------------------------------
         # INITIALIZATION OF CORE SYSTEMS
@@ -57,7 +64,7 @@ class AppController:
         # -----------------------------------------------------
         self._subscribe_events()
 
-        Logger.info(f"AppController initialized successfully (mode={self.mode}).")
+        Logger.info("AppController initialized successfully (v4.1.0).")
 
     # ---------------------------------------------------------
     # SAFE INITIALIZATION WRAPPER
@@ -80,68 +87,10 @@ class AppController:
             return
 
         try:
-            self.event_bus.subscribe("MIDI_EXPORTED", self._on_midi_exported)
-            self.event_bus.subscribe("ERROR_OCCURRED", self._on_error)
-
-            # v4: AI routing
-            if self.ai_engine:
-                self.event_bus.subscribe("AI_EVENT", self._on_ai_event)
-
+            self.event_bus.subscribe(MIDI_EXPORTED, self._on_midi_exported)
+            self.event_bus.subscribe(ERROR_OCCURRED, self._on_error)
         except Exception as e:
             Logger.error(f"Failed to subscribe to events: {e}")
-
-    # ---------------------------------------------------------
-    # MODULE REGISTRATION (v4)
-    # ---------------------------------------------------------
-    def register_ai_engine(self, ai_engine):
-        self.ai_engine = ai_engine
-        Logger.info("AI engine registered.")
-
-    def register_realtime_engine(self, realtime_engine):
-        self.realtime_engine = realtime_engine
-        Logger.info("Real-time engine registered.")
-
-    def register_engraving_engine(self, engraving_engine):
-        self.engraving_engine = engraving_engine
-        Logger.info("Engraving engine registered.")
-
-    # ---------------------------------------------------------
-    # START / STOP AI (v4)
-    # ---------------------------------------------------------
-    def start_ai(self):
-        if self.ai_engine:
-            try:
-                self.ai_engine.start()
-                Logger.info("AI engine started.")
-            except Exception as e:
-                Logger.error(f"Failed to start AI engine: {e}")
-
-    def stop_ai(self):
-        if self.ai_engine:
-            try:
-                self.ai_engine.stop()
-                Logger.info("AI engine stopped.")
-            except Exception as e:
-                Logger.error(f"Failed to stop AI engine: {e}")
-
-    # ---------------------------------------------------------
-    # START / STOP REAL-TIME ENGINE
-    # ---------------------------------------------------------
-    def start_realtime(self):
-        if self.realtime_engine:
-            try:
-                self.realtime_engine.start()
-                Logger.info("Real-time engine started.")
-            except Exception as e:
-                Logger.error(f"Failed to start real-time engine: {e}")
-
-    def stop_realtime(self):
-        if self.realtime_engine:
-            try:
-                self.realtime_engine.stop()
-                Logger.info("Real-time engine stopped.")
-            except Exception as e:
-                Logger.error(f"Failed to stop real-time engine: {e}")
 
     # ---------------------------------------------------------
     # START APPLICATION
@@ -156,16 +105,10 @@ class AppController:
 
         if self.event_bus:
             try:
-                self.event_bus.publish("APP_STARTED")
-                self.event_bus.publish("STATUS_MESSAGE", "App is running")
+                self.event_bus.publish(APP_STARTED)
+                self.event_bus.publish(STATUS_MESSAGE, "App is running")
             except Exception as e:
                 Logger.error(f"Failed to publish start events: {e}")
-
-        # v4: start engines based on mode
-        if self.mode in ("ai", "full"):
-            self.start_ai()
-
-        self.start_realtime()
 
     # ---------------------------------------------------------
     # STOP APPLICATION
@@ -178,26 +121,20 @@ class AppController:
         Logger.info("Application stopped.")
         self.is_running = False
 
-        self.stop_realtime()
-        self.stop_ai()
-
         if self.event_bus:
             try:
-                self.event_bus.publish("APP_STOPPED")
+                self.event_bus.publish(APP_STOPPED)
             except Exception as e:
                 Logger.error(f"Failed to publish stop event: {e}")
 
     # ---------------------------------------------------------
-    # SHUTDOWN (v4)
+    # SHUTDOWN (v4.1.0)
     # ---------------------------------------------------------
     def shutdown(self):
         Logger.info("Shutting down system...")
         self.stop()
 
         for name, module in [
-            ("AI engine", self.ai_engine),
-            ("Real-time engine", self.realtime_engine),
-            ("Engraving engine", self.engraving_engine),
             ("NotationProcessor", self.notation_processor),
             ("TrackSystem", self.track_system),
         ]:
@@ -216,7 +153,7 @@ class AppController:
 
         if self.event_bus:
             try:
-                self.event_bus.publish("MIDI_EXPORT_REQUEST", filename)
+                self.event_bus.publish(MIDI_EXPORT_REQUEST, filename)
             except Exception as e:
                 Logger.error(f"Failed to publish MIDI_EXPORT_REQUEST: {e}")
 
@@ -226,13 +163,6 @@ class AppController:
             except Exception as e:
                 Logger.error(f"NotationProcessor export failed: {e}")
 
-        # v4: AI post-export hook
-        if self.ai_engine and hasattr(self.ai_engine, "on_midi_exported"):
-            try:
-                self.ai_engine.on_midi_exported(filename)
-            except Exception as e:
-                Logger.error(f"AI engine post-export hook failed: {e}")
-
     # ---------------------------------------------------------
     # EVENT HANDLERS
     # ---------------------------------------------------------
@@ -241,7 +171,10 @@ class AppController:
 
         if self.event_bus:
             try:
-                self.event_bus.publish("STATUS_MESSAGE", f"MIDI exported: {filename}")
+                self.event_bus.publish(
+                    STATUS_MESSAGE,
+                    f"MIDI exported: {filename}"
+                )
             except Exception as e:
                 Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
 
@@ -250,9 +183,9 @@ class AppController:
 
         if self.event_bus:
             try:
-                self.event_bus.publish("STATUS_MESSAGE", f"Error: {error_message}")
+                self.event_bus.publish(
+                    STATUS_MESSAGE,
+                    f"Error: {error_message}"
+                )
             except Exception as e:
                 Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
-
-    def _on_ai_event(self, data):
-        Logger.info(f"AI event received: {data}")
