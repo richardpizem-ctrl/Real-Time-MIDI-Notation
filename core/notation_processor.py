@@ -1,6 +1,6 @@
 # =========================================================
-# NotationProcessor v4.0.0-ready
-# AI-ready, Engraving-ready, Real-Time-ready
+# NotationProcessor v4.1.0
+# Stabilná CORE verzia pre Runtime 4.x–5.x
 # =========================================================
 
 from typing import Dict, Any, Optional, List
@@ -10,50 +10,23 @@ from .logger import Logger
 from .event_types import (
     MIDI_EXPORTED,
     ERROR_OCCURRED,
-    AI_EVENT,
-    ENGRAVING_UPDATE,
-    EXPORT_PDF,
-    EXPORT_SVG,
-    EXPORT_MUSICXML
 )
 
 
 class NotationProcessor:
     """
-    NotationProcessor v4-ready:
-    - AI event pipeline
-    - metadata injection
-    - batch processing
-    - engraving engine hook
-    - multi-format export (MIDI/PDF/SVG/MusicXML)
-    - async-safe
+    NotationProcessor v4.1.0:
+    - čistý MIDI export
+    - stabilný a deterministický
+    - bez AI pipeline
+    - bez Engraving Engine
+    - bez Real-Time pipeline
+    - pripravené pre Runtime 5.x
     """
 
     def __init__(self, track_system, event_bus=None):
         self.track_system = track_system
         self.event_bus = event_bus
-
-        # AI modul
-        self.ai = None
-        self.ai_enabled = False
-
-        # Engraving engine
-        self.engraving_engine = None
-
-    # ---------------------------------------------------------
-    # AI ATTACH (v4)
-    # ---------------------------------------------------------
-    def attach_ai(self, ai_engine):
-        self.ai = ai_engine
-        self.ai_enabled = True
-        Logger.info("AI Engine attached to NotationProcessor.")
-
-    # ---------------------------------------------------------
-    # ENGRAVING ENGINE ATTACH (v4)
-    # ---------------------------------------------------------
-    def attach_engraving_engine(self, engine):
-        self.engraving_engine = engine
-        Logger.info("Engraving Engine attached to NotationProcessor.")
 
     # ---------------------------------------------------------
     # PUBLIC EXPORT API
@@ -91,9 +64,7 @@ class NotationProcessor:
                 # Events
                 events = self._safe_get_events(track_id)
 
-                # Batch processing (v4)
                 for event in events:
-                    event = self._process_event_v4(event, track_id)
                     msg = self._event_to_mido_message(event)
                     if msg:
                         try:
@@ -115,33 +86,6 @@ class NotationProcessor:
 
         except Exception as e:
             self._publish_error(str(e))
-
-    # ---------------------------------------------------------
-    # v4 EVENT PROCESSING PIPELINE
-    # ---------------------------------------------------------
-    def _process_event_v4(self, event: Dict[str, Any], track_id: int):
-        """AI + metadata + engraving pipeline."""
-        if not isinstance(event, dict):
-            return event
-
-        # Metadata injection
-        event["track_id"] = track_id
-
-        # AI processing
-        if self.ai_enabled and self.ai:
-            try:
-                event = self.ai.process_event(event)
-            except Exception as e:
-                Logger.error(f"AI processing failed: {e}")
-
-        # Engraving engine update
-        if self.engraving_engine:
-            try:
-                self.engraving_engine.update_event(event)
-            except Exception as e:
-                Logger.error(f"Engraving update failed: {e}")
-
-        return event
 
     # ---------------------------------------------------------
     # SAFE TRACK NAME
@@ -200,7 +144,7 @@ class NotationProcessor:
                 pass
 
     # ---------------------------------------------------------
-    # SHUTDOWN (v4)
+    # SHUTDOWN
     # ---------------------------------------------------------
     def shutdown(self):
         Logger.info("NotationProcessor shutdown.")
