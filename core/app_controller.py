@@ -1,6 +1,7 @@
 # =========================================================
-# AppController v4-ready
+# AppController v4.1.0
 # Hlavný orchestrátor systému pre Real-Time MIDI Notation
+# Pripravené pre Runtime 5.x (KG, Envoy, System Agent)
 # =========================================================
 
 from .logger import Logger
@@ -24,19 +25,20 @@ from .event_types import (
 
 class AppController:
     """
-    Centrálny kontrolér aplikácie (v4-ready).
-    Pripravený na:
-    - AI engine
-    - Real-time engine
-    - rozšíriteľnú architektúru
+    Centrálny kontrolér aplikácie (v4.1.0).
+
+    Zodpovedá za:
+    - inicializáciu core modulov
+    - bezpečné spúšťanie a ukončovanie aplikácie
+    - publikovanie systémových udalostí
+    - spracovanie exportov a chýb
+    - prípravu na Runtime 5.x (KG, Envoy, System Agent)
     """
 
     def __init__(self):
-        Logger.info("Initializing AppController (v4-ready)...")
+        Logger.info("Initializing AppController (v4.1.0)...")
 
         self.is_running = False
-        self.ai_engine = None
-        self.realtime_engine = None
 
         # -----------------------------------------------------
         # INITIALIZATION OF CORE SYSTEMS
@@ -62,7 +64,7 @@ class AppController:
         # -----------------------------------------------------
         self._subscribe_events()
 
-        Logger.info("AppController initialized successfully (v4-ready).")
+        Logger.info("AppController initialized successfully (v4.1.0).")
 
     # ---------------------------------------------------------
     # SAFE INITIALIZATION WRAPPER
@@ -91,33 +93,6 @@ class AppController:
             Logger.error(f"Failed to subscribe to events: {e}")
 
     # ---------------------------------------------------------
-    # AI / REAL-TIME HOOKS (v4-ready)
-    # ---------------------------------------------------------
-    def register_ai_engine(self, ai_engine):
-        self.ai_engine = ai_engine
-        Logger.info("AI engine registered.")
-
-    def register_realtime_engine(self, realtime_engine):
-        self.realtime_engine = realtime_engine
-        Logger.info("Real-time engine registered.")
-
-    def start_realtime(self):
-        if self.realtime_engine:
-            try:
-                self.realtime_engine.start()
-                Logger.info("Real-time engine started.")
-            except Exception as e:
-                Logger.error(f"Failed to start real-time engine: {e}")
-
-    def stop_realtime(self):
-        if self.realtime_engine:
-            try:
-                self.realtime_engine.stop()
-                Logger.info("Real-time engine stopped.")
-            except Exception as e:
-                Logger.error(f"Failed to stop real-time engine: {e}")
-
-    # ---------------------------------------------------------
     # START APPLICATION
     # ---------------------------------------------------------
     def start(self):
@@ -135,9 +110,6 @@ class AppController:
             except Exception as e:
                 Logger.error(f"Failed to publish start events: {e}")
 
-        # v4-ready: automatické spustenie real-time engine
-        self.start_realtime()
-
     # ---------------------------------------------------------
     # STOP APPLICATION
     # ---------------------------------------------------------
@@ -149,9 +121,6 @@ class AppController:
         Logger.info("Application stopped.")
         self.is_running = False
 
-        # v4-ready: najprv zastaviť real-time engine
-        self.stop_realtime()
-
         if self.event_bus:
             try:
                 self.event_bus.publish(APP_STOPPED)
@@ -159,16 +128,14 @@ class AppController:
                 Logger.error(f"Failed to publish stop event: {e}")
 
     # ---------------------------------------------------------
-    # SHUTDOWN (v4-ready)
+    # SHUTDOWN (v4.1.0)
     # ---------------------------------------------------------
     def shutdown(self):
         Logger.info("Shutting down system...")
         self.stop()
 
-        # v4-ready: korektné vypnutie modulov
+        # korektné vypnutie modulov
         for name, module in [
-            ("AI engine", self.ai_engine),
-            ("Real-time engine", self.realtime_engine),
             ("NotationProcessor", self.notation_processor),
             ("TrackSystem", self.track_system),
         ]:
@@ -196,13 +163,6 @@ class AppController:
                 self.notation_processor.export_midi(filename)
             except Exception as e:
                 Logger.error(f"NotationProcessor export failed: {e}")
-
-        # v4-ready: AI post-export hook
-        if self.ai_engine and hasattr(self.ai_engine, "on_midi_exported"):
-            try:
-                self.ai_engine.on_midi_exported(filename)
-            except Exception as e:
-                Logger.error(f"AI engine post-export hook failed: {e}")
 
     # ---------------------------------------------------------
     # EVENT HANDLERS
