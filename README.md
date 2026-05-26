@@ -9,10 +9,6 @@
   <b>Python</b> • <b>Pygame</b> • <b>Real‑Time MIDI</b> • <b>Yamaha 16‑Track</b> • <b>Live Notation</b>
 </p>
 
-<!--  
-SEO: real-time midi notation engine, python midi notation, pygame midi visualizer, multi-track midi, yamaha 16-track, live midi notation, midi to sheet music, real-time midi renderer, sirius engine, real-time midi software, midi notation python, midi sheet generator, live midi score, midi performance analysis, midi engraving engine, open-source midi notation, real-time music notation, midi research tool, yamaha midi arranger notation, midi multi-track renderer, python music engine  
--->
-
 ---
 
 # 📌 Table of Contents
@@ -32,7 +28,7 @@ SEO: real-time midi notation engine, python midi notation, pygame midi visualize
 
 # 📸 Showcase  
 <p align="center">
-  <img src="assets/screenshots/Copilot_20260422_120106.png" width="80%">
+  <img src="assets/Copilot_20260422_120106.png" width="80%">
 </p>
 
 Do you use **SIRIUS / Real-Time MIDI Notation** in your setup?
@@ -92,7 +88,7 @@ python main.py
 
 # 🎹 Supported Instruments
 
-- Yamaha PSR / Tyros / Genos (full arranger support)  
+- Yamaha PSR / Tyros / Genos  
 - Korg PA series  
 - Roland Fantom / Juno  
 - Kurzweil PC series  
@@ -105,18 +101,18 @@ python main.py
 
 - real‑time MIDI visualizers  
 - DAW companion tools  
-- music education & pedagogy  
+- music education  
 - live performance analysis  
-- Yamaha arranger keyboard users  
-- MIDI debugging & development  
-- research & academic tools  
-- recording studios needing **pre‑recording performance diagnostics**  
+- Yamaha arranger users  
+- MIDI debugging  
+- research & academia  
+- studios needing **pre‑recording diagnostics**  
 
 ---
 
 # 🧪 Testing Policy
 
-Real‑time MIDI systems behave differently on every computer due to:
+Real‑time MIDI systems behave differently depending on:
 
 - OS  
 - drivers  
@@ -190,10 +186,9 @@ Spacing, collision avoidance, slurs, ties, articulations.
 ---
 
 # 🔎 SEO Keywords  
-`midi`, `real-time midi`, `real-time midi notation`, `midi notation software`,  
-`midi visualizer`, `midi renderer`, `music notation`, `pygame`, `python midi`,  
-`multi-track midi`, `midi to sheet music`, `live midi`, `midi processing`,  
-`real-time visualization`, `midi sheet music`, `midi score`,  
+`midi`, `real-time midi`, `midi notation`, `pygame`, `python midi`,  
+`multi-track midi`, `live midi`, `midi processing`,  
+`midi sheet music`, `midi score`,  
 `notation engine`, `real-time notation`, `music education`
 
 ---
@@ -204,6 +199,6 @@ SIRIUS is:
 
 - the **first open‑source real‑time multi‑track MIDI notation engine**  
 - built for musicians, educators, researchers  
-- modular, stable, and ready for expansion  
+- modular, stable, expandable  
 - visually branded under **SIRIUS**  
-- the foundation of a **full real‑time engraving engine**
+- foundation of a **future engraving engine**
