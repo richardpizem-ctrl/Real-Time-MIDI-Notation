@@ -1,8 +1,11 @@
-# 🎼 Real‑Time MIDI Notation — Project Overview (v4.0.0)
+# 🎼 Real‑Time MIDI Notation — Project Overview (v4.2.0)
 
 This document serves as the **official architecture overview, technical summary, and system description**  
 for the **Real‑Time MIDI Notation (SIRIUS Engine)** — a professional real‑time multi‑track MIDI  
 visualization and notation engine.
+
+Version **4.2.0** introduces the **Editing Layer**, preparing the system for real‑time editing,  
+Editing API v4.3.0, and Runtime Engine 6.0.0.
 
 The goal of the project is to create a tool that:
 
@@ -12,7 +15,8 @@ The goal of the project is to create a tool that:
 - provides DAW‑style 16‑track control  
 - enables playback, visualization, and future export  
 - supports Yamaha‑style arranger workflows  
-- maintains a modular, scalable architecture (v4‑ready)  
+- maintains a modular, scalable architecture (v4.x → v5.x)  
+- supports real‑time editing (v4.2.0 foundation)  
 
 ---
 
@@ -38,6 +42,7 @@ This engine combines features that have never existed together before:
 - instant graphical notation (beams, stems, barlines)  
 - **velocity‑based** dynamics  
 - modular graphic renderer (Python + Pygame)  
+- Editing Layer (v4.2.0) for real‑time selection, regions, snapping, ghosts  
 - architecture optimized for **research, education, live performance, and studio workflows**  
 - no preprocessing, no look‑ahead, no offline steps  
 
@@ -48,18 +53,20 @@ SIRIUS defines a **new category** of real‑time MIDI tools, enabling:
 - expressive timing research  
 - pre‑recording studio diagnostics  
 - educational visualization  
+- real‑time editing workflows (v4.2.0+)  
 
 ---
 
-# 🧩 1. Project Architecture (v4.0.0)
+# 🧩 1. Project Architecture (v4.2.0)
 
 The project is organized into modular directories, each with a clear responsibility:
 
 | Directory | Purpose |
 |----------|---------|
-| **core/** | TrackManager, PlaybackEngine, EventBus v4, timing logic |
+| **core/** | TrackManager, PlaybackEngine, EventBus v4, Editing Layer v4.2.0 |
 | **renderer_new/** | v4 renderer stack (GraphicRenderer, PixelLayoutEngine v4) |
 | **ui/** | CanvasUI, TimelineUI, UIManager v4 |
+| **editing/** | Selection, Regions, Snapping, Ghosts, Editing Events |
 | **track_system/** | 16‑channel Yamaha‑style track system |
 | **notation_processor/** | MIDI → notes → rhythm → visualization pipeline |
 | **midi_input/** | DeviceManager v4, EventRouter |
@@ -71,11 +78,11 @@ This modular structure ensures:
 - clean separation of concerns  
 - easy debugging  
 - scalable architecture  
-- future expansion (engraving engine v5)  
+- future expansion (Editing API v4.3.0, engraving engine v5)  
 
 ---
 
-# 🎼 2. Main Modules and Their Purpose (v4.0.0)
+# 🎼 2. Main Modules and Their Purpose (v4.2.0)
 
 ## **TrackManager (`core/track_manager.py`)**
 - 16‑track Yamaha‑style system  
@@ -137,6 +144,16 @@ This modular structure ensures:
 
 ---
 
+## **Editing Layer (v4.2.0) — `core/editing/`**
+- **SelectionSet v2** — multi‑selection  
+- **RegionManager** — region creation, splitting  
+- **SnapGrid v2** — snapping utilities  
+- **GhostController** — ghost notes + ghost regions  
+- **Editing events** — selection, region, ghost previews  
+- foundation for **Editing API v4.3.0**  
+
+---
+
 ## **EventBus (`core/event_bus.py`)**
 - publish/subscribe system  
 - thread‑safe v4 implementation  
@@ -165,7 +182,7 @@ This modular structure ensures:
 
 ---
 
-# 🔄 3. Real‑Time Pipeline (v4.0.0)
+# 🔄 3. Real‑Time Pipeline (v4.2.0)
 
 ```
 MIDI Input  
@@ -177,6 +194,8 @@ EventRouter
 EventBus v4  
    ↓  
 TrackSystem + NotationProcessor  
+   ↓  
+Editing Layer (selection, regions, snapping, ghosts)  
    ↓  
 PlaybackEngine v4  
    ↓  
@@ -201,7 +220,8 @@ python main.py
 
 This initializes:
 
-- all v4 modules  
+- all v4.2.0 modules  
+- Editing Layer v4.2.0  
 - UIManager v4  
 - PlaybackEngine v4  
 - real‑time renderer  
@@ -209,10 +229,14 @@ This initializes:
 
 ---
 
-# 🚀 5. Future Extensions (v4 → v5)
+# 🚀 5. Future Extensions (v4.2 → v5)
 
 Planned features include:
 
+- Editing API v4.3.0  
+- Undo/Redo v2  
+- batch editing  
+- quantization engine  
 - engraving engine (slurs, ties, articulations)  
 - MusicXML export  
 - advanced spacing algorithms  
@@ -222,7 +246,7 @@ Planned features include:
 
 ---
 
-# 🏁 6. Project Status (v4.0.0)
+# 🏁 6. Project Status (v4.2.0)
 
 All major modules are **stable and complete**:
 
@@ -234,9 +258,10 @@ All major modules are **stable and complete**:
 - TimelineUI — ✔  
 - DeviceManager v4 — ✔  
 - EventBus v4 — ✔  
+- Editing Layer v4.2.0 — ✔  
 
 The project is ready for **professional use**, research, education, and future v5 expansion.
 
 ---
 
-# 🔚 End of Project Overview (v4.0.0)
+# 🔚 End of Project Overview (v4.2.0)
