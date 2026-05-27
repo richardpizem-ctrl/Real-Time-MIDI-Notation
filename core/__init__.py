@@ -1,8 +1,8 @@
 # =========================================================
-# AppController v4.1.0
+# AppController v4.2.0
 # Hlavný orchestrátor systému pre Real-Time MIDI Notation
 # Pripravené pre Runtime 5.x (KG, Envoy, System Agent)
-# + Editing Layer (v4.2.0 preparation)
+# + Editing Layer (v4.2.0)
 # =========================================================
 
 from .logger import Logger
@@ -14,7 +14,7 @@ from .track_manager import TrackSystem
 from .notation_processor import NotationProcessor
 
 # ---------------------------------------------------------
-# EDITING LAYER (v4.2.0 preparation)
+# EDITING LAYER (v4.2.0)
 # ---------------------------------------------------------
 from .editing.selection import SelectionSet
 from .editing.regions import RegionManager
@@ -41,7 +41,7 @@ from .event_types import (
 
 class AppController:
     """
-    Centrálny kontrolér aplikácie (v4.1.0).
+    Centrálny kontrolér aplikácie (v4.2.0).
 
     Zodpovedá za:
     - inicializáciu všetkých core modulov
@@ -49,7 +49,7 @@ class AppController:
     - publikovanie systémových udalostí
     - spracovanie exportov a chýb
     - prípravu na Runtime 5.x (KG, Envoy, System Agent)
-    - prípravu EDITING layer (v4.2.0)
+    - EDITING layer (v4.2.0)
     """
 
     def __init__(
@@ -59,10 +59,10 @@ class AppController:
         track_system: TrackSystem | None = None,
         notation_processor: NotationProcessor | None = None,
     ):
-        Logger.info("Initializing AppController (v4.1.0)...")
+        Logger.info("Initializing AppController (v4.2.0)...")
 
         self.is_running = False
-        self.version = "4.1.0"
+        self.version = "4.2.0"
 
         # -----------------------------------------------------
         # INITIALIZATION OF CORE SYSTEMS
@@ -84,7 +84,7 @@ class AppController:
         )
 
         # -----------------------------------------------------
-        # INITIALIZATION OF EDITING LAYER (v4.2.0 preparation)
+        # INITIALIZATION OF EDITING LAYER (v4.2.0)
         # -----------------------------------------------------
         self.selection = SelectionSet()
         self.regions = RegionManager()
@@ -96,7 +96,7 @@ class AppController:
         # -----------------------------------------------------
         self._subscribe_events()
 
-        Logger.info("AppController initialized successfully (v4.1.0).")
+        Logger.info("AppController initialized successfully (v4.2.0).")
 
     # ---------------------------------------------------------
     # SAFE INITIALIZATION WRAPPER
@@ -125,7 +125,7 @@ class AppController:
             self.event_bus.subscribe(ERROR_OCCURRED, self._on_error)
 
             # -------------------------------------------------
-            # EDITING EVENTS (v4.2.0 preparation)
+            # EDITING EVENTS (v4.2.0)
             # -------------------------------------------------
             self.event_bus.subscribe(SelectionChangedEvent, lambda e: None)
             self.event_bus.subscribe(RegionCreatedEvent, lambda e: None)
@@ -180,7 +180,7 @@ class AppController:
             Logger.error(f"Failed to publish stop event: {e}")
 
     # ---------------------------------------------------------
-    # SHUTDOWN (v4.1.0)
+    # SHUTDOWN (v4.2.0)
     # ---------------------------------------------------------
     def shutdown(self):
         """Úplné vypnutie systému."""
