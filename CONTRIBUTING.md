@@ -1,5 +1,5 @@
 # 🤝 Contributing to Real‑Time MIDI Notation  
-### Version 4.0.0 — Professional Edition
+### Version 4.2.0 — Professional Edition
 
 Thank you for your interest in contributing to **Real‑Time MIDI Notation (SIRIUS Engine)** —  
 the world’s first open‑source real‑time multi‑track Yamaha‑style notation engine.
@@ -10,7 +10,7 @@ who wants to help improve the project.
 
 ---
 
-# 🌍 Global Testing Appeal (v4.0.0)
+# 🌍 Global Testing Appeal (v4.2.0)
 
 Real‑time MIDI behavior varies dramatically across:
 
@@ -34,6 +34,7 @@ Every test improves accuracy, stability, and cross‑platform compatibility.
 - notation accuracy  
 - UI responsiveness  
 - Yamaha style compatibility  
+- Editing Layer behavior (selection, regions, snapping, ghosts)  
 - any unexpected behavior  
 
 Please report your results in the **Issues** tab.
@@ -83,10 +84,11 @@ We welcome all improvements — from small fixes to major features.
   - TrackManager  
   - PlaybackEngine  
   - UIManager  
+  - **Editing Layer (v4.2.0)**  
 
 ---
 
-# 🧩 Architecture Overview (v4.0.0)
+# 🧩 Architecture Overview (v4.2.0)
 
 ### 🔧 Core Engine
 - **NotationProcessor v4** → `notation_processor/notation_processor.py`  
@@ -97,6 +99,13 @@ We welcome all improvements — from small fixes to major features.
 ### 🎚 Track System
 - **TrackSystem** → `track_system/track_system.py`  
 - **TrackManager v4** → `core/track_manager.py`  
+
+### ✏️ Editing Layer (v4.2.0)
+- **SelectionSet v2** → `core/editing/selection.py`  
+- **RegionManager** → `core/editing/regions.py`  
+- **SnapGrid v2** → `core/editing/snapping.py`  
+- **GhostController** → `core/editing/ghosts.py`  
+- **Editing Events** → `core/editing/events.py`  
 
 ### 🎨 Rendering
 - **GraphicNotationRenderer v4** → `renderer_new/graphic_renderer.py`  
@@ -127,6 +136,7 @@ For contributors with some experience:
 - improve track highlighting  
 - refine playhead rendering  
 - improve caching behavior  
+- improve Editing Layer interactions  
 
 ## 🟥 Advanced Tasks
 For experienced developers:
@@ -137,6 +147,9 @@ For experienced developers:
 - performance profiling (CPU/GPU)  
 - memory footprint optimization  
 - advanced engraving logic (v5 groundwork)  
+- Editing API v1 (v4.3.0)  
+- Undo/Redo v2  
+- Quantization engine  
 
 ---
 
@@ -158,6 +171,8 @@ We especially welcome ideas related to:
 - advanced harmony analysis  
 - export formats (PDF/PNG/MusicXML)  
 - engraving engine (v5)  
+- Editing Layer improvements  
+- Editing API (v4.3.0)  
 
 ---
 
