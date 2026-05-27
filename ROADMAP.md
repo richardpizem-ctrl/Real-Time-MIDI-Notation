@@ -1,13 +1,13 @@
-# 🆕 Current Version: v4.0.0 — Professional Architecture & Publishing‑Ready Engine
+# 🆕 Current Version: v4.2.0 — Editing Layer & Professional Architecture
 
 This roadmap describes:
 - what is **already completed** in v1.x.x  
 - what was **stabilized and unified** in v2.0.0  
 - what was **extended and refined** in v3.0.0  
-- what is **now available in v4.0.0**  
+- what is **now available in v4.x.x**  
 - what is **planned for v5.x.x and v6.x.x**  
 
-> Focus: everything up to and including **v4.0.0**, with a clear roadmap for the next major generations.  
+> Focus: everything up to and including **v4.2.0**, with a clear roadmap for the next major generations.  
 > AI and experimental features remain **beyond the core roadmap**.
 
 ---
@@ -137,68 +137,70 @@ Groundwork for advanced editing features:
 
 ---
 
-# 📦 v4.0.0 — Professional Architecture & Publishing‑Ready Core
+# 📦 v4.x.x — Professional Architecture & Editing Layer
 
-> v4.0.0 is where the project becomes a **serious toolchain**, not just a visualizer.
+> v4.x.x is where the project becomes a **serious toolchain**, not just a visualizer.
 
-## 🧠 1. Core Architecture v4
+---
+
+# 🧠 v4.0.0 — Core Architecture v4
 - unified **v4 naming and versioning** across core modules  
 - hardened `EventBus v4` (thread‑safe, no‑leak exceptions)  
 - `DeviceManager v4` with robust MIDI device handling  
 - `RhythmAnalyzer v4` with stable BPM + stability metrics  
 - `main.py` and `run.py` aligned with v4 architecture  
 
-## 🖥 2. UI Architecture v4
-- `UIManager v4` as a central UI orchestration layer  
-- clear separation between:
-  - real‑time engine  
-  - renderer stack  
-  - UI components  
-- safer event handling in the main loop  
-- consistent behavior for playback, space‑bar control, and window lifecycle  
-
-## 🎨 3. Renderer & Preview v4
-- `preview.py v4` for fast renderer inspection  
-- stable demo timeline builder  
-- safe rendering calls (no exceptions leaking to UI)  
-- ready for professional engraving rules in future versions  
-
-## ⚙ 4. Stability & Safety Guarantees
-- all critical paths wrapped to avoid uncaught exceptions  
-- logger usage hardened with safe fallbacks  
-- real‑time loops use `tick_busy_loop` where appropriate  
-- modules designed to fail‑soft instead of fail‑hard  
-
-## 📂 5. Packaging & Project Metadata
-- `pyproject.toml v4.0.0` with modern metadata  
-- improved discoverability  
-- roadmap and architecture aligned to v4  
-
 ---
 
-# 🛠️ v4.x.x — Stabilization & Pre‑Engraving Phase
-
-> These versions refine v4 and prepare the system for the engraving engine.
-
-### 🔧 v4.1.0 — Renderer & UI Polishing
+# 🖥 v4.1.0 — Renderer & UI Polishing
 - improved spacing logic  
 - refined staff rendering  
 - timeline performance improvements  
 - safer device hot‑plug handling  
 
-### 🔧 v4.2.0 — Editing Tools Foundation
-- selection model v2  
-- region editing groundwork  
-- improved snapping logic  
-- hover + ghost primitives  
+---
 
-### 🔧 v4.3.0 — Performance & Diagnostics
+# ✏️ v4.2.0 — Editing Layer Foundation (Current)
+**The biggest upgrade since v3.0.0.**
+
+### ✔ Selection v2  
+- multi‑selection  
+- additive/subtractive selection  
+- selection events  
+
+### ✔ Region Editing  
+- region creation  
+- region splitting  
+- region metadata  
+
+### ✔ Snapping v2  
+- time snapping  
+- pitch snapping  
+- configurable grid resolution  
+
+### ✔ Ghost Previews  
+- ghost notes  
+- ghost regions  
+- hover previews  
+- non‑destructive editing  
+
+### ✔ Integration  
+- AppController updated  
+- EventBus extended with editing events  
+- tests added for all editing modules  
+
+---
+
+# 🧪 v4.3.0 — Performance & Diagnostics
 - renderer micro‑optimizations  
 - real‑time loop profiling  
 - diagnostics panel v1  
 - improved error recovery  
+- editing performance improvements  
 
-### 🔧 v4.4.0 — Pre‑Engraving Layout Engine
+---
+
+# 🧱 v4.4.0 — Pre‑Engraving Layout Engine
 - spacing primitives  
 - collision‑detection prototypes  
 - engraving rule definitions  
@@ -291,7 +293,8 @@ Groundwork for advanced editing features:
 
 # 🔮 Summary
 
-Up to **v4.0.0**, Real‑Time MIDI Notation has evolved from a **real‑time visualizer** into a **structured, publishing‑ready engine**.
+Up to **v4.2.0**, Real‑Time MIDI Notation has evolved from a **real‑time visualizer** into a  
+**structured, editing‑capable, publishing‑ready engine**.
 
 With **v5.x.x** and **v6.x.x**, it becomes:
 
