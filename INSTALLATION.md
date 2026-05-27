@@ -1,4 +1,4 @@
-# 🛠️ Real‑Time MIDI Notation — Installation Guide (v4.0.0)
+# 🛠️ Real‑Time MIDI Notation — Installation Guide (v4.2.0)
 
 This guide explains how to install, configure, and run  
 **Real‑Time MIDI Notation (SIRIUS Engine)** on any supported system.
@@ -16,7 +16,7 @@ It is designed for beginners, developers, testers, and musicians.
 
 ## ✔ Python Version
 - Python **3.10+** required  
-(v4.0.0 is fully tested on Python 3.10–3.12)
+(v4.2.0 is fully tested on Python 3.10–3.12)
 
 ## ✔ Dependencies (installed automatically)
 - pygame  
@@ -88,7 +88,8 @@ python main.py
 
 This will:
 
-- initialize all **v4.0.0 modules**  
+- initialize all **v4.2.0 modules**  
+- load the Editing Layer (selection, regions, snapping, ghosts)  
 - open the Pygame window  
 - start the real‑time renderer  
 - begin listening for MIDI input  
@@ -107,6 +108,7 @@ You should see:
 - track colors  
 - playhead movement  
 - barlines and grid  
+- Editing Layer ghost previews (v4.2.0)  
 - stable v4 renderer performance  
 
 If nothing appears:
@@ -144,7 +146,7 @@ If nothing appears:
 
 # 🎉 Installation Complete
 
-You are now ready to use **Real‑Time MIDI Notation (SIRIUS Engine) v4.0.0**.  
+You are now ready to use **Real‑Time MIDI Notation (SIRIUS Engine) v4.2.0**.  
 For more help, see:
 
 - **FAQ.md**  
