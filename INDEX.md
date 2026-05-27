@@ -1,7 +1,7 @@
-# INDEX — Real-Time MIDI Notation (v4.0.0 Documentation)
+# INDEX — Real-Time MIDI Notation (v4.2.0 Documentation)
 
 Welcome to the central index of the **Real-Time MIDI Notation (SIRIUS Engine)** project.  
-This document provides a structured overview of the entire system, modules, architecture, and documentation set for **version 4.0.0**.
+This document provides a structured overview of the entire system, modules, architecture, and documentation set for **version 4.2.0**.
 
 ---
 
@@ -14,13 +14,14 @@ Real-Time MIDI Notation is a high‑performance, real‑time music notation engi
 - timeline‑based editing  
 - modular UI + renderer separation  
 - Yamaha‑style 16‑track workflows  
+- Editing Layer (v4.2.0)  
 - future engraving engine (v5+)  
 
 The project is built for long‑term scalability, clarity, and professional‑grade performance.
 
 ---
 
-## 🧱 Core Architecture (v4.0.0)
+## 🧱 Core Architecture (v4.2.0)
 
 The system is divided into stable, well‑defined modules:
 
@@ -32,6 +33,12 @@ The system is divided into stable, well‑defined modules:
 - Timing & synchronization  
 - Data models  
 - Logger v4  
+- **Editing Layer v4.2.0**  
+  - SelectionSet v2  
+  - RegionManager  
+  - SnapGrid v2  
+  - GhostController  
+  - Editing events  
 
 ### **UI/**
 - UIManager v4  
@@ -75,16 +82,17 @@ The system is divided into stable, well‑defined modules:
 ### **commands/**
 - Command pattern  
 - Undo/redo groundwork  
+- Editing API preparation (v4.3.0)  
 
 ---
 
-## 🧩 Documentation Set (v4.0.0)
+## 🧩 Documentation Set (v4.2.0)
 
-All documentation files follow the unified v4.0.0 standard.
+All documentation files follow the unified v4.2.0 standard.
 
 - **README.md** — Project introduction  
 - **INDEX.md** — Central documentation index  
-- **ARCHITECTURE.md** — Full system architecture  
+- **ARCHITECTURE_DIAGRAM.md** — Full system architecture  
 - **MODULE_MAP.md** — Module responsibilities  
 - **PROJECT_OVERVIEW.md** — High‑level system description  
 - **INSTALLATION.md** — Installation guide  
@@ -94,28 +102,19 @@ All documentation files follow the unified v4.0.0 standard.
 - **ROADMAP.md** — Development roadmap  
 - **RELEASE_NOTES/** — Version history  
 - **CONTRIBUTING.md** — Contribution guidelines  
+- **FAQ.md** — Frequently asked questions  
+- **CITATION.cff** — Academic citation metadata  
 
 ---
 
 ## 🚀 Release History
 
-### **v1.3.0 — TimelineUI Finalization**
-- Completed TimelineUI  
-- Stabilized markers, loops, playhead  
-- Prepared for architecture upgrade  
-
-### **v2.0.0 — Architecture Upgrade**
-- Unified naming  
-- Renderer_new  
-- PixelLayoutEngine v2  
-- Cached grid rendering  
-- Full documentation rewrite  
-
-### **v3.0.0 — Advanced Engraving Groundwork**
-- Multi‑voice preparation  
-- Polyphony groundwork  
-- Beam/articulation preparation  
-- Graphic primitives layer  
+### **v4.2.0 — Editing Layer Foundation**
+- New Editing Layer (selection, regions, snapping, ghosts)  
+- Editing events  
+- AppController updated  
+- Tests added  
+- Architecture prepared for Editing API v4.3.0  
 
 ### **v4.0.0 — Professional Architecture**
 - EventBus v4  
@@ -126,9 +125,33 @@ All documentation files follow the unified v4.0.0 standard.
 - Documentation v4 standard  
 - Full system stabilization  
 
+### **v3.0.0 — Advanced Engraving Groundwork**
+- Multi‑voice preparation  
+- Polyphony groundwork  
+- Beam/articulation preparation  
+- Graphic primitives layer  
+
+### **v2.0.0 — Architecture Upgrade**
+- Unified naming  
+- Renderer_new  
+- PixelLayoutEngine v2  
+- Cached grid rendering  
+- Full documentation rewrite  
+
+### **v1.3.0 — TimelineUI Finalization**
+- Completed TimelineUI  
+- Stabilized markers, loops, playhead  
+- Prepared for architecture upgrade  
+
 ---
 
 ## 🔮 Roadmap
+
+### **v4.3.0 — Editing API v1**
+- High‑level editing operations  
+- Undo/Redo v2  
+- Batch editing  
+- Quantization hooks  
 
 ### **v5.x — Engraving Engine**
 - Full engraving engine  
@@ -143,5 +166,4 @@ All documentation files follow the unified v4.0.0 standard.
 ## 🏁 Summary
 
 This **INDEX.md** serves as the central navigation point for the entire Real-Time MIDI Notation project.  
-It reflects the stable **v4.0.0 documentation standard** and provides a clear overview of modules, architecture, and releases.
-
+It reflects the stable **v4.2.0 documentation standard** and provides a clear overview of modules, architecture, and releases.
