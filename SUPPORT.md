@@ -1,7 +1,9 @@
-# 🆘 Real‑Time MIDI Notation — Support Guide (v4.0.0, Professional Edition)
+# 🆘 Real‑Time MIDI Notation — Support Guide  
+### Version 4.2.0 — Professional Edition
 
 Thank you for using **Real‑Time MIDI Notation (SIRIUS Engine)**!  
-The project is now in its **v4.0.0 architecture era**, with a stable core, unified modules, and a professional rendering/UI pipeline.
+The project is now in its **v4.2.0 architecture era**, featuring a stable core, unified modules,  
+a professional rendering/UI pipeline, and the new **Editing Layer**.
 
 This guide explains how to get help, report issues, test the engine, and contribute effectively.
 
@@ -20,6 +22,7 @@ Use the **Issues** tab to report:
 - bugs  
 - performance problems  
 - UI/renderer issues  
+- Editing Layer issues (selection, regions, snapping, ghosts)  
 - MIDI device compatibility problems  
 - feature requests  
 - questions about usage  
@@ -32,11 +35,11 @@ The repository includes **professional Issue Templates** to make reporting struc
 
 For private or sensitive questions, you may contact the maintainer directly:
 
-**richardpizem@gmail.com**
+📧 **richardpizem@gmail.com**
 
 ---
 
-# 🧪 2. Testing the Project (v4.0.0)
+# 🧪 2. Testing the Project (v4.2.0)
 
 Because this is a **real‑time MIDI engine**, testing on different systems is extremely valuable.
 
@@ -47,11 +50,13 @@ Please test:
 - Yamaha arranger compatibility  
 - rendering performance  
 - UI responsiveness  
+- Editing Layer behavior (selection, regions, snapping, ghost previews)  
 - timing accuracy  
 - stability under heavy MIDI load  
 - unexpected behavior or crashes  
 
-If you test the project, consider reporting your results in the **Issues** tab to help improve cross‑platform stability.
+If you test the project, consider reporting your results in the **Issues** tab  
+to help improve cross‑platform stability.
 
 ---
 
@@ -65,12 +70,13 @@ When reporting an issue, please include:
 - steps to reproduce  
 - screenshots or logs (if available)  
 - expected vs. actual behavior  
+- whether Editing Layer was active (selection, region, snapping)  
 
-Clear, detailed reports help us fix problems faster and ensure consistent behavior across different systems.
+Clear, detailed reports help us fix problems faster and ensure consistent behavior across systems.
 
 ---
 
-# 🤝 4. Contributing (v4‑Ready)
+# 🤝 4. Contributing (v4.2‑Ready)
 
 If you want to contribute code, documentation, or ideas, please read:
 
@@ -83,6 +89,7 @@ It explains:
 - how to report issues  
 - contributor task levels (beginner → advanced)  
 - community values and expectations  
+- Editing Layer contribution rules  
 
 All contributions are welcome — from small fixes to major features.
 
@@ -113,6 +120,10 @@ Yes — the engine is built around the **Yamaha 16‑track standard**.
 
 ### **Q: Can I use this in a DAW?**  
 Yes, via virtual MIDI routing (LoopMIDI, IAC Driver, etc.).
+
+### **Q: Editing Layer behaves strangely (ghosts, snapping, selection).**  
+Include a screenshot + steps to reproduce.  
+Editing Layer is new in v4.2.0 and still evolving.
 
 ---
 
