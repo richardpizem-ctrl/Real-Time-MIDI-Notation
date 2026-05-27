@@ -1,4 +1,4 @@
-# ❓ Real‑Time MIDI Notation — FAQ (v4.0.0)
+# ❓ Real‑Time MIDI Notation — FAQ (v4.2.0)
 
 A collection of the most common questions from users, testers, developers, and researchers.
 
@@ -55,6 +55,33 @@ Scrolling follows the **playhead**, controlled by the PlaybackEngine v4.
 
 ---
 
+# ✏️ EDITING LAYER (v4.2.0)
+
+### **Q: What is the Editing Layer introduced in v4.2.0?**
+It is a new CORE subsystem providing:
+- Selection model v2  
+- Region editing  
+- Snapping logic v2  
+- Ghost previews  
+- Editing events  
+
+It prepares the engine for **Editing API v4.3.0** and full real‑time editing in Runtime 6.0.0.
+
+### **Q: Can I move or edit notes yet?**
+Not fully — v4.2.0 provides the **foundation**.  
+Full editing operations arrive in **v4.3.0 (Editing API v1)**.
+
+### **Q: Why do ghost notes appear?**
+Ghost notes are **previews** for upcoming editing actions:
+- moving notes  
+- resizing notes  
+- creating regions  
+- snapping previews  
+
+They do not affect playback.
+
+---
+
 # 🧠 ARCHITECTURE & ENGINE
 
 ### **Q: Is the renderer modular?**
@@ -65,6 +92,7 @@ Yes — every part of the system is isolated:
 - TrackManager  
 - EventBus v4  
 - StreamHandler  
+- Editing Layer (v4.2.0)  
 
 ### **Q: Can I replace the renderer with my own?**
 Yes — the architecture supports custom renderers.
@@ -131,7 +159,7 @@ This can happen if:
 # 🧩 MISCELLANEOUS
 
 ### **Q: Is this project stable?**
-Yes — all core modules are complete and stable as of v4.0.0.
+Yes — all core modules are complete and stable as of v4.2.0.
 
 ### **Q: Is this suitable for education?**
 Absolutely — it is ideal for:
