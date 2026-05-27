@@ -2,6 +2,7 @@
 # AppController v4.1.0
 # Hlavný orchestrátor systému pre Real-Time MIDI Notation
 # Pripravené pre Runtime 5.x (KG, Envoy, System Agent)
+# + Editing Layer (v4.2.0 preparation)
 # =========================================================
 
 from .logger import Logger
@@ -11,6 +12,21 @@ from .config_manager import ConfigManager
 # Core modules
 from .track_manager import TrackSystem
 from .notation_processor import NotationProcessor
+
+# ---------------------------------------------------------
+# EDITING LAYER (v4.2.0 preparation)
+# ---------------------------------------------------------
+from .editing.selection import SelectionSet
+from .editing.regions import RegionManager
+from .editing.snapping import SnapGrid
+from .editing.ghosts import GhostController
+from .editing.events import (
+    SelectionChangedEvent,
+    RegionCreatedEvent,
+    RegionSplitEvent,
+    GhostNotePreviewEvent,
+    GhostRegionPreviewEvent,
+)
 
 # Event types
 from .event_types import (
@@ -33,6 +49,7 @@ class AppController:
     - publikovanie systémových udalostí
     - spracovanie exportov a chýb
     - prípravu na Runtime 5.x (KG, Envoy, System Agent)
+    - prípravu EDITING layer (v4.2.0)
     """
 
     def __init__(
@@ -67,6 +84,14 @@ class AppController:
         )
 
         # -----------------------------------------------------
+        # INITIALIZATION OF EDITING LAYER (v4.2.0 preparation)
+        # -----------------------------------------------------
+        self.selection = SelectionSet()
+        self.regions = RegionManager()
+        self.snap_grid = SnapGrid(0.25)  # default 1/4 beat grid
+        self.ghosts = GhostController()
+
+        # -----------------------------------------------------
         # EVENT SUBSCRIPTIONS
         # -----------------------------------------------------
         self._subscribe_events()
@@ -98,6 +123,16 @@ class AppController:
         try:
             self.event_bus.subscribe(MIDI_EXPORTED, self._on_midi_exported)
             self.event_bus.subscribe(ERROR_OCCURRED, self._on_error)
+
+            # -------------------------------------------------
+            # EDITING EVENTS (v4.2.0 preparation)
+            # -------------------------------------------------
+            self.event_bus.subscribe(SelectionChangedEvent, lambda e: None)
+            self.event_bus.subscribe(RegionCreatedEvent, lambda e: None)
+            self.event_bus.subscribe(RegionSplitEvent, lambda e: None)
+            self.event_bus.subscribe(GhostNotePreviewEvent, lambda e: None)
+            self.event_bus.subscribe(GhostRegionPreviewEvent, lambda e: None)
+
         except Exception as e:
             Logger.error(f"Failed to subscribe to events: {e}")
 
