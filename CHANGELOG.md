@@ -1,49 +1,96 @@
-# 📝 Real-Time MIDI Notation — CHANGELOG (v4.0.0)
+# 📝 Real-Time MIDI Notation — CHANGELOG (v4.2.0)
 
 This document tracks all major changes, improvements, stabilizations, and milestones  
-for **SIRIUS / Real-Time MIDI Notation v4.0.0**.
+for **SIRIUS / Real-Time MIDI Notation v4.2.0**.
 
 ---
 
-# 🚀 v4.0.0 — Professional Architecture & System Hardening (Released)
+# 🚀 v4.2.0 — Editing Layer Foundation (Released)
 
-## 🧠 Core Architecture — v4 Finalization
+## ✏️ New Editing Layer (CORE)
+- Added new module: `core/editing/`
+- **Selection model v2**
+  - SelectionSet
+  - SelectionItem
+  - Multi-selection
+  - SelectionChangedEvent
+- **Region editing groundwork**
+  - RegionManager
+  - Region creation
+  - Region splitting
+  - RegionCreatedEvent
+  - RegionSplitEvent
+- **Snapping logic v2**
+  - SnapGrid
+  - snap_time
+  - snap_range
+- **Ghost primitives**
+  - GhostNote
+  - GhostRegion
+  - HoverState
+  - GhostController
+  - GhostNotePreviewEvent
+  - GhostRegionPreviewEvent
+
+---
+
+## 🧪 Tests Added
+- `test_editing_selection.py`
+- `test_editing_regions.py`
+- `test_editing_snapping.py`
+- `test_editing_ghosts.py`
+
+---
+
+## 🔧 Integration
+- AppController updated to **v4.2.0**
+- Editing layer initialized (selection, regions, snapping, ghosts)
+- EventBus updated to register editing events
+- `core/__init__.py` updated with editing exports
+
+---
+
+## 🧠 Core Architecture — v4 Foundation (from v4.0.0)
 - Unified **v4 architecture** across all modules  
-- All root-level Python files aligned with v4 structure  
-- **EventBus v4** introduced (thread‑safe, exception‑safe, real‑time safe)  
-- **DeviceManager v4** (robust port handling, Windows/ASIO lock protection)  
-- **RhythmAnalyzer v4** (stability index, BPM clamping, timing safety)  
-- **Logger v4** added (safe fallback logging)  
-- Real-time pipeline fully synchronized across:
+- EventBus v4 (thread‑safe, exception‑safe, real‑time safe)  
+- DeviceManager v4 (robust port handling, Windows/ASIO lock protection)  
+- RhythmAnalyzer v4 (stability index, BPM clamping, timing safety)  
+- Logger v4 added (safe fallback logging)  
+- Real-time pipeline synchronized across:
   - TrackManager v4  
   - NotationProcessor v4  
   - PlaybackEngine v4  
   - UIManager v4  
   - Renderer stack v4  
 
+---
+
 ## 🎨 Renderer & Layout Engine — v4 Rendering Pipeline
-- **GraphicNotationRenderer v4** stabilized  
-- **PixelLayoutEngine v4** fully upgraded  
+- GraphicNotationRenderer v4 stabilized  
+- PixelLayoutEngine v4 fully upgraded  
 - Improved staff caching (dirty‑region system)  
 - Improved chord grouping logic  
 - Improved barline + grid synchronization  
-- Improved playhead rendering  
 - Renderer prepared for **v5 engraving engine**  
 
-## 🖥 UI Layer — v4.0.0
-- **UIManager v4** introduced (central UI orchestrator)  
+---
+
+## 🖥 UI Layer — v4
+- UIManager v4 (central UI orchestrator)  
 - CanvasUI updated for v4 timing + rendering safety  
 - TimelineUI stabilized (markers, loops, zoom/scroll)  
 - Unified event handling across UI components  
-- Consistent color, visibility, and track‑state APIs  
 - Improved input handling (mouse, keyboard, gestures)  
+
+---
 
 ## 🎚 Track System — v4 Stability
 - TrackManager v4 stabilized  
 - Real-time activity meter improvements  
 - Safe track switching  
 - Yamaha‑compatible 16‑track architecture preserved  
-- Ready for v5 multi‑voice + engraving expansion  
+
+---
 
 ## 🧩 Notation Processor — v4 Pipeline
 - Stable MIDI → NoteObject pipeline  
@@ -51,45 +98,27 @@ for **SIRIUS / Real-Time MIDI Notation v4.0.0**.
 - Improved timing normalization  
 - RhythmAnalyzer v4 integrated  
 - Safe event routing through EventBus v4  
-- Prepared for v5 engraving transformations  
+
+---
 
 ## ⏱ Playback Engine — v4 Timing Core
 - Stable play/pause/seek logic  
 - Improved delta‑time handling  
 - Safe renderer updates  
 - BPM + meter synchronization  
-- Ready for v5 predictive layout engine  
-
-## 🧹 Codebase Cleanup — v4 Standardization
-- Removed all legacy v1.x and v2.x fragments  
-- Unified naming conventions (v4 standard)  
-- Improved internal comments  
-- Removed duplicate logic across UI and renderer  
-- Ensured consistent structure across all modules  
-- Documentation fully rewritten for v4  
-
-## 📘 Documentation — v4 Standard
-- New **Architecture Diagram v4.0.0**  
-- New **CHANGELOG v4.0.0**  
-- Updated developer notes  
-- Updated module descriptions  
-- New v4 documentation set:
-  - README v4  
-  - PROJECT_OVERVIEW v4  
-  - MODULE_MAP v4  
-  - INSTALLATION v4  
-  - SUPPORT v4  
-  - SECURITY v4  
-  - CONTRIBUTING v4  
-  - CODE_OF_CONDUCT v4  
-  - FAQ v4  
-  - CITATION.cff v4  
 
 ---
 
-# 📦 v3.0.0 — Advanced Engraving Groundwork (Released)
-(kept for historical reference)
+## 🧹 Codebase Cleanup — v4 Standardization
+- Removed all legacy v1.x and v2.x fragments  
+- Unified naming conventions  
+- Improved internal comments  
+- Ensured consistent structure across all modules  
+- Documentation rewritten for v4  
 
+---
+
+# 📦 v3.0.0 — Advanced Engraving Groundwork (Historical)
 - Multi‑voice groundwork  
 - Polyphony preparation  
 - Beam/articulation preparation  
@@ -99,9 +128,7 @@ for **SIRIUS / Real-Time MIDI Notation v4.0.0**.
 
 ---
 
-# 📦 v2.0.0 — Architecture Upgrade (Released)
-(kept for historical reference)
-
+# 📦 v2.0.0 — Architecture Upgrade (Historical)
 - Unified naming  
 - Renderer_new  
 - PixelLayoutEngine v2  
@@ -110,32 +137,25 @@ for **SIRIUS / Real-Time MIDI Notation v4.0.0**.
 
 ---
 
-# 📦 v1.3.0 — TimelineUI Finalization (Released)
-(kept for historical reference)
-
+# 📦 v1.3.0 — TimelineUI Finalization (Historical)
 - Finalized TimelineUI  
 - Stabilized markers, loop region, playhead, scroll/zoom  
 - Renderer integration improvements  
-- Selection pipeline stable  
 
 ---
 
-# 📦 v1.2.0 — TimelineUI Refactor (Released)
-(kept for historical reference)
-
+# 📦 v1.2.0 — TimelineUI Refactor (Historical)
 - Full TimelineUI refactor  
 - Stabilized drawing + event logic  
 - Renderer integration improvements  
 
 ---
 
-# 📦 v1.1.0 — Timeline Selection & Phase‑4 Stabilization (Released)
-(unchanged)
+# 📦 v1.1.0 — Timeline Selection & Phase‑4 Stabilization (Historical)
 
 ---
 
-# 📦 v1.0.0 — Core Engine Complete (Released)
-(unchanged)
+# 📦 v1.0.0 — Core Engine Complete (Historical)
 
 ---
 
@@ -151,7 +171,10 @@ for **SIRIUS / Real-Time MIDI Notation v4.0.0**.
 - Predictive layout (AI-assisted)  
 - MusicXML export  
 - MuseScore/LilyPond‑level engraving  
+- Editing API v1 (v4.3.0)  
+- Undo/Redo v2  
+- Quantization engine  
 
 ---
 
-# 🎉 End of CHANGELOG (v4.0.0)
+# 🎉 End of CHANGELOG (v4.2.0)
