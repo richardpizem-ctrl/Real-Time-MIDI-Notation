@@ -1,12 +1,12 @@
 # 🎼 MIDI Naming Conventions  
-Real‑Time MIDI Notation Engine — Official Naming Standard (v4.0.0)
+Real‑Time MIDI Notation Engine — Official Naming Standard (v4.2.0)
 
 This document defines unified naming rules for files, modules, classes, and components within the  
 **Real‑Time MIDI Notation Engine (SIRIUS Engine)**.  
 The goal is to maintain a consistent, professional, scalable, and future‑proof architecture.
 
-Version **4.0.0** introduces a fully standardized naming system aligned with the v4 architecture and  
-prepared for the v5 engraving/AI expansion.
+Version **4.2.0** extends the v4 naming system with new standards for the **Editing Layer**,  
+ensuring compatibility with the upcoming v4.3.0 Editing API and v5 engraving/AI expansion.
 
 ---
 
@@ -15,14 +15,14 @@ prepared for the v5 engraving/AI expansion.
 - names must be descriptive and unambiguous  
 - names must reflect the module’s function  
 - names must be consistent across the entire project  
-- names must be future‑expandable (v4.0.0 → v5.0.0)  
+- names must be future‑expandable (v4.2.0 → v5.0.0)  
 - names must be architectural, not script‑like  
 - names must match the real‑time pipeline structure  
 - names must avoid abbreviations unless industry‑standard  
 
 ---
 
-# 2. MIDI Input & Processing (v4.0.0)
+# 2. MIDI Input & Processing (v4.2.0)
 
 | Module | Purpose |
 |--------|---------|
@@ -40,7 +40,7 @@ prepared for the v5 engraving/AI expansion.
 
 ---
 
-# 3. Notation Engine (v4.0.0)
+# 3. Notation Engine (v4.2.0)
 
 | Module | Purpose |
 |--------|---------|
@@ -56,7 +56,7 @@ prepared for the v5 engraving/AI expansion.
 
 ---
 
-# 4. Graphic Rendering (v4.0.0)
+# 4. Graphic Rendering (v4.2.0)
 
 | Module | Purpose |
 |--------|---------|
@@ -73,7 +73,7 @@ prepared for the v5 engraving/AI expansion.
 
 ---
 
-# 5. User Interface Layer (v4.0.0)
+# 5. User Interface Layer (v4.2.0)
 
 | Module | Purpose |
 |--------|---------|
@@ -90,7 +90,7 @@ prepared for the v5 engraving/AI expansion.
 
 ---
 
-# 6. Processing Pipeline (v4.0.0)
+# 6. Processing Pipeline (v4.2.0)
 
 | Module | Purpose |
 |--------|---------|
@@ -106,16 +106,38 @@ prepared for the v5 engraving/AI expansion.
 
 ---
 
-# 7. Versioned Modules
+# 7. Editing Layer (v4.2.0)
 
-## Version 4.0.0 (current)
+| Module | Purpose |
+|--------|---------|
+| `editing/selection.py` | SelectionSet v2, selection logic |
+| `editing/regions.py` | RegionManager, region creation/splitting |
+| `editing/snapping.py` | SnapGrid v2, snapping utilities |
+| `editing/ghosts.py` | GhostNote, GhostRegion, hover previews |
+| `editing/events.py` | Editing events (selection, regions, ghosts) |
+
+**Naming rules:**
+- editing modules must use **clear nouns** describing their domain  
+- snapping modules must include `snap` in the name  
+- ghost modules must include `ghost` in the name  
+- event modules must end with `_events.py` or be grouped in `events.py`  
+
+---
+
+# 8. Versioned Modules
+
+## Version 4.2.0 (current)
 - `event_bus.py` (thread‑safe v4)  
 - `device_manager.py` (safe port handling)  
 - `ui_manager.py` (central UI orchestrator)  
-- `rhythm_analyzer.py` (stable BPM + stability)  
+- `rhythm_analyzer.py` (stable BPM + timing)  
 - `graphic_renderer.py` (v4 renderer)  
 - `pixel_layout_engine.py` (v4 layout engine)  
-- `preview.py` (safe renderer preview)  
+- `selection.py` (v4.2 editing)  
+- `regions.py` (v4.2 editing)  
+- `snapping.py` (v4.2 editing)  
+- `ghosts.py` (v4.2 editing)  
+- `events.py` (v4.2 editing events)  
 
 ## Version 5.0.0 (planned)
 - `engraving_engine.py`  
@@ -128,7 +150,7 @@ prepared for the v5 engraving/AI expansion.
 
 ---
 
-# 8. Class Naming Rules
+# 9. Class Naming Rules
 
 - **PascalCase**  
 - class name must reflect a single responsibility  
@@ -141,10 +163,13 @@ prepared for the v5 engraving/AI expansion.
   - `StreamHandler`  
   - `UIManager`  
   - `PlaybackEngine`  
+  - `SelectionSet`  
+  - `RegionManager`  
+  - `GhostController`  
 
 ---
 
-# 9. Function Naming Rules
+# 10. Function Naming Rules
 
 - **snake_case**  
 - must be action‑based (verb + object)  
@@ -156,10 +181,12 @@ prepared for the v5 engraving/AI expansion.
   - `open_input_port()`  
   - `publish_event()`  
   - `resolve_duration()`  
+  - `snap_time()`  
+  - `create_region()`  
 
 ---
 
-# 10. Constant Naming Rules
+# 11. Constant Naming Rules
 
 - **UPPER_CASE**  
 - examples:  
@@ -167,11 +194,12 @@ prepared for the v5 engraving/AI expansion.
   - `MAX_TRACKS = 16`  
   - `DEFAULT_BPM = 120`  
   - `DEFAULT_WINDOW_WIDTH = 1600`  
+  - `DEFAULT_SNAP_RESOLUTION = 0.25`  
 
 ---
 
-# 11. Conclusion
+# 12. Conclusion
 
-This document defines the official naming standard for the Real‑Time MIDI Notation Engine v4.0.0.  
+This document defines the official naming standard for the Real‑Time MIDI Notation Engine v4.2.0.  
 It ensures architectural consistency, supports long‑term scalability, and prepares the project  
-for the upcoming **v5.0.0 engraving + analysis expansion**.
+for the upcoming **v4.3.0 Editing API** and **v5.0.0 engraving + analysis expansion**.
