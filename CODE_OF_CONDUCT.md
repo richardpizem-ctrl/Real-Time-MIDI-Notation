@@ -1,4 +1,4 @@
-# 🤝 Real‑Time MIDI Notation — Code of Conduct (v4.0.0)
+# 🤝 Real‑Time MIDI Notation — Code of Conduct (v4.2.0)
 
 The **Real‑Time MIDI Notation (SIRIUS Engine)** project is built by a diverse global community of  
 developers, musicians, designers, researchers, and contributors.  
