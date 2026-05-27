@@ -1,8 +1,8 @@
-# 🏗️ Real‑Time MIDI Notation — ARCHITECTURE DIAGRAM (v4.0.0)
+# 🏗️ Real‑Time MIDI Notation — ARCHITECTURE DIAGRAM (v4.2.0)
 
 This document provides a complete, high‑level overview of the system architecture for  
-**SIRIUS / Real‑Time MIDI Notation v4.0.0**, including real‑time MIDI flow, module responsibilities,  
-and communication pathways.
+**SIRIUS / Real‑Time MIDI Notation v4.2.0**, including real‑time MIDI flow, module responsibilities,  
+communication pathways, and the newly added **Editing Layer (v4.2.0)**.
 
 It is designed for developers, contributors, researchers, and engineers studying the internal structure  
 of the engine.
@@ -37,7 +37,7 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
 
 ---
 
-# 🎹 1. High‑Level System Overview (v4.0.0)
+# 🎹 1. High‑Level System Overview (v4.2.0)
 
 ```
 🎹 MIDI Device (Keyboard / Yamaha Arranger / Virtual MIDI)
@@ -49,23 +49,25 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
 🔀 midi_input/EventRouter
                 │
                 ▼
-📡 core/EventBus v4 ───────────────────────────────────────────────────────────────┐
-                │                                                                  │
-                ├──────────────► 🎚 track_system/TrackSystem                       │
-                │                                                                  │
-                ├──────────────► 🧠 notation_processor/NotationProcessor            │
-                │                                                                  │
-                ▼                                                                  │
-⏱ core/PlaybackEngine v4                                                           │
-                │                                                                  │
-                ▼                                                                  │
-🎨 renderer_new/GraphicNotationRenderer v4                                          │
-                │                                                                  │
-                ▼                                                                  │
-🖼 ui/CanvasUI                                                                       │
-                │                                                                  │
-                ▼                                                                  │
-🧩 ui/UIManager v4 ◄────────────────────────────────────────────────────────────────┘
+📡 core/EventBus v4 ───────────────────────────────────────────────────────────────────────────────┐
+                │                                                                                  │
+                ├──────────────► 🎚 track_system/TrackSystem                                       │
+                │                                                                                  │
+                ├──────────────► 🧠 notation_processor/NotationProcessor                            │
+                │                                                                                  │
+                ├──────────────► ✏️ editing/Editing Layer (v4.2.0)                                  │
+                │                                                                                  │
+                ▼                                                                                  │
+⏱ core/PlaybackEngine v4                                                                           │
+                │                                                                                  │
+                ▼                                                                                  │
+🎨 renderer_new/GraphicNotationRenderer v4                                                          │
+                │                                                                                  │
+                ▼                                                                                  │
+🖼 ui/CanvasUI                                                                                       │
+                │                                                                                  │
+                ▼                                                                                  │
+🧩 ui/UIManager v4 ◄────────────────────────────────────────────────────────────────────────────────┘
                 │
                 ▼
 🪟 Pygame Window (Final Output)
@@ -73,7 +75,7 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
 
 ---
 
-# 🧩 2. Module Responsibilities (v4.0.0)
+# 🧩 2. Module Responsibilities (v4.2.0)
 
 ## 🎹 MIDI Input Layer
 
@@ -103,6 +105,7 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
   - NotationProcessor  
   - TrackManager  
   - PlaybackEngine  
+  - **Editing Layer (v4.2.0)**  
 
 ---
 
@@ -128,6 +131,41 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
 - Timing + velocity extraction  
 - Prepares data for renderer  
 - Integrated RhythmAnalyzer v4  
+
+---
+
+## ✏️ Editing Layer (v4.2.0)
+
+### `editing/selection.py`
+- SelectionSet  
+- SelectionItem  
+- Multi‑selection  
+- Selection events  
+
+### `editing/regions.py`
+- RegionManager  
+- Region creation  
+- Region splitting  
+- Region events  
+
+### `editing/snapping.py`
+- SnapGrid  
+- snap_time  
+- snap_range  
+- Pitch/time snapping  
+
+### `editing/ghosts.py`
+- GhostNote  
+- GhostRegion  
+- HoverState  
+- GhostController  
+
+### `editing/events.py`
+- SelectionChangedEvent  
+- RegionCreatedEvent  
+- RegionSplitEvent  
+- GhostNotePreviewEvent  
+- GhostRegionPreviewEvent  
 
 ---
 
@@ -173,7 +211,7 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
 
 ---
 
-# 🔄 3. Full Real‑Time Pipeline (Detailed v4.0.0)
+# 🔄 3. Full Real‑Time Pipeline (Detailed v4.2.0)
 
 ```
 🎹 MIDI Device
@@ -190,6 +228,8 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
       ├────────► TrackSystem (track attributes)
       │
       ├────────► NotationProcessor (note objects)
+      │
+      ├────────► Editing Layer (selection, regions, snapping, ghosts)
       │
       ▼
 ⏱ PlaybackEngine v4
@@ -209,7 +249,7 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
 
 ---
 
-# 🧱 4. Architectural Principles (v4.0.0)
+# 🧱 4. Architectural Principles (v4.2.0)
 
 - **Modular** — each component is isolated  
 - **Extensible** — new UI, processors, or renderers can be added  
@@ -219,6 +259,7 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
 - **Renderer‑first** — optimized for real‑time drawing  
 - **Predictable timing** — PlaybackEngine v4 ensures stable frame pacing  
 - **Safe device handling** — DeviceManager v4 prevents port‑locking issues  
+- **Editing‑ready** — v4.2.0 introduces a complete editing foundation  
 
 ---
 
@@ -233,7 +274,10 @@ SIRIUS defines a **new category of real‑time MIDI tools**, complementing tradi
 - MusicXML export  
 - Predictive layout (AI‑assisted)  
 - Advanced performance analytics  
+- Editing API v1 (v4.3.0)  
+- Undo/Redo v2  
+- Quantization engine  
 
 ---
 
-# 🎉 End of Architecture Diagram (v4.0.0)
+# 🎉 End of Architecture Diagram (v4.2.0)
