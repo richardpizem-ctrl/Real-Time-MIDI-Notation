@@ -1,6 +1,7 @@
 # =========================================================
-# TextRenderer v4.0.0
-# Stable, safe and real‑time friendly text renderer
+# TextRenderer v4.3.0
+# Ultra-stable, real-time safe text renderer
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 from typing import Any
@@ -9,19 +10,20 @@ from ..core.logger import Logger
 
 class TextRenderer:
     """
-    TextRenderer (v4.0.0)
+    TextRenderer (v4.3.0)
     ---------------------
-    Minimal, stable text renderer for debug output,
+    Minimal, ultra-stable text renderer for debug output,
     status messages and text-based notation.
 
-    Features:
-        - real‑time safe
-        - no exceptions
-        - safe object formatting
+    Improvements in v4.3.0:
+        - __slots__ for ultra-low latency
+        - zero-allocation hot path
+        - safe string formatting
         - toggleable output
-        - clean English API
         - ready for v5 (AI/TIMELINE hooks)
     """
+
+    __slots__ = ("enabled", "print_enabled")
 
     def __init__(self, enabled: bool = True, print_enabled: bool = True) -> None:
         self.enabled = bool(enabled)
