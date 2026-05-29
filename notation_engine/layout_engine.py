@@ -1,5 +1,5 @@
 # =========================================================
-# LayoutEngine v4.0.0
+# LayoutEngine v4.3.0
 # Stabilný layout notácie pre Real-Time-MIDI-Notation
 # =========================================================
 
@@ -10,6 +10,13 @@ from .drum_notation import annotate_drum_timeline
 
 class LayoutConfig:
     """Configuration for layout behavior."""
+
+    __slots__ = (
+        "max_symbols_per_line", "min_spacing", "max_spacing",
+        "barline_spacing", "line_break_on_bars",
+        "max_line_width", "line_height",
+        "min_bars_for_justify", "min_bars_for_smart_justify"
+    )
 
     def __init__(
         self,
@@ -38,15 +45,18 @@ class LayoutConfig:
 
 class LayoutEngine:
     """
-    LayoutEngine (v4.0.0):
+    LayoutEngine (v4.3.0):
     - berie sekvenciu symbolov (noty, pomlky, taktové čiary, ...)
     - produkuje riadkový layout s rozostupmi a skupinami taktov
     - stabilné spracovanie, bezpečné fallbacky
+    - real-time safe
     """
+
+    __slots__ = ("config",)
 
     def __init__(self, config: LayoutConfig | None = None):
         self.config = config or LayoutConfig()
-        Logger.info("LayoutEngine initialized with full layout configuration (v4-ready).")
+        Logger.info("LayoutEngine initialized (v4.3.0).")
 
     # ---------------------------------------------------------
     # PUBLIC API
@@ -60,11 +70,12 @@ class LayoutEngine:
             bars = self._group_into_bars(symbols)
             if not bars:
                 return []
+
             lines = self._break_into_lines(bars)
             if not lines:
                 return []
-            laid_out = self._apply_spacing(lines)
 
+            laid_out = self._apply_spacing(lines)
             Logger.info(f"LayoutEngine produced {len(laid_out)} lines.")
             return laid_out
 
@@ -76,8 +87,8 @@ class LayoutEngine:
     # 1) Grouping into bars
     # ---------------------------------------------------------
     def _group_into_bars(self, symbols: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
-        bars: List[List[Dict[str, Any]]] = []
-        current_bar: List[Dict[str, Any]] = []
+        bars = []
+        current_bar = []
 
         for sym in symbols:
             if not isinstance(sym, dict):
@@ -85,8 +96,7 @@ class LayoutEngine:
 
             current_bar.append(sym)
             if sym.get("type") == "barline":
-                if current_bar:
-                    bars.append(current_bar)
+                bars.append(current_bar)
                 current_bar = []
 
         if current_bar:
@@ -99,12 +109,14 @@ class LayoutEngine:
     # 2) Line breaking
     # ---------------------------------------------------------
     def _break_into_lines(self, bars: List[List[Dict[str, Any]]]) -> List[List[Dict[str, Any]]]:
-        lines: List[List[Dict[str, Any]]] = []
-        current_line: List[Dict[str, Any]] = []
-        current_width: float = 0.0
+        lines = []
+        current_line = []
+        current_width = 0.0
+
+        max_width = self.config.max_line_width
 
         for bar in bars:
-            if not isinstance(bar, list) or not bar:
+            if not bar:
                 continue
 
             try:
@@ -112,12 +124,12 @@ class LayoutEngine:
             except Exception:
                 bar_width = 0.0
 
-            if current_width + bar_width > self.config.max_line_width and current_line:
+            if current_width + bar_width > max_width and current_line:
                 lines.append(current_line)
                 current_line = []
                 current_width = 0.0
 
-            current_line.extend([s for s in bar if isinstance(s, dict)])
+            current_line.extend(bar)
             current_width += bar_width
 
         if current_line:
@@ -138,66 +150,58 @@ class LayoutEngine:
         return width
 
     # ---------------------------------------------------------
-    # 3) SMART JUSTIFY 2.0 + CENTER LAST LINE + NO JUSTIFY ON SHORT LINES
+    # 3) SMART JUSTIFY 2.0 + CENTER LAST LINE
     # ---------------------------------------------------------
     def _apply_spacing(self, lines: List[List[Dict[str, Any]]]) -> List[List[Dict[str, Any]]]:
-        laid_out_lines: List[List[Dict[str, Any]]] = []
+        laid_out_lines = []
         if not lines:
             return laid_out_lines
 
         last_line_index = len(lines) - 1
-        line_index = 0
 
-        for line in lines:
-            if not isinstance(line, list) or not line:
-                line_index += 1
+        for line_index, line in enumerate(lines):
+            if not line:
                 continue
 
-            # Rozdeliť symboly do taktov
-            bars: List[List[Dict[str, Any]]] = []
-            current_bar: List[Dict[str, Any]] = []
+            # Rozdelenie na takty
+            bars = []
+            current_bar = []
 
             for sym in line:
                 if not isinstance(sym, dict):
                     continue
                 current_bar.append(sym)
                 if sym.get("type") == "barline":
-                    if current_bar:
-                        bars.append(current_bar)
+                    bars.append(current_bar)
                     current_bar = []
+
             if current_bar:
                 bars.append(current_bar)
 
             if not bars:
-                line_index += 1
                 continue
 
             bar_count = len(bars)
 
-            # Šírka každého taktu
-            bar_widths: List[float] = []
+            # Šírky taktov
+            bar_widths = []
             for bar in bars:
                 try:
-                    bar_widths.append(
-                        sum(self._spacing_for_symbol(s) for s in bar if isinstance(s, dict))
-                    )
+                    bar_widths.append(sum(self._spacing_for_symbol(s) for s in bar))
                 except Exception:
                     bar_widths.append(0.0)
 
             total_original_width = sum(bar_widths)
 
-            # Rytmická váha každého taktu
-            bar_rhythm_weights: List[float] = []
+            # Rytmické váhy
+            bar_rhythm_weights = []
             for bar in bars:
                 weight = 0.0
                 for s in bar:
-                    if not isinstance(s, dict):
-                        continue
                     if s.get("type") == "barline":
                         continue
-                    dur = s.get("duration", 0.25)
                     try:
-                        dur = float(dur)
+                        dur = float(s.get("duration", 0.25))
                     except Exception:
                         dur = 0.25
 
@@ -211,119 +215,78 @@ class LayoutEngine:
                         weight += 0.5 * dur
                     else:
                         weight += 0.25 * dur
-                bar_rhythm_weights.append(weight or 1.0)
 
-            Logger.info(
-                f"Line {line_index}: bars={bar_count}, "
-                f"width={total_original_width:.2f}, "
-                f"rhythm_weights={bar_rhythm_weights}"
-            )
+                bar_rhythm_weights.append(weight or 1.0)
 
             # CENTER LAST LINE
             if line_index == last_line_index:
                 x_pos = (self.config.max_line_width - total_original_width) / 2.0
-                laid_out_line: List[Dict[str, Any]] = []
+                laid_out_line = []
 
                 for bar_idx, bar in enumerate(bars):
                     for sym in bar:
                         spacing = self._spacing_for_symbol(sym)
-
-                        laid_out_line.append(
-                            {
-                                "symbol": sym,
-                                "x": x_pos,
-                                "line": line_index,
-                                "spacing": spacing,
-                                "debug": {
-                                    "mode": "center_last_line",
-                                    "bar_index": bar_idx,
-                                    "base_spacing": spacing,
-                                    "extra_spacing": 0.0,
-                                },
-                            }
-                        )
-
+                        laid_out_line.append({
+                            "symbol": sym,
+                            "x": x_pos,
+                            "line": line_index,
+                            "spacing": spacing,
+                        })
                         x_pos += spacing
 
                 laid_out_lines.append(laid_out_line)
-                line_index += 1
                 continue
 
-            # NO JUSTIFY ON SHORT LINES
+            # SHORT LINES → no justify
             if bar_count < self.config.min_bars_for_justify:
-                laid_out_line: List[Dict[str, Any]] = []
                 x_pos = 0.0
-                for bar_idx, bar in enumerate(bars):
+                laid_out_line = []
+
+                for bar in bars:
                     for sym in bar:
                         spacing = self._spacing_for_symbol(sym)
-                        laid_out_line.append(
-                            {
-                                "symbol": sym,
-                                "x": x_pos,
-                                "line": line_index,
-                                "spacing": spacing,
-                                "debug": {
-                                    "mode": "no_justify_short_line",
-                                    "bar_index": bar_idx,
-                                    "base_spacing": spacing,
-                                    "extra_spacing": 0.0,
-                                },
-                            }
-                        )
+                        laid_out_line.append({
+                            "symbol": sym,
+                            "x": x_pos,
+                            "line": line_index,
+                            "spacing": spacing,
+                        })
                         x_pos += spacing
 
                 laid_out_lines.append(laid_out_line)
-                line_index += 1
                 continue
 
-            # JUSTIFY / SMART JUSTIFY 2.0
+            # JUSTIFY / SMART JUSTIFY
             remaining = max(self.config.max_line_width - total_original_width, 0.0)
 
             if bar_count >= self.config.min_bars_for_smart_justify:
                 total_weight = sum(bar_rhythm_weights) or 1.0
                 bar_extra = [remaining * (rw / total_weight) for rw in bar_rhythm_weights]
-                mode = "smart_justify_2_0"
             else:
                 total_bar_weight = sum(bar_widths) or 1.0
                 bar_extra = [remaining * (bw / total_bar_weight) for bw in bar_widths]
-                mode = "justify_width_based"
 
-            laid_out_line: List[Dict[str, Any]] = []
             x_pos = 0.0
+            laid_out_line = []
 
-            for bar_idx, (bar, extra_width) in enumerate(zip(bars, bar_extra)):
+            for bar, extra_width in zip(bars, bar_extra):
                 gaps = max(len(bar) - 1, 1)
                 extra_per_symbol = extra_width / gaps if gaps > 0 else 0.0
 
                 for i, sym in enumerate(bar):
                     base_spacing = self._spacing_for_symbol(sym)
+                    spacing = base_spacing + extra_per_symbol if i < len(bar) - 1 else base_spacing
 
-                    if i < len(bar) - 1:
-                        spacing = base_spacing + extra_per_symbol
-                        extra = extra_per_symbol
-                    else:
-                        spacing = base_spacing
-                        extra = 0.0
-
-                    laid_out_line.append(
-                        {
-                            "symbol": sym,
-                            "x": x_pos,
-                            "line": line_index,
-                            "spacing": spacing,
-                            "debug": {
-                                "mode": mode,
-                                "bar_index": bar_idx,
-                                "base_spacing": base_spacing,
-                                "extra_spacing": extra,
-                            },
-                        }
-                    )
+                    laid_out_line.append({
+                        "symbol": sym,
+                        "x": x_pos,
+                        "line": line_index,
+                        "spacing": spacing,
+                    })
 
                     x_pos += spacing
 
             laid_out_lines.append(laid_out_line)
-            line_index += 1
 
         return laid_out_lines
 
@@ -331,14 +294,11 @@ class LayoutEngine:
         if not isinstance(symbol, dict):
             return self.config.min_spacing
 
-        sym_type = symbol.get("type")
-        duration = symbol.get("duration", 0.25)
-
-        if sym_type == "barline":
+        if symbol.get("type") == "barline":
             return self.config.barline_spacing
 
         try:
-            dur = float(duration)
+            dur = float(symbol.get("duration", 0.25))
         except Exception:
             dur = 0.25
 
@@ -346,10 +306,16 @@ class LayoutEngine:
         return max(self.config.min_spacing, min(self.config.max_spacing, base))
 
 
-# -------------------------------------------------------------------------
-# PixelLayoutEngine v4.0.0 – grafický layout pre renderer (x/y pozície)
-# -------------------------------------------------------------------------
+# =========================================================
+# PixelLayoutEngine v4.3.0
+# Grafický layout pre renderer (x/y pozície)
+# =========================================================
 class PixelLayoutEngine:
+    __slots__ = (
+        "note_spacing", "measure_width", "staff_top", "staff_spacing",
+        "track_offsets", "drum_y_map", "reference_pitch", "pitch_step"
+    )
+
     def __init__(
         self,
         note_spacing: float = 40.0,
@@ -362,14 +328,14 @@ class PixelLayoutEngine:
         self.staff_top = float(staff_top)
         self.staff_spacing = float(staff_spacing)
 
-        self.track_offsets: Dict[str, float] = {
+        self.track_offsets = {
             "melody": 0.0,
             "bass": staff_spacing,
             "drums": staff_spacing * 2,
             "chords": staff_spacing * 3,
         }
 
-        self.drum_y_map: Dict[int, float] = {
+        self.drum_y_map = {
             36: +20.0,
             38: 0.0,
             42: -20.0,
@@ -378,8 +344,8 @@ class PixelLayoutEngine:
             51: -40.0,
         }
 
-        self.reference_pitch: int = 60
-        self.pitch_step: float = 3.0
+        self.reference_pitch = 60
+        self.pitch_step = 3.0
 
     # ---------------------------------------------------------
     # TIMELINE LAYOUT
@@ -393,14 +359,17 @@ class PixelLayoutEngine:
         except Exception:
             annotated = timeline
 
-        result: List[Dict[str, Any]] = []
+        result = []
+        append = result.append
+
         for note in annotated:
             if not isinstance(note, dict):
                 continue
             try:
-                result.append(self.layout_note(note))
+                append(self.layout_note(note))
             except Exception:
                 continue
+
         return result
 
     def layout_single(self, note: Dict[str, Any]) -> Dict[str, Any]:
