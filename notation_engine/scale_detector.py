@@ -1,6 +1,7 @@
 # =========================================================
-# ScaleDetector v4.0.0
+# ScaleDetector v4.3.0
 # Stabilná detekcia stupnice podľa pitch-classov
+# Real-time safe, deterministické, optimalizované
 # =========================================================
 
 from typing import Iterable, Optional, Dict, Set, Any
@@ -18,15 +19,14 @@ MINOR_PATTERN = [0, 2, 3, 5, 7, 8, 10]
 # SAFE HELPERS
 # ---------------------------------------------------------
 def _safe_iter_pitches(pitches: Any) -> Iterable[int]:
-    if pitches is None:
-        return []
-    if not hasattr(pitches, "__iter__"):
+    if pitches is None or not hasattr(pitches, "__iter__"):
         return []
     result = []
+    append = result.append
     for p in pitches:
         try:
             if isinstance(p, (int, float)):
-                result.append(int(p) % 12)
+                append(int(p) % 12)
         except Exception:
             continue
     return result
@@ -42,11 +42,11 @@ def _build_scale(root: int, is_major: bool) -> Set[int]:
 
 
 # ---------------------------------------------------------
-# SCALE DETECTOR v4.0.0
+# SCALE DETECTOR v4.3.0
 # ---------------------------------------------------------
 class ScaleDetector:
     """
-    ScaleDetector (v4.0.0):
+    ScaleDetector (v4.3.0):
     - analyzuje MIDI pitch-classy
     - odhaduje stupnicu (dur/mol)
     - vracia:
@@ -55,23 +55,30 @@ class ScaleDetector:
         name ("C major", "A minor")
         scale_pcs (set)
         coverage (0.0–1.0)
+    - real-time safe, deterministické
     """
 
+    __slots__ = ("scales",)
+
     def __init__(self):
-        self.scales = []
+        scales = []
+        append = scales.append
+
         for root in range(12):
-            self.scales.append({
+            append({
                 "root": root,
                 "is_major": True,
                 "name": f"{NOTE_NAMES[root]} major",
                 "pcs": _build_scale(root, True),
             })
-            self.scales.append({
+            append({
                 "root": root,
                 "is_major": False,
                 "name": f"{NOTE_NAMES[root]} minor",
                 "pcs": _build_scale(root, False),
             })
+
+        self.scales = scales
 
     # ---------------------------------------------------------
     # DETEKCIA STUPNICE
