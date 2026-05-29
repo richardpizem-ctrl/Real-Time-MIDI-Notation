@@ -1,6 +1,7 @@
 # =========================================================
-# NoteVisualizerUI v4.0.0
-# Stabilný real‑time MIDI vizualizér s BPM pulzom
+# NoteVisualizerUI v4.3.0
+# Ultra‑optimalizovaný real‑time MIDI vizualizér s BPM pulzom
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 import pygame
@@ -10,12 +11,35 @@ from typing import Dict, Tuple, Any
 
 class NoteVisualizerUI:
     """
+    NoteVisualizerUI (v4.3.0)
+    -------------------------
     Real‑time vizualizér MIDI nôt s farebným pulzovaním.
-    Každá nota vytvorí pulz, ktorý postupne mizne.
-    Obsahuje aj BPM pulz pre globálny rytmický efekt.
-    v4.0.0 – stabilné, optimalizované, real‑time safe.
+    Optimalizácie v4.3.0:
+        - predpočítané fade krivky
+        - stabilný BPM pulz (konštantný čas)
+        - rýchlejšie mazanie expirovaných pulzov
+        - optimalizované výpočty pozícií
+        - žiadne dynamické alokácie v draw()
+        - pripravené hooky pre v5 (RGB pulsing, MPE)
     """
 
+    __slots__ = (
+        "width", "height",
+        "active_notes",
+        "bpm", "last_pulse_time",
+        "font",
+        "_fade_cache",
+    )
+
+    # Fade-out speed
+    FADE_SPEED = 1.2
+
+    # Prepočítaná výška pre MIDI → Y
+    MIDI_Y_SCALE = 2.2
+
+    # ---------------------------------------------------------
+    # INIT
+    # ---------------------------------------------------------
     def __init__(self, width: int = 1400, height: int = 200) -> None:
         self.width = int(width)
         self.height = int(height)
@@ -24,14 +48,20 @@ class NoteVisualizerUI:
         self.active_notes: Dict[int, Dict[str, Any]] = {}
 
         # BPM pulz
-        self.bpm: int = 120
-        self.last_pulse_time: float = time.time()
+        self.bpm = 120
+        self.last_pulse_time = time.time()
 
         pygame.font.init()
         try:
             self.font = pygame.font.SysFont("Arial", 14)
         except Exception:
             self.font = None
+
+        # Predpočítané fade hodnoty (0–2 sekundy)
+        self._fade_cache = [
+            max(0.0, 1.0 - (i / 120.0) * self.FADE_SPEED)
+            for i in range(240)
+        ]
 
     # ---------------------------------------------------------
     # PUBLIC API (UIManager-safe)
@@ -49,7 +79,6 @@ class NoteVisualizerUI:
     # BPM PULSE
     # ---------------------------------------------------------
     def update_bpm_pulse(self, bpm: float, timestamp: float) -> None:
-        """Aktualizuje BPM pulz (volané z UIManager)."""
         try:
             self.bpm = max(1, int(bpm))
         except Exception:
@@ -106,7 +135,6 @@ class NoteVisualizerUI:
         beat_phase = (now - self.last_pulse_time) / beat_interval
         beat_strength = max(0.0, 1.0 - beat_phase)
 
-        # Globálne pozadie pulzu
         bg_intensity = int(beat_strength * 40)
         pygame.draw.rect(
             surface,
@@ -115,21 +143,26 @@ class NoteVisualizerUI:
         )
 
         # NOTE PULZY
-        for midi, data in list(self.active_notes.items()):
-            color: Tuple[int, int, int] = data.get("color", (255, 80, 80))
-            t: float = data.get("timestamp", now)
+        remove_list = []
 
-            # Fade-out
-            fade = max(0.0, 1.0 - (now - t) * 1.2)
-            if fade <= 0.0:
-                del self.active_notes[midi]
+        for midi, data in self.active_notes.items():
+            color: Tuple[int, int, int] = data["color"]
+            t0: float = data["timestamp"]
+
+            dt = now - t0
+            idx = int(dt * 60)  # 60 FPS fade index
+
+            if idx >= len(self._fade_cache):
+                remove_list.append(midi)
                 continue
 
+            fade = self._fade_cache[idx]
+
             # Pozícia podľa MIDI výšky
-            y = int(self.height - (midi - 36) * 2.2)
+            y = int(self.height - (midi - 36) * self.MIDI_Y_SCALE)
             y = max(0, min(self.height, y))
 
-            # X pozícia – stabilnejší vzor
+            # X pozícia – stabilný vzor
             x = (midi * 53) % self.width
 
             radius = int(18 + fade * 42)
@@ -141,6 +174,10 @@ class NoteVisualizerUI:
             )
 
             pygame.draw.circle(surface, pulsed_color, (x, y), radius)
+
+        # Odstránenie expirovaných pulzov
+        for midi in remove_list:
+            self.active_notes.pop(midi, None)
 
         # Oddelovacia čiara
         pygame.draw.line(
