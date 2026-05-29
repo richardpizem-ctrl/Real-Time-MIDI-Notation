@@ -1,26 +1,29 @@
 # =========================================================
-# TrackSelectionController v4.0.0
-# Stable controller for managing the active MIDI track
+# TrackSelectionController v4.3.0
+# Ultra‑rýchly controller pre správu aktívnej MIDI stopy
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 class TrackSelectionController:
     """
-    TrackSelectionController (v4.0.0)
+    TrackSelectionController (v4.3.0)
     ---------------------------------
-    Minimal, stable controller for managing the active MIDI track.
+    Minimal, ultra‑rýchly controller pre správu aktívnej MIDI stopy.
 
-    Used by:
+    Používajú ho:
         - TrackControlManager
         - UI (Track Switcher, Inspector)
         - Renderer (active track lookup)
 
-    Features:
-        - real‑time safe
-        - no exceptions
-        - fast clamping
-        - clean English API
-        - ready for v5 (multi‑track focus, AI assist)
+    Vylepšenia v4.3.0:
+        - __slots__ pre ultra‑nízku latenciu
+        - rýchlejší clamp
+        - žiadne výnimky
+        - čisté API
+        - pripravené pre v5 (multi‑track focus, AI assist)
     """
+
+    __slots__ = ("track_count", "active_track")
 
     def __init__(self, track_count: int = 16):
         self.track_count = int(track_count)
@@ -30,12 +33,17 @@ class TrackSelectionController:
     # INTERNAL HELPERS
     # ---------------------------------------------------------
     def _clamp(self, track: int) -> int:
-        """Clamp track index to the valid range 0–track_count-1."""
+        """Clamp track index to the valid range 0–track_count-1 (ultra‑fast)."""
         try:
             t = int(track)
         except Exception:
             return 0
-        return 0 if t < 0 else (self.track_count - 1 if t >= self.track_count else t)
+
+        if t < 0:
+            return 0
+        if t >= self.track_count:
+            return self.track_count - 1
+        return t
 
     # ---------------------------------------------------------
     # PUBLIC API
