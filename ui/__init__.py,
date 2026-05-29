@@ -1,14 +1,14 @@
 """
-UI Package (v4.0.0)
+UI Package (v4.3.0)
 
 Tento balík združuje všetky UI komponenty projektu:
-- PianoUI (real‑time klavírna vizualizácia)
+- PianoUI (real‑time klavírna vizualizácia v4.3.0)
 - Timeline UI vrstvy
 - Renderer UI moduly
 - Interaktívne vizualizačné prvky
 
-UI vrstva je oddelená od logiky a real‑time pipeline.
+UI vrstva je oddelená od logiky a real‑time pipeline
+a je kompatibilná s Runtime 4.3.0 → 5.x.
 """
 
 __all__ = []
-
