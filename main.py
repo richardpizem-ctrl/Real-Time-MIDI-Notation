@@ -1,5 +1,5 @@
 # =========================================================
-# main.py – Real-Time MIDI Notation v4.0.0
+# main.py – Real-Time MIDI Notation v4.3.0
 # Stable main launcher for SIRIUS MIDI Engine
 # =========================================================
 
@@ -13,14 +13,14 @@ from core.track_manager import TrackManager
 from core.notation_processor import NotationProcessor
 from core.playback_engine import PlaybackEngine
 
-from ui.ui_manager import UIManager  # UI wrapper v4
+from ui.ui_manager import UIManager  # UI wrapper v4.3.0
 
 
 # ---------------------------------------------------------
 # MAIN FUNCTION
 # ---------------------------------------------------------
 def main():
-    Logger.info("=== REAL-TIME MIDI NOTATION START (v4.0.0) ===")
+    Logger.info("=== REAL-TIME MIDI NOTATION START (v4.3.0) ===")
 
     # -----------------------------------------------------
     # 0. Pygame initialization
@@ -38,7 +38,7 @@ def main():
             (screen_width, screen_height),
             pygame.DOUBLEBUF | pygame.HWSURFACE,
         )
-        pygame.display.set_caption("SIRIUS MIDI Engine | v4.0.0")
+        pygame.display.set_caption("SIRIUS MIDI Engine | v4.3.0")
 
         clock = pygame.time.Clock()
 
@@ -78,8 +78,8 @@ def main():
     try:
         playback_engine = PlaybackEngine(
             track_manager=track_manager,
-            renderer=None,      # UIManager v4 injects renderer
-            canvas_ui=None,     # UIManager v4 injects CanvasUI
+            renderer=None,      # UIManager injects renderer
+            canvas_ui=None,     # UIManager injects CanvasUI
             bpm=120.0,
             beats_per_bar=4,
         )
@@ -88,7 +88,7 @@ def main():
         return
 
     # -----------------------------------------------------
-    # 4. UI Manager (v4.0.0)
+    # 4. UI Manager (v4.3.0)
     # -----------------------------------------------------
     try:
         ui = UIManager(
