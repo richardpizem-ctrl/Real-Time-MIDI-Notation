@@ -1,6 +1,10 @@
 # =========================================================
-# LatencyMonitor v4.0.0
+# LatencyMonitor v4.3.0
 # Stabilné meranie latencie pre real-time processing
+# - mikrooptimalizácie
+# - žiadne alokácie v slučke
+# - real-time safe
+# - diagnostické fallbacky
 # =========================================================
 
 import time
@@ -11,12 +15,22 @@ from ..core.logger import Logger
 
 class LatencyMonitor:
     """
-    LatencyMonitor (v4.0.0):
+    LatencyMonitor (v4.3.0):
     - bezpečné meranie latencie medzi udalosťami
     - stabilné štatistiky (min, max, avg, last)
     - odolnosť voči chybám v real-time pipeline
-    - optimalizované pre architektúru v4
+    - optimalizované pre architektúru v4.3.0
+    - žiadne alokácie v slučke
     """
+
+    __slots__ = (
+        "window_size",
+        "last_timestamp",
+        "latencies",
+        "max_latency",
+        "min_latency",
+        "avg_latency",
+    )
 
     def __init__(self, window_size: int = 100):
         try:
@@ -54,22 +68,30 @@ class LatencyMonitor:
         now = time.perf_counter()
 
         # First event → no latency yet
-        if self.last_timestamp is None:
+        last = self.last_timestamp
+        if last is None:
             self.last_timestamp = now
             return None
 
-        latency = now - self.last_timestamp
+        latency = now - last
         self.last_timestamp = now
 
         try:
             self.latencies.append(latency)
 
             # Update stats
-            self.max_latency = max(self.max_latency, latency)
-            self.min_latency = latency if self.min_latency is None else min(self.min_latency, latency)
+            if latency > self.max_latency:
+                self.max_latency = latency
 
-            if self.latencies:
-                self.avg_latency = sum(self.latencies) / len(self.latencies)
+            if self.min_latency is None or latency < self.min_latency:
+                self.min_latency = latency
+
+            count = len(self.latencies)
+            if count:
+                # Avoid sum() allocation by manual incremental update
+                self.avg_latency = (
+                    (self.avg_latency * (count - 1)) + latency
+                ) / count
 
         except Exception as e:
             try:
