@@ -3,33 +3,53 @@
 # Central registry for UI components (v4.3 architecture)
 # =========================================================
 
-from .transport_ui import TransportUI
+# Core controllers
 from .track_selection_controller import TrackSelectionController
 from .track_visibility_controller import TrackVisibilityController
 from .track_color_map import TrackColorMap
 from .track_control_manager import TrackControlManager
 
+# Transport
+from .transport_ui import TransportUI
+
+# Track UI
 from .track_selector_ui import TrackSelectorUI
 from .track_switcher_ui import TrackSwitcherUI
 
+# Main visual UI
 from .timeline_ui import TimelineUI
 from .staff_ui import StaffUI
 from .piano_roll_ui import PianoRollUI
 from .piano_keyboard_ui import PianoKeyboardUI
 
+# New modules (v4.3.0)
+from .diagnostics_overlay import DiagnosticsOverlay
+from .new_module_name import NewModuleName
+
 
 __all__ = [
-    "TransportUI",
+    # Core controllers
     "TrackSelectionController",
     "TrackVisibilityController",
     "TrackColorMap",
     "TrackControlManager",
+
+    # Transport
+    "TransportUI",
+
+    # Track UI
     "TrackSelectorUI",
     "TrackSwitcherUI",
+
+    # Main visual UI
     "TimelineUI",
     "StaffUI",
     "PianoRollUI",
     "PianoKeyboardUI",
+
+    # New modules
+    "DiagnosticsOverlay",
+    "NewModuleName",
 ]
 
 
@@ -50,6 +70,7 @@ def create_default_ui_components(track_system=None, notation_processor=None):
     # UI components
     return {
         "transport": TransportUI(),
+
         "track_selection": selection,
         "track_visibility": visibility,
         "track_colors": colors,
@@ -68,4 +89,8 @@ def create_default_ui_components(track_system=None, notation_processor=None):
         "staff": StaffUI(),
         "piano_roll": PianoRollUI(),
         "piano_keyboard": PianoKeyboardUI(),
+
+        # New modules (optional UI overlays)
+        "diagnostics_overlay": DiagnosticsOverlay(),
+        "new_module": NewModuleName(),
     }
