@@ -1,5 +1,5 @@
 # =========================================================
-# RhythmAnalyzer v4.0.0
+# RhythmAnalyzer v4.3.0
 # Stable real‑time rhythm analyzer for MIDI note_on events
 # =========================================================
 
@@ -10,7 +10,7 @@ from core.logger import Logger
 
 class RhythmAnalyzer:
     """
-    RhythmAnalyzer (v4.0.0)
+    RhythmAnalyzer (v4.3.0)
     -----------------------
     Stable real‑time rhythm analyzer for MIDI input.
 
@@ -22,7 +22,7 @@ class RhythmAnalyzer:
         - provides rhythm stability (0–1)
         - real‑time safe (no exceptions)
         - clean English API
-        - ready for v5 (groove/swing analysis)
+        - ready for future groove/swing analysis
     """
 
     def __init__(self, max_events: int = 32, silence_timeout: float = 2.0):
