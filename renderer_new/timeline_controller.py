@@ -1,12 +1,20 @@
 # =========================================================
-# TimelineController v4.0.0
-# Stabilný riadiaci modul pre timeline (grid, playhead, layout)
+# TimelineController v4.3.0
+# Optimalizovaný riadiaci modul pre timeline (grid, playhead, layout)
+# - mikrooptimalizácie
+# - bezpečné vykresľovanie
+# - real-time safe
+# - pripravené na diagnostiku a profiler
 # =========================================================
 
-import pygame
 from typing import Optional, List, Dict, Any
-from ..core.logger import Logger
 
+try:
+    import pygame
+except Exception:
+    pygame = None
+
+from ..core.logger import Logger
 from .timeline_grid import TimelineGrid
 from .playhead import Playhead
 from .timeline_layout_engine import TimelineLayoutEngine
@@ -14,14 +22,30 @@ from .timeline_layout_engine import TimelineLayoutEngine
 
 class TimelineController:
     """
-    TimelineController (v4.0.0)
+    TimelineController (v4.3.0)
     ---------------------------
     Účel:
         - Riadi timeline (grid, playhead, layout)
         - Poskytuje API pre zoom, scroll, update, markers
         - Slúži ako zdroj pre TimelineLayer
         - Real‑time safe, bez blokujúcich operácií
+
+    Vylepšenia v4.3.0:
+        - bezpečnejšie fallbacky
+        - stabilnejšia synchronizácia layout/grid/playhead
+        - pripravené na diagnostiku a profiler
     """
+
+    __slots__ = (
+        "width",
+        "height",
+        "layout",
+        "grid",
+        "playhead",
+        "markers",
+        "surface",
+        "font",
+    )
 
     def __init__(
         self,
@@ -81,26 +105,35 @@ class TimelineController:
         # -----------------------------------------------------
         # SURFACE
         # -----------------------------------------------------
-        try:
-            self.surface = pygame.Surface((self.width, self.height))
-        except Exception:
+        if pygame is not None:
+            try:
+                self.surface = pygame.Surface((self.width, self.height))
+            except Exception:
+                self.surface = None
+        else:
             self.surface = None
 
         # -----------------------------------------------------
         # FONT
         # -----------------------------------------------------
-        try:
-            self.font = pygame.font.SysFont("Arial", 14)
-        except Exception:
+        if pygame is not None:
+            try:
+                self.font = pygame.font.SysFont("Arial", 14)
+            except Exception:
+                self.font = None
+        else:
             self.font = None
 
-        Logger.info("TimelineController initialized (v4.0.0).")
+        Logger.info("TimelineController initialized (v4.3.0).")
 
     # ---------------------------------------------------------
     # EXTERNAL LAYOUT UPDATES
     # ---------------------------------------------------------
     def set_bounds(self, width: int, height: int) -> None:
         """Externé nastavenie veľkosti timeline."""
+        if pygame is None:
+            return
+
         try:
             self.width = max(1, int(width))
             self.height = max(1, int(height))
@@ -142,11 +175,14 @@ class TimelineController:
     # ---------------------------------------------------------
     def set_markers(self, markers: List[Dict[str, Any]]) -> None:
         """Prijme markery z TimelineUI alebo rendereru."""
-        if isinstance(markers, (list, tuple)):
-            try:
-                self.markers = list(markers)
-            except Exception:
-                pass
+        if not isinstance(markers, (list, tuple)):
+            return
+
+        try:
+            self.markers = list(markers)
+        except Exception:
+            # radšej necháme pôvodné markery, ako by sme mali zhodiť timeline
+            pass
 
     # ---------------------------------------------------------
     # UPDATE TIMELINE STATE
@@ -169,19 +205,23 @@ class TimelineController:
     # ---------------------------------------------------------
     # DRAW HELPERS (pre TimelineLayer)
     # ---------------------------------------------------------
-    def draw_grid(self, surface):
+    def draw_grid(self, surface) -> None:
+        if surface is None:
+            return
         try:
             self.grid.render(surface)
         except Exception:
             pass
 
-    def draw_playhead(self, surface):
+    def draw_playhead(self, surface) -> None:
+        if surface is None:
+            return
         try:
             self.playhead.render(surface)
         except Exception:
             pass
 
-    def draw_markers(self, surface):
+    def draw_markers(self, surface) -> None:
         if pygame is None or surface is None:
             return
 
@@ -225,12 +265,12 @@ class TimelineController:
     # ---------------------------------------------------------
     # MAIN RENDER ENTRY (fallback)
     # ---------------------------------------------------------
-    def render(self) -> Optional[pygame.Surface]:
+    def render(self) -> Optional["pygame.Surface"]:
         """
         Fallback render – používa sa len ak TimelineLayer nie je aktívna.
         V LayerManager architektúre sa používa TimelineLayer.draw().
         """
-        if self.surface is None:
+        if pygame is None or self.surface is None:
             return None
 
         try:
