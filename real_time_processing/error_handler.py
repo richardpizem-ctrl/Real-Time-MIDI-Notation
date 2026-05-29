@@ -1,5 +1,5 @@
 # =========================================================
-# ErrorHandler v4.0.0
+# ErrorHandler v4.3.0
 # Stabilné a bezpečné centrálne spracovanie chýb
 # pre Real-Time-MIDI-Notation
 # =========================================================
@@ -10,13 +10,16 @@ from typing import Any, Callable, Optional
 
 class ErrorHandler:
     """
-    ErrorHandler (v4.0.0):
+    ErrorHandler (v4.3.0):
     - jednotné logovanie
     - bezpečné volanie funkcií
     - ochrana pred zlyhaním Loggera
     - konzistentné návratové hodnoty
-    - stabilné pre real-time pipeline v4
+    - real-time safe
+    - pripravené pre Runtime 5.x
     """
+
+    __slots__ = ()
 
     @staticmethod
     def handle(
