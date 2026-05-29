@@ -1,41 +1,33 @@
 # =========================================================
-# Chord Detector v4.0.0
+# Chord Detector v4.3.0
 # Stabilná detekcia základných triád pre MIDI Engine
 # =========================================================
 
 from typing import Iterable, Optional
 
 NOTE_NAMES = {
-    0: "C",
-    1: "C#",
-    2: "D",
-    3: "D#",
-    4: "E",
-    5: "F",
-    6: "F#",
-    7: "G",
-    8: "G#",
-    9: "A",
-    10: "A#",
-    11: "B",
+    0: "C",  1: "C#", 2: "D",  3: "D#",
+    4: "E",  5: "F",  6: "F#", 7: "G",
+    8: "G#", 9: "A", 10: "A#", 11: "B",
 }
 
 TRIAD_PATTERNS = {
-    (0, 4, 7): "",       # major
-    (0, 3, 7): "m",      # minor
-    (0, 3, 6): "dim",    # diminished
-    (0, 4, 8): "aug",    # augmented
+    (0, 4, 7): "",      # major
+    (0, 3, 7): "m",     # minor
+    (0, 3, 6): "dim",   # diminished
+    (0, 4, 8): "aug",   # augmented
 }
 
 
 def detect_chord(pitches: Iterable[int]) -> Optional[str]:
     """
-    Stabilizovaná detekcia akordov (v4.0.0):
+    Stabilizovaná detekcia akordov (v4.3.0):
     - bezpečné spracovanie vstupu
     - ochrana pred None a nevalidnými hodnotami
     - bezpečné spracovanie pitch-classov
     - fallback pri chybách
     - podpora základných triád
+    - real-time safe
     """
 
     if pitches is None:
