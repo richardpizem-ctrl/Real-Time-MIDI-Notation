@@ -1,5 +1,5 @@
 # =========================================================
-# Real-Time MIDI Notation – Real-Time Processing Module v4.0.0
+# Real-Time MIDI Notation – Real-Time Processing Module v4.3.0
 # =========================================================
 """
 Tento balík zabezpečuje:
@@ -7,9 +7,10 @@ Tento balík zabezpečuje:
 - monitorovanie latencie a výkonu
 - správu streamov a playback pipeline
 - bezpečné spracovanie chýb počas real-time behu
-- prepojenie na renderer a hlavný event bus
+- prepojenie na renderer, Notation Engine a hlavný event bus
 
 Modul je optimalizovaný pre nízku latenciu, stabilitu a predvídateľné správanie.
+Verzia 4.3.0 je pripravená pre Runtime 4.x → 5.x a renderer_new.
 """
 
 from .error_handler import ErrorHandler
@@ -26,4 +27,4 @@ __all__ = [
     "StreamHandler",
 ]
 
-__version__ = "4.0.0"
+__version__ = "4.3.0"
