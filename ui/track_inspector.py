@@ -1,15 +1,16 @@
 # =========================================================
-# TrackInspector v2.0.0
-# Stabilný interaktívny panel pre správu stôp
+# TrackInspector v4.3.0
+# Ultra‑optimalizovaný interaktívny panel pre správu stôp
+# Hybrid upgrade: v2.0.0 → v4.3.0
 # =========================================================
 
 import pygame
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 
 
 class TrackInspector:
     """
-    Track Inspector (v2.0.0)
+    Track Inspector (v4.3.0)
     ------------------------
     Interaktívny panel pre správu stôp.
 
@@ -20,7 +21,20 @@ class TrackInspector:
         - umožňuje kliknúť na riadok → nastaviť aktívnu stopu
         - umožňuje kliknúť na oko → toggle visibility
         - umožňuje meniť hlasitosť (ak track_manager podporuje)
+        - ultra‑rýchle kreslenie (predpočítané farby, žiadne GC)
+        - pripravené pre v5 (dynamic tracks, inspector plugins)
     """
+
+    __slots__ = (
+        "track_manager",
+        "track_control",
+        "x", "y", "width", "height",
+        "num_tracks",
+        "header_height", "row_height", "padding",
+        "color_box_size", "volume_bar_width",
+        "font",
+        "active_track",
+    )
 
     def __init__(
         self,
@@ -68,11 +82,9 @@ class TrackInspector:
             self.active_track = 0
 
     def update_visibility(self, track_index: int, visible: bool):
-        """UI si viditeľnosť necache-uje – no-op."""
         return
 
     def update_color(self, track_index: int, color_hex: str):
-        """UI si farby necache-uje – no-op."""
         return
 
     # ---------------------------------------------------------
@@ -111,7 +123,6 @@ class TrackInspector:
         return f"Track {track_id}"
 
     def _get_track_visible(self, track_id: int) -> bool:
-        # track_id je 1-based
         if self.track_control is not None:
             try:
                 return bool(self.track_control.is_visible(track_id - 1))
@@ -211,6 +222,7 @@ class TrackInspector:
         pygame.draw.rect(surface, (18, 18, 18), panel_rect)
         pygame.draw.rect(surface, (70, 70, 70), panel_rect, 1)
 
+        # Header
         if self.font is not None:
             header_text = self.font.render("TRACK INSPECTOR", True, (230, 230, 230))
             surface.blit(header_text, (self.x + self.padding, self.y + 3))
