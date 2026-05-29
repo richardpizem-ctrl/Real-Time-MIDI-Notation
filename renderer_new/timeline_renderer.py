@@ -1,6 +1,9 @@
 # =========================================================
-# TimelineRenderer v4.0.0
-# Stabilný fallback renderer pre timeline (grid + markers + playhead)
+# TimelineRenderer v4.3.0
+# Optimalizovaný fallback renderer pre timeline
+# - real‑time safe
+# - partial redraw friendly
+# - diagnostické fallbacky
 # =========================================================
 
 import pygame
@@ -11,7 +14,7 @@ from .timeline_controller import TimelineController
 
 class TimelineRenderer:
     """
-    TimelineRenderer (v4.0.0)
+    TimelineRenderer (v4.3.0)
     -------------------------
     Účel:
         - Fallback renderer pre timeline (mimo LayerManager)
@@ -19,11 +22,21 @@ class TimelineRenderer:
         - Používa sa v TimelineUI alebo pri testovaní
         - Pripravené pre PixelLayoutEngine (v4)
 
-    Vlastnosti:
-        - Real‑time safe
-        - Žiadne blokujúce operácie
-        - Oddelená logika pre grid, playhead a layout
+    Vylepšenia v4.3.0:
+        - bezpečnejšie fallbacky
+        - optimalizované volania
+        - partial redraw kompatibilné
+        - real‑time safe
     """
+
+    __slots__ = (
+        "width", "height",
+        "bg_color",
+        "controller",
+        "surface",
+        "zoom",
+        "scroll_x",
+    )
 
     def __init__(
         self,
@@ -35,6 +48,7 @@ class TimelineRenderer:
         pixels_per_beat: int = 100
     ) -> None:
 
+        # Dimensions
         try:
             self.width = max(1, int(width))
         except Exception:
@@ -61,22 +75,28 @@ class TimelineRenderer:
             self.controller = None
 
         # Surface pre timeline
-        try:
-            self.surface = pygame.Surface((self.width, self.height))
-        except Exception:
+        if pygame is not None:
+            try:
+                self.surface = pygame.Surface((self.width, self.height))
+            except Exception:
+                self.surface = None
+        else:
             self.surface = None
 
-        # Zoom + scroll (externé ovládanie)
+        # View parameters
         self.zoom = 1.0
         self.scroll_x = 0.0
 
-        Logger.info("TimelineRenderer initialized (v4.0.0).")
+        Logger.info("TimelineRenderer initialized (v4.3.0).")
 
     # ---------------------------------------------------------
     # EXTERNAL LAYOUT (PixelLayoutEngine)
     # ---------------------------------------------------------
     def set_bounds(self, width: int, height: int) -> None:
         """Externé nastavenie veľkosti timeline."""
+        if pygame is None:
+            return
+
         try:
             self.width = max(1, int(width))
             self.height = max(1, int(height))
@@ -95,18 +115,20 @@ class TimelineRenderer:
     def set_zoom(self, zoom: float) -> None:
         """Externé nastavenie zoomu timeline."""
         try:
-            self.zoom = max(0.1, min(float(zoom), 8.0))
+            z = max(0.1, min(float(zoom), 8.0))
+            self.zoom = z
             if self.controller:
-                self.controller.set_zoom(self.zoom)
+                self.controller.set_zoom(z)
         except Exception:
             Logger.error("TimelineRenderer set_zoom error.")
 
     def set_scroll(self, scroll_x: float) -> None:
         """Externé nastavenie horizontálneho posunu timeline."""
         try:
-            self.scroll_x = max(0.0, float(scroll_x))
+            sx = max(0.0, float(scroll_x))
+            self.scroll_x = sx
             if self.controller:
-                self.controller.set_scroll(self.scroll_x)
+                self.controller.set_scroll(sx)
         except Exception:
             Logger.error("TimelineRenderer set_scroll error.")
 
@@ -115,11 +137,12 @@ class TimelineRenderer:
     # ---------------------------------------------------------
     def update(self, time_seconds: float) -> None:
         """Aktualizuje timeline podľa času prehrávania."""
-        if not self.controller:
+        ctrl = self.controller
+        if ctrl is None:
             return
 
         try:
-            self.controller.update(time_seconds)
+            ctrl.update(time_seconds)
         except Exception as e:
             Logger.error(f"TimelineRenderer update error: {e}")
 
@@ -132,17 +155,20 @@ class TimelineRenderer:
         Toto je fallback render – v LayerManager architektúre
         sa používa TimelineLayer.draw().
         """
-        if self.surface is None or self.controller is None:
+        surf = self.surface
+        ctrl = self.controller
+
+        if surf is None or ctrl is None:
             return None
 
         try:
-            self.surface.fill(self.bg_color)
+            surf.fill(self.bg_color)
 
-            timeline_surface = self.controller.render()
+            timeline_surface = ctrl.render()
             if timeline_surface is not None:
-                self.surface.blit(timeline_surface, (0, 0))
+                surf.blit(timeline_surface, (0, 0))
 
-            return self.surface
+            return surf
 
         except Exception as e:
             Logger.error(f"TimelineRenderer render error: {e}")
