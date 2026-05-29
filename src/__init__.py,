@@ -1,14 +1,14 @@
 """
-Real-Time MIDI Notation – Source Root Package (v4.0.0)
+Real-Time MIDI Notation – Source Root Package (v4.3.0)
 
 Tento balík združuje všetky hlavné moduly systému:
-- core (jadro real-time pipeline)
+- core (jadro real-time pipeline + editing module v4.3.0)
 - midi_input (spracovanie MIDI vstupu)
-- notation_engine (analýza a generovanie notového zápisu)
+- notation_engine (analýza a generovanie notového zápisu v4.3.0)
 - real_time_processing (nízkolatenčné spracovanie udalostí)
 - renderer_new (moderný renderer notového zápisu)
 
-SRC slúži ako centrálna vrstva projektu.
+SRC slúži ako centrálna vrstva projektu pre Runtime 4.3.0 → 5.x.
 """
 
 from . import core
@@ -26,4 +26,4 @@ __all__ = [
 ]
 
 # Hlavná verzia architektúry
-__version__ = "4.0.0"
+__version__ = "4.3.0"
