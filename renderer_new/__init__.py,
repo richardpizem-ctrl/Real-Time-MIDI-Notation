@@ -1,11 +1,12 @@
 """
-Real-Time MIDI Notation – New Renderer Module
+Real-Time MIDI Notation – Renderer_new v4.3.0
 
 Tento renderer poskytuje:
 - moderné vrstvené vykresľovanie notového zápisu
 - real-time aktualizáciu symbolov a layoutu
 - podporu pre viacero stôp a dynamické prepočty
 - optimalizované kreslenie pre nízku latenciu
+- diagnostiku a profilovanie výkonu (v4.3.0)
 - prepojenie na Notation Engine a Real-Time Processing
 
 Renderer_new je hlavná vizuálna vrstva systému.
@@ -21,6 +22,10 @@ from .measure_renderer import MeasureRenderer
 from .note_renderer import NoteRenderer
 from .staff_renderer import StaffRenderer
 
+# Nové moduly v4.3.0
+from .render_profiler import RenderProfiler
+from .renderer_stats import RendererStats
+
 __all__ = [
     "GraphicRenderer",
     "RendererLayers",
@@ -31,7 +36,8 @@ __all__ = [
     "MeasureRenderer",
     "NoteRenderer",
     "StaffRenderer",
+    "RenderProfiler",
+    "RendererStats",
 ]
 
-__version__ = "3.0.0"
-
+__version__ = "4.3.0"
