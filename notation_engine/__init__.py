@@ -1,7 +1,7 @@
 """
-Real-Time MIDI Notation – Notation Engine Module
+Real-Time MIDI Notation – Notation Engine Module (v4.3.0)
 
-Tento balík obsahuje všetky algoritmy a spracovacie vrstvy potrebné na:
+Tento balík obsahuje všetky analytické a spracovacie vrstvy potrebné na:
 - mapovanie MIDI udalostí na noty
 - detekciu rytmu, harmónie, akordov a tóniny
 - generovanie symbolov a grafických prvkov
@@ -39,5 +39,4 @@ __all__ = [
     "NotationRenderer",
 ]
 
-__version__ = "3.0.0"
-
+__version__ = "4.3.0"
