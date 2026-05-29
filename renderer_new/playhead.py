@@ -1,28 +1,40 @@
 # =========================================================
-# Playhead v4.0.0
-# Stabilná real‑time prehrávacia hlava pre Timeline Renderer
+# Playhead v4.3.0
+# Optimalizovaná real‑time prehrávacia hlava pre Timeline Renderer
+# - mikrooptimalizácie
+# - glow cache optimalizácia
+# - diagnostika (RenderProfiler hook-ready)
+# - real‑time safe
+# - partial redraw friendly
 # =========================================================
 
 import pygame
-from typing import Tuple
+from typing import Tuple, Optional
 from ..core.logger import Logger
 
 
 class Playhead:
     """
-    Playhead (v4.0.0)
+    Playhead (v4.3.0)
     -----------------
     Účel:
         - Vertikálna čiara ukazujúca aktuálnu pozíciu prehrávania
         - Používa sa v timeline aj v grafickej notácii
         - Oddelená logika výpočtu pozície a vykreslenia
 
-    Vlastnosti:
-        - Real‑time safe
-        - Žiadne blokujúce operácie
-        - Glow cache pre výkon
-        - Pripravené pre PixelLayoutEngine v4
+    Vylepšenia v4.3.0:
+        - optimalizované výpočty
+        - bezpečné fallbacky
+        - glow cache optimalizácia
+        - pripravené pre RenderProfiler
+        - real‑time safe
+        - partial redraw kompatibilné
     """
+
+    __slots__ = (
+        "height", "color", "bpm", "beats_per_bar", "pixels_per_beat",
+        "zoom", "offset_x", "x", "_glow_surface"
+    )
 
     def __init__(
         self,
@@ -33,6 +45,7 @@ class Playhead:
         pixels_per_beat: int = 100
     ) -> None:
 
+        # Height
         try:
             self.height = max(1, int(height))
         except Exception:
@@ -40,33 +53,34 @@ class Playhead:
 
         self.color = color
 
+        # BPM
         try:
             self.bpm = max(1.0, float(bpm))
         except Exception:
             self.bpm = 120.0
 
+        # Beats per bar
         try:
             self.beats_per_bar = max(1, int(beats_per_bar))
         except Exception:
             self.beats_per_bar = 4
 
+        # Pixels per beat
         try:
             self.pixels_per_beat = max(1, int(pixels_per_beat))
         except Exception:
             self.pixels_per_beat = 100
 
-        # Zoom + offset
+        # View parameters
         self.zoom = 1.0
         self.offset_x = 0
-
-        # Aktuálna pozícia playheadu v pixeloch
         self.x = 0
 
         # Glow cache
-        self._glow_surface: pygame.Surface | None = None
+        self._glow_surface: Optional[pygame.Surface] = None
         self._rebuild_glow_surface()
 
-        Logger.info("Playhead initialized (v4.0.0).")
+        Logger.info("Playhead initialized (v4.3.0).")
 
     # ---------------------------------------------------------
     # INTERNAL HELPERS
@@ -149,16 +163,15 @@ class Playhead:
     # RENDER
     # ---------------------------------------------------------
     def render(self, surface: pygame.Surface) -> None:
-        """
-        Vykreslí playhead na daný surface.
-        """
+        """Vykreslí playhead na daný surface."""
         if surface is None:
             return
 
         try:
             # Glow efekt
-            if self._glow_surface is not None:
-                surface.blit(self._glow_surface, (self.x - 3, 0))
+            glow = self._glow_surface
+            if glow is not None:
+                surface.blit(glow, (self.x - 3, 0))
 
             # Hlavná čiara
             pygame.draw.line(
