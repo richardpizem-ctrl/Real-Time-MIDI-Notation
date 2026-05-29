@@ -1,6 +1,7 @@
 # =========================================================
-# selection_actions.py v4.0.0
+# selection_actions.py v4.3.0
 # Stabilné operácie nad vybranými notami (immutable workflow)
+# Optimalizované pre Runtime 4.3.0
 # =========================================================
 
 from typing import List, Dict, Any, Tuple
@@ -19,6 +20,8 @@ def clone_note(note: Dict[str, Any]) -> Dict[str, Any]:
 
 def _safe_indices(selected_indices: List[int], length: int) -> List[int]:
     """Bezpečne normalizuje indexy (odstráni nevalidné)."""
+    if not selected_indices or length <= 0:
+        return []
     try:
         return [i for i in selected_indices if isinstance(i, int) and 0 <= i < length]
     except Exception:
@@ -37,6 +40,9 @@ def delete_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     return [n for i, n in enumerate(notes) if i not in valid]
 
 
@@ -54,6 +60,9 @@ def move_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     new_notes: List[Dict[str, Any]] = []
 
     for i, note in enumerate(notes):
@@ -85,6 +94,9 @@ def transpose_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     new_notes: List[Dict[str, Any]] = []
 
     for i, note in enumerate(notes):
@@ -114,6 +126,9 @@ def velocity_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     new_notes: List[Dict[str, Any]] = []
 
     for i, note in enumerate(notes):
@@ -144,6 +159,9 @@ def stretch_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     new_notes: List[Dict[str, Any]] = []
 
     for i, note in enumerate(notes):
@@ -183,6 +201,10 @@ def apply_actions(
         return notes
 
     result = notes
+    valid_indices = _safe_indices(selected_indices, len(notes))
+
+    if not valid_indices:
+        return notes
 
     for action in actions:
         if not isinstance(action, tuple) or not action:
@@ -191,18 +213,18 @@ def apply_actions(
         name = action[0]
 
         if name == "move" and len(action) == 3:
-            result = move_selected_notes(result, selected_indices, action[1], action[2])
+            result = move_selected_notes(result, valid_indices, action[1], action[2])
 
         elif name == "transpose" and len(action) == 2:
-            result = transpose_selected_notes(result, selected_indices, action[1])
+            result = transpose_selected_notes(result, valid_indices, action[1])
 
         elif name == "velocity" and len(action) == 2:
-            result = velocity_selected_notes(result, selected_indices, action[1])
+            result = velocity_selected_notes(result, valid_indices, action[1])
 
         elif name == "stretch" and len(action) == 2:
-            result = stretch_selected_notes(result, selected_indices, action[1])
+            result = stretch_selected_notes(result, valid_indices, action[1])
 
         elif name == "delete":
-            result = delete_selected_notes(result, selected_indices)
+            result = delete_selected_notes(result, valid_indices)
 
     return result
