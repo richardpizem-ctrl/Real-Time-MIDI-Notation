@@ -1,14 +1,44 @@
 # =========================================================
-# NotationRenderer v4.0.0
+# NotationRenderer v4.3.0
 # Stabilný textový renderer pre debug a fallback režim
+# Optimalizovaný, bezpečný, diagnostický
 # =========================================================
 
-from typing import Callable, Optional, Dict, Any
+from typing import Callable, Optional, Dict, Any, List
+import time
+
+try:
+    import pygame
+except Exception:
+    pygame = None
 
 
+# ---------------------------------------------------------
+# LIGHTWEIGHT PROFILER (shared with renderer_new)
+# ---------------------------------------------------------
+class RenderProfiler:
+    """Ultra‑ľahký profiler pre fallback renderer."""
+    def __init__(self):
+        self.last_frame_ms = 0.0
+        self.frame_times: List[float] = []
+
+    def begin(self):
+        self._start = time.perf_counter()
+
+    def end(self):
+        dt = (time.perf_counter() - self._start) * 1000.0
+        self.last_frame_ms = dt
+        self.frame_times.append(dt)
+        if len(self.frame_times) > 60:
+            self.frame_times.pop(0)
+
+
+# ---------------------------------------------------------
+# NOTATION RENDERER (TEXT MODE)
+# ---------------------------------------------------------
 class NotationRenderer:
     """
-    NotationRenderer (v4.0.0)
+    NotationRenderer (v4.3.0)
     -------------------------
     Jednoduchý textový renderer pre real‑time MIDI pipeline.
     Poskytuje:
@@ -20,17 +50,23 @@ class NotationRenderer:
         - clear() bufferu
         - timestampy
         - FPS limit (ak pygame existuje)
+        - diagnostiku (RenderProfiler)
         - ochranu pred None a nevalidnými dátami
     """
 
     def __init__(self):
-        self.notes: list[Dict[str, Any]] = []
+        self.notes: List[Dict[str, Any]] = []
         self.filter_fn: Optional[Callable] = None
+
+        # profiler
+        self.profiler = RenderProfiler()
 
         # pygame clock je voliteľný
         try:
-            import pygame
-            self.clock = pygame.time.Clock()
+            if pygame is not None:
+                self.clock = pygame.time.Clock()
+            else:
+                self.clock = None
         except Exception:
             self.clock = None
 
@@ -38,13 +74,7 @@ class NotationRenderer:
     # ADD NOTE
     # ---------------------------------------------------------
     def add_note(self, note: Dict[str, Any]) -> None:
-        """
-        Pridá hotovú notu do renderovacieho bufferu a vypíše ju.
-        Očakáva dict s kľúčmi:
-            pitch, duration, channel, bar, beat
-            drum (voliteľné)
-            drum_layer_offset (voliteľné)
-        """
+        """Pridá hotovú notu do renderovacieho bufferu a vypíše ju."""
         if not isinstance(note, dict):
             print("[NotationRenderer] ⚠️ add_note: neplatný objekt:", note)
             return
@@ -69,10 +99,7 @@ class NotationRenderer:
     # FILTER
     # ---------------------------------------------------------
     def set_filter(self, fn: Optional[Callable]) -> None:
-        """
-        Nastaví filter funkciu.
-        fn musí byť funkcia, ktorá dostane notu a vráti True/False.
-        """
+        """Nastaví filter funkciu."""
         if fn is None or callable(fn):
             self.filter_fn = fn
             print("[NotationRenderer] 🔎 Filter nastavený.")
@@ -84,9 +111,9 @@ class NotationRenderer:
     # ---------------------------------------------------------
     def render(self) -> None:
         """Textová vizualizácia nôt vrátane bubnových značiek."""
-        import time
-        timestamp = time.strftime("%H:%M:%S")
+        self.profiler.begin()
 
+        timestamp = time.strftime("%H:%M:%S")
         print(f"\n--- RENDER [{timestamp}] ---")
 
         for n in self.notes:
@@ -147,3 +174,5 @@ class NotationRenderer:
                 self.clock.tick(60)
         except Exception:
             pass
+
+        self.profiler.end()
