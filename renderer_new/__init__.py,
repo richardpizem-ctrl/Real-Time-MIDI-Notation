@@ -12,6 +12,7 @@ Tento renderer poskytuje:
 Renderer_new je hlavná vizuálna vrstva systému.
 """
 
+# Hlavné renderer moduly
 from .graphic_renderer import GraphicRenderer
 from .renderer_layers import RendererLayers
 from .render_utils import RenderUtils
@@ -26,6 +27,9 @@ from .staff_renderer import StaffRenderer
 from .render_profiler import RenderProfiler
 from .renderer_stats import RendererStats
 
+# Render pipeline (nový orchestrátor)
+from .render_pipeline import RenderPipeline
+
 __all__ = [
     "GraphicRenderer",
     "RendererLayers",
@@ -38,6 +42,7 @@ __all__ = [
     "StaffRenderer",
     "RenderProfiler",
     "RendererStats",
+    "RenderPipeline",
 ]
 
 __version__ = "4.3.0"
