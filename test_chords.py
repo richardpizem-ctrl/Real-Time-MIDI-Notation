@@ -1,5 +1,5 @@
 # =========================================================
-# test_chords.py v4.0.0
+# test_chords.py v4.3.0
 # Stable chord detection test for Real-Time MIDI Notation
 # =========================================================
 
@@ -29,7 +29,7 @@ def test_chord(notes):
 
 
 def main():
-    Logger.info("=== TEST: CHORD DETECTION v4.0.0 ===")
+    Logger.info("=== TEST: CHORD DETECTION v4.3.0 ===")
 
     # Basic triads
     test_chord([60, 64, 67])   # C major
