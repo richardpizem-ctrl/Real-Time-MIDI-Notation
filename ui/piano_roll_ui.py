@@ -1,14 +1,24 @@
 # =========================================================
-# PianoRollUI v4.0.0
-# Stabilná real‑time klavírna vizualizácia (pygame)
+# PianoRollUI v4.3.0
+# Ultra‑optimalizovaná real‑time klavírna vizualizácia (pygame)
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 import pygame
 import time
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Any
 
 
 class PianoRollUI:
+    __slots__ = (
+        "width", "height",
+        "active_keys",
+        "white_keys", "black_keys",
+        "font",
+        "_fade_cache_white",
+        "_fade_cache_black",
+    )
+
     WHITE_KEY_WIDTH = 20
     WHITE_KEY_HEIGHT = 120
     BLACK_KEY_WIDTH = 12
@@ -16,6 +26,8 @@ class PianoRollUI:
 
     FIRST_MIDI_NOTE = 36   # C2
     LAST_MIDI_NOTE = 96    # C7
+
+    FADE_SPEED = 1.35
 
     def __init__(self, width: int = 1400, height: int = 200):
         self.width = int(width)
@@ -32,6 +44,13 @@ class PianoRollUI:
             self.font = pygame.font.SysFont("Arial", 12, bold=True)
         except Exception:
             self.font = None
+
+        # predpočítané fade hodnoty (0–2s pri ~60 FPS)
+        self._fade_cache_white = [
+            max(0.0, 1.0 - (i / 120.0) * self.FADE_SPEED)
+            for i in range(240)
+        ]
+        self._fade_cache_black = self._fade_cache_white  # rovnaká krivka
 
         self._calculate_key_positions()
 
@@ -79,7 +98,7 @@ class PianoRollUI:
     # ---------------------------------------------------------
     # KEY HIGHLIGHT
     # ---------------------------------------------------------
-    def highlight_key(self, midi_note, color=(255, 80, 80)):
+    def highlight_key(self, midi_note: Any, color=(255, 80, 80)):
         """Highlight a key with fade-out animation."""
         if midi_note is None:
             return
@@ -94,7 +113,7 @@ class PianoRollUI:
 
         self.active_keys[midi] = (tuple(color), time.time())
 
-    def unhighlight_key(self, midi_note):
+    def unhighlight_key(self, midi_note: Any):
         try:
             midi = int(midi_note)
         except Exception:
@@ -115,18 +134,25 @@ class PianoRollUI:
         # --- WHITE KEYS ---
         for midi_note, rect in self.white_keys:
             base_color = (255, 255, 255)
+            color = base_color
 
-            if midi_note in self.active_keys:
-                color, t = self.active_keys[midi_note]
-                fade = max(0.0, 1.0 - (now - t) * 1.35)
+            data = self.active_keys.get(midi_note)
+            if data is not None:
+                key_color, t = data
+                dt = now - t
+                idx = int(dt * 60)  # ~60 FPS index
 
-                color = (
-                    int(color[0] * fade + base_color[0] * (1 - fade)),
-                    int(color[1] * fade + base_color[1] * (1 - fade)),
-                    int(color[2] * fade + base_color[2] * (1 - fade)),
-                )
-            else:
-                color = base_color
+                if idx < len(self._fade_cache_white):
+                    fade = self._fade_cache_white[idx]
+                    inv = 1.0 - fade
+                    color = (
+                        int(key_color[0] * fade + base_color[0] * inv),
+                        int(key_color[1] * fade + base_color[1] * inv),
+                        int(key_color[2] * fade + base_color[2] * inv),
+                    )
+                else:
+                    # pulz skončil
+                    self.active_keys.pop(midi_note, None)
 
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (0, 0, 0), rect, 2)
@@ -134,18 +160,23 @@ class PianoRollUI:
         # --- BLACK KEYS ---
         for midi_note, rect in self.black_keys:
             base_color = (0, 0, 0)
+            color = base_color
 
-            if midi_note in self.active_keys:
-                color, t = self.active_keys[midi_note]
-                fade = max(0.0, 1.0 - (now - t) * 1.35)
+            data = self.active_keys.get(midi_note)
+            if data is not None:
+                key_color, t = data
+                dt = now - t
+                idx = int(dt * 60)
 
-                color = (
-                    int(color[0] * fade),
-                    int(color[1] * fade),
-                    int(color[2] * fade),
-                )
-            else:
-                color = base_color
+                if idx < len(self._fade_cache_black):
+                    fade = self._fade_cache_black[idx]
+                    color = (
+                        int(key_color[0] * fade),
+                        int(key_color[1] * fade),
+                        int(key_color[2] * fade),
+                    )
+                else:
+                    self.active_keys.pop(midi_note, None)
 
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, (50, 50, 50), rect, 1)
@@ -166,5 +197,5 @@ class PianoRollUI:
             (80, 80, 80),
             (0, h - 2),
             (self.width, h - 2),
-            2
+            2,
         )
