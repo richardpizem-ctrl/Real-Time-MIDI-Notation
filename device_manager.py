@@ -1,5 +1,5 @@
 # =========================================================
-# DeviceManager v4.0.0 – Stable MIDI Device Manager
+# DeviceManager v4.3.0 – Stable MIDI Device Manager
 # =========================================================
 
 import threading
@@ -11,7 +11,7 @@ from core.event_bus import EventBus
 
 class DeviceManager:
     """
-    DeviceManager (v4.0.0)
+    DeviceManager (v4.3.0)
     ----------------------
     Stable, safe, thread‑safe MIDI Device Manager.
 
@@ -26,7 +26,7 @@ class DeviceManager:
         - protects against Windows/ASIO locked‑port bug
         - no exceptions leak out
         - EventBus integration
-        - ready for v5 (AI/TIMELINE MIDI routing)
+        - ready for future routing upgrades
     """
 
     def __init__(self, event_bus: EventBus | None = None):
