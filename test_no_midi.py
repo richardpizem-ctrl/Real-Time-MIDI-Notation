@@ -1,5 +1,5 @@
 # =========================================================
-# test_no_midi.py v4.0.0
+# test_no_midi.py v4.3.0
 # Test: system must work even without a MIDI device
 # =========================================================
 
