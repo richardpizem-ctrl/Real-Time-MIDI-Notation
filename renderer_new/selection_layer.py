@@ -1,6 +1,7 @@
 # =========================================================
-# selection_actions.py v4.0.0
+# selection_actions.py v4.3.0
 # Stabilné operácie nad vybranými notami (immutable workflow)
+# Optimalizované pre Runtime 4.3.0
 # =========================================================
 
 from typing import List, Dict, Any, Tuple
@@ -19,6 +20,8 @@ def clone_note(note: Dict[str, Any]) -> Dict[str, Any]:
 
 def _safe_indices(selected_indices: List[int], length: int) -> List[int]:
     """Bezpečne normalizuje indexy (odstráni nevalidné)."""
+    if not selected_indices or length <= 0:
+        return []
     try:
         return [i for i in selected_indices if isinstance(i, int) and 0 <= i < length]
     except Exception:
@@ -37,6 +40,9 @@ def delete_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     return [n for i, n in enumerate(notes) if i not in valid]
 
 
@@ -54,14 +60,19 @@ def move_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     new_notes: List[Dict[str, Any]] = []
+    dx = int(dx)
+    dy = int(dy)
 
     for i, note in enumerate(notes):
         if i in valid:
             nn = clone_note(note)
             try:
-                nn["x"] = int(note.get("x", 0)) + int(dx)
-                nn["y"] = int(note.get("y", 0)) + int(dy)
+                nn["x"] = int(note.get("x", 0)) + dx
+                nn["y"] = int(note.get("y", 0)) + dy
             except Exception:
                 nn["x"] = note.get("x", 0)
                 nn["y"] = note.get("y", 0)
@@ -85,13 +96,17 @@ def transpose_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     new_notes: List[Dict[str, Any]] = []
+    semitones = int(semitones)
 
     for i, note in enumerate(notes):
         if i in valid:
             nn = clone_note(note)
             try:
-                nn["pitch"] = int(note.get("pitch", 60)) + int(semitones)
+                nn["pitch"] = int(note.get("pitch", 60)) + semitones
             except Exception:
                 nn["pitch"] = note.get("pitch", 60)
             new_notes.append(nn)
@@ -114,13 +129,17 @@ def velocity_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     new_notes: List[Dict[str, Any]] = []
+    delta = int(delta)
 
     for i, note in enumerate(notes):
         if i in valid:
             nn = clone_note(note)
             try:
-                vel = int(note.get("velocity", 100)) + int(delta)
+                vel = int(note.get("velocity", 100)) + delta
                 nn["velocity"] = max(1, min(127, vel))
             except Exception:
                 nn["velocity"] = note.get("velocity", 100)
@@ -144,14 +163,22 @@ def stretch_selected_notes(
         return notes
 
     valid = set(_safe_indices(selected_indices, len(notes)))
+    if not valid:
+        return notes
+
     new_notes: List[Dict[str, Any]] = []
+
+    try:
+        factor = float(factor)
+    except Exception:
+        return notes
 
     for i, note in enumerate(notes):
         if i in valid:
             nn = clone_note(note)
             try:
                 dur = float(note.get("duration", 1.0))
-                nn["duration"] = max(0.05, dur * float(factor))
+                nn["duration"] = max(0.05, dur * factor)
             except Exception:
                 nn["duration"] = note.get("duration", 1.0)
             new_notes.append(nn)
@@ -182,6 +209,10 @@ def apply_actions(
     if not notes or not actions:
         return notes
 
+    valid = _safe_indices(selected_indices, len(notes))
+    if not valid:
+        return notes
+
     result = notes
 
     for action in actions:
@@ -191,18 +222,18 @@ def apply_actions(
         name = action[0]
 
         if name == "move" and len(action) == 3:
-            result = move_selected_notes(result, selected_indices, action[1], action[2])
+            result = move_selected_notes(result, valid, action[1], action[2])
 
         elif name == "transpose" and len(action) == 2:
-            result = transpose_selected_notes(result, selected_indices, action[1])
+            result = transpose_selected_notes(result, valid, action[1])
 
         elif name == "velocity" and len(action) == 2:
-            result = velocity_selected_notes(result, selected_indices, action[1])
+            result = velocity_selected_notes(result, valid, action[1])
 
         elif name == "stretch" and len(action) == 2:
-            result = stretch_selected_notes(result, selected_indices, action[1])
+            result = stretch_selected_notes(result, valid, action[1])
 
         elif name == "delete":
-            result = delete_selected_notes(result, selected_indices)
+            result = delete_selected_notes(result, valid)
 
     return result
