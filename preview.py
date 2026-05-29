@@ -1,5 +1,5 @@
 # =========================================================
-# preview.py – Real-Time MIDI Notation v4.0.0
+# preview.py – Real-Time MIDI Notation v4.3.0
 # Stable renderer preview (Tkinter)
 # =========================================================
 
@@ -80,11 +80,11 @@ def build_demo_timeline():
 
 
 def main():
-    Logger.info("=== PREVIEW MODE v4.0.0 ===")
+    Logger.info("=== PREVIEW MODE v4.3.0 ===")
 
     try:
         root = tk.Tk()
-        root.title("Real-Time MIDI Notation – Preview v4.0.0")
+        root.title("Real-Time MIDI Notation – Preview v4.3.0")
 
         canvas = tk.Canvas(root, width=1200, height=400, bg="#202020")
         canvas.pack(fill="both", expand=True)
