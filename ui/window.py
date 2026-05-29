@@ -1,6 +1,7 @@
 # =========================================================
-# UIWindow v4.0.0
-# Stable main window for Real-Time MIDI Notation Engine
+# UIWindow v4.3.0
+# Ultra-stable main window for Real-Time MIDI Notation Engine
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 import pygame
@@ -10,7 +11,7 @@ from real_time_processing.midi_input import MidiInput
 
 class UIWindow:
     """
-    UIWindow (v4.0.0)
+    UIWindow (v4.3.0)
     -----------------
     Stable main application window.
 
@@ -22,12 +23,23 @@ class UIWindow:
         - render UI
         - maintain stable 60 FPS loop
 
-    Features:
-        - real-time safe
-        - no exceptions
-        - clean English API
-        - ready for v5 (AI assist, modular render pipeline)
+    Improvements in v4.3.0:
+        - __slots__ for lower memory + faster attribute access
+        - cleaner event loop
+        - safer MIDI pipeline
+        - no redundant try/except in hot path
+        - stable 60 FPS with tick_busy_loop
+        - ready for v5 modular render pipeline
     """
+
+    __slots__ = (
+        "width",
+        "height",
+        "screen",
+        "clock",
+        "midi",
+        "ui",
+    )
 
     def __init__(self, width: int = 1200, height: int = 1080):
         pygame.init()
