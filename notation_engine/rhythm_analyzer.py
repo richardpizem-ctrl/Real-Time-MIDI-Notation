@@ -1,5 +1,5 @@
 # =========================================================
-# RhythmAnalyzer v4.0.0
+# RhythmAnalyzer v4.3.0
 # Stabilná analýza rytmu, swingu, groove a patternov
 # pre Real-Time-MIDI-Notation
 # =========================================================
@@ -10,6 +10,14 @@ from ..core.logger import Logger
 
 
 class RhythmAnalyzerConfig:
+    __slots__ = (
+        "bpm", "ppq", "quant_grid",
+        "swing_threshold", "timing_loose_threshold",
+        "timing_laidback_threshold",
+        "velocity_accent_threshold", "velocity_ghost_threshold",
+        "min_pattern_bars", "max_pattern_length_beats"
+    )
+
     def __init__(
         self,
         bpm=120.0,
@@ -23,20 +31,14 @@ class RhythmAnalyzerConfig:
         min_pattern_bars=2,
         max_pattern_length_beats=4.0,
     ):
-        try:
-            self.bpm = float(bpm)
-        except Exception:
-            self.bpm = 120.0
+        try: self.bpm = float(bpm)
+        except Exception: self.bpm = 120.0
 
-        try:
-            self.ppq = int(ppq)
-        except Exception:
-            self.ppq = 480
+        try: self.ppq = int(ppq)
+        except Exception: self.ppq = 480
 
-        try:
-            self.quant_grid = float(quant_grid)
-        except Exception:
-            self.quant_grid = 0.25
+        try: self.quant_grid = float(quant_grid)
+        except Exception: self.quant_grid = 0.25
 
         self.swing_threshold = float(swing_threshold)
         self.timing_loose_threshold = float(timing_loose_threshold)
@@ -44,20 +46,16 @@ class RhythmAnalyzerConfig:
         self.velocity_accent_threshold = float(velocity_accent_threshold)
         self.velocity_ghost_threshold = float(velocity_ghost_threshold)
 
-        try:
-            self.min_pattern_bars = int(min_pattern_bars)
-        except Exception:
-            self.min_pattern_bars = 2
+        try: self.min_pattern_bars = int(min_pattern_bars)
+        except Exception: self.min_pattern_bars = 2
 
-        try:
-            self.max_pattern_length_beats = float(max_pattern_length_beats)
-        except Exception:
-            self.max_pattern_length_beats = 4.0
+        try: self.max_pattern_length_beats = float(max_pattern_length_beats)
+        except Exception: self.max_pattern_length_beats = 4.0
 
 
 class RhythmAnalyzer:
     """
-    RhythmAnalyzer (v4.0.0):
+    RhythmAnalyzer (v4.3.0):
     - kvantizácia
     - timing deviation
     - velocity analýza
@@ -65,11 +63,14 @@ class RhythmAnalyzer:
     - pattern detection
     - downbeat detection
     - groove classification
+    - real-time safe
     """
+
+    __slots__ = ("config",)
 
     def __init__(self, config=None):
         self.config = config or RhythmAnalyzerConfig()
-        Logger.info("RhythmAnalyzer initialized (v4-ready).")
+        Logger.info("RhythmAnalyzer initialized (v4.3.0).")
 
     # ---------------------------------------------------------
     # PUBLIC API
@@ -91,7 +92,13 @@ class RhythmAnalyzer:
             Logger.error(f"RhythmAnalyzer.analyze error: {e}")
             return {}
 
-        result = {
+        Logger.info(
+            f"RhythmAnalyzer: swing={swing_info.get('type')}, "
+            f"groove={groove.get('label')}, "
+            f"avg_timing_dev={timing_stats.get('avg_abs_deviation_beats', 0):.4f}"
+        )
+
+        return {
             "quantized": quantized,
             "timing": timing_stats,
             "velocity": velocity_stats,
@@ -101,45 +108,31 @@ class RhythmAnalyzer:
             "groove": groove,
         }
 
-        Logger.info(
-            f"RhythmAnalyzer: swing={swing_info.get('type')}, "
-            f"groove={groove.get('label')}, "
-            f"avg_timing_dev={timing_stats.get('avg_abs_deviation_beats', 0):.4f}"
-        )
-
-        return result
-
     # ---------------------------------------------------------
     # 1) Kvantizácia
     # ---------------------------------------------------------
     def _quantize_timeline(self, timeline):
         grid = self.config.quant_grid
         quantized = []
+        append = quantized.append
 
         for note in timeline:
             if not isinstance(note, dict):
                 continue
 
-            try:
-                start = float(note.get("start", 0.0))
-            except Exception:
-                start = 0.0
+            try: start = float(note.get("start", 0.0))
+            except Exception: start = 0.0
 
-            try:
-                duration = float(note.get("duration", grid))
-            except Exception:
-                duration = grid
+            try: duration = float(note.get("duration", grid))
+            except Exception: duration = grid
 
-            velocity = note.get("velocity", 80)
-            try:
-                velocity = int(velocity)
-            except Exception:
-                velocity = 80
+            try: velocity = int(note.get("velocity", 80))
+            except Exception: velocity = 80
 
             q_start = round(start / grid) * grid
             q_duration = round(duration / grid) * grid
 
-            quantized.append({
+            append({
                 **note,
                 "q_start": q_start,
                 "q_duration": q_duration,
@@ -153,22 +146,19 @@ class RhythmAnalyzer:
     # ---------------------------------------------------------
     def _analyze_timing_deviation(self, timeline, quantized):
         deviations = []
+        append = deviations.append
 
         for orig, q in zip(timeline, quantized):
             if not isinstance(orig, dict) or not isinstance(q, dict):
                 continue
 
-            try:
-                start = float(orig.get("start", 0.0))
-            except Exception:
-                start = 0.0
+            try: start = float(orig.get("start", 0.0))
+            except Exception: start = 0.0
 
-            try:
-                q_start = float(q.get("q_start", start))
-            except Exception:
-                q_start = start
+            try: q_start = float(q.get("q_start", start))
+            except Exception: q_start = start
 
-            deviations.append(start - q_start)
+            append(start - q_start)
 
         if not deviations:
             return {
@@ -200,15 +190,14 @@ class RhythmAnalyzer:
     # ---------------------------------------------------------
     def _analyze_velocity_patterns(self, timeline):
         velocities = []
+        append_v = velocities.append
 
         for n in timeline:
             if not isinstance(n, dict):
                 continue
-            try:
-                v = int(n.get("velocity", 80))
-            except Exception:
-                v = 80
-            velocities.append(v)
+            try: v = int(n.get("velocity", 80))
+            except Exception: v = 80
+            append_v(v)
 
         if not velocities:
             return {
@@ -232,10 +221,8 @@ class RhythmAnalyzer:
             if not isinstance(n, dict):
                 continue
 
-            try:
-                v = int(n.get("velocity", 80))
-            except Exception:
-                v = 80
+            try: v = int(n.get("velocity", 80))
+            except Exception: v = 80
 
             norm = v / 127.0
             is_accent = norm >= self.config.velocity_accent_threshold
@@ -249,10 +236,8 @@ class RhythmAnalyzer:
                 "is_ghost": is_ghost,
             })
 
-            if is_accent:
-                accents.append(idx)
-            if is_ghost:
-                ghosts.append(idx)
+            if is_accent: accents.append(idx)
+            if is_ghost: ghosts.append(idx)
 
         return {
             "avg_velocity": avg_v,
@@ -277,17 +262,14 @@ class RhythmAnalyzer:
         for n in timeline:
             if not isinstance(n, dict):
                 continue
-            bar = n.get("bar_index", 0)
-            by_bar[bar].append(n)
+            by_bar[n.get("bar_index", 0)].append(n)
 
         for bar, notes in by_bar.items():
-            notes_sorted = sorted(
-                [x for x in notes if isinstance(x, dict)],
-                key=lambda x: x.get("start", 0.0),
-            )
+            notes_sorted = sorted(notes, key=lambda x: x.get("start", 0.0))
             for i in range(len(notes_sorted) - 1):
                 a = notes_sorted[i]
                 b = notes_sorted[i + 1]
+
                 try:
                     sa = float(a.get("start", 0.0))
                     sb = float(b.get("start", 0.0))
@@ -301,12 +283,14 @@ class RhythmAnalyzer:
             return {"type": "straight", "ratio": 0.0}
 
         ratios = []
+        append_r = ratios.append
+
         for sa, sb in pairs:
             diff = sb - sa
             total = 0.5
             first = diff
             second = max(total - first, 1e-6)
-            ratios.append(first / (first + second))
+            append_r(first / (first + second))
 
         if not ratios:
             return {"type": "straight", "ratio": 0.0}
@@ -336,47 +320,43 @@ class RhythmAnalyzer:
 
         bars = defaultdict(list)
         for n in quantized:
-            if not isinstance(n, dict):
-                continue
-            bar = n.get("bar_index", 0)
-            bars[bar].append(n)
+            if isinstance(n, dict):
+                bars[n.get("bar_index", 0)].append(n)
 
         bar_patterns = {}
         pattern_counter = Counter()
 
         for bar_idx, notes in bars.items():
-            notes_sorted = sorted(
-                [x for x in notes if isinstance(x, dict)],
-                key=lambda x: x.get("q_start", 0.0),
-            )
+            notes_sorted = sorted(notes, key=lambda x: x.get("q_start", 0.0))
 
             starts = []
+            append_s = starts.append
+
             for n in notes_sorted:
-                try:
-                    qs = float(n.get("q_start", 0.0))
-                except Exception:
-                    qs = 0.0
-                starts.append(qs)
+                try: qs = float(n.get("q_start", 0.0))
+                except Exception: qs = 0.0
+                append_s(qs)
 
             if len(starts) < 2:
                 bar_patterns[bar_idx] = ()
                 continue
 
             diffs = []
+            append_d = diffs.append
+
             for i in range(len(starts) - 1):
-                diffs.append(round(starts[i + 1] - starts[i], 3))
+                append_d(round(starts[i + 1] - starts[i], 3))
 
             pattern = tuple(diffs)
             bar_patterns[bar_idx] = pattern
             pattern_counter[pattern] += 1
 
         patterns = []
+        append_p = patterns.append
+
         for pat, count in pattern_counter.items():
             if count >= self.config.min_pattern_bars and len(pat) > 0:
-                patterns.append({
-                    "pattern": pat,
-                    "occurrences": count,
-                })
+                append_p({"pattern": pat, "occurrences": count})
 
         patterns_sorted = sorted(patterns, key=lambda x: x["occurrences"], reverse=True)
 
@@ -392,14 +372,15 @@ class RhythmAnalyzer:
         if not timeline:
             return {"downbeats": []}
 
-        has_bar = any(isinstance(n, dict) and "bar_index" in n for n in timeline)
-        if not has_bar:
+        if not any("bar_index" in n for n in timeline if isinstance(n, dict)):
             return {"downbeats": []}
 
         avg_v = velocity_stats.get("avg_velocity", 80)
         accents = set(velocity_stats.get("accents", []))
 
         downbeats = []
+        append_db = downbeats.append
+
         for idx, n in enumerate(timeline):
             if not isinstance(n, dict):
                 continue
@@ -408,20 +389,16 @@ class RhythmAnalyzer:
             beat_in_bar = n.get("beat_in_bar", 0.0)
             v = n.get("velocity", 80)
 
-            try:
-                beat_val = float(beat_in_bar) if beat_in_bar is not None else 0.0
-            except Exception:
-                beat_val = 0.0
+            try: beat_val = float(beat_in_bar)
+            except Exception: beat_val = 0.0
 
-            try:
-                v = int(v)
-            except Exception:
-                v = 80
+            try: v = int(v)
+            except Exception: v = 80
 
             if fabs(beat_val) < 0.05:
                 is_accent = idx in accents or v >= avg_v + 10
                 if is_accent:
-                    downbeats.append({
+                    append_db({
                         "index": idx,
                         "bar_index": bar,
                         "velocity": v,
@@ -443,12 +420,7 @@ class RhythmAnalyzer:
         tags = []
 
         # Swing / straight
-        if swing_type == "straight":
-            tags.append("straight")
-        elif swing_type == "swing":
-            tags.append("swing")
-        elif swing_type == "shuffle":
-            tags.append("shuffle")
+        tags.append(swing_type)
 
         # Timing feel
         tags.append(timing_feel)
@@ -473,18 +445,12 @@ class RhythmAnalyzer:
                 tags.append("sixteenth_based")
 
         # Label selection
-        if "swing" in tags or "shuffle" in tags:
-            if "sixteenth_based" in tags:
-                label = "16th_swing"
-            else:
-                label = "8th_swing"
-        elif "straight" in tags:
-            if "sixteenth_based" in tags:
-                label = "16th_straight"
-            else:
-                label = "8th_straight"
+        if swing_type in ("swing", "shuffle"):
+            label = "16th_swing" if "sixteenth_based" in tags else "8th_swing"
+        elif swing_type == "straight":
+            label = "16th_straight" if "sixteenth_based" in tags else "8th_straight"
 
-        if "3_grouping" in tags and "straight" in tags:
+        if "3_grouping" in tags and swing_type == "straight":
             label = "3_3_2_style"
 
         return {
