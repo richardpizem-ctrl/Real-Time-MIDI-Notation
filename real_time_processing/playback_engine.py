@@ -1,5 +1,5 @@
 # =========================================================
-# PlaybackEngine v4.0.0
+# PlaybackEngine v4.3.0
 # Stabilný real‑time prehrávací motor pre Timeline Renderer
 # =========================================================
 
@@ -12,7 +12,7 @@ from ..renderer_new.timeline_controller import TimelineController
 
 class PlaybackEngine:
     """
-    PlaybackEngine (v4.0.0)
+    PlaybackEngine (v4.3.0)
     -----------------------
     Účel:
         - Riadi čas prehrávania (time_seconds)
@@ -20,11 +20,19 @@ class PlaybackEngine:
         - Slúži ako centrálny prehrávací motor pre notáciu
         - Pripravené pre budúcu integráciu s audio/MIDI playback
 
-    Vlastnosti:
-        - Real‑time safe
-        - Stabilné časovanie
-        - Jednoduché API: play(), stop(), update(), render()
+    Vylepšenia v4.3.0:
+        - real‑time safe
+        - žiadne alokácie v slučke
+        - stabilné časovanie
+        - partial redraw friendly
+        - prepojené s TimelineController v4.3.0
     """
+
+    __slots__ = (
+        "width", "timeline_height", "bpm",
+        "is_playing", "start_time", "time_seconds",
+        "timeline", "surface"
+    )
 
     def __init__(
         self,
@@ -50,9 +58,9 @@ class PlaybackEngine:
             self.bpm = 120.0
 
         # Playback state
-        self.is_playing: bool = False
-        self.start_time: float = 0.0
-        self.time_seconds: float = 0.0
+        self.is_playing = False
+        self.start_time = 0.0
+        self.time_seconds = 0.0
 
         # Timeline controller
         try:
@@ -66,13 +74,16 @@ class PlaybackEngine:
             raise
 
         # Surface pre timeline
-        try:
-            self.surface = pygame.Surface((self.width, self.timeline_height))
-        except Exception:
+        if pygame is not None:
+            try:
+                self.surface = pygame.Surface((self.width, self.timeline_height))
+            except Exception:
+                self.surface = None
+                Logger.error("PlaybackEngine: Failed to create pygame Surface.")
+        else:
             self.surface = None
-            Logger.error("PlaybackEngine: Failed to create pygame Surface.")
 
-        Logger.info("PlaybackEngine initialized (v4.0.0).")
+        Logger.info("PlaybackEngine initialized (v4.3.0).")
 
     # ---------------------------------------------------------
     # PLAYBACK CONTROL
@@ -119,18 +130,19 @@ class PlaybackEngine:
         """
         Vykreslí timeline a vráti surface.
         """
-        if self.surface is None:
+        surf = self.surface
+        if surf is None:
             Logger.error("PlaybackEngine render error: surface is None.")
             return None
 
         try:
-            self.surface.fill((20, 20, 20))
+            surf.fill((20, 20, 20))
 
             timeline_surface = self.timeline.render()
             if timeline_surface is not None:
-                self.surface.blit(timeline_surface, (0, 0))
+                surf.blit(timeline_surface, (0, 0))
 
-            return self.surface
+            return surf
 
         except Exception as e:
             Logger.error(f"PlaybackEngine render error: {e}")
