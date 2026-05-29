@@ -1,6 +1,7 @@
 # =========================================================
-# TrackControlManager v4.0.0
+# TrackControlManager v4.3.0
 # Centrálna správa track visibility, selection a farieb
+# Ultra‑optimalizované, real‑time safe, pripravené pre v5
 # =========================================================
 
 from typing import Callable, Dict, Any, List
@@ -12,7 +13,7 @@ from .track_color_map import TrackColorMap
 
 class TrackControlManager:
     """
-    TrackControlManager (v4.0.0)
+    TrackControlManager (v4.3.0)
     ----------------------------
     Centrálna trieda pre správu všetkých track-related kontrolérov.
 
@@ -27,8 +28,17 @@ class TrackControlManager:
         - prepínanie viditeľnosti
         - poskytovanie farieb (HEX + RGB)
         - event hooky (track_selected, visibility_changed, color_changed)
-        - real‑time safe, stabilné, pripravené na v5 (dynamic tracks)
+        - real‑time safe, stabilné
+        - pripravené na v5 (dynamic tracks, track groups)
     """
+
+    __slots__ = (
+        "track_count",
+        "visibility",
+        "selection",
+        "colors",
+        "_listeners",
+    )
 
     def __init__(self, track_count: int = 16):
         self.track_count = int(track_count)
@@ -38,7 +48,7 @@ class TrackControlManager:
         self.selection = TrackSelectionController(self.track_count)
         self.colors = TrackColorMap()
 
-        # Event hooky
+        # Event hooky (predpočítané, ultra‑rýchle)
         self._listeners: Dict[str, List[Callable[[Dict[str, Any]], None]]] = {
             "track_selected": [],
             "visibility_changed": [],
@@ -57,7 +67,7 @@ class TrackControlManager:
         self._listeners[event_name].append(callback)
 
     def _emit(self, event_name: str, data: Dict[str, Any]) -> None:
-        """Bezpečne notifikuje všetkých listenerov."""
+        """Bezpečne notifikuje všetkých listenerov (žiadne výnimky)."""
         listeners = self._listeners.get(event_name)
         if not listeners:
             return
