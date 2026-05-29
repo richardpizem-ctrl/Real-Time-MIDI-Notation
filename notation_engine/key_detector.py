@@ -1,5 +1,5 @@
 # =========================================================
-# Key Detector v4.0.0
+# Key Detector v4.3.0
 # Stabilná detekcia tóniny podľa Krumhansl–Schmuckler profilu
 # =========================================================
 
@@ -36,14 +36,22 @@ def correlation(a, b):
         mean_a = sum(a) / len(a)
         mean_b = sum(b) / len(b)
 
-        num = sum((x - mean_a) * (y - mean_b) for x, y in zip(a, b))
-        den_a = math.sqrt(sum((x - mean_a) ** 2 for x in a))
-        den_b = math.sqrt(sum((y - mean_b) ** 2 for y in b))
+        num = 0.0
+        den_a = 0.0
+        den_b = 0.0
+
+        for x, y in zip(a, b):
+            da = x - mean_a
+            db = y - mean_b
+            num += da * db
+            den_a += da * da
+            den_b += db * db
 
         if den_a == 0 or den_b == 0:
             return 0.0
 
-        return num / (den_a * den_b)
+        return num / math.sqrt(den_a * den_b)
+
     except Exception:
         return 0.0
 
@@ -53,7 +61,7 @@ def correlation(a, b):
 # ---------------------------------------------------------
 def detect_key(pitches: Iterable[int]) -> Optional[str]:
     """
-    Detekcia tóniny podľa histogramu pitch-classov (v4.0.0).
+    Detekcia tóniny podľa histogramu pitch-classov (v4.3.0).
     Vráti napr. "C", "G#", "Am", "F#m".
     """
 
@@ -73,8 +81,8 @@ def detect_key(pitches: Iterable[int]) -> Optional[str]:
     if sum(histogram) == 0:
         return None
 
-    best_key: Optional[str] = None
-    best_score: float = -999.0
+    best_key = None
+    best_score = -999.0
 
     # Testujeme všetkých 12 rootov
     for i in range(12):
