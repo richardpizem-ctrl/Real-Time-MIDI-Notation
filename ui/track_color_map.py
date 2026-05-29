@@ -1,21 +1,30 @@
 # =========================================================
-# TrackColorMap v4.0.0
-# Stabilné mapovanie farieb pre 16 MIDI stôp (Yamaha štandard)
+# TrackColorMap v4.3.0
+# Ultra‑rýchle mapovanie farieb pre 16 MIDI stôp (Yamaha štandard)
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 class TrackColorMap:
     """
-    TrackColorMap (v4.0.0)
+    TrackColorMap (v4.3.0)
     ----------------------
     Poskytuje konzistentné farby pre 16 MIDI stôp podľa Yamaha štandardu.
 
-    Vylepšenia v4:
-        - okamžitý HEX aj RGB lookup (bez prepočtu v UI)
-        - tuple = nemenné, rýchle, real‑time safe
-        - fallback HEX aj RGB
+    Vylepšenia v4.3.0:
+        - __slots__ pre ultra‑nízku latenciu
+        - okamžitý HEX aj RGB lookup (O(1))
+        - predpočítané RGB tuple (žiadne runtime konverzie)
+        - bezpečné fallback farby
+        - drop‑in kompatibilita s UIManager 4.3.0
         - pripravené pre AI/TIMELINE color assist v5
-        - drop‑in kompatibilita s UIManager API
     """
+
+    __slots__ = (
+        "colors_hex",
+        "colors_rgb",
+        "fallback_hex",
+        "fallback_rgb",
+    )
 
     def __init__(self):
         # HEX farby (nemenné)
@@ -38,7 +47,7 @@ class TrackColorMap:
             "#FF334B",  # 15 - Red-Pink
         )
 
-        # Prepočítané RGB farby (tuple[int,int,int])
+        # Predpočítané RGB tuple (nemenné, ultra‑rýchle)
         self.colors_rgb = tuple(self._hex_to_rgb(h) for h in self.colors_hex)
 
         # fallback
@@ -49,7 +58,7 @@ class TrackColorMap:
     # INTERNAL HELPERS
     # ---------------------------------------------------------
     def _hex_to_rgb(self, h: str):
-        """Konverzia HEX → RGB tuple."""
+        """Konverzia HEX → RGB tuple (real‑time safe)."""
         try:
             h = h.lstrip("#")
             return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
@@ -62,14 +71,14 @@ class TrackColorMap:
     def get_color(self, track: int) -> str:
         """
         Vráti farbu v HEX formáte (#RRGGBB).
-        Ak index nie je platný, vráti fallback farbu.
+        O(1), real‑time safe.
         """
         try:
             idx = int(track)
         except Exception:
             return self.fallback_hex
 
-        if 0 <= idx < len(self.colors_hex):
+        if 0 <= idx < 16:
             return self.colors_hex[idx]
 
         return self.fallback_hex
@@ -77,14 +86,14 @@ class TrackColorMap:
     def get_color_rgb(self, track: int):
         """
         Vráti farbu v RGB formáte (r, g, b).
-        Real‑time safe, O(1).
+        O(1), real‑time safe.
         """
         try:
             idx = int(track)
         except Exception:
             return self.fallback_rgb
 
-        if 0 <= idx < len(self.colors_rgb):
+        if 0 <= idx < 16:
             return self.colors_rgb[idx]
 
         return self.fallback_rgb
