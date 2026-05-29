@@ -1,8 +1,8 @@
 # =========================================================
-# NotationProcessor v4.0.0
+# NotationProcessor v4.3.0
 # Centrálna pipeline pre Real-Time-MIDI-Notation
 # MIDI → Mapper → Rhythm → Symbols → Renderer
-# Stabilizovaná verzia pre v4.0.0
+# Stabilizovaná verzia pre v4.3.0
 # =========================================================
 
 from .midi_note_mapper import MidiNoteMapper, Note
@@ -14,12 +14,19 @@ from .key_detector import detect_key
 
 class NotationProcessor:
     """
-    NotationProcessor (v4.0.0):
+    NotationProcessor (v4.3.0):
     - centrálna pipeline pre MIDI → vizuálnu notáciu
     - stabilné spracovanie MIDI udalostí
-    - bezpečné fallbacky
-    - pripravené na AI/TIMELINE v4.x
+    - real-time safe
+    - pripravené pre AI/TIMELINE v4.3.0 a Runtime 5.x
     """
+
+    __slots__ = (
+        "note_mapper", "rhythm_analyzer", "symbol_manager", "renderer",
+        "timeline", "current_chord", "last_measure", "active_pitches",
+        "current_key", "last_note_by_pitch", "current_play_position",
+        "bpm", "is_running", "last_timestamp", "track_colors"
+    )
 
     def __init__(self):
         self.note_mapper = MidiNoteMapper()
@@ -27,19 +34,19 @@ class NotationProcessor:
         self.symbol_manager = SymbolManager()
         self.renderer = NotationRenderer()
 
-        self.timeline: list[dict] = []
+        self.timeline = []
         self.current_chord = None
 
-        self.last_measure: int | None = None
-        self.active_pitches: set[int] = set()
-        self.current_key: str | None = None
+        self.last_measure = None
+        self.active_pitches = set()
+        self.current_key = None
 
-        self.last_note_by_pitch: dict[int, dict] = {}
-        self.current_play_position: float = 0.0
+        self.last_note_by_pitch = {}
+        self.current_play_position = 0.0
 
-        self.bpm: int = 120
-        self.is_running: bool = False
-        self.last_timestamp: float = 0.0
+        self.bpm = 120
+        self.is_running = False
+        self.last_timestamp = 0.0
 
         self.track_colors = {
             "melody": (80, 160, 255),
@@ -60,7 +67,7 @@ class NotationProcessor:
     # ---------------------------------------------------------
     def _compute_time_delta(self, timestamp: float) -> float:
         try:
-            dt = float(timestamp) - float(self.last_timestamp)
+            dt = float(timestamp) - self.last_timestamp
         except Exception:
             dt = 0.0
         if dt < 0:
@@ -79,8 +86,7 @@ class NotationProcessor:
 
         self.is_running = True
 
-        import threading
-        import time
+        import threading, time
 
         def loop():
             while self.is_running:
@@ -101,9 +107,10 @@ class NotationProcessor:
         except Exception:
             self.current_play_position = 0.0
 
-        if hasattr(self.renderer, "set_playhead"):
+        renderer = self.renderer
+        if hasattr(renderer, "set_playhead"):
             try:
-                self.renderer.set_playhead(self.current_play_position)
+                renderer.set_playhead(self.current_play_position)
             except Exception:
                 pass
 
@@ -130,9 +137,10 @@ class NotationProcessor:
 
             self.timeline.append(key_item)
 
-            if hasattr(self.renderer, "add_key_change"):
+            renderer = self.renderer
+            if hasattr(renderer, "add_key_change"):
                 try:
-                    self.renderer.add_key_change(key_item)
+                    renderer.add_key_change(key_item)
                 except Exception:
                     pass
 
@@ -149,9 +157,10 @@ class NotationProcessor:
 
         self.timeline.append(chord_item)
 
-        if hasattr(self.renderer, "add_chord"):
+        renderer = self.renderer
+        if hasattr(renderer, "add_chord"):
             try:
-                self.renderer.add_chord(chord_item)
+                renderer.add_chord(chord_item)
             except Exception:
                 pass
 
@@ -238,7 +247,7 @@ class NotationProcessor:
                     pass
                 self._update_key(timestamp)
 
-            created_note: Note | None = None
+            created_note = None
 
             def on_note_created(note: Note):
                 nonlocal created_note
@@ -295,9 +304,10 @@ class NotationProcessor:
                 }
                 self.timeline.append(bar_item)
 
-                if hasattr(self.renderer, "add_barline"):
+                renderer = self.renderer
+                if hasattr(renderer, "add_barline"):
                     try:
-                        self.renderer.add_barline(bar_item["start"])
+                        renderer.add_barline(bar_item["start"])
                     except Exception:
                         pass
 
@@ -364,17 +374,18 @@ class NotationProcessor:
             # ---------------------------------------------------------
             # RENDERER
             # ---------------------------------------------------------
-            if self.renderer:
-                if hasattr(self.renderer, "add_note"):
-                    try:
-                        self.renderer.add_note(timeline_item)
-                    except Exception:
-                        pass
-                elif hasattr(self.renderer, "render"):
-                    try:
-                        self.renderer.render(self.timeline)
-                    except Exception:
-                        pass
+            renderer = self.renderer
+
+            if hasattr(renderer, "add_note"):
+                try:
+                    renderer.add_note(timeline_item)
+                except Exception:
+                    pass
+            elif hasattr(renderer, "render"):
+                try:
+                    renderer.render(self.timeline)
+                except Exception:
+                    pass
 
             return {
                 "note": created_note,
