@@ -1,5 +1,5 @@
 # =========================================================
-# MIDIListener v4.0.0
+# MIDIListener v4.3.0
 # Stabilný real-time MIDI vstupný modul pre MIDI Engine
 # =========================================================
 
@@ -13,14 +13,24 @@ from ..core.logger import Logger
 
 class MIDIListener:
     """
-    MIDIListener (v4.0.0):
+    MIDIListener (v4.3.0):
     - bezpečné otváranie MIDI portu
     - auto-detect MIDI zariadenia
     - thread-safe štart/stop
     - odolný voči chybám počas čítania
     - žiadne duplikované porty
-    - kompatibilný s EventBus v4
+    - real-time safe (žiadne výnimky v slučke)
+    - kompatibilný s EventBus v4.3.0
     """
+
+    __slots__ = (
+        "event_bus",
+        "device_name",
+        "poll_interval",
+        "running",
+        "thread",
+        "port",
+    )
 
     def __init__(self, event_bus, device_name=None, poll_interval=0.001):
         self.event_bus = event_bus
@@ -31,7 +41,7 @@ class MIDIListener:
         self.thread = None
         self.port = None
 
-        Logger.info("MIDIListener initialized (v4-ready).")
+        Logger.info("MIDIListener initialized (v4.3.0).")
 
     # ---------------------------------------------------------
     # START LISTENING
@@ -62,9 +72,10 @@ class MIDIListener:
         Logger.info("MIDIListener stopping...")
 
         # počkaj na ukončenie vlákna
-        if self.thread and self.thread.is_alive():
+        thread = self.thread
+        if thread and thread.is_alive():
             try:
-                self.thread.join(timeout=1.0)
+                thread.join(timeout=1.0)
             except Exception:
                 pass
 
@@ -110,9 +121,10 @@ class MIDIListener:
             return None
 
     def _close_port(self):
-        if self.port:
+        port = self.port
+        if port:
             try:
-                self.port.close()
+                port.close()
             except Exception:
                 pass
             self.port = None
@@ -131,13 +143,17 @@ class MIDIListener:
         with self.port:
             Logger.info(f"MIDIListener: listening on '{self.port.name}'")
 
+            poll_interval = self.poll_interval
+            event_bus = self.event_bus
+            parse = MessageParser.parse
+
             while self.running:
                 try:
                     for msg in self.port.iter_pending():
-                        parsed = MessageParser.parse(msg)
+                        parsed = parse(msg)
                         if parsed:
                             try:
-                                self.event_bus.publish("midi_event", parsed)
+                                event_bus.publish("midi_event", parsed)
                             except Exception as e:
                                 Logger.error(f"EventBus publish error: {e}")
 
@@ -145,7 +161,7 @@ class MIDIListener:
                     Logger.error(f"MIDIListener loop error: {e}")
                     time.sleep(0.1)
 
-                time.sleep(self.poll_interval)
+                time.sleep(poll_interval)
 
     # ---------------------------------------------------------
     # NO-OP API (pre UIManager kompatibilitu)
