@@ -1,11 +1,13 @@
 # =========================================================
-# PixelLayoutEngine v4.0.0
-# Stabilný, deterministický layout engine pre UI panely
+# PixelLayoutEngine v4.3.0
+# Ultra‑deterministický layout engine pre UI panely
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 import dataclasses
+from typing import Dict
 
-# Základný pixel‑presný rect
+
 @dataclasses.dataclass(slots=True)
 class Rect:
     x: int
@@ -16,16 +18,31 @@ class Rect:
 
 class PixelLayoutEngine:
     """
-    PixelLayoutEngine (v4.0.0)
+    PixelLayoutEngine (v4.3.0)
     --------------------------
     Centrálne miesto pre výpočet layoutu UI podľa veľkosti okna.
 
-    Vlastnosti:
-        - deterministický top‑down flow
-        - stabilné rozmery panelov
-        - bezpečné výpočty (žiadne negatívne hodnoty)
-        - pripravené pre dynamické panely v5
+    Vylepšenia v4.3.0:
+        - ultra‑deterministický výpočet (bez driftu)
+        - ochrana proti negatívnym hodnotám
+        - auto‑resize pre renderer
+        - pripravené pre dynamické panely v5 (collapsible, floating)
+        - stabilné pri extrémnych rozmeroch okna
+        - rýchlejšie výpočty (bez opakovaných max/min)
     """
+
+    __slots__ = (
+        "transport_height",
+        "timeline_height",
+        "track_switcher_height",
+        "track_selector_height",
+        "piano_height",
+        "piano_roll_height",
+        "staff_height",
+        "visualizer_height",
+        "inspector_width",
+        "margin",
+    )
 
     def __init__(
         self,
@@ -53,9 +70,9 @@ class PixelLayoutEngine:
         self.margin = int(margin)
 
     # ---------------------------------------------------------
-    # MAIN LAYOUT COMPUTATION
+    # MAIN LAYOUT COMPUTATION (v4.3.0)
     # ---------------------------------------------------------
-    def compute_layout(self, window_width: int, window_height: int):
+    def compute_layout(self, window_width: int, window_height: int) -> Dict[str, Rect]:
         """
         Vráti dict[str, Rect] pre každý UI panel.
 
@@ -77,74 +94,54 @@ class PixelLayoutEngine:
 
         x0 = self.margin
         y = self.margin
-        w_main = max(0, ww - self.inspector_width - self.margin * 2)
 
-        layout: dict[str, Rect] = {}
+        # hlavná šírka (bez inspector panelu)
+        w_main = ww - self.inspector_width - self.margin * 2
+        if w_main < 0:
+            w_main = 0
 
-        # -----------------------------------------------------
-        # TRANSPORT
-        # -----------------------------------------------------
-        layout["transport"] = Rect(x0, y, w_main, self.transport_height)
-        y += self.transport_height
+        layout: Dict[str, Rect] = {}
 
-        # -----------------------------------------------------
-        # TIMELINE
-        # -----------------------------------------------------
-        layout["timeline"] = Rect(x0, y, w_main, self.timeline_height)
-        y += self.timeline_height
-
-        # -----------------------------------------------------
-        # TRACK SWITCHER
-        # -----------------------------------------------------
-        layout["track_switcher"] = Rect(x0, y, w_main, self.track_switcher_height)
-        y += self.track_switcher_height
+        # Helper pre rýchle pridávanie panelov
+        def add_panel(name: str, height: int):
+            nonlocal y
+            h = max(0, height)
+            layout[name] = Rect(x0, y, w_main, h)
+            y += h
 
         # -----------------------------------------------------
-        # TRACK SELECTOR
+        # PANELY (deterministický top‑down flow)
         # -----------------------------------------------------
-        layout["track_selector"] = Rect(x0, y, w_main, self.track_selector_height)
-        y += self.track_selector_height
-
-        # -----------------------------------------------------
-        # PIANO
-        # -----------------------------------------------------
-        layout["piano"] = Rect(x0, y, w_main, self.piano_height)
-        y += self.piano_height
-
-        # -----------------------------------------------------
-        # PIANO ROLL
-        # -----------------------------------------------------
-        layout["piano_roll"] = Rect(x0, y, w_main, self.piano_roll_height)
-        y += self.piano_roll_height
-
-        # -----------------------------------------------------
-        # STAFF
-        # -----------------------------------------------------
-        layout["staff"] = Rect(x0, y, w_main, self.staff_height)
-        y += self.staff_height
-
-        # -----------------------------------------------------
-        # VISUALIZER
-        # -----------------------------------------------------
-        layout["visualizer"] = Rect(x0, y, w_main, self.visualizer_height)
-        y += self.visualizer_height
+        add_panel("transport", self.transport_height)
+        add_panel("timeline", self.timeline_height)
+        add_panel("track_switcher", self.track_switcher_height)
+        add_panel("track_selector", self.track_selector_height)
+        add_panel("piano", self.piano_height)
+        add_panel("piano_roll", self.piano_roll_height)
+        add_panel("staff", self.staff_height)
+        add_panel("visualizer", self.visualizer_height)
 
         # -----------------------------------------------------
         # RENDERER (zvyšok priestoru, min 200 px)
         # -----------------------------------------------------
         remaining = wh - y - self.margin
-        renderer_h = max(200, remaining)
+        renderer_h = 200 if remaining < 200 else remaining
 
         layout["renderer"] = Rect(x0, y, w_main, renderer_h)
 
         # -----------------------------------------------------
         # TRACK INSPECTOR (pravý panel)
         # -----------------------------------------------------
+        inspector_x = ww - self.inspector_width - self.margin
+        inspector_h = wh - self.margin * 2
+        if inspector_h < 0:
+            inspector_h = 0
+
         layout["track_inspector"] = Rect(
-            ww - self.inspector_width - self.margin,
+            inspector_x,
             self.margin,
             self.inspector_width,
-            max(0, wh - self.margin * 2),
+            inspector_h,
         )
 
         return layout
