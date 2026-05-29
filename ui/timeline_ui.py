@@ -1,5 +1,5 @@
     # ---------------------------------------------------------
-    # EVENTS (v4.0.0 – stabilná, optimalizovaná verzia)
+    # EVENTS (v4.3.0 – stabilná, optimalizovaná verzia)
     # ---------------------------------------------------------
     def handle_event(self, event) -> None:
         mx, my = pygame.mouse.get_pos()
@@ -18,6 +18,7 @@
         # MOUSE DOWN
         # -----------------------------------------------------
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # LEFT CLICK
             if event.button == 1:
                 # 1) Commit rename if active
                 if self.marker_rename_index is not None:
