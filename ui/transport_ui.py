@@ -1,6 +1,7 @@
 # =========================================================
-# TransportUI v4.0.0
-# Stable transport panel for DAW (play/stop/loop/BPM/time)
+# TransportUI v4.3.0
+# Ultra-stable transport panel for DAW (play/stop/loop/BPM/time)
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 import pygame
@@ -8,9 +9,9 @@ import pygame
 
 class TransportUI:
     """
-    TransportUI (v4.0.0)
+    TransportUI (v4.3.0)
     --------------------
-    Minimal, stable transport panel for DAW-style applications.
+    Minimal, ultra-stable transport panel for DAW-style applications.
 
     Features:
         - play / stop / rewind
@@ -24,7 +25,18 @@ class TransportUI:
         - ready for v5 (skins, animations, AI assist)
     """
 
-    def __init__(self, width=1400, height=50):
+    __slots__ = (
+        "width",
+        "height",
+        "font",
+        "buttons",
+        "bpm",
+        "time_text",
+        "loop_enabled",
+        "is_playing",
+    )
+
+    def __init__(self, width: int = 1400, height: int = 50):
         self.width = int(width)
         self.height = int(height)
 
@@ -75,28 +87,29 @@ class TransportUI:
             return None
 
         pos = event.pos
+        buttons = self.buttons
 
-        if self.buttons["rewind"].collidepoint(pos):
+        if buttons["rewind"].collidepoint(pos):
             self.is_playing = False
             return {"action": "rewind"}
 
-        if self.buttons["play"].collidepoint(pos):
+        if buttons["play"].collidepoint(pos):
             self.is_playing = True
             return {"action": "play"}
 
-        if self.buttons["stop"].collidepoint(pos):
+        if buttons["stop"].collidepoint(pos):
             self.is_playing = False
             return {"action": "stop"}
 
-        if self.buttons["loop"].collidepoint(pos):
+        if buttons["loop"].collidepoint(pos):
             self.loop_enabled = not self.loop_enabled
             return {"action": "loop", "enabled": self.loop_enabled}
 
-        if self.buttons["bpm_minus"].collidepoint(pos):
+        if buttons["bpm_minus"].collidepoint(pos):
             self.bpm = max(20, self.bpm - 1)
             return {"action": "bpm", "value": self.bpm}
 
-        if self.buttons["bpm_plus"].collidepoint(pos):
+        if buttons["bpm_plus"].collidepoint(pos):
             self.bpm = min(300, self.bpm + 1)
             return {"action": "bpm", "value": self.bpm}
 
@@ -129,44 +142,52 @@ class TransportUI:
         # Background
         pygame.draw.rect(surface, (230, 230, 230), (0, 0, self.width, self.height))
 
+        buttons = self.buttons
+
         # Button colors
-        pygame.draw.rect(surface, (80, 80, 80), self.buttons["rewind"])
-        pygame.draw.rect(surface, (0, 200, 0) if not self.is_playing else (0, 150, 0), self.buttons["play"])
-        pygame.draw.rect(surface, (200, 0, 0), self.buttons["stop"])
+        pygame.draw.rect(surface, (80, 80, 80), buttons["rewind"])
+        pygame.draw.rect(
+            surface,
+            (0, 200, 0) if not self.is_playing else (0, 150, 0),
+            buttons["play"],
+        )
+        pygame.draw.rect(surface, (200, 0, 0), buttons["stop"])
 
         loop_color = (0, 120, 255) if self.loop_enabled else (120, 120, 120)
-        pygame.draw.rect(surface, loop_color, self.buttons["loop"])
+        pygame.draw.rect(surface, loop_color, buttons["loop"])
 
-        pygame.draw.rect(surface, (180, 180, 180), self.buttons["bpm_minus"])
-        pygame.draw.rect(surface, (180, 180, 180), self.buttons["bpm_plus"])
+        pygame.draw.rect(surface, (180, 180, 180), buttons["bpm_minus"])
+        pygame.draw.rect(surface, (180, 180, 180), buttons["bpm_plus"])
 
         # Text rendering
         if self.font:
-            # Icons
-            rewind_t = self.font.render("⏪", True, (255, 255, 255))
-            play_t = self.font.render("▶", True, (0, 0, 0))
-            stop_t = self.font.render("■", True, (0, 0, 0))
-            loop_t = self.font.render("LOOP", True, (255, 255, 255))
+            font = self.font
 
-            minus_t = self.font.render("-", True, (0, 0, 0))
-            plus_t = self.font.render("+", True, (0, 0, 0))
+            # Icons
+            rewind_t = font.render("⏪", True, (255, 255, 255))
+            play_t = font.render("▶", True, (0, 0, 0))
+            stop_t = font.render("■", True, (0, 0, 0))
+            loop_t = font.render("LOOP", True, (255, 255, 255))
+
+            minus_t = font.render("-", True, (0, 0, 0))
+            plus_t = font.render("+", True, (0, 0, 0))
 
             # Draw icons
-            surface.blit(rewind_t, rewind_t.get_rect(center=self.buttons["rewind"].center))
-            surface.blit(play_t, play_t.get_rect(center=self.buttons["play"].center))
-            surface.blit(stop_t, stop_t.get_rect(center=self.buttons["stop"].center))
-            surface.blit(loop_t, loop_t.get_rect(center=self.buttons["loop"].center))
+            surface.blit(rewind_t, rewind_t.get_rect(center=buttons["rewind"].center))
+            surface.blit(play_t, play_t.get_rect(center=buttons["play"].center))
+            surface.blit(stop_t, stop_t.get_rect(center=buttons["stop"].center))
+            surface.blit(loop_t, loop_t.get_rect(center=buttons["loop"].center))
 
-            surface.blit(minus_t, minus_t.get_rect(center=self.buttons["bpm_minus"].center))
-            surface.blit(plus_t, plus_t.get_rect(center=self.buttons["bpm_plus"].center))
+            surface.blit(minus_t, minus_t.get_rect(center=buttons["bpm_minus"].center))
+            surface.blit(plus_t, plus_t.get_rect(center=buttons["bpm_plus"].center))
 
             # BPM text
-            bpm_t = self.font.render(f"BPM: {self.bpm}", True, (0, 0, 0))
+            bpm_t = font.render(f"BPM: {self.bpm}", True, (0, 0, 0))
             surface.blit(bpm_t, (360, 12))
 
             # Time display box
             pygame.draw.rect(surface, (255, 255, 255), (500, 10, 150, 30))
             pygame.draw.rect(surface, (0, 0, 0), (500, 10, 150, 30), 2)
 
-            time_t = self.font.render(self.time_text, True, (0, 0, 0))
+            time_t = font.render(self.time_text, True, (0, 0, 0))
             surface.blit(time_t, (510, 12))
