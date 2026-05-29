@@ -1,5 +1,5 @@
 # =========================================================
-# Harmony Engine v4.0.0
+# Harmony Engine v4.3.0
 # Stabilná harmonická analýza pre Real-Time-MIDI-Notation
 # =========================================================
 
@@ -16,16 +16,15 @@ class HarmonyRole:
 
 class HarmonyEngine:
     """
-    HarmonyEngine (v4.0.0) – stabilizovaný harmonický engine:
+    HarmonyEngine (v4.3.0):
     - analyzuje MIDI pitch hodnoty
     - pracuje s informáciou o kľúči (tonalite) a akorde
     - vracia harmonickú rolu:
-        - root
-        - chord_tone
-        - tension
-        - scale_tone
-        - outside
+        root, chord_tone, tension, scale_tone, outside
+    - real-time safe, deterministické
     """
+
+    __slots__ = ("chord_intervals",)
 
     def __init__(self):
         self.chord_intervals = {
@@ -51,10 +50,11 @@ class HarmonyEngine:
         except Exception:
             return []
 
-        if is_major:
-            pattern = [0, 2, 4, 5, 7, 9, 11]
-        else:
-            pattern = [0, 2, 3, 5, 7, 8, 10]
+        pattern = (
+            [0, 2, 4, 5, 7, 9, 11]
+            if is_major
+            else [0, 2, 3, 5, 7, 8, 10]
+        )
 
         try:
             return [(key_root + step) % 12 for step in pattern]
@@ -77,19 +77,20 @@ class HarmonyEngine:
         if not isinstance(pitches, list):
             return roles
 
-        # Stupnica
-        scale_pitches: List[int] = []
-        if key_root is not None:
-            scale_pitches = self._build_scale(key_root, is_major)
+        # Scale
+        scale_pitches = (
+            self._build_scale(key_root, is_major)
+            if key_root is not None
+            else []
+        )
 
-        # Normalizovaný root akordu
-        chord_root_norm = None
-        if chord_root is not None:
-            try:
-                chord_root_norm = int(chord_root) % 12
-            except Exception:
-                chord_root_norm = None
+        # Chord root
+        try:
+            chord_root_norm = int(chord_root) % 12 if chord_root is not None else None
+        except Exception:
+            chord_root_norm = None
 
+        # Analyze each pitch
         for p in pitches:
             try:
                 norm = self._normalize_pitch(p)
@@ -97,7 +98,7 @@ class HarmonyEngine:
                 roles[p] = HarmonyRole.OUTSIDE
                 continue
 
-            # 1) ROOT / CHORD_TONE / TENSION
+            # Chord-based roles
             if chord_root_norm is not None:
                 try:
                     interval = (norm - chord_root_norm) % 12
@@ -117,7 +118,7 @@ class HarmonyEngine:
                     roles[p] = HarmonyRole.TENSION
                     continue
 
-            # 2) SCALE TONE vs OUTSIDE
+            # Scale tone vs outside
             if scale_pitches:
                 roles[p] = (
                     HarmonyRole.SCALE_TONE
