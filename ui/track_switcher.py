@@ -1,6 +1,7 @@
 # =========================================================
-# ui_track_switcher.py – v4.0.0
-# Stabilná logická vrstva pre prepínanie MIDI stôp
+# ui_track_switcher.py – v4.3.0
+# Ultra‑optimalizovaná logická vrstva pre prepínanie MIDI stôp
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 from dataclasses import dataclass
@@ -16,17 +17,24 @@ class TrackSwitchEvent:
 
 class TrackSwitcherLogic:
     """
-    TrackSwitcherLogic (v4.0.0)
+    TrackSwitcherLogic (v4.3.0)
     ---------------------------
     Čistá logická vrstva pre prepínanie stôp.
 
-    Vylepšenia v4:
+    Vylepšenia v4.3.0:
+        - __slots__ pre ultra‑nízku latenciu
+        - bezpečné volanie controllerov (žiadne výnimky)
+        - stabilný callback systém (O(1) lookup)
         - okamžitý HEX aj RGB lookup (ak color_map podporuje)
-        - bezpečné volanie controllerov
-        - stabilný callback systém
-        - drop‑in kompatibilita s v2 UI
-        - pripravené pre v5 (hover, inspector sync)
+        - pripravené pre v5 (hover, inspector sync, multi‑track)
     """
+
+    __slots__ = (
+        "selection_controller",
+        "visibility_controller",
+        "color_map",
+        "_callbacks",
+    )
 
     def __init__(self, selection_controller, visibility_controller=None, color_map=None):
         self.selection_controller = selection_controller
@@ -52,7 +60,7 @@ class TrackSwitcherLogic:
         """
         Logika prepnutia stopy.
         - nastaví aktívnu stopu
-        - voliteľne prepína viditeľnosť
+        - notifikuje UI
         """
 
         # 1) Nastav aktívnu stopu
@@ -98,7 +106,6 @@ class TrackSwitcherLogic:
         if self.color_map is None:
             return "#FFFFFF"
 
-        # Podpora HEX aj RGB
         try:
             if hasattr(self.color_map, "get_color_rgb"):
                 return self.color_map.get_color_rgb(track_id)
