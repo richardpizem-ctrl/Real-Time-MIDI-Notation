@@ -6,43 +6,35 @@ Tento renderer poskytuje:
 - real-time aktualizáciu symbolov a layoutu
 - podporu pre viacero stôp a dynamické prepočty
 - optimalizované kreslenie pre nízku latenciu
-- diagnostiku a profilovanie výkonu (v4.3.0)
 - prepojenie na Notation Engine a Real-Time Processing
 
 Renderer_new je hlavná vizuálna vrstva systému.
 """
 
-# Hlavné renderer moduly
 from .graphic_renderer import GraphicRenderer
-from .renderer_layers import RendererLayers
-from .render_utils import RenderUtils
-from .color_theme import ColorTheme
-from .layout_manager import LayoutManager
-from .playhead_renderer import PlayheadRenderer
-from .measure_renderer import MeasureRenderer
-from .note_renderer import NoteRenderer
-from .staff_renderer import StaffRenderer
-
-# Nové moduly v4.3.0
-from .render_profiler import RenderProfiler
-from .renderer_stats import RendererStats
-
-# Render pipeline (nový orchestrátor)
-from .render_pipeline import RenderPipeline
+from .layers import RendererLayers
+from .notation_renderer import NotationRenderer
+from .playhead import Playhead
+from .selection_actions import SelectionActions
+from .selection_layer import SelectionLayer
+from .timeline_controller import TimelineController
+from .timeline_grid import TimelineGrid
+from .timeline_layer import TimelineLayer
+from .timeline_layout_engine import TimelineLayoutEngine
+from .timeline_renderer import TimelineRenderer
 
 __all__ = [
     "GraphicRenderer",
     "RendererLayers",
-    "RenderUtils",
-    "ColorTheme",
-    "LayoutManager",
-    "PlayheadRenderer",
-    "MeasureRenderer",
-    "NoteRenderer",
-    "StaffRenderer",
-    "RenderProfiler",
-    "RendererStats",
-    "RenderPipeline",
+    "NotationRenderer",
+    "Playhead",
+    "SelectionActions",
+    "SelectionLayer",
+    "TimelineController",
+    "TimelineGrid",
+    "TimelineLayer",
+    "TimelineLayoutEngine",
+    "TimelineRenderer",
 ]
 
 __version__ = "4.3.0"
