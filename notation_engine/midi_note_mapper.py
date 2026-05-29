@@ -1,12 +1,14 @@
 # =========================================================
-# MidiNoteMapper v2.0.0
+# MidiNoteMapper v4.3.0
 # Stabilizovaný MIDI → Notation mapper pre Real-Time-MIDI-Notation
 # =========================================================
 
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, Callable
 
 
 class Duration:
+    __slots__ = ("ticks", "dotted")
+
     def __init__(self, ticks: int, dotted: bool = False):
         try:
             self.ticks = int(ticks)
@@ -14,11 +16,13 @@ class Duration:
             self.ticks = 0
         self.dotted = bool(dotted)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Duration(ticks={self.ticks}, dotted={self.dotted})"
 
 
 class MeasurePosition:
+    __slots__ = ("measure", "beat")
+
     def __init__(self, measure: int, beat: float):
         try:
             self.measure = int(measure)
@@ -29,11 +33,20 @@ class MeasurePosition:
         except Exception:
             self.beat = 1.0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"MeasurePosition(measure={self.measure}, beat={self.beat})"
 
 
 class Note:
+    __slots__ = (
+        "pitch",
+        "velocity",
+        "start_time",
+        "duration",
+        "channel",
+        "position",
+    )
+
     def __init__(
         self,
         pitch: int,
@@ -71,7 +84,7 @@ class Note:
             else MeasurePosition(0, 1.0)
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"Note(pitch={self.pitch}, velocity={self.velocity}, "
             f"start={self.start_time}, duration={self.duration}, "
@@ -81,14 +94,27 @@ class Note:
 
 class MidiNoteMapper:
     """
-    MidiNoteMapper (v2.0.0) – stabilizovaný MIDI → Notation mapper.
+    MidiNoteMapper (v4.3.0) – stabilizovaný MIDI → Notation mapper.
 
     - sleduje aktívne noty (note_on → note_off)
     - konvertuje čas na ticks
     - kvantizuje
     - počíta measure/beat podľa time signature
     - vytvára Note objekt
+    - real-time safe, deterministické
     """
+
+    __slots__ = (
+        "active_notes",
+        "ppq",
+        "tempo_bpm",
+        "current_measure",
+        "current_beat",
+        "on_note_created",
+        "quantize_resolution",
+        "time_numerator",
+        "time_denominator",
+    )
 
     def __init__(self, ppq: int = 480, tempo_bpm: float = 120.0):
         self.active_notes: Dict[Tuple[int, int], Dict[str, float]] = {}
@@ -103,20 +129,20 @@ class MidiNoteMapper:
         except Exception:
             self.tempo_bpm = 120.0
 
-        self.current_measure = 0
-        self.current_beat = 1.0
+        self.current_measure: int = 0
+        self.current_beat: float = 1.0
 
-        self.on_note_created = None
+        self.on_note_created: Optional[Callable[[Note], None]] = None
 
-        self.quantize_resolution = 120
+        self.quantize_resolution: int = 120
 
-        self.time_numerator = 4
-        self.time_denominator = 4
+        self.time_numerator: int = 4
+        self.time_denominator: int = 4
 
     # ---------------------------------------------------------
     # TIMING
     # ---------------------------------------------------------
-    def set_timing(self, ppq: int, tempo_bpm: float):
+    def set_timing(self, ppq: int, tempo_bpm: float) -> None:
         try:
             self.ppq = int(ppq)
         except Exception:
@@ -126,7 +152,7 @@ class MidiNoteMapper:
         except Exception:
             pass
 
-    def set_time_signature(self, numerator: int, denominator: int):
+    def set_time_signature(self, numerator: int, denominator: int) -> None:
         try:
             self.time_numerator = int(numerator)
         except Exception:
@@ -163,7 +189,7 @@ class MidiNoteMapper:
         except Exception:
             return ticks
 
-    def _update_position(self, timestamp: float):
+    def _update_position(self, timestamp: float) -> None:
         try:
             timestamp = float(timestamp)
         except Exception:
@@ -190,7 +216,7 @@ class MidiNoteMapper:
     # ---------------------------------------------------------
     # MIDI EVENTS
     # ---------------------------------------------------------
-    def handle_note_on(self, pitch: int, velocity: int, channel: int, timestamp: float):
+    def handle_note_on(self, pitch: int, velocity: int, channel: int, timestamp: float) -> None:
         self._update_position(timestamp)
 
         try:
@@ -206,7 +232,7 @@ class MidiNoteMapper:
         except Exception:
             pass
 
-    def handle_note_off(self, pitch: int, channel: int, timestamp: float):
+    def handle_note_off(self, pitch: int, channel: int, timestamp: float) -> None:
         self._update_position(timestamp)
 
         try:
@@ -226,7 +252,11 @@ class MidiNoteMapper:
 
         del self.active_notes[key]
 
-        duration_seconds = max(float(timestamp) - start_time, 0.0)
+        try:
+            duration_seconds = max(float(timestamp) - start_time, 0.0)
+        except Exception:
+            duration_seconds = 0.0
+
         duration_ticks = self._seconds_to_ticks(duration_seconds)
         duration_ticks = self._quantize_ticks(duration_ticks)
         duration = Duration(ticks=duration_ticks)
@@ -250,8 +280,9 @@ class MidiNoteMapper:
             position=position,
         )
 
-        if callable(self.on_note_created):
+        callback = self.on_note_created
+        if callable(callback):
             try:
-                self.on_note_created(note)
+                callback(note)
             except Exception:
                 pass
