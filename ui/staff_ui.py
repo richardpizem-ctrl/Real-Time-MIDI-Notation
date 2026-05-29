@@ -1,6 +1,7 @@
 # =========================================================
-# StaffUI v4.0.0
-# Stabilná real‑time notová osnova (pygame)
+# StaffUI v4.3.0
+# Ultra‑optimalizovaná real‑time notová osnova (pygame)
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 import pygame
@@ -9,16 +10,21 @@ from typing import Dict, List, Tuple, Any
 
 
 class StaffUI:
+    __slots__ = (
+        "width", "height",
+        "notes", "note_order",
+        "scroll_x", "note_spacing", "scroll_speed",
+        "_white", "_outline",
+        "_highlight",
+    )
+
     STAFF_LINE_COLOR = (220, 220, 220)
-    NOTE_COLOR = (255, 255, 255)
-    HIGHLIGHT_COLOR = (255, 80, 80)
 
     STAFF_TOP = 40
     STAFF_SPACING = 12
     STAFF_LINES = 5
 
     NOTE_RADIUS = 7
-    NOTE_OUTLINE = (30, 30, 30)
 
     def __init__(self, width: int = 1400, height: int = 200):
         self.width = int(width)
@@ -32,6 +38,11 @@ class StaffUI:
         self.scroll_x = 0
         self.note_spacing = 22
         self.scroll_speed = 2
+
+        # predpočítané farby
+        self._white = (255, 255, 255)
+        self._outline = (30, 30, 30)
+        self._highlight = (255, 80, 80)
 
     # ---------------------------------------------------------
     # PUBLIC API (UIManager-safe)
@@ -68,7 +79,7 @@ class StaffUI:
         except Exception:
             return
 
-        # Stabilnejšie ID (čas v ms + index)
+        # Stabilné ID (čas v ms + index)
         note_id = f"{track}_{midi_int}_{int(t * 1000)}_{len(self.note_order)}"
 
         if note_id in self.notes:
@@ -84,9 +95,9 @@ class StaffUI:
         y = max(0, min(self.height - 10, y))
 
         # farba
-        color = event.get("track_color", self.NOTE_COLOR)
+        color = event.get("track_color", self._white)
         if not isinstance(color, (tuple, list)) or len(color) != 3:
-            color = self.NOTE_COLOR
+            color = self._white
 
         self.notes[note_id] = {
             "x": x,
@@ -122,12 +133,12 @@ class StaffUI:
 
     def highlight_note(self, note_id: str, color=None):
         if note_id in self.notes:
-            self.notes[note_id]["color"] = tuple(color or self.HIGHLIGHT_COLOR)
+            self.notes[note_id]["color"] = tuple(color or self._highlight)
             self.notes[note_id]["highlight"] = True
 
     def unhighlight_note(self, note_id: str):
         if note_id in self.notes:
-            self.notes[note_id]["color"] = self.NOTE_COLOR
+            self.notes[note_id]["color"] = self._white
             self.notes[note_id]["highlight"] = False
 
     # ---------------------------------------------------------
@@ -151,23 +162,23 @@ class StaffUI:
     # ---------------------------------------------------------
     def draw_staff(self, surface: pygame.Surface):
         w = surface.get_width()
+        top = self.STAFF_TOP
+        spacing = self.STAFF_SPACING
+        color = self.STAFF_LINE_COLOR
+
         for i in range(self.STAFF_LINES):
-            y = self.STAFF_TOP + i * self.STAFF_SPACING
-            pygame.draw.line(
-                surface,
-                self.STAFF_LINE_COLOR,
-                (20, y),
-                (w - 20, y),
-                2,
-            )
+            y = top + i * spacing
+            pygame.draw.line(surface, color, (20, y), (w - 20, y), 2)
 
     # ---------------------------------------------------------
     # DRAW NOTES
     # ---------------------------------------------------------
     def draw_notes(self, surface: pygame.Surface):
         w = surface.get_width()
+        outline = self._outline
+        r = self.NOTE_RADIUS
 
-        for note_id in list(self.note_order):
+        for note_id in self.note_order:
             note = self.notes.get(note_id)
             if not note:
                 continue
@@ -181,14 +192,8 @@ class StaffUI:
             color = note["color"]
             y = note["y"]
 
-            pygame.draw.circle(surface, color, (shifted_x, y), self.NOTE_RADIUS)
-            pygame.draw.circle(
-                surface,
-                self.NOTE_OUTLINE,
-                (shifted_x, y),
-                self.NOTE_RADIUS,
-                2,
-            )
+            pygame.draw.circle(surface, color, (shifted_x, y), r)
+            pygame.draw.circle(surface, outline, (shifted_x, y), r, 2)
 
     # ---------------------------------------------------------
     # DRAW
