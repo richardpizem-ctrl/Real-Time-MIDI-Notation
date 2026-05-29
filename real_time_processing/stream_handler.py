@@ -1,5 +1,5 @@
 # =========================================================
-# StreamHandler v4.0.0
+# StreamHandler v4.3.0
 # Stabilný real‑time MIDI Stream Handler pre SIRIUS
 # =========================================================
 
@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any
 
 class StreamHandler:
     """
-    StreamHandler (v4.0.0):
+    StreamHandler (v4.3.0):
     - bezpečné čítanie MIDI eventov
     - ochrana pred None objektmi
     - ochrana pred nevalidnými MIDI dátami
@@ -18,7 +18,16 @@ class StreamHandler:
     - fallback pri chýbajúcom zariadení
     - bezpečné logovanie bez pádu
     - čistý shutdown (stop)
+    - real-time safe, pripravené pre Runtime 5.x
     """
+
+    __slots__ = (
+        "ui",
+        "event_router",
+        "perf",
+        "midi_input",
+        "running",
+    )
 
     def __init__(self, ui_manager=None, event_router=None, perf=None):
         self.ui = ui_manager
@@ -34,6 +43,7 @@ class StreamHandler:
             pygame.midi.init()
         except Exception as e:
             print(f"[StreamHandler] MIDI init error: {e}")
+            self.running = False
             return
 
         # -----------------------------------------------------
@@ -43,10 +53,12 @@ class StreamHandler:
             default_id = pygame.midi.get_default_input_id()
         except Exception as e:
             print(f"[StreamHandler] MIDI device lookup error: {e}")
+            self.running = False
             return
 
         if default_id == -1:
             print("[StreamHandler] Žiadne MIDI zariadenie nebolo nájdené.")
+            self.running = False
             return
 
         # -----------------------------------------------------
@@ -58,11 +70,12 @@ class StreamHandler:
         except Exception as e:
             print(f"[StreamHandler] MIDI Input error: {e}")
             self.midi_input = None
+            self.running = False
 
     # ---------------------------------------------------------
     # CLEAN SHUTDOWN
     # ---------------------------------------------------------
-    def stop(self):
+    def stop(self) -> None:
         """Bezpečné ukončenie MIDI vstupu."""
         self.running = False
 
@@ -87,10 +100,7 @@ class StreamHandler:
         Bezpečné čítanie MIDI eventov.
         max_messages = limit správ na jeden cyklus (burst-safe).
         """
-        if not self.running:
-            return
-
-        if self.midi_input is None:
+        if not self.running or self.midi_input is None:
             return
 
         # Poll
@@ -108,7 +118,6 @@ class StreamHandler:
             print(f"[StreamHandler] MIDI read error: {e}")
             return
 
-        # Stuck‑poll protection
         if not events:
             return
 
@@ -188,7 +197,8 @@ class StreamHandler:
             latency_ms = (pipeline_end - pipeline_start) * 1000.0
 
             try:
-                if self.perf and hasattr(self.perf, "record_event_latency"):
-                    self.perf.record_event_latency(latency_ms)
+                perf = self.perf
+                if perf is not None and hasattr(perf, "record_event_latency"):
+                    perf.record_event_latency(latency_ms)
             except Exception as e:
                 print(f"[StreamHandler] PerfTracker error: {e}")
