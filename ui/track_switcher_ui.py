@@ -1,7 +1,7 @@
 # =========================================================
-# TrackSwitcherUI v4.0.0
-# DAW‑štýlový vizuálny prepínač stôp s meterom, panom, volume,
-# record/mute/solo a highlight systémom.
+# TrackSwitcherUI v4.3.0
+# Ultra‑optimalizovaný DAW‑štýlový prepínač MIDI stôp
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 import pygame
@@ -10,6 +10,15 @@ from .track_control_manager import TrackControlManager
 
 
 class TrackSwitcherUI:
+    __slots__ = (
+        "x", "y", "width", "height",
+        "track_colors", "event_bus",
+        "track_control_manager",
+        "track_count", "button_width", "button_height",
+        "peak_hold",
+        "font", "small_font",
+    )
+
     TRACK_COUNT = 16
     METER_HEIGHT = 20
     VOLUME_HEIGHT = 30
@@ -49,7 +58,6 @@ class TrackSwitcherUI:
         self.height = int(height)
         self.track_colors = track_colors
         self.event_bus = event_bus
-
         self.track_control_manager = track_control_manager
 
         self.track_count = self.TRACK_COUNT
@@ -70,6 +78,7 @@ class TrackSwitcherUI:
     # ---------------------------------------------------------
     def update_peak_hold(self):
         tm = self.event_bus.track_manager
+        ph = self.peak_hold
 
         for i in range(self.track_count):
             tid = i + 1
@@ -78,10 +87,10 @@ class TrackSwitcherUI:
             except Exception:
                 level = 0.0
 
-            if level > self.peak_hold[i]:
-                self.peak_hold[i] = level
+            if level > ph[i]:
+                ph[i] = level
             else:
-                self.peak_hold[i] = max(0.0, self.peak_hold[i] - 0.01)
+                ph[i] = max(0.0, ph[i] - 0.01)
 
     # ---------------------------------------------------------
     # SOLO / AUDIBLE LOGIC
@@ -202,9 +211,11 @@ class TrackSwitcherUI:
         tooltip_text = None
         tooltip_pos = None
 
-        get_color_rgb = None
-        if self.track_control_manager is not None:
-            get_color_rgb = self.track_control_manager.get_color_rgb
+        get_color_rgb = (
+            self.track_control_manager.get_color_rgb
+            if self.track_control_manager is not None
+            else None
+        )
 
         for i in range(self.track_count):
             tid = i + 1
