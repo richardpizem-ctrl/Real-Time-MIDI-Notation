@@ -1,5 +1,5 @@
 # =========================================================
-# Drum Notation v4.0.0
+# Drum Notation v4.3.0
 # Profesionálny mapping bicích pre Real-Time-MIDI-Notation
 # =========================================================
 
