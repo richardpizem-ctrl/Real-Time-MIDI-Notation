@@ -1,21 +1,25 @@
 # =========================================================
-# TrackVisibilityController v4.0.0
-# Stabilný controller pre viditeľnosť MIDI stôp
+# TrackVisibilityController v4.3.0
+# Ultra‑rýchly controller pre viditeľnosť MIDI stôp
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 class TrackVisibilityController:
     """
-    TrackVisibilityController (v4.0.0)
+    TrackVisibilityController (v4.3.0)
     ----------------------------------
     Správa viditeľnosti stôp.
 
-    Vylepšenia v4:
+    Vylepšenia v4.3.0:
+        - __slots__ pre ultra‑nízku latenciu
         - rýchlejší boolean lookup
-        - bezpečné volania (žiadne výnimky)
-        - okamžitý clamp
-        - drop‑in kompatibilita
+        - okamžitý clamp (bez vetvenia navyše)
+        - real‑time safe (žiadne výnimky)
         - pripravené pre v5 (dynamic track allocation)
+        - drop‑in kompatibilita s UIManager a TrackControlManager
     """
+
+    __slots__ = ("track_count", "_visible")
 
     def __init__(self, track_count: int = 16):
         self.track_count = int(track_count)
@@ -25,18 +29,23 @@ class TrackVisibilityController:
     # INTERNAL HELPERS
     # ---------------------------------------------------------
     def _clamp(self, track: int) -> int:
-        """Zabezpečí, že index je v rozsahu 0–track_count-1."""
+        """Clamp index to 0–track_count-1 (ultra‑fast, no exceptions)."""
         try:
             t = int(track)
         except Exception:
             return 0
-        return 0 if t < 0 else (self.track_count - 1 if t >= self.track_count else t)
+
+        if t < 0:
+            return 0
+        if t >= self.track_count:
+            return self.track_count - 1
+        return t
 
     # ---------------------------------------------------------
     # PUBLIC API
     # ---------------------------------------------------------
     def is_visible(self, track: int) -> bool:
-        """Vráti, či je daná stopa viditeľná."""
+        """Vráti, či je daná stopa viditeľná (real‑time safe)."""
         try:
             return self._visible[self._clamp(track)]
         except Exception:
@@ -65,14 +74,16 @@ class TrackVisibilityController:
             pass
 
     def show_all(self):
-        """Zobrazí všetky stopy."""
+        """Zobrazí všetky stopy (O(n), žiadne výnimky)."""
+        vis = self._visible
         for i in range(self.track_count):
-            self._visible[i] = True
+            vis[i] = True
 
     def hide_all(self):
-        """Skryje všetky stopy."""
+        """Skryje všetky stopy (O(n), žiadne výnimky)."""
+        vis = self._visible
         for i in range(self.track_count):
-            self._visible[i] = False
+            vis[i] = False
 
     # ---------------------------------------------------------
     # NO-OP API (UIManager kompatibilita)
