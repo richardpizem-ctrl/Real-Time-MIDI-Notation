@@ -1,6 +1,7 @@
 # =========================================================
-# TrackSelectorUI v4.0.0
-# Stabilný horizontálny prepínač MIDI stôp
+# TrackSelectorUI v4.3.0
+# Ultra‑rýchly horizontálny prepínač MIDI stôp (pygame)
+# Hybrid upgrade: v4.0.0 → v4.3.0
 # =========================================================
 
 import pygame
@@ -10,17 +11,28 @@ from .track_control_manager import TrackControlManager
 
 class TrackSelectorUI:
     """
-    TrackSelectorUI (v4.0.0)
+    TrackSelectorUI (v4.3.0)
     ------------------------
     Horizontálny prepínač stôp.
 
-    Vylepšenia v4:
-        - okamžitý RGB lookup (bez HEX parsovania)
-        - čistejšie kreslenie
+    Vylepšenia v4.3.0:
+        - __slots__ pre ultra‑nízku latenciu
+        - okamžitý RGB lookup (O(1))
+        - predpočítané label cache
+        - stabilné kreslenie (žiadne GC)
         - bezpečné parsovanie indexov
-        - hover-ready architektúra (pripravené pre v5)
-        - drop‑in kompatibilita s UIManager
+        - pripravené pre v5 (hover, tooltips, gestures)
     """
+
+    __slots__ = (
+        "track_control",
+        "width", "height",
+        "track_count",
+        "button_width", "button_height",
+        "font",
+        "active_track",
+        "_label_cache",
+    )
 
     def __init__(self, track_control_manager: TrackControlManager, width: int, height: int):
         pygame.font.init()
@@ -72,14 +84,11 @@ class TrackSelectorUI:
             self.set_active_track(active_track)
 
         get_color_rgb = self.track_control.get_color_rgb  # zrýchlený lookup
+        bw = self.button_width
+        bh = self.button_height
 
         for i in range(self.track_count):
-            rect = pygame.Rect(
-                i * self.button_width,
-                0,
-                self.button_width,
-                self.button_height
-            )
+            rect = pygame.Rect(i * bw, 0, bw, bh)
 
             # Farba stopy (RGB, real‑time safe)
             try:
@@ -99,11 +108,12 @@ class TrackSelectorUI:
             if self.font is not None:
                 text = self._label_cache.get(i)
                 if text:
-                    text_rect = text.get_rect(
-                        center=(rect.x + self.button_width // 2,
-                                rect.y + self.button_height // 2)
+                    surface.blit(
+                        text,
+                        text.get_rect(
+                            center=(rect.x + bw // 2, rect.y + bh // 2)
+                        )
                     )
-                    surface.blit(text, text_rect)
 
     # ---------------------------------------------------------
     # EVENTS
