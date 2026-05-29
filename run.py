@@ -1,5 +1,5 @@
 # =========================================================
-# run.py — Real-Time MIDI Notation v4.0.0
+# run.py — Real-Time MIDI Notation v4.3.0
 # Stable main launcher
 # =========================================================
 
@@ -29,7 +29,7 @@ from ui.canvas_ui import CanvasUI
 # MAIN FUNCTION
 # ---------------------------------------------------------
 def main():
-    Logger.info("=== REAL-TIME MIDI NOTATION v4.0.0 START ===")
+    Logger.info("=== REAL-TIME MIDI NOTATION v4.3.0 START ===")
 
     # -----------------------------------------------------
     # 0. Pygame initialization
@@ -38,7 +38,7 @@ def main():
 
     try:
         pygame.init()
-        pygame.display.set_caption("Real-Time MIDI Notation | v4.0.0")
+        pygame.display.set_caption("Real-Time MIDI Notation | v4.3.0")
 
         screen = pygame.display.set_mode(
             (1600, 1000),
