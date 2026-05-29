@@ -1,6 +1,10 @@
 # =========================================================
-# TimelineLayer v4.0.0
-# Stabilná vrstva pre kreslenie timeline (grid + markers + playhead)
+# TimelineLayer v4.3.0
+# Optimalizovaná vrstva pre kreslenie timeline (grid + markers + playhead)
+# - real‑time safe
+# - mikrooptimalizácie
+# - diagnostické fallbacky
+# - prepojené s TimelineController v4.3.0
 # =========================================================
 
 import pygame
@@ -11,14 +15,16 @@ from .layers import BaseLayer
 
 class TimelineLayer(BaseLayer):
     """
-    TimelineLayer (v4.0.0)
+    TimelineLayer (v4.3.0)
     ----------------------
     - Vrstva pre kreslenie timeline
-    - Nepoužíva vlastnú logiku, iba deleguje kreslenie
-      na TimelineController
+    - Deleguje kreslenie na TimelineController
     - Real‑time safe
-    - Pripravené pre AI/TIMELINE v4
+    - Partial redraw friendly
+    - Optimalizované pre renderer_new
     """
+
+    __slots__ = ("controller",)
 
     def __init__(self, controller: TimelineController, z_index: int = 0):
         super().__init__(z_index=z_index, visible=True)
@@ -32,18 +38,19 @@ class TimelineLayer(BaseLayer):
             2. Markers
             3. Playhead
         """
-        if self.controller is None or surface is None:
+        ctrl = self.controller
+        if ctrl is None or surface is None:
             return
 
         try:
             # Grid
-            self.controller.draw_grid(surface)
+            ctrl.draw_grid(surface)
 
             # Markers
-            self.controller.draw_markers(surface)
+            ctrl.draw_markers(surface)
 
             # Playhead
-            self.controller.draw_playhead(surface)
+            ctrl.draw_playhead(surface)
 
         except Exception:
             # Timeline musí byť real‑time safe
