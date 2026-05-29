@@ -1,5 +1,5 @@
 # =========================================================
-# pyproject.toml — Real-Time MIDI Notation v4.0.0
+# pyproject.toml — Real-Time MIDI Notation v4.3.0
 # Modern build configuration for Python 3.10+
 # =========================================================
 
@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "real-time-midi-notation"
-version = "4.0.0"
+version = "4.3.0"
 description = "Real-time multi-track MIDI notation engine with Yamaha 16-track support, v4 rendering pipeline, UI architecture v4, and real-time processing core."
 readme = "README.md"
 requires-python = ">=3.10"
