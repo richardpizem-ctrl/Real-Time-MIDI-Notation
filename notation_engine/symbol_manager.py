@@ -1,15 +1,19 @@
 # =========================================================
-# SymbolManager v4.0.0
+# SymbolManager v4.3.0
 # Stabilný generátor vizuálnych/logických symbolov pre noty
+# Real-time safe, deterministické, optimalizované
 # =========================================================
 
 class SymbolManager:
     """
-    SymbolManager (v4.0.0):
+    SymbolManager (v4.3.0):
     - bezpečné spracovanie Note objektov
     - fallback hodnoty pri chybách
     - farebná paleta podľa pitch-class (12-TET)
+    - real-time safe (žiadne výnimky)
     """
+
+    __slots__ = ("pitch_colors",)
 
     def __init__(self):
         self.pitch_colors = {
@@ -34,10 +38,11 @@ class SymbolManager:
         """
         Vráti symbol pre danú notu.
 
-        Stabilizované (v4.0.0):
+        Stabilizované (v4.3.0):
         - ochrana pred None
         - bezpečné čítanie pitch/duration/position
         - fallback farby a labelu
+        - real-time safe
         """
 
         if note is None or rhythm is None:
