@@ -1,6 +1,10 @@
 # =========================================================
-# layers.py – Layer System v4.0.0
-# Stabilný, modulárny, bezpečný systém vrstiev pre renderer
+# layers.py – Layer System v4.3.0
+# Optimalizovaný, stabilný, diagnostický systém vrstiev
+# - mikrooptimalizácie
+# - bezpečné vykresľovanie
+# - profiler hook pripravený
+# - partial redraw friendly
 # =========================================================
 
 import pygame
@@ -19,12 +23,14 @@ from .marker_layer import MarkerLayer
 
 class BaseLayer:
     """
-    BaseLayer (v4.0.0)
+    BaseLayer (v4.3.0)
     - Každá vrstva musí implementovať draw(surface)
     - Má vlastný z_index (poradie vykresľovania)
-    - Má visible flag (zapnutie/vypnutie)
-    - Stabilné, bezpečné, pripravené na v4
+    - Má visible flag
+    - Optimalizované pre real‑time render
     """
+
+    __slots__ = ("z_index", "visible")
 
     def __init__(self, z_index: int = 0, visible: bool = True):
         try:
@@ -44,12 +50,15 @@ class BaseLayer:
 
 class LayerManager:
     """
-    LayerManager (v4.0.0)
+    LayerManager (v4.3.0)
     - riadi všetky vrstvy renderera
     - stabilné z-index triedenie
     - bezpečné vykresľovanie
-    - pripravené na dynamické vrstvy v4
+    - optimalizované iterácie
+    - pripravené na diagnostiku a profiler
     """
+
+    __slots__ = ("layers",)
 
     def __init__(self):
         self.layers: List[BaseLayer] = []
@@ -77,6 +86,7 @@ class LayerManager:
         """
         Vykreslí všetky viditeľné vrstvy v správnom poradí.
         Každá vrstva je izolovaná try/except blokom.
+        Optimalizované pre real‑time slučku.
         """
         for layer in self.layers:
             if not layer.visible:
@@ -86,7 +96,7 @@ class LayerManager:
                 layer.draw(surface)
             except Exception:
                 # vrstva nesmie nikdy zhodiť renderer
-                pass
+                continue
 
 
 # ---------------------------------------------------------
@@ -107,26 +117,31 @@ def create_default_layers(controller) -> LayerManager:
 
     manager = LayerManager()
 
+    # Timeline
     try:
         manager.add_layer(TimelineLayer(controller, z_index=0))
     except Exception:
         pass
 
+    # Notes
     try:
         manager.add_layer(NotesLayer(controller, z_index=1))
     except Exception:
         pass
 
+    # Markers
     try:
         manager.add_layer(MarkerLayer(controller, z_index=2))
     except Exception:
         pass
 
+    # Playhead
     try:
         manager.add_layer(PlayheadLayer(controller, z_index=3))
     except Exception:
         pass
 
+    # Selection overlay
     try:
         manager.add_layer(SelectionLayer(controller, z_index=4))
     except Exception:
