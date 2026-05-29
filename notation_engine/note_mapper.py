@@ -1,9 +1,12 @@
 # =========================================================
-# NoteMapper v4.0.0
+# NoteMapper v4.3.0
 # Stabilný prevod MIDI čísla (0–127) na názov noty (napr. C4)
+# Real-time safe, odolné voči chybám, bez výnimiek v slučke
 # =========================================================
 
 class NoteMapper:
+    __slots__ = ()
+
     NOTE_NAMES = [
         "C", "C#", "D", "D#", "E", "F",
         "F#", "G", "G#", "A", "A#", "B"
@@ -17,12 +20,13 @@ class NoteMapper:
         Prevod MIDI čísla (0–127) na názov noty.
         Napr. 60 -> C4, 61 -> C#4, 62 -> D4
 
-        Stabilizované (v4.0.0):
+        Stabilizované (v4.3.0):
         - ochrana pred None
         - bezpečný cast na int
         - ochrana pred rozsahom mimo 0–127
         - bezpečný výpočet oktávy
         - odolné voči floatom, stringom, NaN
+        - real-time safe (žiadne výnimky)
         """
 
         if midi_number is None:
