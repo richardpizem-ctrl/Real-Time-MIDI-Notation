@@ -1,5 +1,5 @@
 # =========================================================
-# EventBus v4.0.0 – Stable, safe, thread‑safe event system
+# EventBus v4.3.0 – Stable, safe, thread‑safe event system
 # =========================================================
 
 import threading
@@ -11,7 +11,7 @@ from core.logger import Logger
 
 class EventBus:
     """
-    EventBus (v4.0.0)
+    EventBus (v4.3.0)
     -----------------
     Stable, safe, thread‑safe event router for the entire system.
 
@@ -25,7 +25,7 @@ class EventBus:
         - no exceptions leak out
         - callbacks executed outside lock (no deadlocks)
         - validation of event types and callbacks
-        - ready for v5 (AI/TIMELINE hooks, async pipelines)
+        - ready for future routing upgrades
     """
 
     def __init__(self):
@@ -33,7 +33,7 @@ class EventBus:
         self._lock = threading.Lock()
 
         try:
-            Logger.info("EventBus initialized (v4.0.0).")
+            Logger.info("EventBus initialized (v4.3.0).")
         except Exception:
             pass
 
