@@ -1,249 +1,64 @@
-# 🎼 SIRIUS — Real‑Time MIDI Notation Engine  
-### *Next‑generation real‑time multi‑track MIDI notation engine for musicians, educators & researchers.*
-
-<p align="center">
-  <img src="SIRIUS%20PROGRAM%20S%20EM.png" width="80%">
-</p>
-
-<p align="center">
-  <b>Python</b> • <b>Pygame</b> • <b>Real‑Time MIDI</b> • <b>Yamaha 16‑Track</b> • <b>Live Notation</b> • <b>Editing Layer v4.2.0</b>
-</p>
-
----
-
-# 📌 Table of Contents
-- [Showcase](#-showcase)
-- [Features](#-features)
-- [Architecture](#-architecture)
-- [Editing Layer (v4.2.0)](#-editing-layer-v420)
-- [Installation](#-installation)
-- [Supported Instruments](#-supported-instruments)
-- [Who Is This For](#-who-is-this-for)
-- [Roadmap](#-roadmap)
-- [Academic Relevance](#-academic-relevance)
-- [Long‑Term Vision](#-long-term-vision)
-- [SEO Keywords](#-seo-keywords)
-- [Summary](#-summary)
-
----
-
-# 📸 Showcase  
-<p align="center">
-  <img src="assets/Copilot_20260422_120106.png" width="80%">
-</p>
-
-Do you use **SIRIUS / Real-Time MIDI Notation** in your setup?
-
-👉 Open an Issue titled **“Showcase Submission”** and attach your screenshot.  
-Community examples will be added here (with credit).
-
----
-
-# 🚀 Features
-
-| Category | Highlights |
-|---------|------------|
-| **Real‑Time Engine** | Zero‑latency rendering, instant beams/stems, velocity dynamics |
-| **Multi‑Track** | Full Yamaha 16‑track arranger support |
-| **Notation** | Real‑time engraving: beams, stems, barlines, grouping |
-| **Visualization** | Color‑coded tracks, activity meters, timeline, grid |
-| **Editing Layer v4.2.0** | Selection v2, Regions, Snapping v2, Ghost Notes/Regions |
-| **Modular UI** | Replaceable components, custom renderers |
-| **Performance Tools** | Micro‑timing, velocity maps, expressive analysis *(future)* |
-| **Education Tools** | Real‑time feedback, rhythm training *(future)* |
-
----
-
-# 🧠 Architecture
-
-```
-┌──────────────────────────────┐
-│        MIDI Input Layer      │
-└───────────────┬──────────────┘
-                │
-┌───────────────▼──────────────┐
-│     Real‑Time Processing      │
-│   (StreamHandler, Router)     │
-└───────────────┬──────────────┘
-                │
-┌───────────────▼──────────────┐
-│       Notation Processor      │
-│ (notes, rhythm, timing, vel.) │
-└───────────────┬──────────────┘
-                │
-┌───────────────▼──────────────┐
-│        Editing Layer v4.2     │
-│ (selection, regions, snapping)│
-└───────────────┬──────────────┘
-                │
-┌───────────────▼──────────────┐
-│       Modular UI Renderer     │
-└──────────────────────────────┘
-```
-
----
+# SIRIUS — Real-Time MIDI Notation
 
-# ✏️ Editing Layer (v4.2.0)
-
-Version **4.2.0** introduces the first fully integrated **Editing Layer**, including:
-
-### ✔ Selection v2  
-- multi‑selection  
-- additive/subtractive selection  
-- selection events  
-
-### ✔ Region Editing  
-- region creation  
-- region splitting  
-- region metadata  
-
-### ✔ Snapping v2  
-- time snapping  
-- pitch snapping  
-- configurable grid resolution  
+**Recovery preview 4.3.1 · Python · Local MIDI recording and visualisation**
 
-### ✔ Ghost Previews  
-- ghost notes  
-- ghost regions  
-- hover previews  
-- non‑destructive editing  
+This pull request repairs a previously unverified source tree. It provides one supported
+application path with automated tests. It is not yet a hardware-validated release.
 
-This layer prepares the system for **Editing API v4.3.0** and full real‑time editing in Runtime Engine 6.0.0.
+![SIRIUS](SIRIUS%20PROGRAM%20S%20EM.png)
 
----
+## Start on Windows
 
-# 📦 Installation
+1. Extract or clone the complete **repair branch** into a writable folder.
+2. Install Python 3.10+; Python 3.10 is the locally tested environment.
+3. Run **PRIPRAVIT-MIDI.cmd** once. It prepares a local `.venv` and installs dependencies.
+4. Run **SPUSTIT-MIDI.cmd**. Click **DEMO** to try a simulated two-channel phrase without hardware.
+5. To use a keyboard, connect it, refresh devices, select the input and click **Pripojiť**.
 
-```bash
-git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation
-cd Real-Time-MIDI-Notation
-python main.py
-```
+See [installation](INSTALLATION.md) and the Slovak [quick-start text](PRECITAJ-MA.txt).
+Without a selected MIDI output, playback is visual. There is no built-in synthesizer.
 
-Full installation guide: **INSTALLATION.md**
+## Supported and tested software path
 
----
+- One application through `main.py`, `run.py`, `preview.py` and the compatibility window.
+- 16-channel recording, note-on/off, sustain, retriggers and disconnect cleanup.
+- Basic staff preview with note names, piano-roll history and keyboard display.
+- MIDI import/export retaining timing, channels, controllers and pitch bend.
+- Visual playback with optional external MIDI output, pause/resume and track mute.
+- Basic chord/key estimates. Estimates are not verdicts that a musician played incorrectly.
+- Read-only startup diagnostics and explicit recovery of invalid/missing settings with backup.
 
-# 🎹 Supported Instruments
+This is a basic notation preview, not a complete professional engraving system. Historical
+rendering/editing experiments retained in the tree are not all connected to the supported UI.
+There is no audio intonation/level analyzer or SIRIUS BETA bridge yet.
 
-- Yamaha PSR / Tyros / Genos  
-- Korg PA series  
-- Roland Fantom / Juno  
-- Kurzweil PC series  
+## Verification and remaining acceptance
 
-> ❗ Casio is **not** a target platform.
+The local Windows/Python 3.10 suite has **96 passing tests**, including simulated input,
+recording, timed MIDI round trips, tempo changes, all 12 key transpositions, playback,
+8,000 queued MIDI events, launchers, read-only diagnostics and failed-write recovery.
+Normal Windows SDL startup/shutdown and dummy-display rendering were checked. A prior
+75-test recovery ZIP was also installed and tested after extraction; the PR adds launcher
+and settings diagnostics coverage. GitHub Actions checks Windows/Linux and Python 3.10/3.12;
+its results must be read separately from local results.
 
----
+**Still required:** a real MIDI keyboard/driver, actual MIDI sound output, reconnection and
+manual UI acceptance. The PR remains draft until this acceptance is complete. No zero-latency,
+universal hardware compatibility, world-first or full-module validation claim is made.
 
-# 🎯 Who Is This For?
+## Diagnostics and controlled recovery
 
-- real‑time MIDI visualizers  
-- DAW companion tools  
-- music education  
-- live performance analysis  
-- Yamaha arranger users  
-- MIDI debugging  
-- research & academia  
-- studios needing **pre‑recording diagnostics**  
+- `DIAGNOSTIKA.cmd` reports missing libraries, missing/broken critical source files and settings.
+- `OPRAVIT-NASTAVENIA.cmd` restores defaults only for missing/invalid `config.json`.
+- A damaged configuration is backed up byte-for-byte in `recovery-backups` before replacement.
+- Valid custom settings remain unchanged. A failed replacement preserves the original.
+- No source code or recording is rewritten, and no dependency is installed by recovery.
 
----
+This is limited settings recovery, **not autonomous self-repair of the application**.
+Missing libraries require the preparation step; missing code requires a known-good source copy.
 
-# 🧪 Testing Policy
+## Documentation
 
-Real‑time MIDI systems behave differently depending on:
-
-- OS  
-- drivers  
-- latency  
-- hardware  
-- Python version  
-
-Please test on your system and report issues.
-
----
-
-# 🤝 Contributing
-
-- Keep PRs modular  
-- Follow v4.2.0 architecture  
-- No heavy dependencies  
-- Real‑time code must stay fast  
-- Editing Layer changes must follow event‑driven design  
-
-See **CONTRIBUTING.md** for full rules.
-
----
-
-# 🧭 Roadmap
-
-### 🔥 v4.3.0 — Editing API v1
-- high‑level editing operations  
-- undo/redo v2  
-- batch editing  
-- quantization hooks  
-
-### 🚀 v5.x — Engraving Engine
-- slurs, ties, articulations  
-- spacing engine  
-- collision avoidance  
-- MusicXML export  
-
-### 🌌 Long‑Term
-- predictive layout (AI‑assisted)  
-- performance analytics  
-- standalone hardware device  
-
----
-
-# 🎓 Academic Relevance
-
-Suitable for:
-
-- music informatics  
-- real‑time systems  
-- HCI  
-- performance analysis  
-- pedagogy  
-
-CITATION.cff included.
-
----
-
-# 🌟 Long‑Term Vision
-
-## 🎼 1. Sheet Music for Musicians Who Play by Ear  
-Generate professional sheet music from live performance.
-
-## 🎹 2. Bridge Amateur ↔ Professional Worlds  
-Convert ideas → notation → orchestration.
-
-## 🧪 3. Research Platform  
-Timing deviation, expressive performance, visualization.
-
-## 📄 4. Export & Sharing  
-Snapshots, score exports, timeline exports.
-
-## 🎼 5. Future Engraving Engine  
-Spacing, collision avoidance, slurs, ties, articulations.
-
----
-
-# 🔎 SEO Keywords  
-`midi`, `real-time midi`, `midi notation`, `pygame`, `python midi`,  
-`multi-track midi`, `live midi`, `midi processing`,  
-`midi sheet music`, `midi score`,  
-`notation engine`, `real-time notation`, `music education`,  
-`editing layer`, `midi editor`, `real-time editing`
-
----
-
-# 🧩 Summary
-
-SIRIUS is:
-
-- the **first open‑source real‑time multi‑track MIDI notation engine**  
-- built for musicians, educators, researchers  
-- modular, stable, expandable  
-- now equipped with **Editing Layer v4.2.0**  
-- visually branded under **SIRIUS**  
-- foundation of the **future engraving engine (v5)**  
+[Installation](INSTALLATION.md) · [Verification and repair scope](REPAIR_STATUS.md) ·
+[Launcher map](LAUNCHERS.md) · [Module map](MODULE_MAP.md) · [Roadmap](ROADMAP.md) ·
+[Contributing](CONTRIBUTING.md) · [License](LICENSE)

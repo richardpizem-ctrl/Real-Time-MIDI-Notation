@@ -22,7 +22,8 @@ def rotate(lst, n):
         if not lst:
             return lst
         n = int(n) % len(lst)
-        return lst[n:] + lst[:n]
+        # The profile's tonic must move right to the requested pitch class.
+        return lst[-n:] + lst[:-n] if n else list(lst)
     except Exception:
         return lst
 

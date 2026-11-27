@@ -7,7 +7,7 @@ from notation_engine.chord_detector import detect_chord
 from core.logger import Logger
 
 
-def test_chord(notes):
+def show_chord(notes):
     """
     Safely test chord detection for a given MIDI note set.
     Real-time safe: no exceptions allowed.
@@ -32,15 +32,15 @@ def main():
     Logger.info("=== TEST: CHORD DETECTION v4.3.0 ===")
 
     # Basic triads
-    test_chord([60, 64, 67])   # C major
-    test_chord([57, 60, 64])   # A minor
-    test_chord([62, 65, 69])   # D major
+    show_chord([60, 64, 67])   # C major
+    show_chord([57, 60, 64])   # A minor
+    show_chord([62, 65, 69])   # D major
 
     # Edge cases
-    test_chord([])               # empty
-    test_chord([60])             # single note
-    test_chord([60, 61, 62])     # cluster
-    test_chord("invalid_input")  # invalid
+    show_chord([])               # empty
+    show_chord([60])             # single note
+    show_chord([60, 61, 62])     # cluster
+    show_chord("invalid_input")  # invalid
 
     Logger.info("=== END ===")
 

@@ -1,3 +1,16 @@
+# Unreleased — recovery preview 4.3.1
+
+- Repaired the single MIDI recording/display/export/playback pipeline.
+- Unified `main.py`, `run.py`, `preview.py` and compatibility window entry points.
+- Corrected MIDI time/channel handling, sustain/disconnect cleanup and key transposition.
+- Added regression tests, headless demo checks and cross-platform CI.
+- Added read-only diagnostics and explicit settings recovery with exact backup and atomic replacement.
+- Replaced unverified marketing/startup claims with scoped documentation.
+
+Physical MIDI input/output and manual UI acceptance remain open; this is not yet a public hardware-verified release.
+
+## Historical changelog
+
 # 📝 Real-Time MIDI Notation — CHANGELOG (v4.2.0)
 
 This document tracks all major changes, improvements, stabilizations, and milestones  

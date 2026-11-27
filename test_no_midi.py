@@ -4,6 +4,11 @@
 # =========================================================
 
 import pytest
+
+@pytest.fixture(autouse=True)
+def no_hardware(monkeypatch):
+    monkeypatch.setattr("mido.get_input_names", lambda: [])
+
 from real_time_processing.midi_input import MidiInput
 
 

@@ -1,150 +1,76 @@
-# =========================================================
-# NotationProcessor v4.1.0
-# Stabilná CORE verzia pre Runtime 4.x–5.x
-# =========================================================
-
-from typing import Dict, Any, Optional, List
-from mido import Message, MidiFile, MidiTrack, MetaMessage
-
-from .logger import Logger
-from .event_types import (
-    MIDI_EXPORTED,
-    ERROR_OCCURRED,
-)
-
+"""Timed MIDI file I/O. Recorded seconds are converted to per-track delta ticks."""
+from pathlib import Path
+import math
+import mido
+from .track_system import TrackSystem
 
 class NotationProcessor:
-    """
-    NotationProcessor v4.1.0:
-    - čistý MIDI export
-    - stabilný a deterministický
-    - bez AI pipeline
-    - bez Engraving Engine
-    - bez Real-Time pipeline
-    - pripravené pre Runtime 5.x
-    """
-
-    def __init__(self, track_system, event_bus=None):
-        self.track_system = track_system
+    def __init__(self, track_system=None, event_bus=None, track_manager=None):
+        self.track_system = track_system if track_system is not None else track_manager.track_system
         self.event_bus = event_bus
 
-    # ---------------------------------------------------------
-    # PUBLIC EXPORT API
-    # ---------------------------------------------------------
-    def export_midi(self, filename: str = "export.mid") -> None:
-        if not filename or not isinstance(filename, str):
-            self._publish_error("Invalid filename")
-            return
-
-        self._export_midi_internal(filename)
-
-    # ---------------------------------------------------------
-    # INTERNAL MIDI EXPORT
-    # ---------------------------------------------------------
-    def _export_midi_internal(self, filename: str):
-        if self.track_system is None:
-            self._publish_error("TrackSystem not initialized")
-            return
-
-        try:
-            mid = MidiFile()
-            Logger.info(f"Starting MIDI export → {filename}")
-
-            for track_id in range(1, 17):
-                midi_track = MidiTrack()
-                mid.tracks.append(midi_track)
-
-                # Track name
-                track_name = self._safe_track_name(track_id)
-                try:
-                    midi_track.append(MetaMessage("track_name", name=track_name, time=0))
-                except Exception:
-                    Logger.error(f"Failed to write track name for track {track_id}")
-
-                # Events
-                events = self._safe_get_events(track_id)
-
-                for event in events:
-                    msg = self._event_to_mido_message(event)
-                    if msg:
-                        try:
-                            midi_track.append(msg)
-                        except Exception as e:
-                            Logger.error(f"Failed to append MIDI message: {e}")
-
-            # Save file
-            try:
-                mid.save(filename)
-                Logger.info(f"MIDI export completed → {filename}")
-            except Exception as e:
-                self._publish_error(str(e))
-                return
-
-            # Notify success
-            if self.event_bus:
-                self.event_bus.publish(MIDI_EXPORTED, filename)
-
-        except Exception as e:
-            self._publish_error(str(e))
-
-    # ---------------------------------------------------------
-    # SAFE TRACK NAME
-    # ---------------------------------------------------------
-    def _safe_track_name(self, track_id: int) -> str:
-        try:
-            name = self.track_system.get_track_name(track_id)
-            return name if isinstance(name, str) and name.strip() else f"Track {track_id}"
-        except Exception:
-            return f"Track {track_id}"
-
-    # ---------------------------------------------------------
-    # SAFE EVENT RETRIEVAL
-    # ---------------------------------------------------------
-    def _safe_get_events(self, track_id: int) -> List[Dict[str, Any]]:
-        try:
-            return self.track_system.recorded_events.get(track_id, [])
-        except Exception:
-            return []
-
-    # ---------------------------------------------------------
-    # EVENT → MIDO MESSAGE
-    # ---------------------------------------------------------
-    def _event_to_mido_message(self, event: Dict[str, Any]):
-        if not isinstance(event, dict):
-            return None
-
-        etype = event.get("type")
-        note = event.get("note")
-        velocity = event.get("velocity", 100)
-
-        if not isinstance(note, int):
-            return None
-
-        try:
-            channel = max(0, min(15, int(event.get("channel", 1)) - 1))
-        except Exception:
-            channel = 0
-
-        if etype == "note_on":
-            return Message("note_on", note=note, velocity=velocity, channel=channel, time=0)
-
-        if etype == "note_off":
-            return Message("note_off", note=note, velocity=velocity, channel=channel, time=0)
-
-        return None
-
-    # ---------------------------------------------------------
-    # ERROR PUBLISHING
-    # ---------------------------------------------------------
-    def _publish_error(self, message: str):
+    def export_midi(self, filename='export.mid', bpm=120.0):
+        if not math.isfinite(float(bpm)) or not 1 <= float(bpm) <= 1000:
+            raise ValueError('Invalid tempo')
+        tempo = mido.bpm2tempo(bpm)
+        mid = mido.MidiFile(type=1, ticks_per_beat=480)
+        conductor = mido.MidiTrack()
+        conductor.append(mido.MetaMessage('set_tempo',tempo=tempo,time=0))
+        mid.tracks.append(conductor)
+        # Work on a copy: closing an export must not stop a live session.
+        import copy
+        source = copy.deepcopy(self.track_system.recorded_events)
+        end = max(self.track_system.last_time, self.track_system.clock()-self.track_system.origin)
+        for track_id, events in source.items():
+            channel = track_id - 1
+            for key in self.track_system.active:
+                if key[0] == channel:
+                    events.append({'type':'note_off','channel':channel,'note':key[1],'velocity':0,'time':end})
+            if self.track_system.sustain[channel]:
+                events.append({'type':'control_change','channel':channel,'control':64,'value':0,'time':end})
+            if not events:
+                continue
+            track = mido.MidiTrack()
+            track.append(mido.MetaMessage('track_name',name=self.track_system.get_track_name(track_id),time=0))
+            previous = 0
+            for event in sorted(events,key=lambda x:x['time']):
+                tick = round(mido.second2tick(event['time'],mid.ticks_per_beat,tempo))
+                payload = {k:v for k,v in event.items() if k != 'time'}
+                track.append(mido.Message.from_dict(dict(payload,time=max(0,tick-previous))))
+                previous = tick
+            mid.tracks.append(track)
+        destination = Path(filename)
+        destination.parent.mkdir(parents=True,exist_ok=True)
+        mid.save(destination)
         if self.event_bus:
-            try:
-                self.event_bus.publish(ERROR_OCCURRED, message)
-            except Exception:
-                pass
+            self.event_bus.publish('export.midi_done',str(destination))
+        return destination
 
-    # ---------------------------------------------------------
-    # SHUTDOWN
-    # ---------------------------------------------------------
+    def import_midi(self, filename):
+        mid = mido.MidiFile(filename)
+        if mid.type == 2:
+            raise ValueError('Asynchronous type-2 MIDI files are not supported')
+        # Build off to the side. A malformed file must not erase current work.
+        result = TrackSystem(clock=self.track_system.clock)
+        elapsed = 0.0
+        tempo = 500000
+        for message in mido.merge_tracks(mid.tracks):
+            elapsed += mido.tick2second(message.time,mid.ticks_per_beat,tempo)
+            if message.type == 'set_tempo':
+                tempo = message.tempo
+            elif not message.is_meta and message.type in {'note_on','note_off','control_change','pitchwheel','program_change','aftertouch','polytouch'}:
+                event = message.dict()
+                event['time'] = result.origin + elapsed
+                result.process(event)
+        result.finish(elapsed)
+        self.track_system.origin = result.origin
+        self.track_system.recorded_events = result.recorded_events
+        self.track_system.notes = result.notes
+        self.track_system.active = result.active
+        self.track_system.held = result.held
+        self.track_system.sustain = result.sustain
+        self.track_system.last_time = elapsed
+        return self.track_system
+
     def shutdown(self):
-        Logger.info("NotationProcessor shutdown.")
+        pass

@@ -1,180 +1,22 @@
-# 🔐 Real‑Time MIDI Notation — Security Policy  
-### Version 4.2.0 — Professional Edition
+# Security and recovery scope
 
-Security is a core priority of the **Real‑Time MIDI Notation (SIRIUS Engine)** project.  
-This document explains how vulnerabilities should be reported, how they are handled,  
-and what contributors can expect from the security process.
+This local MIDI preview opens user-selected devices and MIDI files. It is not a security-audited
+sandbox. Review logs and recordings before sharing them in issues.
 
-Our goal is to ensure that the project remains safe, stable, and trustworthy for all users.
+## Diagnostics
 
----
+Startup checks inspect required Python libraries, critical source syntax and `config.json`.
+They do not install packages, access network services, execute repair shell commands or alter
+source files. Missing libraries are handled by an explicit preparation step.
 
-# 🛡 1. Supported Versions
+## Settings recovery
 
-The following versions currently receive security updates:
+`OPRAVIT-NASTAVENIA.cmd` / `python main.py --repair-settings` can restore missing/invalid settings.
+Valid custom settings are not reset. Before replacement, the exact original bytes are saved
+under `recovery-backups`. A temporary validated file is atomically replaced; a failed replacement
+leaves the original in place. Symlinked settings/backups are refused. Concurrent configuration
+changes abort replacement. Existing recordings and source files are outside recovery scope.
 
-| Version | Supported |
-|---------|-----------|
-| **Latest (v4.2.0)** | ✔ Yes |
-| Older versions | ✖ No |
-
-Only the latest version receives security patches.  
-Older versions may contain unresolved vulnerabilities and should not be used in production environments.
-
----
-
-# 🚨 2. Reporting a Vulnerability
-
-If you discover a security vulnerability, please report it **responsibly and privately**.
-
-### 🔹 GitHub Issues (non‑sensitive only)
-Use this for:
-- dependency warnings  
-- minor security concerns  
-- non‑critical vulnerabilities  
-
-### 🔹 Email (recommended for sensitive issues)
-For anything serious, private, or potentially harmful:
-
-📧 **richardpizem@gmail.com**
-
-Please include:
-
-- a clear description of the issue  
-- steps to reproduce  
-- potential impact  
-- affected modules or files  
-- logs, screenshots, or proof‑of‑concept code (if available)  
-
-All reports will be reviewed as soon as possible.
-
----
-
-# 🧭 3. Responsible Disclosure Expectations
-
-To protect users and contributors, please follow these guidelines:
-
-### ✔ Do:
-- report vulnerabilities privately  
-- allow reasonable time for investigation  
-- provide clear technical details  
-- include reproduction steps  
-- keep communication confidential  
-
-### ✖ Do NOT:
-- publicly disclose the vulnerability before it is fixed  
-- exploit the vulnerability beyond what is necessary to demonstrate it  
-- share the vulnerability with third parties  
-- use the vulnerability to access unauthorized data  
-
-Responsible disclosure helps keep the project safe for everyone.
-
----
-
-# 🛠 4. How We Handle Vulnerabilities
-
-When a vulnerability is reported:
-
-1. **Acknowledgment**  
-   The maintainer confirms receipt of the report.
-
-2. **Assessment**  
-   The issue is evaluated for severity, impact, and affected components.
-
-3. **Reproduction**  
-   The vulnerability is reproduced in a controlled environment.
-
-4. **Fix Development**  
-   A patch or mitigation is created.
-
-5. **Verification**  
-   The fix is tested to ensure the vulnerability is resolved.
-
-6. **Release**  
-   A security update is published in the next release.
-
-7. **Disclosure**  
-   A short, responsible disclosure summary may be added to the changelog.
-
----
-
-# 🧱 5. Security Scope
-
-This policy covers vulnerabilities related to:
-
-- real‑time MIDI processing  
-- event routing (EventBus v4.2)  
-- Editing Layer events (selection, regions, snapping, ghosts)  
-- renderer stability  
-- memory handling  
-- dependency vulnerabilities  
-- UI injection risks  
-- file handling (future export features)  
-- potential crashes or denial‑of‑service vectors  
-
-It does **not** cover:
-
-- feature requests  
-- performance issues  
-- UI bugs  
-- expected behavior differences  
-
-These should be reported via normal GitHub Issues.
-
----
-
-# 🔒 6. Safe Development Practices
-
-The project follows these principles:
-
-- no unsafe `eval` / `exec` usage  
-- strict separation of UI, logic, and editing layers  
-- no untrusted code execution  
-- no automatic file writes without user action  
-- minimal external dependencies  
-- sandboxed MIDI processing  
-- no network communication unless explicitly added in future versions  
-- Editing Layer events must never bypass EventBus v4.2  
-- renderer must fail‑soft, never crash the main loop  
-
----
-
-# 🧑‍💻 7. Security for Contributors
-
-If you contribute code:
-
-- avoid introducing unsafe patterns  
-- validate input where necessary  
-- avoid unnecessary dependencies  
-- do not include debugging backdoors  
-- follow the project’s architecture and coding standards  
-- ensure Editing Layer operations cannot corrupt state  
-- ensure real‑time loops remain safe under load  
-- ensure exceptions never escape into the main loop  
-
-Security is a shared responsibility.
-
----
-
-# 🛡 8. Runtime Safety (v4.2.0)
-
-The v4.2.0 runtime includes:
-
-- safe event dispatching  
-- Editing Layer event isolation  
-- ghost preview sandboxing  
-- region editing safety checks  
-- fallback logging  
-- device hot‑plug protection  
-- burst‑safe MIDI handling  
-
-These mechanisms ensure that even under heavy load, the engine remains stable.
-
----
-
-# ❤️ 9. Thank You
-
-Security researchers, testers, and contributors play a crucial role in improving this project.  
-Your effort and responsible reporting help protect users worldwide.
-
-Thank you for helping keep **Real‑Time MIDI Notation (SIRIUS Engine)** secure.
+This is not autonomous code repair, an antivirus function, a general integrity guarantee or a
+claim that every retained legacy module is secure. A real device/output test is still required.
+Report reproducible concerns without publishing secrets or private recordings.

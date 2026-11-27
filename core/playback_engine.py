@@ -1,243 +1,137 @@
-# =========================================================
-# PlaybackEngine v4.0.0-ready
-# Real-Time, AI-ready, Engraving-ready playback engine
-# =========================================================
-
+"""Playback is advanced only by the UI thread; timestamps remain seconds."""
+import copy
 import time
-import threading
-from typing import List, Dict, Any, Optional
-
-from core.logger import Logger
-from core.event_types import (
-    RT_TICK,
-    RT_STARTED,
-    RT_STOPPED,
-    RT_LATENCY_WARNING,
-    ENGRAVING_UPDATE,
-    AI_EVENT
-)
-
+import mido
 
 class PlaybackEngine:
-    """
-    PlaybackEngine v4-ready:
-    - real-time thread
-    - drift-free timing
-    - AI hook
-    - engraving engine hook
-    - EventBus routing
-    - batch-safe active note scanning
-    """
-
-    def __init__(
-        self,
-        track_manager,
-        renderer,
-        canvas_ui,
-        event_bus=None,
-        ai_engine=None,
-        engraving_engine=None,
-        bpm: float = 120.0,
-        beats_per_bar: int = 4,
-    ):
+    def __init__(self, track_manager=None, renderer=None, canvas_ui=None,
+                 event_bus=None, bpm=120.0, beats_per_bar=4, clock=time.monotonic, output=None, **unused):
         self.track_manager = track_manager
         self.renderer = renderer
         self.canvas_ui = canvas_ui
         self.event_bus = event_bus
-
-        self.ai_engine = ai_engine
-        self.engraving_engine = engraving_engine
-
-        # Tempo / meter
-        self.bpm = max(1.0, float(bpm))
-        self.beats_per_bar = max(1, int(beats_per_bar))
-
-        # Playback state
+        self.bpm = bpm
+        self.beats_per_bar = beats_per_bar
+        self.clock = clock
+        self.output = output
         self.playing = False
         self.position_sec = 0.0
-        self._last_time = time.time()
+        self.events = []
+        self.index = 0
+        self.active = set()
+        self.channels = set()
+        self._last_time = clock()
+        self.duration = 0.0
+        self._resume_pending = False
 
-        # Notes
-        self.notes: List[Dict[str, Any]] = []
+    def load_recording(self, track_system):
+        self.stop()
+        self.events = sorted([copy.deepcopy(e) for es in track_system.recorded_events.values() for e in es],key=lambda x:x['time'])
+        self.duration = max((e['time'] for e in self.events),default=0.0)
 
-        # Real-time thread
-        self._running = True
-        self._thread = threading.Thread(target=self._loop, daemon=True)
-        self._thread.start()
+    def set_notes(self, notes):
+        self.stop()
+        self.events = []
+        for n in notes:
+            channel = n.get('channel',n.get('track_id',1)-1)
+            start = float(n.get('timestamp',0))
+            pitch = n.get('pitch',n.get('note'))
+            self.events.extend([{'type':'note_on','note':pitch,'channel':channel,'velocity':n.get('velocity',100),'time':start},
+                                {'type':'note_off','note':pitch,'channel':channel,'velocity':0,'time':start+float(n.get('duration',0.1))}])
+        self.events.sort(key=lambda x:x['time'])
+        self.duration = max((e['time'] for e in self.events),default=0)
 
-        Logger.info("PlaybackEngine initialized (v4-ready).")
+    def _send(self, event):
+        message = mido.Message.from_dict({k:v for k,v in event.items() if k != 'time'})
+        if message.type == 'note_on' and message.velocity > 0 and self.track_manager:
+            transformed = self.track_manager.apply_midi_transform(message.channel+1,message.note,message.velocity)
+            if transformed is None:
+                return
+            message = message.copy(note=transformed[0],velocity=transformed[1])
+        if self.output is not None:
+            self.output.send(message)
+        key = (getattr(message,'channel',0),getattr(message,'note',None))
+        self.channels.add(key[0])
+        if message.type == 'note_on' and message.velocity > 0:
+            self.active.add(key)
+        elif message.type in ('note_on','note_off'):
+            self.active.discard(key)
 
-    # ---------------------------------------------------------
-    # REAL-TIME LOOP (v4)
-    # ---------------------------------------------------------
-    def _loop(self):
-        """Real-time playback loop."""
-        if self.event_bus:
-            self.event_bus.publish(RT_STARTED)
-
-        while self._running:
-            start = time.time()
-
-            if self.playing:
-                self.update()
-
-            # RT tick event
-            if self.event_bus:
-                self.event_bus.publish(RT_TICK, self.position_sec)
-
-            # Drift-free sleep
-            elapsed = time.time() - start
-            sleep_time = max(0.0, 0.016 - elapsed)  # ~60 FPS
-
-            if sleep_time < 0.001 and self.event_bus:
-                self.event_bus.publish(RT_LATENCY_WARNING, elapsed)
-
-            time.sleep(sleep_time)
-
-        if self.event_bus:
-            self.event_bus.publish(RT_STOPPED)
-
-    # ---------------------------------------------------------
-    # PLAYBACK CONTROL
-    # ---------------------------------------------------------
     def play(self):
+        if not self.events:
+            return
+        if self.index >= len(self.events):
+            self.index = 0
+            self.position_sec = 0.0
+        if self._resume_pending:
+            # Reconstruct only the state at the pause point; do not replay old notes.
+            from .track_system import TrackSystem
+            model = TrackSystem(clock=lambda:0)
+            controls = {}
+            for event in self.events[:self.index]:
+                model.process(event)
+                if event['type'] not in ('note_on','note_off'):
+                    controls[(event['channel'],event['type'],event.get('control'),event.get('note'))] = event
+            for event in controls.values():
+                self._send(event)
+            for key,note in model.active.items():
+                self._send({'type':'note_on','channel':key[0],'note':key[1],'velocity':note['velocity']})
+                if key not in model.held:
+                    self._send({'type':'note_off','channel':key[0],'note':key[1],'velocity':0})
+            self._resume_pending = False
         self.playing = True
-        self._last_time = time.time()
-        Logger.info("Playback started.")
+        self._last_time = self.clock()
 
     def pause(self):
+        was_playing = self.playing
+        if self.playing:
+            self.update()
         self.playing = False
-        Logger.info("Playback paused.")
+        self._panic()
+        self._resume_pending = was_playing and self.index < len(self.events)
+
+    def _panic(self):
+        for channel,note in list(self.active):
+            self._send({'type':'note_off','channel':channel,'note':note,'velocity':0})
+        if self.output is not None:
+            for channel in self.channels:
+                self.output.send(mido.Message('control_change',channel=channel,control=64,value=0))
+        self.active.clear()
+        self.channels.clear()
+
+    def release_channel(self, channel):
+        for key in list(self.active):
+            if key[0] == channel:
+                self._send({'type':'note_off','channel':channel,'note':key[1],'velocity':0})
+        if self.output is not None:
+            self.output.send(mido.Message('control_change',channel=channel,control=64,value=0))
 
     def stop(self):
         self.playing = False
+        self._resume_pending = False
+        self._panic()
         self.position_sec = 0.0
-        Logger.info("Playback stopped.")
+        self.index = 0
 
-    # ---------------------------------------------------------
-    # NOTES TIMELINE
-    # ---------------------------------------------------------
-    def set_notes(self, notes: List[Dict[str, Any]]):
-        if not isinstance(notes, (list, tuple)):
-            self.notes = []
-            return
+    def is_playing(self):
+        return self.playing
 
-        cleaned = [dict(n) for n in notes if isinstance(n, dict)]
-        cleaned.sort(key=lambda n: float(n.get("timestamp", 0.0)))
-        self.notes = cleaned
-
-    # ---------------------------------------------------------
-    # INTERNAL: TIME UPDATE
-    # ---------------------------------------------------------
-    def _update_time(self):
-        now = time.time()
-        dt = now - self._last_time
+    def update(self, dt=None):
+        if not self.playing:
+            return None
+        now = self.clock()
+        self.position_sec += max(0.0,now-self._last_time)
         self._last_time = now
+        while self.index < len(self.events) and self.events[self.index]['time'] <= self.position_sec:
+            self._send(self.events[self.index])
+            self.index += 1
+        if self.index == len(self.events):
+            self.playing = False
+            self._panic()
+        return None
 
-        if dt < 0 or dt > 1.0:
-            dt = 0.0
-
-        if self.playing:
-            self.position_sec += dt
-            if self.position_sec < 0:
-                self.position_sec = 0.0
-
-    # ---------------------------------------------------------
-    # ACTIVE NOTES (batch-safe)
-    # ---------------------------------------------------------
-    def _collect_active_notes(self) -> List[Dict[str, Any]]:
-        active = []
-        t_now = self.position_sec
-
-        for note in self.notes:
-            start = float(note.get("timestamp", 0.0))
-            duration = float(note.get("duration", 0.05))
-            end = start + duration
-
-            if not (start <= t_now <= end):
-                continue
-
-            track_id = note.get("track_id")
-            pitch = note.get("pitch", note.get("note"))
-            velocity = note.get("velocity", 100)
-
-            if track_id is None or pitch is None:
-                continue
-
-            try:
-                pitch_int = int(pitch)
-                vel_int = int(velocity)
-            except Exception:
-                continue
-
-            # TrackManager transform
-            if self.track_manager:
-                try:
-                    transformed = self.track_manager.apply_midi_transform(track_id, pitch_int, vel_int)
-                except Exception:
-                    transformed = None
-
-                if transformed is None:
-                    continue
-
-                pitch_int, vel_int = transformed
-
-            active.append({
-                "timestamp": start,
-                "track_id": track_id,
-                "pitch": pitch_int,
-                "velocity": vel_int,
-            })
-
-        return active
-
-    # ---------------------------------------------------------
-    # MAIN UPDATE (v4)
-    # ---------------------------------------------------------
-    def update(self):
-        self._update_time()
-
-        # Playhead → UI
-        if self.canvas_ui:
-            try:
-                self.canvas_ui.set_playhead_time(int(self.position_sec * 1000))
-            except Exception:
-                Logger.warning("CanvasUI rejected playhead update.")
-
-        # Active notes
-        active_notes = self._collect_active_notes()
-
-        # AI hook
-        if self.ai_engine:
-            try:
-                active_notes = self.ai_engine.process_active_notes(active_notes)
-            except Exception as e:
-                Logger.error(f"AI error: {e}")
-
-        # Engraving engine hook
-        if self.engraving_engine:
-            try:
-                self.engraving_engine.update_active_notes(active_notes)
-            except Exception as e:
-                Logger.error(f"Engraving error: {e}")
-
-        # Renderer
-        surface = None
-        if self.renderer:
-            try:
-                surface = self.renderer.draw(active_notes)
-            except Exception as e:
-                Logger.error(f"Renderer error: {e}")
-
-        return surface
-
-    # ---------------------------------------------------------
-    # SHUTDOWN (v4)
-    # ---------------------------------------------------------
     def shutdown(self):
-        Logger.info("PlaybackEngine shutdown...")
-        self._running = False
-        try:
-            self._thread.join(timeout=1.0)
-        except Exception:
-            pass
+        self.stop()
+        if self.output is not None:
+            self.output.close()
+            self.output = None

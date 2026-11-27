@@ -9,14 +9,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "real-time-midi-notation"
-version = "4.0.0"
+version = "4.3.1"
 description = "Real-time multi-track MIDI notation engine with Yamaha 16-track support, v4 rendering pipeline, UI architecture v4, and real-time processing core."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 
 authors = [
-    { name = "Richard Pizem", email = "" }
+    { name = "Richard Pizem" }
 ]
 
 keywords = [
@@ -54,3 +54,14 @@ Repository = "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation"
 Issues = "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation/issues"
 Documentation = "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation/tree/main/docs"
 Changelog = "https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "midi_input*", "notation_engine*", "ui*"]
+
+[tool.setuptools]
+py-modules = ["main", "run"]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+testpaths = ["tests", "test_chords.py", "test_no_midi.py"]

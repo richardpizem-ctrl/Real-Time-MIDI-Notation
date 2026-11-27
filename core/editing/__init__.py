@@ -9,17 +9,17 @@
 # =========================================================
 
 from .selection import SelectionSet, SelectionItem
-from .snapping import SnapEngine, SnapResult
-from .regions import Region, RegionSet
+from .snapping import SnapEngine, SnapGrid, snap_time, snap_range
+from .regions import EditRegion, RegionManager
 from .ghosts import GhostNote, GhostRegion
 
 __all__ = [
     "SelectionSet",
     "SelectionItem",
     "SnapEngine",
-    "SnapResult",
-    "Region",
-    "RegionSet",
+    "SnapGrid",
+    "EditRegion",
+    "RegionManager",
     "GhostNote",
     "GhostRegion",
 ]

@@ -1,181 +1,20 @@
-# ❓ Real‑Time MIDI Notation — FAQ (v4.2.0)
+# FAQ — recovery preview
 
-A collection of the most common questions from users, testers, developers, and researchers.
+**Which file starts the application?** Use `SPUSTIT-MIDI.cmd` after preparation. Python entry
+points all lead to the same implementation; see [LAUNCHERS.md](LAUNCHERS.md).
 
----
+**Can I test without a keyboard?** Yes, click DEMO. This tests simulated input, not hardware.
 
-# 🎹 MIDI & INPUT
+**Why is there no sound?** There is no built-in synthesizer. Select an external MIDI output;
+otherwise playback is visual.
 
-### **Q: My MIDI device is not detected.**
-Most DAWs lock MIDI ports. Close all DAWs (FL Studio, Ableton, Cubase, etc.) and restart the app.  
-If still not detected:
-- reconnect the device  
-- restart the OS  
-- check OS MIDI permissions  
-- ensure no other app is using the MIDI port  
-- try a wired USB connection instead of Bluetooth  
-- verify DeviceManager v4 logs  
+**Are velocity and loudness the same?** No. Velocity describes a MIDI performance parameter,
+not measured audio level or sound pressure.
 
-### **Q: Does this support Yamaha arranger keyboards?**
-Yes — the engine is built around the **Yamaha 16‑track standard**, including:
-- channel colors  
-- multi‑track routing  
-- accompaniment parts  
-- real‑time visualization  
+**Can it judge out-of-tune singing?** No audio input analysis has been implemented.
 
-### **Q: Can I use virtual MIDI ports?**
-Yes — LoopMIDI (Windows), IAC Driver (macOS), and similar tools work perfectly.
+**Does self-repair fix code?** No. Diagnostics report startup issues; explicit recovery only
+backs up invalid settings and restores defaults. Valid settings and recordings are retained.
 
-### **Q: Does it support USB MIDI keyboards?**
-Yes — any class‑compliant MIDI device works.
-
----
-
-# 🎨 RENDERING & UI
-
-### **Q: Why are notes delayed?**
-Possible causes:
-- high system latency  
-- slow audio/MIDI drivers  
-- background CPU load  
-- USB hub bottlenecks  
-- low‑quality MIDI interface  
-- OS power‑saving modes  
-
-### **Q: Why do some beams not appear?**
-Beam grouping depends on rhythmic analysis.  
-Unusual timing or extreme rhythms may require future improvements.
-
-### **Q: Why are some notes drawn with different colors?**
-Colors represent **tracks** (Yamaha 16‑track standard).  
-Each track has its own color.
-
-### **Q: Why does the renderer scroll automatically?**
-Scrolling follows the **playhead**, controlled by the PlaybackEngine v4.
-
----
-
-# ✏️ EDITING LAYER (v4.2.0)
-
-### **Q: What is the Editing Layer introduced in v4.2.0?**
-It is a new CORE subsystem providing:
-- Selection model v2  
-- Region editing  
-- Snapping logic v2  
-- Ghost previews  
-- Editing events  
-
-It prepares the engine for **Editing API v4.3.0** and full real‑time editing in Runtime 6.0.0.
-
-### **Q: Can I move or edit notes yet?**
-Not fully — v4.2.0 provides the **foundation**.  
-Full editing operations arrive in **v4.3.0 (Editing API v1)**.
-
-### **Q: Why do ghost notes appear?**
-Ghost notes are **previews** for upcoming editing actions:
-- moving notes  
-- resizing notes  
-- creating regions  
-- snapping previews  
-
-They do not affect playback.
-
----
-
-# 🧠 ARCHITECTURE & ENGINE
-
-### **Q: Is the renderer modular?**
-Yes — every part of the system is isolated:
-- Processor  
-- Renderer  
-- UI  
-- TrackManager  
-- EventBus v4  
-- StreamHandler  
-- Editing Layer (v4.2.0)  
-
-### **Q: Can I replace the renderer with my own?**
-Yes — the architecture supports custom renderers.
-
-### **Q: Is this a DAW?**
-No — it is a **real‑time notation engine**, not an audio workstation.
-
-### **Q: Does it support audio?**
-Not yet — MIDI only.
-
----
-
-# 🛠 DEVELOPMENT & CONTRIBUTING
-
-### **Q: How do I contribute?**
-See **CONTRIBUTING.md** for:
-- PR rules  
-- feature requests  
-- issue reporting  
-- contributor levels  
-
-### **Q: Can I add new UI components?**
-Yes — UIManager v4 is designed for extension.
-
-### **Q: Can I use this in my own project?**
-Yes — the project is dual‑licensed (MIT + Apache 2.0), allowing full reuse, including commercial use.
-
----
-
-# 📦 EXPORT & FILES
-
-### **Q: Can I export notation?**
-Export is planned for v5:
-- PNG  
-- SVG  
-- PDF  
-- MusicXML  
-
-### **Q: Can I load MIDI files?**
-MIDI file import is planned for a future version.
-
----
-
-# 🧪 TESTING & PERFORMANCE
-
-### **Q: Why is the renderer slow on my system?**
-Try:
-- closing GPU‑heavy apps  
-- updating graphics drivers  
-- reducing window size  
-- disabling background processes  
-- using a wired MIDI interface instead of Bluetooth  
-- ensuring hardware acceleration is enabled  
-
-### **Q: Why does the playhead drift?**
-This can happen if:
-- CPU is overloaded  
-- system timer resolution is low  
-- background tasks interrupt timing  
-- OS power‑saving modes are active  
-
----
-
-# 🧩 MISCELLANEOUS
-
-### **Q: Is this project stable?**
-Yes — all core modules are complete and stable as of v4.2.0.
-
-### **Q: Is this suitable for education?**
-Absolutely — it is ideal for:
-- music theory  
-- rhythm training  
-- MIDI analysis  
-- live performance visualization  
-
-### **Q: Is this suitable for research?**
-Yes — the modular architecture is ideal for:
-- real‑time systems  
-- music informatics  
-- HCI research  
-- visualization studies  
-
----
-
-# 🎉 More questions?
-Open an Issue or contact the maintainer at **richardpizem@gmail.com**.
+**Is the whole historical source tree verified?** No. The supported path is tested; earlier
+unconnected experiments are labelled as such. Real hardware and manual UI acceptance remain.

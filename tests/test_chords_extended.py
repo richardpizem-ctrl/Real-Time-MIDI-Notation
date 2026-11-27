@@ -7,7 +7,7 @@
 from notation_engine.chord_detector import detect_chord
 
 
-def test_chord(notes, label):
+def show_chord(notes, label):
     """Safely tests chord detection for a given list of MIDI notes."""
     try:
         if not isinstance(notes, (list, tuple)):
@@ -55,7 +55,7 @@ def main():
 
     print("--- MAJOR CHORDS ---")
     for label, notes in major_chords.items():
-        test_chord(notes, label)
+        show_chord(notes, label)
 
     print("\n")
 
@@ -79,7 +79,7 @@ def main():
 
     print("--- MINOR CHORDS ---")
     for label, notes in minor_chords.items():
-        test_chord(notes, label)
+        show_chord(notes, label)
 
     print("\n=== END ===")
 
