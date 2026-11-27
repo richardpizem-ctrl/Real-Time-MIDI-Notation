@@ -7,6 +7,7 @@ from typing import Dict, Tuple, Optional
 import threading
 
 from core.logger import Logger
+from .track_system import TrackSystem
 from core.event_types import (
     TRACK_SELECTED,
     TRACK_MUTED,
@@ -26,8 +27,8 @@ class TrackManager:
     - bez Real-Time pipeline
     """
 
-    def __init__(self, track_system, event_bus=None):
-        self.track_system = track_system
+    def __init__(self, track_system=None, event_bus=None):
+        self.track_system = track_system if track_system is not None else TrackSystem(event_bus)
         self.event_bus = event_bus
 
         self._lock = threading.Lock()

@@ -1,0 +1,38 @@
+SIRIUS MIDI - lokalna pracovna oprava 4.3.1, zatial nevydana
+
+1. Cely ZIP rozbalte do noveho zapisovatelneho priecinka.
+2. Vyuziva Python 3.10+; overena je verzia 3.10 na Windows.
+3. Ak tu este nie je pripravene .venv, spustite PRIPRAVIT-MIDI.cmd.
+   Ten vytvori oddelene prostredie a stiahne kniznice zo siete.
+4. Spustite SPUSTIT-MIDI.cmd.
+
+BEZ KLAVIATURY
+Tlacidlo DEMO vygeneruje dve trojice MIDI not na dvoch kanaloch.
+Noty sa zobrazia v zakladnom notovom nahlade, casovej osi a na klaviature.
+Export ulozi .mid do exports. Otvorit nacita MIDI. Hrat/Pauza prehrava
+nacitanu alebo zaznamenanu hru. Bez zvoleneho MIDI vystupu ide o vizualne
+prehravanie. Program nema vstavaný zvukovy syntetizator.
+
+S KLAVIATUROU
+Pripojte nastroj, kliknite Obnovit, Vstup > vyberie zariadenie,
+Pripojit zapne prijem not. Stop vstup odpoji a uzavrie drzane noty.
+Fyzicky nastroj ani realny MIDI zvukovy vystup este neboli overene.
+Dalsia aplikacia moze mat port obsadeny; pri chybe najprv skontrolujte nazov.
+
+Sledovanie: 16 MIDI kanalov, nazvy not C4=60, velocity (nie dB),
+odhad akordu a toniny. Kliknutie na cislo stopy prepina mute pre prehravanie.
+Odhad toniny nie je hudobny verdikt. Program este nehodnoti falsny spev.
+Zvuk z mikrofonu a prepojenie BETA nie su implementovane.
+Notovy nahlad je zakladny, nejde o profesionalnu kompletnu sadzbu partitury.
+Historicke rendererove/editacne experimenty nie su vsetky zapojene do okna.
+
+Pauza/stop posiela vypnutie not na zvoleny MIDI vystup.
+Pred zavretim neulozenej hry program ponukne Export, alebo opakovane
+ukoncenie do 4 sekund. Nahravku ukladajte cez Export.
+Nevkladajte tuto kopiu do pracovnej BETA; je to samostatna aplikacia.
+
+DIAGNOSTIKA A OBNOVA
+DIAGNOSTIKA.cmd preveri kniznice, dolezite zdrojove subory a config.json.
+OPRAVIT-NASTAVENIA.cmd obnovi iba chybajuce/neplatne nastavenia. Poskodeny
+subor najprv presne zalohuje do recovery-backups. Platne vlastne nastavenia
+nemeni. Ziadny kod, MIDI subor ani nahravku automaticky neprepisuje.

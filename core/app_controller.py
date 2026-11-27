@@ -1,192 +1,111 @@
-# =========================================================
-# AppController v4.1.0
-# Hlavný orchestrátor systému pre Real-Time MIDI Notation
-# Pripravené pre Runtime 5.x (KG, Envoy, System Agent)
-# =========================================================
-
-from .logger import Logger
+"""One supported MIDI -> queue -> model -> analysis pipeline."""
+from queue import Queue, Empty, Full
+import mido
 from .event_bus import EventBus
-from .config_manager import ConfigManager
-
-# Core modules
-from .track_manager import TrackSystem
+from .track_system import TrackSystem
+from .track_manager import TrackManager
 from .notation_processor import NotationProcessor
-
-# Event types
-from .event_types import (
-    APP_STARTED,
-    APP_STOPPED,
-    STATUS_MESSAGE,
-    MIDI_EXPORT_REQUEST,
-    MIDI_EXPORTED,
-    ERROR_OCCURRED,
-)
-
+from midi_input.message_parser import MessageParser
+from midi_input.midi_listener import MIDIListener
+from midi_input.event_router import EventRouter
+from notation_engine.chord_detector import detect_chord
+from notation_engine.key_detector import detect_key
 
 class AppController:
-    """
-    Centrálny kontrolér aplikácie (v4.1.0).
+    def __init__(self, clock=None):
+        self.event_bus = EventBus()
+        self.track_system = TrackSystem(self.event_bus, **({'clock':clock} if clock else {}))
+        self.track_manager = TrackManager(self.track_system,self.event_bus)
+        self.notation_processor = NotationProcessor(self.track_system,self.event_bus)
+        self.queue = Queue(maxsize=16384)
+        self.errors = Queue()
+        self.dropped = 0
+        self.recording = True
+        self.listener = None
+        self.router = EventRouter(self.event_bus)
+        self.event_bus.subscribe('midi_event', self.enqueue)
+        self.event_bus.subscribe('note_event', self._process)
+        self.event_bus.subscribe('control_event', self._process)
+        self.event_bus.subscribe('system.error', self.errors.put)
+        self.current_chord = None
+        self.current_key = None
+        self.last_velocity = None
+        self._last_analysis_count = 0
 
-    Zodpovedá za:
-    - inicializáciu core modulov
-    - bezpečné spúšťanie a ukončovanie aplikácie
-    - publikovanie systémových udalostí
-    - spracovanie exportov a chýb
-    - prípravu na Runtime 5.x (KG, Envoy, System Agent)
-    """
-
-    def __init__(self):
-        Logger.info("Initializing AppController (v4.1.0)...")
-
-        self.is_running = False
-
-        # -----------------------------------------------------
-        # INITIALIZATION OF CORE SYSTEMS
-        # -----------------------------------------------------
-        self.event_bus = self._safe_init(EventBus, "EventBus")
-        self.config = self._safe_init(ConfigManager, "ConfigManager")
-
-        self.track_system = self._safe_init(
-            lambda: TrackSystem(event_bus=self.event_bus),
-            "TrackSystem"
-        )
-
-        self.notation_processor = self._safe_init(
-            lambda: NotationProcessor(
-                track_system=self.track_system,
-                event_bus=self.event_bus
-            ),
-            "NotationProcessor"
-        )
-
-        # -----------------------------------------------------
-        # EVENT SUBSCRIPTIONS
-        # -----------------------------------------------------
-        self._subscribe_events()
-
-        Logger.info("AppController initialized successfully (v4.1.0).")
-
-    # ---------------------------------------------------------
-    # SAFE INITIALIZATION WRAPPER
-    # ---------------------------------------------------------
-    def _safe_init(self, constructor, name):
+    def enqueue(self, event):
         try:
-            instance = constructor()
-            Logger.info(f"{name} initialized.")
-            return instance
-        except Exception as e:
-            Logger.error(f"Failed to initialize {name}: {e}")
-            return None
+            self.queue.put_nowait(event)
+        except Full:
+            self.dropped += 1
+            if self.dropped == 1:
+                self.errors.put('MIDI queue overflow; recording stopped to prevent stuck notes')
 
-    # ---------------------------------------------------------
-    # EVENT SUBSCRIPTIONS
-    # ---------------------------------------------------------
-    def _subscribe_events(self):
-        if not self.event_bus:
-            Logger.error("EventBus not available — cannot subscribe to events.")
-            return
+    def inject(self, message, timestamp=None):
+        event = MessageParser.parse(message,timestamp)
+        if event:
+            self.enqueue(event)
 
-        try:
-            self.event_bus.subscribe(MIDI_EXPORTED, self._on_midi_exported)
-            self.event_bus.subscribe(ERROR_OCCURRED, self._on_error)
-        except Exception as e:
-            Logger.error(f"Failed to subscribe to events: {e}")
+    def _process(self, event):
+        if self.recording:
+            self.track_system.process(event)
+            if event['type'] == 'note_on':
+                self.last_velocity = event['velocity']
 
-    # ---------------------------------------------------------
-    # START APPLICATION
-    # ---------------------------------------------------------
-    def start(self):
-        if self.is_running:
-            Logger.info("Application already running.")
-            return
-
-        Logger.info("Application started.")
-        self.is_running = True
-
-        if self.event_bus:
+    def drain(self, limit=4096):
+        if self.dropped:
+            self.recording = False
+            self.track_system.finish()
+        count = 0
+        while count < limit:
             try:
-                self.event_bus.publish(APP_STARTED)
-                self.event_bus.publish(STATUS_MESSAGE, "App is running")
-            except Exception as e:
-                Logger.error(f"Failed to publish start events: {e}")
+                event = self.queue.get_nowait()
+            except Empty:
+                break
+            self.router.route(event)
+            count += 1
+        if self.listener and not self.listener.running and self.listener.error:
+            self.track_system.finish()
+            self.recording = False
+        pitches = [pitch for channel,pitch in self.track_system.active if channel != 9]
+        self.current_chord = detect_chord(pitches)
+        note_count = len(self.track_system.notes)
+        if note_count != self._last_analysis_count:
+            self.current_key = detect_key([n['pitch'] for n in self.track_system.notes[-128:] if n['channel'] != 9])
+            self._last_analysis_count = note_count
+        return count
 
-    # ---------------------------------------------------------
-    # STOP APPLICATION
-    # ---------------------------------------------------------
-    def stop(self):
-        if not self.is_running:
-            Logger.info("Application already stopped.")
-            return
+    def start(self, device_name=None):
+        self.stop_input()
+        self.listener = MIDIListener(self.event_bus,device_name)
+        return self.listener.start()
 
-        Logger.info("Application stopped.")
-        self.is_running = False
+    def stop_input(self):
+        if self.listener:
+            self.listener.stop()
+            self.listener = None
+        self.drain()
+        self.track_system.finish()
 
-        if self.event_bus:
-            try:
-                self.event_bus.publish(APP_STOPPED)
-            except Exception as e:
-                Logger.error(f"Failed to publish stop event: {e}")
+    def set_recording(self, enabled):
+        self.drain()
+        if not enabled:
+            self.track_system.finish()
+        self.recording = bool(enabled) and self.dropped == 0
 
-    # ---------------------------------------------------------
-    # SHUTDOWN (v4.1.0)
-    # ---------------------------------------------------------
+    def reset(self):
+        self.stop_input()
+        while not self.queue.empty():
+            self.queue.get_nowait()
+        self.track_system.reset()
+        self.dropped = 0
+        self.recording = True
+        self.current_chord = self.current_key = self.last_velocity = None
+        self._last_analysis_count = 0
+
+    def export_midi(self, filename='export.mid', bpm=120):
+        self.drain()
+        return self.notation_processor.export_midi(filename,bpm)
+
     def shutdown(self):
-        Logger.info("Shutting down system...")
-        self.stop()
-
-        # korektné vypnutie modulov
-        for name, module in [
-            ("NotationProcessor", self.notation_processor),
-            ("TrackSystem", self.track_system),
-        ]:
-            if hasattr(module, "shutdown") and callable(module.shutdown):
-                try:
-                    module.shutdown()
-                    Logger.info(f"{name} shutdown completed.")
-                except Exception as e:
-                    Logger.error(f"Failed to shutdown {name}: {e}")
-
-    # ---------------------------------------------------------
-    # EXPORT MIDI
-    # ---------------------------------------------------------
-    def export_midi(self, filename="export.mid"):
-        Logger.info(f"Export MIDI requested: {filename}")
-
-        if self.event_bus:
-            try:
-                self.event_bus.publish(MIDI_EXPORT_REQUEST, filename)
-            except Exception as e:
-                Logger.error(f"Failed to publish MIDI_EXPORT_REQUEST: {e}")
-
-        if self.notation_processor:
-            try:
-                self.notation_processor.export_midi(filename)
-            except Exception as e:
-                Logger.error(f"NotationProcessor export failed: {e}")
-
-    # ---------------------------------------------------------
-    # EVENT HANDLERS
-    # ---------------------------------------------------------
-    def _on_midi_exported(self, filename):
-        Logger.info(f"MIDI exported successfully: {filename}")
-
-        if self.event_bus:
-            try:
-                self.event_bus.publish(
-                    STATUS_MESSAGE,
-                    f"MIDI exported: {filename}"
-                )
-            except Exception as e:
-                Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
-
-    def _on_error(self, error_message):
-        Logger.error(f"Application error: {error_message}")
-
-        if self.event_bus:
-            try:
-                self.event_bus.publish(
-                    STATUS_MESSAGE,
-                    f"Error: {error_message}"
-                )
-            except Exception as e:
-                Logger.error(f"Failed to publish STATUS_MESSAGE: {e}")
+        self.stop_input()
+        self.event_bus.shutdown()

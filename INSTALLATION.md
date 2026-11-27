@@ -1,157 +1,39 @@
-# 🛠️ Real‑Time MIDI Notation — Installation Guide (v4.2.0)
+# Installation — recovery preview 4.3.1
 
-This guide explains how to install, configure, and run  
-**Real‑Time MIDI Notation (SIRIUS Engine)** on any supported system.
+## Windows
 
-It is designed for beginners, developers, testers, and musicians.
+Use a fresh writable folder containing the entire repair branch. Python 3.10 is the locally
+verified version; other environments are subject to CI and hardware checks.
 
----
+1. Install Python 3.10+ if missing.
+2. Double-click `PRIPRAVIT-MIDI.cmd`. Internet is needed to install the pinned packages in a local `.venv`.
+3. Double-click `SPUSTIT-MIDI.cmd` and try **DEMO** first.
+4. Connect a MIDI keyboard, press **Obnoviť**, select **Vstup >**, then **Pripojiť**.
+5. Export recordings before closing. Export writes timestamped `.mid` files into `exports`.
 
-# 📦 1. Requirements
+The launcher does not use the BETA Python environment and does not replace the BETA application.
+For sound, select a real MIDI output. Without it, playback is visual; no synthesizer is bundled.
 
-## ✔ Operating Systems
-- Windows 10 / 11  
-- macOS (Intel & Apple Silicon)  
-- Linux (Ubuntu, Arch, Fedora)
+## Command line / development
 
-## ✔ Python Version
-- Python **3.10+** required  
-(v4.2.0 is fully tested on Python 3.10–3.12)
-
-## ✔ Dependencies (installed automatically)
-- pygame  
-- mido  
-- python‑rtmidi  
-
-All dependencies are installed via `requirements.txt`.
-
----
-
-# 📥 2. Installation
-
-## 🔹 Step 1 — Clone the repository
-```bash
-git clone https://github.com/richardpizem-ctrl/Real-Time-MIDI-Notation
-cd Real-Time-MIDI-Notation
+```text
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.venv\Scripts\python.exe -B main.py --demo
+.venv\Scripts\python.exe -B -m pytest -q
 ```
 
-## 🔹 Step 2 — Create a virtual environment
-```bash
-python -m venv venv
-```
+On Linux use `.venv/bin/python`; Linux is a CI target, not a locally verified hardware platform.
+`python main.py --headless --demo --frames 120` performs a bounded display-less startup test.
+All launchers and their status are listed in [LAUNCHERS.md](LAUNCHERS.md).
 
-### Activate it:
-Windows:
-```bash
-venv\Scripts\activate
-```
+## Troubleshooting
 
-macOS/Linux:
-```bash
-source venv/bin/activate
-```
+- **Missing dependency:** prepare the local environment with the preparation script.
+- **Bad config.json:** run diagnostics, then explicitly invoke `OPRAVIT-NASTAVENIA.cmd` if recovery is appropriate.
+- **Missing/broken source:** use a known-good complete copy. Diagnostics will report it; recovery will not invent code.
+- **Device unavailable/occupied:** verify the exact input name and whether another program holds the port.
+- **No sound:** choose an external MIDI output and check its instrument. The UI alone does not synthesize audio.
 
-## 🔹 Step 3 — Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
----
-
-# 🎹 3. MIDI Device Setup
-
-The engine automatically detects:
-
-- USB MIDI keyboards  
-- Yamaha arranger keyboards  
-- virtual MIDI ports (LoopMIDI, IAC Driver, etc.)
-
-If your device is not detected:
-
-- close all DAWs (they may lock the MIDI port)  
-- reconnect the device  
-- restart the application  
-- check OS MIDI permissions  
-- ensure no other app is using the MIDI port  
-
-The **DeviceManager v4** includes protection against Windows/ASIO locked‑port issues.
-
----
-
-# ▶️ 4. Running the Application
-
-Start the program with:
-
-```bash
-python main.py
-```
-
-This will:
-
-- initialize all **v4.2.0 modules**  
-- load the Editing Layer (selection, regions, snapping, ghosts)  
-- open the Pygame window  
-- start the real‑time renderer  
-- begin listening for MIDI input  
-- activate UIManager v4 + CanvasUI  
-- start the PlaybackEngine v4 timing loop  
-
----
-
-# 🧪 5. Testing Your Setup
-
-Play notes on your MIDI device.  
-You should see:
-
-- real‑time note rendering  
-- velocity shading  
-- track colors  
-- playhead movement  
-- barlines and grid  
-- Editing Layer ghost previews (v4.2.0)  
-- stable v4 renderer performance  
-
-If nothing appears:
-
-- check MIDI device connection  
-- verify Python version  
-- check console logs  
-- ensure no DAW is blocking the MIDI port  
-- restart the application  
-
----
-
-# 🛠️ 6. Troubleshooting
-
-### ❌ No MIDI device detected
-- close DAWs  
-- restart the app  
-- reconnect the device  
-- check OS permissions  
-- verify DeviceManager v4 logs  
-
-### ❌ Renderer is slow
-- close GPU‑heavy apps  
-- update graphics drivers  
-- reduce window size  
-- disable background processes  
-- ensure hardware acceleration is enabled  
-
-### ❌ Wrong track colors
-- verify TrackManager configuration  
-- check channel → track mapping  
-- ensure no custom mapping overrides are active  
-
----
-
-# 🎉 Installation Complete
-
-You are now ready to use **Real‑Time MIDI Notation (SIRIUS Engine) v4.2.0**.  
-For more help, see:
-
-- **FAQ.md**  
-- **SUPPORT.md**  
-- **PROJECT_OVERVIEW.md**  
-- **MODULE_MAP.md**  
-
-Enjoy real‑time notation!
+Do not submit recordings, secrets or personal device details without reviewing them first.
+Hardware operation remains an acceptance task; a simulated port test does not establish it.

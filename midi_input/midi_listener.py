@@ -1,176 +1,69 @@
-# =========================================================
-# MIDIListener v4.3.0
-# Stabilný real-time MIDI vstupný modul pre MIDI Engine
-# =========================================================
-
+"""Read MIDI on a worker; event subscribers must enqueue, never render here."""
 import threading
-import time
 import mido
-
+from core.logger import Logger
 from .message_parser import MessageParser
-from ..core.logger import Logger
-
 
 class MIDIListener:
-    """
-    MIDIListener (v4.3.0):
-    - bezpečné otváranie MIDI portu
-    - auto-detect MIDI zariadenia
-    - thread-safe štart/stop
-    - odolný voči chybám počas čítania
-    - žiadne duplikované porty
-    - real-time safe (žiadne výnimky v slučke)
-    - kompatibilný s EventBus v4.3.0
-    """
-
-    __slots__ = (
-        "event_bus",
-        "device_name",
-        "poll_interval",
-        "running",
-        "thread",
-        "port",
-    )
-
-    def __init__(self, event_bus, device_name=None, poll_interval=0.001):
+    def __init__(self, event_bus, device_name=None, poll_interval=0.003):
         self.event_bus = event_bus
         self.device_name = device_name
-        self.poll_interval = max(0.0005, float(poll_interval))
-
+        self.poll_interval = max(0.001, float(poll_interval))
         self.running = False
         self.thread = None
         self.port = None
+        self.error = None
+        self._stop = threading.Event()
 
-        Logger.info("MIDIListener initialized (v4.3.0).")
-
-    # ---------------------------------------------------------
-    # START LISTENING
-    # ---------------------------------------------------------
     def start(self):
         if self.running:
-            Logger.warning("MIDIListener is already running.")
-            return
-
+            return True
+        if self.thread and self.thread.is_alive():
+            raise RuntimeError('Previous MIDI reader has not stopped')
+        self.error = None
+        try:
+            names = mido.get_input_names()
+            selected = self.device_name or (names[0] if names else None)
+            if selected not in names:
+                raise RuntimeError('Selected MIDI input is unavailable')
+            self.port = mido.open_input(selected)
+            self.device_name = selected
+        except Exception as error:
+            self.error = str(error)
+            self.event_bus.publish('system.error', self.error)
+            return False
+        self._stop.clear()
         self.running = True
-        self.thread = threading.Thread(target=self._listen_loop, daemon=True)
+        self.thread = threading.Thread(target=self._listen_loop, name='MidiReader', daemon=True)
+        self.thread.start()
+        return True
 
-        try:
-            self.thread.start()
-            Logger.info("MIDIListener started.")
-        except Exception as e:
-            Logger.error(f"MIDIListener thread start error: {e}")
-            self.running = False
-
-    # ---------------------------------------------------------
-    # STOP LISTENING
-    # ---------------------------------------------------------
-    def stop(self):
-        if not self.running:
-            return
-
-        self.running = False
-        Logger.info("MIDIListener stopping...")
-
-        # počkaj na ukončenie vlákna
-        thread = self.thread
-        if thread and thread.is_alive():
-            try:
-                thread.join(timeout=1.0)
-            except Exception:
-                pass
-
-        # zatvor port
-        self._close_port()
-        Logger.info("MIDIListener stopped.")
-
-    # ---------------------------------------------------------
-    # PORT HANDLING
-    # ---------------------------------------------------------
-    def _open_port(self):
-        """Bezpečne otvorí MIDI port, fallback na prvý dostupný."""
-        try:
-            available = mido.get_input_names()
-        except Exception as e:
-            Logger.error(f"MIDIListener: cannot list MIDI ports → {e}")
-            return None
-
-        if not available:
-            Logger.warning("MIDIListener: no MIDI input ports available.")
-            return None
-
-        # auto-detect
-        if self.device_name is None:
-            selected = available[0]
-            Logger.info(f"MIDIListener: auto-selected '{selected}'")
-        else:
-            if self.device_name in available:
-                selected = self.device_name
-            else:
-                Logger.warning(
-                    f"MIDIListener: device '{self.device_name}' not found. "
-                    f"Available: {available}. Using '{available[0]}'"
-                )
-                selected = available[0]
-
-        try:
-            port = mido.open_input(selected)
-            Logger.info(f"MIDIListener: opened MIDI input '{selected}'")
-            return port
-        except Exception as e:
-            Logger.error(f"MIDIListener: failed to open '{selected}' → {e}")
-            return None
-
-    def _close_port(self):
-        port = self.port
-        if port:
-            try:
-                port.close()
-            except Exception:
-                pass
-            self.port = None
-
-    # ---------------------------------------------------------
-    # MAIN LISTEN LOOP
-    # ---------------------------------------------------------
     def _listen_loop(self):
-        """Hlavný loop – číta MIDI správy a posiela ich do EventBusu."""
-        self.port = self._open_port()
-        if not self.port:
-            Logger.error("MIDIListener: no port opened, stopping listener.")
+        try:
+            while not self._stop.is_set():
+                for message in self.port.iter_pending():
+                    event = MessageParser.parse(message)
+                    if event:
+                        self.event_bus.publish('midi_event', event)
+                self._stop.wait(self.poll_interval)
+        except Exception as error:
+            self.error = str(error)
+            self.event_bus.publish('system.error', self.error)
+        finally:
             self.running = False
-            return
-
-        with self.port:
-            Logger.info(f"MIDIListener: listening on '{self.port.name}'")
-
-            poll_interval = self.poll_interval
-            event_bus = self.event_bus
-            parse = MessageParser.parse
-
-            while self.running:
+            if self.port is not None:
                 try:
-                    for msg in self.port.iter_pending():
-                        parsed = parse(msg)
-                        if parsed:
-                            try:
-                                event_bus.publish("midi_event", parsed)
-                            except Exception as e:
-                                Logger.error(f"EventBus publish error: {e}")
+                    self.port.close()
+                except Exception as error:
+                    Logger.warning(str(error))
 
-                except Exception as e:
-                    Logger.error(f"MIDIListener loop error: {e}")
-                    time.sleep(0.1)
+    def stop(self):
+        self._stop.set()
+        if self.thread and self.thread is not threading.current_thread():
+            self.thread.join(timeout=2)
+            if self.thread.is_alive():
+                raise RuntimeError('MIDI reader failed to stop')
+        self.running = False
+        self.port = None
 
-                time.sleep(poll_interval)
-
-    # ---------------------------------------------------------
-    # NO-OP API (pre UIManager kompatibilitu)
-    # ---------------------------------------------------------
-    def update_color(self, track_index: int, color_hex: str):
-        return
-
-    def update_visibility(self, track_index: int, visible: bool):
-        return
-
-    def set_active_track(self, track_index: int):
-        return
+MidiListener = MIDIListener

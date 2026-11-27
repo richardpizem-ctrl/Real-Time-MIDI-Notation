@@ -1,153 +1,45 @@
-# =========================================================
-# main.py – Real-Time MIDI Notation v4.3.0
-# Stable main launcher for SIRIUS MIDI Engine
-# =========================================================
-
+"""Supported entry point for the recovered SIRIUS MIDI application."""
+import argparse
 import os
-import pygame
+from pathlib import Path
 
-from core.logger import Logger
-from core.event_bus import EventBus
-from core.event_types import MIDI_EXPORTED, ERROR_OCCURRED
-from core.track_manager import TrackManager
-from core.notation_processor import NotationProcessor
-from core.playback_engine import PlaybackEngine
-
-from ui.ui_manager import UIManager  # UI wrapper v4.3.0
-
-
-# ---------------------------------------------------------
-# MAIN FUNCTION
-# ---------------------------------------------------------
-def main():
-    Logger.info("=== REAL-TIME MIDI NOTATION START (v4.3.0) ===")
-
-    # -----------------------------------------------------
-    # 0. Pygame initialization
-    # -----------------------------------------------------
-    os.environ["SDL_VIDEO_CENTERED"] = "1"
-
-    try:
-        pygame.init()
-
-        info = pygame.display.Info()
-        screen_width = min(info.current_w - 100, 1600)
-        screen_height = min(info.current_h - 100, 900)
-
-        screen = pygame.display.set_mode(
-            (screen_width, screen_height),
-            pygame.DOUBLEBUF | pygame.HWSURFACE,
-        )
-        pygame.display.set_caption("SIRIUS MIDI Engine | v4.3.0")
-
-        clock = pygame.time.Clock()
-
-    except Exception:
-        Logger.error("Pygame initialization failure")
-        return
-
-    # -----------------------------------------------------
-    # 1. EventBus
-    # -----------------------------------------------------
-    event_bus = EventBus()
-
-    def on_error(msg):
+def main(argv=None):
+    parser=argparse.ArgumentParser(description='SIRIUS MIDI - recovered source preview')
+    parser.add_argument('--demo',action='store_true',help='Feed a simulated two-channel phrase')
+    parser.add_argument('--headless',action='store_true',help='Use SDL dummy display for tests')
+    parser.add_argument('--frames',type=int,help='Stop after N frames for a startup check')
+    parser.add_argument('--input',help='Exact MIDI input name')
+    parser.add_argument('--midi',help='Open a MIDI file')
+    parser.add_argument('--diagnose',action='store_true',help='Report startup issues without opening a window')
+    parser.add_argument('--repair-settings',action='store_true',help='Back up invalid config.json and restore default settings')
+    args=parser.parse_args(argv)
+    root = Path(__file__).resolve().parent
+    from core.diagnostics import diagnose, load_settings, repair_settings
+    import json
+    if args.repair_settings:
         try:
-            Logger.error(f"[ERROR] {msg}")
-        except Exception:
-            pass
+            print(json.dumps(repair_settings(root),ensure_ascii=False,indent=2))
+            return 0
+        except (OSError,ValueError) as error:
+            print('Obnova nastavení zlyhala: '+str(error))
+            return 2
+    report = diagnose(root)
+    if args.diagnose or not report['ok']:
+        print(json.dumps(report,ensure_ascii=False,indent=2))
+        if not report['settings_ok']:
+            print('Nastavenia možno obnoviť cez OPRAVIT-NASTAVENIA.cmd; pôvodný súbor bude zálohovaný.')
+        if not report['ok'] or args.diagnose:
+            return 0 if report['ok'] else 2
+    if args.frames is not None and args.frames < 1:
+        parser.error('--frames must be positive')
+    if args.headless:
+        os.environ['SDL_VIDEODRIVER']='dummy'
+        os.environ['SDL_AUDIODRIVER']='dummy'
+    os.environ['PYGAME_HIDE_SUPPORT_PROMPT']='1'
+    from ui.application import MidiApplication
+    app=MidiApplication(demo=args.demo,midi_file=args.midi,input_name=args.input,headless=args.headless,settings=load_settings(root))
+    app.run(max_frames=args.frames)
+    return 0
 
-    event_bus.subscribe(ERROR_OCCURRED, on_error)
-
-    # -----------------------------------------------------
-    # 2. TrackManager + NotationProcessor
-    # -----------------------------------------------------
-    try:
-        track_manager = TrackManager(event_bus=event_bus)
-        notation_processor = NotationProcessor(
-            track_manager=track_manager,
-            event_bus=event_bus
-        )
-    except Exception:
-        Logger.error("Failed to initialize TrackManager or NotationProcessor")
-        return
-
-    # -----------------------------------------------------
-    # 3. PlaybackEngine
-    # -----------------------------------------------------
-    try:
-        playback_engine = PlaybackEngine(
-            track_manager=track_manager,
-            renderer=None,      # UIManager injects renderer
-            canvas_ui=None,     # UIManager injects CanvasUI
-            bpm=120.0,
-            beats_per_bar=4,
-        )
-    except Exception:
-        Logger.error("Failed to initialize PlaybackEngine")
-        return
-
-    # -----------------------------------------------------
-    # 4. UI Manager (v4.3.0)
-    # -----------------------------------------------------
-    try:
-        ui = UIManager(
-            event_bus=event_bus,
-            track_manager=track_manager,
-            playback_engine=playback_engine,
-            screen_width=screen_width,
-            screen_height=screen_height,
-        )
-    except Exception:
-        Logger.error("Failed to initialize UIManager")
-        return
-
-    # -----------------------------------------------------
-    # 5. MAIN LOOP
-    # -----------------------------------------------------
-    running = True
-
-    while running:
-        dt = clock.tick_busy_loop(60) / 1000.0
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-            # UI event handling
-            try:
-                ui.handle_event(event)
-            except Exception:
-                pass
-
-            # Playback toggle
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                try:
-                    if playback_engine.is_playing():
-                        playback_engine.pause()
-                        Logger.info("Playback paused.")
-                    else:
-                        playback_engine.play()
-                        Logger.info("Playback started.")
-                except Exception:
-                    pass
-
-        # Update
-        try:
-            surface = playback_engine.update()
-        except Exception:
-            surface = None
-
-        # Render
-        try:
-            ui.render(screen, dt, surface)
-            pygame.display.flip()
-        except Exception:
-            pass
-
-    Logger.info("=== REAL-TIME MIDI NOTATION END ===")
-    pygame.quit()
-
-
-if __name__ == "__main__":
-    main()
+if __name__=='__main__':
+    raise SystemExit(main())

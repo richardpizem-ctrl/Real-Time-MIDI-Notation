@@ -4,6 +4,8 @@
 # Kompatibilné so Snapping Engine v4.3.0
 # =========================================================
 
+import pytest
+
 from core.editing.snapping import SnapGrid, snap_time, snap_range, SnapEngine
 
 
@@ -29,8 +31,8 @@ def test_snap_engine_beat_mode():
 
 def test_snap_engine_custom_mode():
     engine = SnapEngine(SnapGrid(0.3, mode="custom"))
-    assert engine.snap(1.0) == 0.9
-    assert engine.snap(1.14) == 1.2
+    assert engine.snap(1.0) == pytest.approx(0.9)
+    assert engine.snap(1.14) == pytest.approx(1.2)
 
 
 def test_snap_engine_bar_mode():
